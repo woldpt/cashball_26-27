@@ -2065,3 +2065,10 @@ Plano C1+C2 (quando fizer):
 - `getCtx()` partilhado (1 `AudioContext`, `resume()` se `suspended`); `playSequence(seq, type)` único; 5 exports mantêm assinatura e frequências/volumes.
 - Corrige fuga de contexto por chamada (browsers limitam a ~6) e duplicação ~80%.
 - Checks: eslint sem erros no ficheiro (2 erros pré-existentes noutros — confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (sem mudança de layout) nem audits (sem lógica de jogo).
+
+## Coach tutorial — fixes (2026-09-26)
+- Avaliação 1–10 pedida pelo utilizador: média ~7,3 (textos 9, cobertura 8, navegação 8, visual 8, balão 6, a11y 5, mobile 7, robustez 6, persistência 7, integração 9).
+- Fix 1: `dataTour` também no `FormationCard` mobile (`TacticsView.jsx`) — passo 7 sem alvo em telemóvel; `findTarget` ignora escondidos, por isso é seguro nos dois breakpoints.
+- Fix 2: medição do alvo com retry (`CoachTutorial.jsx`: imediato + intervalo 150ms, máx. ~1s) — a tab nova monta após a saída `mode="wait"` (~0,22s), a medição única aos 120ms falhava.
+- Extra: balão preso ao viewport por baixo (altura real via `ref`, deps `[balloonH, stepIndex]`); Escape fecha (= saltar); foco inicial no balão (`tabIndex={-1}`).
+- Checks: eslint sem erros nos ficheiros (2 erros pré-existentes noutros — confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (só atributo + timing, sem mudança estrutural) nem audits (sem lógica de jogo/sockets).

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "../shared/Button.jsx";
 import { COACH_TUTORIAL_STEPS } from "./coachTutorialSteps.js";
 
@@ -39,24 +39,43 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
   const isLast = stepIndex >= total - 1;
   /** @type {[{x:number,y:number,w:number,h:number}|null, Function]} */
   const [rect, setRect] = useState(null);
+  const balloonRef = useRef(null);
+  // Altura real do balão (medida após montar) para prender o balão ao viewport.
+  const [balloonH, setBalloonH] = useState(240);
 
   useLayoutEffect(() => {
     onNavigate(step);
-    // Dá tempo à tab de montar antes de medir o alvo.
+    // A tab nova monta depois da antiga sair (AnimatePresence mode="wait",
+    // saída ~0,22s) — volta a tentar até o alvo aparecer (máx. ~1s).
     let raf = 0;
-    const measure = () => {
+    let attempts = 0;
+    let scrolled = false;
+    const tryMeasure = () => {
       const el = findTarget(step.targets);
       if (el) {
-        el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        if (!scrolled) {
+          scrolled = true;
+          el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
         raf = requestAnimationFrame(() => {
           const r = el.getBoundingClientRect();
           setRect({ x: r.x, y: r.y, w: r.width, h: r.height });
         });
-      } else {
-        setRect(null);
+        return true;
       }
+      setRect(null);
+      return false;
     };
-    const t = setTimeout(measure, 120);
+    tryMeasure();
+    const t = setInterval(() => {
+      attempts += 1;
+      if (tryMeasure() || attempts >= 6) clearInterval(t);
+    }, 150);
+    const onKey = (e) => {
+      if (e.key === "Escape") onSkip();
+    };
+    window.addEventListener("keydown", onKey);
+    balloonRef.current?.focus({ preventScroll: true });
     const onResize = () => {
       const el = findTarget(step.targets);
       if (el) {
@@ -69,26 +88,33 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onResize, true);
     return () => {
-      clearTimeout(t);
+      clearInterval(t);
       cancelAnimationFrame(raf);
+      window.removeEventListener("keydown", onKey);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onResize, true);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex]);
 
+  // Mede a altura real do balão para o cálculo de posição (só re-renderiza se mudar).
+  useLayoutEffect(() => {
+    const h = balloonRef.current?.offsetHeight;
+    if (h && h !== balloonH) setBalloonH(h);
+  }, [balloonH, stepIndex]);
+
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   let balloon = { left: Math.max(8, (vw - BALLOON_W) / 2), top: vh / 2 - 100 };
   let below = true;
   if (rect) {
-    below = rect.y + rect.h + GAP + 220 <= vh || rect.y < 200;
+    below = rect.y + rect.h + GAP + balloonH + 16 <= vh || rect.y < 200;
     const left = Math.max(
       8,
       Math.min(rect.x + rect.w / 2 - BALLOON_W / 2, vw - BALLOON_W - 8),
     );
-    const top = below ? rect.y + rect.h + GAP : rect.y - GAP - 240;
-    balloon = { left, top: Math.max(8, top) };
+    const top = below ? rect.y + rect.h + GAP : rect.y - GAP - balloonH - 16;
+    balloon = { left, top: Math.max(8, Math.min(top, vh - balloonH - 8)) };
   }
 
   return (
@@ -139,6 +165,8 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
 
       {/* Balão */}
       <div
+        ref={balloonRef}
+        tabIndex={-1}
         className="absolute bg-white border border-primary/50 rounded-xl shadow-2xl p-4 flex flex-col gap-2 text-zinc-900"
         style={{
           left: balloon.left,

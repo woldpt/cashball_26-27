@@ -976,7 +976,7 @@ export function TacticsView() {
               </div>
 
               {/* Formação mobile — chips horizontais */}
-              <FormationCard className="xl:hidden" heartbeat={heartbeat} />
+              <FormationCard className="xl:hidden" dataTour heartbeat={heartbeat} />
             </div>
 
             {/* TOPO desktop — controlos em linha, 1 cartão por coluna */}
