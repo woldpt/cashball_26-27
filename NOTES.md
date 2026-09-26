@@ -1,3 +1,11 @@
+## Camisolas SVG das 60 equipas (2026-09-27)
+- Pedido: adivinhar as camisolas via zerozero.pt e gerar um SVG por equipa. Âmbito decidido por perguntas: 60 equipas, paramétrico simples, ficheiros em `client/public/kits/<slug>.svg`.
+- zerozero tem foto do equipamento em cada página de equipa (`<img src="..._shirt_...">`); sacados 59/60 para `server/.cache/kits/` (só referência, gitignored) e classificados a olho numa folha de contacto numerada por slug.
+- Novos: `server/db/fixtures/kits.json` (base/secondary/pattern, 7 padrões: solid/stripes/hoops/halves/sash/band/shoulders), `server/scripts/generateKits.ts` (molde único, valida os 60 slugs do `teamsSource`, escreve os SVGs), `server/scripts/fetchZerozeroKits.ts` (re-saca as fotos; documenta proveniência).
+- Escouralense sem foto no zerozero → fallback cores do brasão (branco/azul-escuro, `source:"crest"` no JSON). Folha de contacto dos 60 SVGs revista contra as fotos.
+- Achado fora do plano (NÃO mexido, a aguardar decisão): 5 URLs do `teamsSource` apontam hoje para outros clubes — `lusitano-evora/4270`=Randers, `oliveira-hospital/3598`=Lourinhanense, `alcochetense/3592`=FC Infesta, `o-elvas/3604`=Maria da Fonte, `sintrense/3590`=Gondomar SC (confirmado pelo `<title>` das páginas). Os plantéis do `all_teams.json` parecem dos clubes certos (nomes pt-PT, zero dinamarqueses no Lusitano), por isso o dano seria num futuro `--refresh` de plantéis/logos. As classificações dos kits usaram as páginas corretas (cache antigo), logo os SVGs estão certos.
+- Checks: server `typecheck` OK · gerador correu (60/60) · descarregador correu (59/60, escouralense esperado). Sem cliente/layout/lógica → sem lint/mobile/audits.
+
 ## TeamHistoryView: refaturação visual + DRY (2026-09-26)
 - Janela "horrível" → plano aprovado (sem hero, 4 Panels, jogos por época, com lógica). Só `client/src/views/TeamHistoryView.jsx` (498→~440 linhas, zero mudança de dados/servidor).
 - Fora o 3.º hero duplicado (blurs inline, `bg-black/55`, `text-white` hardcoded — o `TeamSquadView` já tem hero mobile+desktop): topo passa a 3 `SummaryWidget compactMobile` (Épocas/Melhor com sub da época/Troféus). Raiz `flex gap-6 p-6` → `space-y-4 px-3 py-4 sm:p-6` (igual à tab Plantel; a tab História não tinha wrapper próprio).
