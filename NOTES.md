@@ -1745,3 +1745,13 @@ Plano C1+C2 (quando fizer):
 - `fans_mood` (0–100) fora do âmbito — mantido.
 - Checks: `typecheck` OK; `eslint` OK nos tocados (2 erros pré-existentes em ficheiros não tocados); `check:types` OK. Prova sintética node:sqlite (17 valores de agressividade + 7 de moral, 2.ª passagem no-op) PASS. Sala real `game_TST148` copiada → migrada → `audit:gamestate V4AUDIT` 0 erros/0 warnings; `audit:socketio` 0 erros (97 warnings pré-existentes, nenhum em morale/aggressiveness).
 - Versão → `v26.09.5`.
+
+## Gestão de contratos & leilões — correções P0+P1 (2026-09-26)
+- Auditoria ao trio `contractHelpers`/`auctionHelpers`/`npcTransferHelpers` → 6 correções, 4 commits.
+- P0.1+P0.2 (`fcd3771d`): orçamento do vencedor de leilão passa a ser revalidado no fecho (percorre lances desc, vende ao 1.º com orçamento real, senão "não vendido"); dinheiro+transferência numa transação (padrão `runExec` BEGIN/COMMIT de `socketTransferHandlers`); `finalizeAuction` reescrito em async/await, nunca rejeita (wrapper catch).
+- P0.3 (`050f14de`): `listPlayerOnMarket` rejeita listagem (leilão E fixa) de jogador com lock de agente — fechava bypass de compra humana por listagem; check no finalize mantido como rede (NPC wage-cut usa `startAuction` direto, não afetado).
+- P0.4 (`5b0e400d`): contagens de necessidades NPC (renovação por posição, `hasModerateNeed`) filtram `id > 0` — juniores mascaravam carências.
+- P1.5 (`f8fa240c`): `CONTRACT_REQUEST_RESET_SQL` (era duplicado em 6 UPDATEs) + helper `currentHighBidOf` (era duplicado 4×, um emitia -1 sem lances).
+- P1.6 (`969017e2`): regras inline → constantes em `gameConstants.ts` (`AGENT_RENEGOTIATION_WAGE_FLOOR`, `NPC_RENEW_MIN_BUDGET`, `AUCTION_PRICE_FLOOR_*`, `NPC_LIST_SQUAD_THRESHOLDS`); fórmula de preço ex-clube extraída para `exClubAuctionPrice`.
+- Segue fora de âmbito: `gameManager.ts` tem merge inline do finalize no crash-recovery SEM revalidação de orçamento nem lock cedo (mesma classe dos P0.1/0.3); `npcListings` NPC pode listar juniores (query sem `id>0`); cap `squad >= 24` inclui juniores. `makeTransferProposal` (97 warnings) é pré-existente.
+- Checks: `typecheck` OK; `test:connect-smoke` OK (após P0.1+0.2, P0.3, P1.5, P1.6); `audit:gamestate TST148` 0/0; `audit:socketio` 0 erros (97 warnings pré-existentes).
