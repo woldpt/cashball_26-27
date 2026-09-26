@@ -1708,3 +1708,8 @@ Plano C1+C2 (quando fizer):
 - Decisão de segurança: `unhandledRejection` faz `fatalShutdown`, por isso `execQuiet` regista `warn` em vez de propagar — um `SQLITE_BUSY` transitório não pode matar o servidor. Semântica de falha igual à anterior, mas visível.
 - Tipos: `Db = any` → interface estrutural mínima (sem `@types/sqlite3`); `io`/`toSocket` com os tipos que o `socket.io` já traz. Zero dependências novas.
 - Checks: `typecheck` OK; `test:session-freeze` 10/10; `audit:socketio` 0 erros.
+
+## roomStateHelpers — sem conversão para await (2026-09-26)
+- Pedido: aplicar o padrão `execQuiet` ao ficheiro. Investigação concluiu que NÃO se aplica: `persistSeat` é chamado em 14 sítios síncronos (5 ficheiros, hot paths de socket) e o ficheiro declara-se "best-effort" por desenho — o driver sqlite serializa por ordem e a janela de crash é coberta por snapshot+replay (`docs/CRASH.md`). Await total seria ripple sem ganho real.
+- Feito em vez disso: os dois únicos callbacks silenciosos (`deleteSeat`, `clearMatchCheckpoint`) passam a registar erro como os irmãos (`persistSeat`, `appendRoomEvent`).
+- Checks: `typecheck` OK; `test:session-freeze` 10/10.

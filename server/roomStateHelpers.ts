@@ -296,7 +296,13 @@ export function releaseSeat(
 /** Remove o assento por completo (sala sem esse treinador). */
 export function deleteSeat(game: ActiveGame, name: string): void {
   delete game.seats[name];
-  game.db.run("DELETE FROM room_seats WHERE coach_name = ? COLLATE NOCASE", [name], () => {});
+  game.db.run(
+    "DELETE FROM room_seats WHERE coach_name = ? COLLATE NOCASE",
+    [name],
+    (err: Error | null) => {
+      if (err) console.error(`[roomState] deleteSeat ${name}:`, err.message);
+    },
+  );
 }
 
 /**
@@ -611,7 +617,10 @@ export function clearMatchCheckpoint(game: ActiveGame): void {
   game.matchCheckpoint = null;
   game.db.run(
     "INSERT OR REPLACE INTO game_state (key, value) VALUES ('matchCheckpoint', 'null')",
-    () => {},
+    (err: Error | null) => {
+      if (err)
+        console.error(`[roomState] clearMatchCheckpoint:`, err.message);
+    },
   );
 }
 
