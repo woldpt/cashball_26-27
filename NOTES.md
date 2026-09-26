@@ -1663,3 +1663,4 @@ Plano C1+C2 (quando fizer):
 - Regra permanente (decisão do utilizador): CalVer `vAA.MM.N` para sempre, sem congelar em `v1.0`. Ex.: `v26.09.1` = ano 26, mês 09, 1.º build do mês.
 - Fonte única: `APP_VERSION` em `client/src/constants/index.js`, visível no rodapé da landing (`LandingFooter.jsx`).
 - Manutenção: a cada alteração commitada incrementa-se N; ao virar o mês, N volta a 1.
+- Tags: cada versão leva tag anotada homónima no GitHub (`v26.09.1` criada e pushed em 2026-09-26). N incrementa em commits com código; docs-notas sozinhas não contam.
