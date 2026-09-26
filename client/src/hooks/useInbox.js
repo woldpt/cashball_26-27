@@ -64,6 +64,19 @@ import {
  *   showOlderSeason: () => void,
  * }}
  */
+
+/**
+ * Prepara um título/parts com a bandeira 🚩, só se não a tiver já no início.
+ * Evita duplicar a flag quando o título já nasce com 🚩 (ex. renovação/convite).
+ * @param {string} title
+ * @param {Array}|null titleParts
+ * @returns {{title: string, parts: Array}}
+ */
+function withFlag(title, parts) {
+  if (title.startsWith("🚩 ")) return { title, parts: parts ?? [] };
+  return { title: `🚩 ${title}`, parts: [partText("🚩 "), ...(parts ?? [])] };
+}
+
 export function useInbox() {
   const {
     contractAnswering,
@@ -381,8 +394,8 @@ export function useInbox() {
         it.kind = pending ? "contract" : "info";
         it.ref = pid ?? null;
         if (pending) {
-          it.title = `🚩 ${it.title}`;
-          it.titleParts = [partText("🚩 "), ...(it.titleParts || [])];
+          it.title = withFlag(it.title, it.titleParts).title;
+          it.titleParts = withFlag(it.title, it.titleParts).parts;
           it.extra = {
             requestedWage: it.facts?.requestedWage ?? null,
             answering: answering.has(Number(pid)),
@@ -400,8 +413,8 @@ export function useInbox() {
           record: it.facts.record ?? "",
         };
         if (pending) {
-          it.title = `🚩 ${it.title}`;
-          it.titleParts = [partText("🚩 "), ...(it.titleParts || [])];
+          it.title = withFlag(it.title, it.titleParts).title;
+          it.titleParts = withFlag(it.title, it.titleParts).parts;
         }
       } else if (it.newsType === "board_warning") {
         const active =
