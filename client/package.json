@@ -21,6 +21,7 @@
     "test:journaldb": "node scripts/journalDbNewsRegression.mjs",
     "test:postmatchflow": "node scripts/postMatchFlowRegression.mjs",
     "test:boardnewsid": "node scripts/boardNewsIdRegression.mjs",
+    "test:joinerrors": "node src/utils/joinErrors.test.mjs",
     "test:breakpoints": "node scripts/breakpointParityRegression.mjs",
     "test:mobile": "node scripts/mobileRespCheck.mjs",
     "test:mobile:landscape": "node scripts/mobileRespCheck.mjs --widths 568,667,736,844,926,1023 --height 375"

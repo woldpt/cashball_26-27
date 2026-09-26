@@ -1,24 +1,12 @@
-import React, {
-	useEffect,
-	useLayoutEffect,
-	useState,
-	startTransition,
-} from "react";
-import { socket } from "./socket.js";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import LandingPage from "./components/auth/LandingPage.jsx";
 import { GameProvider } from "./contexts/GameContext.jsx";
 import { TacticsProvider } from "./contexts/TacticsContext.jsx";
 import { GameLayout } from "./GameLayout.jsx";
 import { SEASON_LABEL } from "./constants/index.js";
-import {
-	loadSavedSession,
-	clearSavedAuth,
-	clearSavedSession,
-	clearRoomPointer,
-	saveSavedAuth,
-	saveRoomPointer,
-	getDeviceId,
-} from "./utils/localStorage.js";
+import { useAuth } from "./hooks/useAuth.js";
+import { useJoinSession } from "./hooks/useJoinSession.js";
+import { loadSavedSession } from "./utils/localStorage.js";
 import { checkCacheVersion } from "./utils/cacheVersion.js";
 import { initPushNotifications } from "./services/pushNotifications.js";
 import { AnimatePresence, motion } from "framer-motion";
@@ -28,6 +16,11 @@ if (window.location.search) {
 	window.history.replaceState({}, "", window.location.pathname);
 }
 
+/**
+ * Raiz da app: composição. O estado de auth vive no `useAuth`, o de
+ * join/sessão no `useJoinSession`; aqui ficam só a cola entre os dois,
+ * o gate de cache e os ecrãs (landing ↔ jogo).
+ */
 function App() {
 	// ── Cache readiness ───────────────────────────────────────────────────
 	const [cacheReady, setCacheReady] = useState(false);
@@ -40,419 +33,92 @@ function App() {
 		initPushNotifications();
 	}, []);
 
-	// ── Auth & session state ───────────────────────────────────────────────
-	const [savedSession, setSavedSession] = useState(null);
-	const [me, setMe] = useState(null);
-	const [token, setToken] = useState(null);
-	const [name, setName] = useState("");
-	const [password, setPassword] = useState("");
+	// Texto do formulário de sala: vive aqui porque os dois hooks o usam
+	// (o auth edita e escolhe o default; o join confirma no sucesso).
 	const [roomCode, setRoomCode] = useState("");
-	const [authPhase, setAuthPhase] = useState("login");
-	const [joinMode, setJoinMode] = useState(null);
-	const [confirmPassword, setConfirmPassword] = useState("");
-	const [availableSaves, setAvailableSaves] = useState([]);
-	const [authSubmitting, setAuthSubmitting] = useState(false);
-	const [authError, setAuthError] = useState("");
-	const [isNewAccount, setIsNewAccount] = useState(false);
-	const [joining, setJoining] = useState(false);
-	const [joinError, setJoinError] = useState("");
-
-	const meRef = React.useRef(null);
-	const savedSessionRef = React.useRef(null);
-	const roomCodeRef = React.useRef("");
-	const joinTimerRef = React.useRef(null);
-	const joinRetryRef = React.useRef(0);
-	// Último payload de join emitido: a re-tentativa reenvia-o sem depender de
-	// estado (evita dependências novas nos efeitos e payloads obsoletos).
-	const lastJoinRef = React.useRef(null);
 
 	const backendUrl =
 		(typeof import.meta !== "undefined" && import.meta.env?.VITE_BACKEND_URL) ||
 		"";
 
-	// ── Socket Listeners for Auth ──────────────────────────────────────────
-	// Erros de autenticação limpam a sessão guardada; erros transitórios
-	// (servidor em baixo, sala cheia, etc.) mantêm-na para re-tentar no reload.
-	const isAuthError = (msg) => {
-		const lowered = (msg || "").toLowerCase();
-		return (
-			lowered.includes("palavra-passe") ||
-			lowered.includes("credenciais") ||
-			lowered.includes("sessão inválida") ||
-			lowered.includes("sessão expirada")
-		);
-	};
+	const auth = useAuth({ backendUrl, roomCode, setRoomCode });
+	const join = useJoinSession({
+		setRoomCode,
+		onRoomGone: () => auth.setAuthPhase("mode"),
+	});
 
-	// Erro transitório de verificação (o servidor não conseguiu confirmar a
-	// sessão, sem a declarar inválida): nunca apaga a credencial — o retry
-	// automático recupera sozinho.
-	const isTransientError = (msg) => {
-		const lowered = (msg || "").toLowerCase();
-		return lowered.includes("temporariamente indisponível");
-	};
+	const { me, joining, joinError } = join;
 
-	const isRoomUnavailable = (msg) => {
-		const lowered = (msg || "").toLowerCase();
-		return (
-			lowered.includes("sala não encontrada") ||
-			lowered.includes("a sala já não existe") ||
-			lowered.includes("foste expulso desta sala")
-		);
-	};
-
-	// Rede de segurança do join: se o teamId não chegar dentro de 10s, re-tenta o
-	// join (com a sessão guardada) em vez de limpar o estado.
-	//
-	// NÃO limpar `me` aqui: era isso que transformava um único `teamAssigned`
-	// perdido num bloqueio permanente. `me` ficava null → o `teamAssigned`
-	// seguinte era ignorado (`if (!currentMe?.name) return`) → novo join → nova
-	// espera, em ciclo; o cliente nunca mais entrava na sala.
-	const armJoinTimeout = () => {
-		if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
-		joinTimerRef.current = setTimeout(() => {
-			setJoining(false);
-			const payload = lastJoinRef.current;
-			if (payload && joinRetryRef.current < 5) {
-				joinRetryRef.current += 1;
-				console.warn(
-					"[App] sem teamAssigned — a re-tentar o join (%d/5)",
-					joinRetryRef.current,
-				);
-				setJoinError("A ligar à sala… (tentativa " + joinRetryRef.current + "/5)");
-				socket.emit("joinGame", payload);
-				armJoinTimeout();
-				return;
-			}
-			setJoinError(
-				"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
-			);
-		}, 10000);
-	};
-
-	useEffect(() => {
-		const handleJoinError = (msg) => {
-			setJoinError(msg);
-			setJoining(false);
-
-			if (isAuthError(msg)) {
-				// Só uma credencial inválida termina a sessão. Um erro de rede,
-				// rate-limit ou carregamento da sala não pode desmontar o jogo.
-				if (joinTimerRef.current) {
-					clearTimeout(joinTimerRef.current);
-					joinTimerRef.current = null;
-				}
-				clearSavedAuth();
-				setSavedSession(null);
-				setToken(null);
-				setMe(null);
-				return;
-			}
-
-			if (isTransientError(msg)) {
-				// Manter sessão e `me`; re-armar a rede de segurança para o
-				// próximo retry (10s) recuperar sem intervenção do treinador.
-				armJoinTimeout();
-				return;
-			}
-
-			if (joinTimerRef.current) {
-				clearTimeout(joinTimerRef.current);
-				joinTimerRef.current = null;
-			}
-
-			if (isRoomUnavailable(msg)) {
-				// A conta continua válida; apenas esta sala deixou de ser uma opção.
-				clearRoomPointer(meRef.current?.name || name);
-				setSavedSession(null);
-				setAuthPhase("mode");
-				setMe(null);
-				return;
-			}
-
-			// Durante um rejoin, manter o jogo montado permite ao socket recuperar
-			// sem transformar um erro transitório num logout aparente. No primeiro
-			// join manual, voltar à seleção é a resposta correcta.
-			const canRecover = Boolean(
-				savedSessionRef.current?.roomCode ||
-				meRef.current?.teamId ||
-				meRef.current?.roomCode,
-			);
-			if (!canRecover) setMe(null);
-		};
-
-		const handleJoinSuccess = (data) => {
-			const { roomCode, roomName } = data;
-			// Atualiza o ref SINCRONICAMENTE (antes do re-render) para que a
-			// guarda inRoom() já passe nos eventos gameState/playerListUpdate
-			// iniciais — caso contrário roomCreator (e o botão Kick do admin)
-			// são descartados e nunca chegam ao client.
-			roomCodeRef.current = roomCode;
-			// Depois do sucesso, futuras tentativas devem reentrar nesta sala —
-			// nunca repetir `new-game` e criar outra sala.
-			if (lastJoinRef.current) {
-				lastJoinRef.current = {
-					...lastJoinRef.current,
-					roomCode,
-					roomName: "",
-					joinMode: "saved-game",
-				};
-			}
-			setRoomCode(roomCode);
-			setMe((prev) => {
-				// Reconstruir da sessão guardada se `me` tiver caído entretanto: um
-				// joinGameSuccess atrasado não pode perder-se por causa disso.
-				// Último recurso: o payload em voo (nome+token do join emitido).
-				const saved = savedSessionRef.current;
-				const inFlight = lastJoinRef.current;
-				const base =
-					prev ||
-					(saved ? { name: saved.name, token: saved.token } : null) ||
-					(inFlight ? { name: inFlight.name, token: inFlight.token } : null);
-				if (!base) return prev;
-				const updated = { ...base, roomCode, roomName };
-				saveRoomPointer(updated.name, updated.roomCode);
-				return updated;
-			});
-			joinRetryRef.current = 0;
-			setJoining(false);
-			setJoinError("");
-			// Re-armar a rede de segurança: o teamAssigned ainda pode demorar ou
-			// perder-se (socket cai neste intervalo) — sem isto o ecrã ficava
-			// bloqueado em "A entrar na sala..." para sempre.
-			armJoinTimeout();
-		};
-
-		socket.on("joinGameSuccess", handleJoinSuccess);
-		socket.on("joinError", handleJoinError);
-
-		return () => {
-			socket.off("joinGameSuccess", handleJoinSuccess);
-			socket.off("joinError", handleJoinError);
-		};
-		// armJoinTimeout só usa refs/setters — estável de propósito.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	// ── Load saved session after cache check ───────────────────────────────
+	// ── Repor sessão guardada após o gate de cache ─────────────────────────
 	useEffect(() => {
 		if (!cacheReady) return;
 		const session = loadSavedSession();
+		if (!session) return;
+		auth.restoreAuth(session);
+		join.restoreSession(session);
 		// eslint-disable-next-line react-hooks/set-state-in-effect
-		setSavedSession(session);
-		if (session) {
-			setMe({
-				name: session.name,
-				token: session.token,
-				roomCode: session.roomCode,
-			});
-			setName(session.name);
-			setToken(session.token);
-			setRoomCode(session.roomCode);
-			setJoining(true);
-		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [cacheReady]);
 
-	// ── Auto-join when savedSession is loaded ──────────────────────────────
-	useEffect(() => {
-		if (!savedSession || me?.teamId) return;
-
-		const joinWithRetry = () => {
-			console.log(
-				"[App] Auto-join attempt, socket.connected:",
-				socket.connected,
-			);
-			const payload = {
-				name: savedSession.name,
-				token: savedSession.token,
-				roomCode: savedSession.roomCode.toUpperCase(),
-				deviceId: getDeviceId(),
-			};
-			lastJoinRef.current = payload;
-			socket.emit("joinGame", payload);
-
-			armJoinTimeout();
-		};
-
-		if (socket.connected) {
-			joinWithRetry();
-		} else {
-			// Socket not ready yet — wait for connection then join
-			const onConnect = () => {
-				console.log("[App] Socket connected, joining with saved session");
-				socket.off("connect", onConnect);
-				joinWithRetry();
-			};
-			socket.on("connect", onConnect);
-			return () => {
-				socket.off("connect", onConnect);
-				if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
-			};
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [savedSession, me?.teamId]);
-
-	// ── Re-fetch saved rooms for this coach ────────────────────────────────
-	useEffect(() => {
-		if (joinMode === "saved-game" && name && token) {
-			const timeout = setTimeout(() => {
-				fetch(
-					`${backendUrl}/saves?name=${encodeURIComponent(name)}&token=${encodeURIComponent(token)}`,
-				)
-					.then((r) => r.json())
-					.then((data) => {
-						setAvailableSaves(Array.isArray(data) ? data : []);
-						if (data.length > 0 && !roomCode) setRoomCode(data[0].code);
-					})
-					.catch(() => {});
-			}, 400);
-			return () => clearTimeout(timeout);
-		} else if (joinMode === "saved-game" && !name) {
-			startTransition(() => setAvailableSaves([]));
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [name, joinMode, token]);
-
-	// ── Keep refs in sync ──────────────────────────────────────────────────
-	useEffect(() => {
-		meRef.current = me;
-	}, [me]);
-	useEffect(() => {
-		savedSessionRef.current = savedSession;
-	}, [savedSession]);
-	useEffect(() => {
-		roomCodeRef.current = me?.roomCode || "";
-	}, [me?.roomCode]);
-
-	// ── Persist session to localStorage ────────────────────────────────────
-	useEffect(() => {
-		if (!me?.name || !me?.token) return;
-		saveSavedAuth({ name: me.name, token: me.token });
-		if (me.roomCode) saveRoomPointer(me.name, me.roomCode);
-	}, [me]);
-
-	// ── Auth handlers ──────────────────────────────────────────────────────
-	const joinCodesRef = React.useRef({});
-	const selectJoinMode = (mode) => {
-		if (joinMode && joinMode !== mode && roomCode) {
-			joinCodesRef.current[joinMode] = roomCode;
-		}
-		setJoinMode(mode);
-		setRoomCode(joinCodesRef.current[mode] || "");
-		setJoinError("");
-	};
-
-	const resetAuthFlow = () => {
-		setAuthPhase("login");
-		setToken(null);
-		setJoinMode(null);
-		setRoomCode("");
-		setJoinError("");
-		setAuthError("");
-		setAuthSubmitting(false);
-		setIsNewAccount(false);
-		joinCodesRef.current = {};
+	// ── Cola auth ↔ join ───────────────────────────────────────────────────
+	const handleJoin = () => {
+		join.joinRoom({
+			name: auth.name,
+			token: auth.token,
+			roomCode,
+			joinMode: auth.joinMode,
+		});
 	};
 
 	const handleAuthenticate = async (mode) => {
-		if (!name || !password || authSubmitting) return;
-		if (mode === "register") {
-			if (!confirmPassword) {
-				setAuthError("Confirma a palavra-passe.");
-				return;
-			}
-			if (password !== confirmPassword) {
-				setAuthError("As palavras-passe não coincidem.");
-				return;
-			}
-		}
-		setAuthSubmitting(true);
-		setAuthError("");
-		try {
-			const response = await fetch(`${backendUrl}/auth/${mode}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name: name.trim(), password }),
-			});
-			const data = await response.json().catch(() => ({}));
-			if (!response.ok || !data.token) {
-				setAuthError(data.error || "Não foi possível autenticar a conta.");
-				return;
-			}
-			const trimmedName = name.trim();
-			setName(trimmedName);
-			setToken(data.token);
-			setConfirmPassword("");
-			setJoinMode(null);
-			setRoomCode("");
-			setJoinError("");
-			setIsNewAccount(mode === "register");
-			setAuthPhase("mode");
-			saveSavedAuth({ name: trimmedName, token: data.token });
-		} catch {
-			setAuthError("Sem ligação ao servidor. Tenta novamente.");
-		} finally {
-			setAuthSubmitting(false);
-		}
+		const ok = await auth.handleAuthenticate(mode);
+		if (ok) join.setJoinError("");
 	};
 
-	const handleLogout = () => {
-		try {
-			if (token) {
-				fetch(`${backendUrl}/auth/logout`, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ token }),
-				}).catch(() => {
-					/* ignore */
-				});
-			}
-		} catch {
-			/* ignore */
-		}
-		clearSavedSession();
-		window.location.reload();
+	const selectJoinMode = (mode) => {
+		auth.selectJoinMode(mode);
+		join.setJoinError("");
 	};
 
-	const handleJoin = () => {
-		if (name && token && roomCode && !joining) {
-			if (me?.roomCode) socket.emit("leaveRoom");
-			setJoinError("");
-			setJoining(true);
-			const payload = {
-				name,
-				token,
-				roomCode: joinMode === "new-game" ? "" : roomCode.toUpperCase(),
-				roomName: joinMode === "new-game" ? roomCode.toUpperCase() : "",
-				joinMode,
-				deviceId: getDeviceId(),
-			};
-			lastJoinRef.current = payload;
-			socket.emit("joinGame", payload);
-			setMe({ name, token, roomCode: "" });
-			armJoinTimeout();
-		}
+	const resetAuthFlow = () => {
+		auth.resetAuthFlow();
+		join.setJoinError("");
 	};
 
-	// Troca de sala (aceitar convite de outro treinador): sai da sala actual e
-	// entra na sala convidada, reutilizando o fluxo de join existente.
-	const switchToRoom = (roomCode) => {
-		if (!name || !token || joining) return;
-		const target = (roomCode || "").toUpperCase();
-		if (!target) return;
-		if (me?.roomCode) socket.emit("leaveRoom");
-		setJoinError("");
-		setJoining(true);
-		const payload = {
-			name,
-			token,
-			roomCode: target,
-			joinMode: "saved-game",
-			deviceId: getDeviceId(),
-		};
-		lastJoinRef.current = payload;
-		socket.emit("joinGame", payload);
-		setMe({ name, token, roomCode: "" });
-		armJoinTimeout();
+	const switchToRoom = (code) => {
+		join.switchRoom({ name: auth.name, token: auth.token, roomCode: code });
+	};
+
+	// Props da landing (mesma API de antes — spread em vez de 28 linhas).
+	const landingProps = {
+		authPhase: auth.authPhase,
+		setAuthPhase: auth.setAuthPhase,
+		name: auth.name,
+		setName: auth.setName,
+		password: auth.password,
+		setPassword: auth.setPassword,
+		confirmPassword: auth.confirmPassword,
+		setConfirmPassword: auth.setConfirmPassword,
+		roomCode,
+		setRoomCode,
+		authSubmitting: auth.authSubmitting,
+		authError: auth.authError,
+		setAuthError: auth.setAuthError,
+		isNewAccount: auth.isNewAccount,
+		joining,
+		joinError,
+		setJoinError: join.setJoinError,
+		handleAuthenticate,
+		handleJoin,
+		resetAuthFlow,
+		selectJoinMode,
+		joinMode: auth.joinMode,
+		handleLogout: auth.handleLogout,
+		me,
+		token: auth.token,
+		availableSaves: auth.availableSaves,
+		setAvailableSaves: auth.setAvailableSaves,
+		backendUrl,
 	};
 
 	// ── Loading screen ─────────────────────────────────────────────────────
@@ -489,36 +155,7 @@ function App() {
 					exit={fade.exit}
 					transition={fade.transition}
 				>
-					<LandingPage
-						authPhase={authPhase}
-						setAuthPhase={setAuthPhase}
-						name={name}
-						setName={setName}
-						password={password}
-						setPassword={setPassword}
-						confirmPassword={confirmPassword}
-						setConfirmPassword={setConfirmPassword}
-						roomCode={roomCode}
-						setRoomCode={setRoomCode}
-						authSubmitting={authSubmitting}
-						authError={authError}
-						setAuthError={setAuthError}
-						isNewAccount={isNewAccount}
-						joining={joining}
-						joinError={joinError}
-						setJoinError={setJoinError}
-						handleAuthenticate={handleAuthenticate}
-						handleJoin={handleJoin}
-						resetAuthFlow={resetAuthFlow}
-						selectJoinMode={selectJoinMode}
-						joinMode={joinMode}
-						handleLogout={handleLogout}
-						me={me}
-						token={token}
-						availableSaves={availableSaves}
-						setAvailableSaves={setAvailableSaves}
-						backendUrl={backendUrl}
-					/>
+					<LandingPage {...landingProps} />
 				</motion.div>
 			) : (
 				<motion.div
@@ -530,13 +167,13 @@ function App() {
 				>
 					<GameProvider
 						me={me}
-						setMe={setMe}
+						setMe={join.setMe}
 						setRoomCode={setRoomCode}
-						setJoining={setJoining}
-						setJoinError={setJoinError}
-						meRef={meRef}
-						roomCodeRef={roomCodeRef}
-						joinTimerRef={joinTimerRef}
+						setJoining={join.setJoining}
+						setJoinError={join.setJoinError}
+						meRef={join.meRef}
+						roomCodeRef={join.roomCodeRef}
+						joinTimerRef={join.joinTimerRef}
 						backendUrl={backendUrl}
 						onAcceptRoomInvite={switchToRoom}
 					>
@@ -578,7 +215,7 @@ function App() {
 									transition={fade.transition}
 								>
 									<TacticsProvider>
-										<GameLayout handleLogout={handleLogout} setAuthPhase={setAuthPhase} />
+										<GameLayout handleLogout={auth.handleLogout} setAuthPhase={auth.setAuthPhase} />
 									</TacticsProvider>
 								</motion.div>
 							)}
