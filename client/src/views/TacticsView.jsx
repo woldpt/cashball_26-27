@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useTactics } from "../contexts/TacticsContext.jsx";
 import { useGame } from "../contexts/GameContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
@@ -49,13 +49,133 @@ const POS_COLORS = {
   },
 };
 
-
 /** Cor do selo de cada pendor tático (attack/defense/balanced). */
 const FORMATION_EDGE_TEXT = {
   attack: "text-rose-400",
   defense: "text-blue-400",
   balanced: "text-gray-500",
 };
+
+/** Valores de mentalidade e metadados partilhados pelos cartões mobile/desktop. */
+const STYLE_ORDER = ["Defensive", "Balanced", "Offensive"];
+const STYLE_META = {
+  Defensive: {
+    short: "DEF",
+    icon: "phase-start",
+    label: "Defensivo",
+    blurb: "Bloco baixo, sair a contragolpe.",
+    chip: "bg-blue-500/15 border-blue-500/40 text-blue-400",
+    pillBg: "rgba(59,130,246,0.28)",
+    pillBorder: "rgba(59,130,246,0.6)",
+    text: "text-blue-400",
+  },
+  Balanced: {
+    short: "NEU",
+    icon: "form-flat",
+    label: "Neutro",
+    blurb: "Equilíbrio no meio, sem extremos.",
+    chip: "bg-[#4ade80]/15 border-[#4ade80]/35 text-[#4ade80]",
+    pillBg: "rgba(74,222,128,0.28)",
+    pillBorder: "rgba(74,222,128,0.55)",
+    text: "text-[#4ade80]",
+  },
+  Offensive: {
+    short: "ATC",
+    icon: "form-up",
+    label: "Ofensivo",
+    blurb: "Pressão alta, campo todo a favor.",
+    chip: "bg-rose-500/15 border-rose-500/40 text-rose-400",
+    pillBg: "rgba(244,63,94,0.28)",
+    pillBorder: "rgba(244,63,94,0.6)",
+    text: "text-rose-400",
+  },
+};
+
+/**
+ * Melhor entrada de familiaridade (por estilo) para uma formação.
+ * @param {Object} allTacticFamiliarity Mapa "formação|ESTILO" → { stars, ... }
+ * @param {string} formation Valor da formação (ex. "4-4-2")
+ * @returns {Object|null}
+ */
+function getBestForFormation(allTacticFamiliarity, formation) {
+  const styles = ["OFENSIVO", "DEFENSIVO", "EQUILIBRADO"];
+  let best = null;
+  for (const s of styles) {
+    const entry = allTacticFamiliarity[`${formation}|${s}`];
+    if (entry && (!best || entry.stars > best.stars)) best = entry;
+  }
+  return best;
+}
+
+/**
+ * Estado de indisponibilidade de um jogador — fonte única usada por
+ * PlayerRow e pelo campo. Presume player.isUnavailable.
+ * @param {Object} player
+ * @param {number|null} calendarIndex
+ * @param {number|null} matchweekCount
+ * @returns {{ emoji: string, left?: number }} left apenas para castigo/lesão
+ */
+function unavailableMark(player, calendarIndex, matchweekCount) {
+  const susp = player.suspension_until_matchweek || 0;
+  const inj = player.injury_until_matchweek || 0;
+  const cooldown = player.transfer_cooldown_until_matchweek || 0;
+  const nowIdx = calendarIndex ?? matchweekCount ?? 0;
+  const isSusp = susp > nowIdx;
+  if (!isSusp && !(inj > nowIdx) && cooldown > 0 && cooldown > nowIdx)
+    return { emoji: "✈️" };
+  return { emoji: isSusp ? "🟥" : "🩹", left: (isSusp ? susp : inj) - nowIdx };
+}
+
+/** Selo inline de indisponibilidade (versão PlayerRow, com jornadas restantes). */
+function UnavailableMark({ player, calendarIndex, matchweekCount }) {
+  const mark = unavailableMark(player, calendarIndex, matchweekCount);
+  if (!mark) return null;
+  if (mark.left === undefined)
+    return <span className="text-[10px] ml-0.5">{mark.emoji}</span>;
+  return (
+    <span className="text-[9px] ml-0.5 text-red-400">
+      {mark.emoji}({mark.left})
+    </span>
+  );
+}
+
+/**
+ * Props de drag-and-drop partilhadas por todas as linhas de jogador
+ * (Titulares, Suplentes, Não Convocados e campo).
+ * @param {Object} t Valor de useTactics()
+ * @param {Object} player
+ * @param {boolean} [stopOver=false] stopPropagation no dragOver (campo)
+ * @returns {Object} Spread direto em PlayerRow ou no wrapper do campo
+ */
+function rowDragProps(t, player, stopOver = false) {
+  return {
+    draggable: !player.isJunior,
+    onDragStart: t.handleDragStart,
+    onDragOver: (e) => {
+      e.preventDefault();
+      if (stopOver) e.stopPropagation();
+      t.setDragOverPlayerId(player.id);
+    },
+    onDragLeave: () => t.setDragOverPlayerId(null),
+    onDrop: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (t.dragPlayerId && t.dragPlayerId !== player.id)
+        t.handleSwapPlayerStatuses(t.dragPlayerId, player.id);
+      else {
+        t.setDragOverPlayerId(null);
+        t.setDragPlayerId(null);
+      }
+      t.setDragOverSection(null);
+    },
+    onDragEnd: () => {
+      t.setDragOverPlayerId(null);
+      t.setDragPlayerId(null);
+    },
+    isOver: t.dragOverPlayerId === player.id && t.dragPlayerId !== player.id,
+    isDragging: t.dragPlayerId === player.id,
+  };
+}
 
 /**
  * Familiaridade táctica — 5 estrelas SVG com contorno.
@@ -193,27 +313,13 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           (player.position === "MED" || player.position === "ATA") && (
             <span className="text-amber-400 text-[9px] ml-0.5">★</span>
           )}
-        {player.isUnavailable &&
-          (() => {
-            const susp = player.suspension_until_matchweek || 0;
-            const inj = player.injury_until_matchweek || 0;
-            const cooldown = player.transfer_cooldown_until_matchweek || 0;
-            const nowIdx = calendarIndex ?? matchweekCount ?? 0;
-            const isSusp = susp > nowIdx;
-            const isCooldown =
-              !isSusp &&
-              !(inj > nowIdx) &&
-              cooldown > 0 &&
-              cooldown > nowIdx;
-            if (isCooldown)
-              return <span className="text-[10px] ml-0.5">✈️</span>;
-            const left = isSusp ? susp - nowIdx : inj - nowIdx;
-            return (
-              <span className="text-[9px] ml-0.5 text-red-400">
-                {isSusp ? "🟥" : "🩹"}({left})
-              </span>
-            );
-          })()}
+        {player.isUnavailable && (
+          <UnavailableMark
+            player={player}
+            calendarIndex={calendarIndex}
+            matchweekCount={matchweekCount}
+          />
+        )}
       </span>
       <SkillBadge
         skill={player.skill}
@@ -226,36 +332,32 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
   );
 }
 
-
-/**
- * Pagina de Tacticas — totalmente auto-contida via useTactics().
- * @returns {JSX.Element}
- */
 /**
  * StatusPicker — popup de seleção de estado do jogador.
  * Extraído para fora do componente TacticsView para evitar re-criação
  * da definição a cada render (prevenindo remount/flickering).
+ * @param {{ player: Object, above?: boolean }} props
+ * @returns {JSX.Element|null}
  */
-function StatusPicker({
-  player,
-  above = false,
-  openStatusPickerId,
-  tacticPositions,
-  annotatedSquad,
-  handleSetPlayerStatus,
-}) {
+function StatusPicker({ player, above = false }) {
+  const {
+    openStatusPickerId,
+    tactic,
+    annotatedSquad,
+    handleSetPlayerStatus,
+  } = useTactics();
   if (openStatusPickerId !== player.id) return null;
-  const subCount = Object.entries(tacticPositions).filter(
+  const subCount = Object.entries(tactic.positions).filter(
     ([id, s]) => s === "Suplente" && Number(id) !== player.id,
   ).length;
-  const titCount = Object.entries(tacticPositions).filter(
+  const titCount = Object.entries(tactic.positions).filter(
     ([id, s]) => s === "Titular" && Number(id) !== player.id,
   ).length;
   const subsFull = subCount >= MAX_BENCH_SIZE;
   const titularesFull = titCount >= 11;
   const posCount =
     player.position !== "GR"
-      ? Object.entries(tacticPositions).filter(([id, s]) => {
+      ? Object.entries(tactic.positions).filter(([id, s]) => {
           if (s !== "Titular" || Number(id) === player.id) return false;
           const p = annotatedSquad.find((x) => x.id === Number(id));
           return p?.position === player.position;
@@ -299,33 +401,445 @@ ${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === s
   );
 }
 
-export function TacticsView() {
+/**
+ * MoraleCard — cartão de moral do treinador.
+ * @param {{ glow?: boolean }} props glow = variante desktop (texto com brilho);
+ *   ausente = variante mobile compacta (etiqueta no cabeçalho).
+ * @returns {JSX.Element}
+ */
+function MoraleCard({ glow = false }) {
+  const { teamInfo } = useTactics();
+  const morale = teamInfo?.morale ?? 25;
+  const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
+  const label = getMoraleLabel(morale);
+  if (glow) {
+    return (
+      <div className="border-b border-outline-variant/15">
+        <div className="px-4 short:px-3 py-2 border-b border-outline-variant/15">
+          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+            Moral
+          </span>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-2 px-6 short:px-4 py-3">
+          <div className={`flex w-full flex-col items-center gap-2 ${textColor}`}>
+            <span
+              title={`Moral ${morale}`}
+              className="text-lg leading-none font-black"
+              style={{ textShadow: "0 0 14px currentColor" }}
+            >
+              {label}
+            </span>
+            <div
+              className="h-2.5 w-full bg-surface-container-low/60 rounded-full overflow-hidden"
+              style={{ filter: "drop-shadow(0 0 6px currentColor)" }}
+            >
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+                style={{ width: `${morale * 2}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <>
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-outline-variant/15">
+        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+          Moral
+        </span>
+        <span className={`text-[9px] font-black uppercase ${textColor}`}>
+          {label}
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col items-center justify-center gap-2.5 px-4 pb-3">
+        <span
+          title={`Moral ${morale}`}
+          className={`text-xl leading-none font-black text-center truncate w-full ${textColor}`}
+        >
+          {label}
+        </span>
+        <div className="h-2 w-full bg-surface-container-low/60 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+            style={{ width: `${morale * 2}%` }}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
+/**
+ * MentalityChips — seletor de mentalidade mobile (3 botões com ícone).
+ * @returns {JSX.Element}
+ */
+function MentalityChips() {
+  const { tactic, updateTactic } = useTactics();
+  return (
+    <div className="flex flex-1 items-stretch gap-1 p-1.5">
+      {STYLE_ORDER.map((val) => {
+        const isActive = tactic.style === val;
+        const meta = STYLE_META[val];
+        return (
+          <button
+            key={val}
+            onClick={() => updateTactic({ style: val })}
+            className={`flex flex-1 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border px-0.5 py-1.5 transition-all active:scale-95 ${isActive ? meta.chip : "border-transparent bg-surface-container-low/60 text-gray-500 hover:text-gray-300"}`}
+          >
+            <MatchIcon
+              name={meta.icon}
+              className={`h-3.5 w-3.5 shrink-0 ${isActive ? "" : "opacity-70"}`}
+            />
+            <span className="text-[9px] font-black uppercase tracking-wide">
+              {meta.short}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * MentalityPills — seletor de mentalidade desktop (pill deslizante + blurb).
+ * @returns {JSX.Element}
+ */
+function MentalityPills() {
+  const { tactic, updateTactic } = useTactics();
+  const activeStyle = tactic.style ?? "Balanced";
+  const idx = STYLE_ORDER.indexOf(activeStyle);
+  const safeIdx = idx < 0 ? 1 : idx;
+  return (
+    <>
+      <div className="relative flex bg-surface-container-low/60 rounded-full p-0.5">
+        {/* Pill deslizante */}
+        <div
+          className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
+          style={{
+            left: `calc(${safeIdx * 33.333}% + 2px)`,
+            width: "calc(33.333% - 4px)",
+            background: STYLE_META[activeStyle].pillBg,
+            border: `1px solid ${STYLE_META[activeStyle].pillBorder}`,
+          }}
+        />
+        {STYLE_ORDER.map((val) => (
+          <button
+            key={val}
+            onClick={() => updateTactic({ style: val })}
+            className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${
+              tactic.style === val
+                ? STYLE_META[val].text
+                : "text-gray-400 hover:text-gray-200"
+            }`}
+          >
+            {STYLE_META[val].label}
+          </button>
+        ))}
+      </div>
+      <p className="text-[9px] text-gray-500 font-semibold leading-snug">
+        {STYLE_META[activeStyle].blurb}
+      </p>
+    </>
+  );
+}
+
+/**
+ * FormationCard — grelha de formações (partilhada mobile/desktop).
+ * @param {Object} props
+ * @param {string} [props.className] Classes extra do contentor (layout do pai)
+ * @param {boolean} [props.desktop=false] Adiciona a linha de blurb da formação ativa
+ * @param {boolean} [props.dataTour=false] Alvo do tour (`data-tour="tactic-lineup"`)
+ * @param {boolean} [props.heartbeat=false] Pulso quando o 11 incompleto bloqueia
+ * @returns {JSX.Element}
+ */
+function FormationCard({ className = "", desktop = false, dataTour = false, heartbeat = false }) {
   const {
     tactic,
-    allTacticFamiliarity,
-    annotatedSquad,
     titulares,
     formationAvailabilityByValue,
-    isLineupComplete,
-    nextMatchOpponent,
-    openStatusPickerId,
-    dragOverPlayerId,
-    setDragOverPlayerId,
-    dragPlayerId,
-    setDragPlayerId,
-    dragOverSection,
-    setDragOverSection,
-    updateTactic,
+    allTacticFamiliarity,
     handleClearTactic,
     handleAutoPick,
-    handleSetPlayerStatus,
-    handleSwapPlayerStatuses,
-    handleDropToSection,
-    handleDragStart,
+  } = useTactics();
+  const activeProfile = TACTIC_FORMATIONS.find(
+    (f) => f.value === tactic.formation,
+  );
+  return (
+    <div
+      data-tour={dataTour ? "tactic-lineup" : undefined}
+      className={`bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden ${className} ${heartbeat ? "animate-heartbeat-border" : ""}`}
+    >
+      <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant/15">
+        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+          Formação
+        </span>
+        <button
+          onClick={handleClearTactic}
+          className="text-[9px] text-gray-600 uppercase hover:text-red-400 transition-colors font-bold"
+        >
+          Limpar
+        </button>
+      </div>
+      {desktop && titulares.length > 0 && activeProfile && (
+        <p className="px-4 short:px-3 pt-2 text-[9px] text-gray-500 font-semibold leading-snug">
+          <span
+            className={`uppercase tracking-widest font-black ${FORMATION_EDGE_TEXT[activeProfile.edge] ?? "text-gray-400"}`}
+          >
+            {activeProfile.badge}
+          </span>{" "}— {activeProfile.blurb}
+        </p>
+      )}
+      <div className="p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
+        {TACTIC_FORMATIONS.map(({ value, label, badge, edge }) => {
+          const isAvailable =
+            formationAvailabilityByValue[value] === true;
+          const isActive =
+            titulares.length > 0 && tactic.formation === value;
+          const best = getBestForFormation(allTacticFamiliarity, value);
+          return (
+            <button
+              key={value}
+              disabled={!isAvailable}
+              onClick={() => isAvailable && handleAutoPick(value)}
+              className={`w-full px-1 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
+                !isAvailable
+                  ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed"
+                  : isActive
+                    ? "text-[#0a1a0a] shadow-lg shadow-green-500/20"
+                    : "bg-surface-container-low/60 text-gray-300 hover:bg-white/5"
+              }`}
+              style={
+                isActive
+                  ? {
+                      background:
+                        "linear-gradient(135deg,#4ade80,#22c55e)",
+                    }
+                  : {}
+              }
+            >
+              <span className="flex flex-col items-center gap-0.5">
+                {label}
+                <span
+                  className={`text-[8px] font-black uppercase tracking-widest leading-none ${isActive ? "text-green-950/70" : (FORMATION_EDGE_TEXT[edge] ?? "text-gray-500")}`}
+                >
+                  {badge}
+                </span>
+                <FamiliarityStars stars={best?.stars ?? 0} fill />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Pitch — campo de futebol (desktop only; mobile usa o FAB e a lista de
+ * Titulares). Grelha SVG, avatares por linha e overlays de drag.
+ * @returns {JSX.Element}
+ */
+function Pitch() {
+  const t = useTactics();
+  const { calendarIndex } = useGame();
+  const {
+    annotatedSquad,
+    titulares,
+    tactic,
+    dragPlayerId,
+    dragOverSection,
+    dragOverPlayerId,
+    matchweekCount,
+  } = t;
+  const tits = annotatedSquad.filter((p) => p.status === "Titular");
+  const rows = [
+    tits.filter((p) => p.position === "ATA"),
+    tits.filter((p) => p.position === "MED"),
+    tits.filter((p) => p.position === "DEF"),
+    tits.filter((p) => p.position === "GR"),
+  ];
+  const rowYs = ["6%", "27%", "52%", "75%"];
+  return (
+    <div className="max-xl:hidden xl:w-72.5 shrink-0 flex flex-col gap-2 short:gap-1.5">
+      <div
+        className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 short:max-h-[38dvh] ${dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" ? "ring-2 ring-[#4ade80]/40 shadow-lg shadow-[#4ade80]/10" : ""}`}
+        style={{
+          aspectRatio: "9/12",
+          background:
+            "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (dragPlayerId) t.setDragOverSection("Titular");
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget))
+            t.setDragOverSection(null);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (dragPlayerId) t.handleDropToSection(dragPlayerId, "Titular");
+          t.setDragOverSection(null);
+        }}
+      >
+        {/* Linhas do campo SVG */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          viewBox="0 0 9 12"
+          preserveAspectRatio="none"
+          fill="none"
+          stroke="rgba(255,255,255,0.15)"
+          strokeWidth="0.065"
+        >
+          <rect x="0.45" y="0.45" width="8.1" height="11.1" rx="0.05" />
+          <line x1="0.45" y1="6" x2="8.55" y2="6" />
+          <circle cx="4.5" cy="6" r="1.2" />
+          <rect x="1.9" y="8.9" width="5.2" height="2.65" />
+          <rect x="3.1" y="10.2" width="2.8" height="1.35" />
+          <rect x="1.9" y="0.45" width="5.2" height="2.65" />
+          <rect x="3.1" y="0.45" width="2.8" height="1.35" />
+          <circle
+            cx="4.5"
+            cy="9.8"
+            r="0.07"
+            fill="rgba(255,255,255,0.2)"
+            stroke="none"
+          />
+          <circle
+            cx="4.5"
+            cy="2.2"
+            r="0.07"
+            fill="rgba(255,255,255,0.2)"
+            stroke="none"
+          />
+          <circle
+            cx="4.5"
+            cy="6"
+            r="0.07"
+            fill="rgba(255,255,255,0.2)"
+            stroke="none"
+          />
+        </svg>
+
+        <div className="absolute inset-0 bg-linear-to-b from-black/5 via-transparent to-black/25 pointer-events-none" />
+
+        {/* Jogadores no campo */}
+        {rows.map((rowPlayers, ri) =>
+          rowPlayers.length > 0 ? (
+            <div
+              key={ri}
+              className="absolute w-full flex justify-evenly items-start px-3"
+              style={{ top: rowYs[ri] }}
+            >
+              {rowPlayers.map((player) => {
+                const pos = POS_COLORS[player.position] || { hex: "#6b7280" };
+                const isDraggingThis = dragPlayerId === player.id;
+                const isOverThis =
+                  dragOverPlayerId === player.id && dragPlayerId !== player.id;
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex flex-col items-center transition-all duration-150 ${isDraggingThis ? "opacity-20 scale-90" : ""} ${isOverThis ? "scale-110" : ""}`}
+                    style={{ maxWidth: "58px" }}
+                    {...rowDragProps(t, player, true)}
+                    draggable
+                    data-player-id={player.id}
+                    data-player-status="Titular"
+                  >
+                    <div
+                      className={`relative cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-50" : ""}`}
+                    >
+                      <PlayerAvatar player={player} size="w-10 h-10" />
+                      {player.isUnavailable && (
+                        <span className="absolute -top-1 -right-1 text-[9px] bg-black/60 rounded-full px-0.5 leading-none">
+                          {
+                            unavailableMark(
+                              player,
+                              calendarIndex,
+                              matchweekCount,
+                            ).emoji
+                          }
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      className="mt-1 text-[8px] font-bold text-white/80 hover:text-[#4ade80] transition-colors leading-none px-1.5 py-0.5 rounded-lg bg-black/40"
+                      style={{
+                        maxWidth: "56px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      onClick={() =>
+                        socket.emit("requestPlayerHistory", {
+                          playerId: player.id,
+                        })
+                      }
+                    >
+                      {player.name.split(" ").pop()}
+                    </button>
+                    <span
+                      className="text-[9px] font-black mt-0.5 leading-none"
+                      style={{
+                        color: pos.hex,
+                        textShadow: "0 1px 5px rgba(0,0,0,0.95)",
+                      }}
+                    >
+                      {player.skill}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null,
+        )}
+
+        {/* Drop overlay */}
+        {dragPlayerId &&
+          dragOverSection === "Titular" &&
+          annotatedSquad.find((p) => p.id === dragPlayerId)?.status !==
+            "Titular" && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-[#4ade80]/4">
+              <div className="bg-black/55 border border-[#4ade80]/35 px-4 py-2.5 rounded-2xl backdrop-blur-sm">
+                <p className="text-[#4ade80] font-black text-xs uppercase tracking-widest animate-pulse">
+                  ↓ Soltar para entrada
+                </p>
+              </div>
+            </div>
+          )}
+
+        {!tactic.formation && titulares.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <p className="text-white/30 text-xs font-bold text-center px-8 leading-relaxed">
+              Arrasta jogadores para o campo ou escolhe uma formação
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Página de Táticas — totalmente auto-contida via useTactics().
+ * Sub-componentes locais (MoraleCard, FormationCard, MentalityChips/Pills,
+ * Pitch, StatusPicker) consomem o contexto diretamente; o TacticsView mantém
+ * só a derivação de estado e a composição do layout.
+ * @returns {JSX.Element}
+ */
+export function TacticsView() {
+  const t = useTactics();
+  const {
+    annotatedSquad,
+    isLineupComplete,
+    nextMatchOpponent,
+    dragPlayerId,
+    dragOverSection,
     handleReady,
     handleHalftimeReady,
     matchweekCount,
-    teamInfo,
     nextMatchSummary,
     players,
     me,
@@ -335,8 +849,7 @@ export function TacticsView() {
     isCupMatch,
     prepPhase,
     setPrepPhase,
-  } = useTactics();
-
+  } = t;
   const {
     lockedCoaches,
     liveMinute,
@@ -350,16 +863,6 @@ export function TacticsView() {
     dismissalModal,
     jobOfferModal,
   } = useGame();
-
-  const getBestForFormation = (formation) => {
-    const styles = ["OFENSIVO", "DEFENSIVO", "EQUILIBRADO"];
-    let best = null;
-    for (const s of styles) {
-      const entry = allTacticFamiliarity[`${formation}|${s}`];
-      if (entry && (!best || entry.stars > best.stars)) best = entry;
-    }
-    return best;
-  };
 
   const myReady = players.find((p) => p.name === me?.name)?.ready;
   const isHalftime = showHalftimePanel && !isPlayingMatch;
@@ -391,6 +894,7 @@ export function TacticsView() {
           : isHalftime
             ? "2ª Parte"
             : "Jogar Jornada";
+  const heartbeat = !isLineupComplete && !myReady;
 
   const titCount = annotatedSquad.filter((p) => p.status === "Titular").length;
   const subCount = annotatedSquad.filter(
@@ -429,522 +933,150 @@ export function TacticsView() {
       )}
 
       {!showBriefing &&
-        (nextMatchSummary?.isCup && !nextMatchOpponent ? (
-        <div className="bg-surface-container border border-outline-variant/25 rounded-2xl flex flex-col items-center gap-4 py-10 text-center px-6">
-          <p className="text-5xl">🏆</p>
-          <p className="text-gray-300 font-bold text-sm leading-relaxed">
-            Já foste eliminado desta ronda da Taça.
-            <br />
-            Avança para observar os jogos e seguir em frente.
-          </p>
-          <button
-            onClick={handleReady}
-            disabled={!!myReady}
-            className={`mt-2 px-10 py-3.5 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
-            style={
-              myReady
-                ? {}
-                : { background: "linear-gradient(135deg, #4ade80, #22c55e)" }
-            }
-          >
-            {myReady ? "⏳ A aguardar..." : "Ver jogos da Taça"}
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3 short:gap-1.5">
-          {/* COL 1 — só mobile; em desktop os controlos vivem na faixa de topo em linha */}
-          <div className="xl:hidden flex flex-col gap-2 short:gap-1.5">
-            {/* Proximo jogo — mobile: moral + mentality side by side */}
-            <div className="flex gap-2 xl:hidden">
-              {nextMatchSummary && (
-                <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-                  {(() => {
-                    const morale = teamInfo?.morale ?? 25;
-                    const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
-                    const label = getMoraleLabel(morale);
-                    return (
-                      <>
-                        <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-outline-variant/15">
-                          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                            Moral
-                          </span>
-                          <span
-                            className={`text-[9px] font-black uppercase ${textColor}`}
-                          >
-                            {label}
-                          </span>
-                        </div>
-                        <div className="flex flex-1 flex-col items-center justify-center gap-2.5 px-4 pb-3">
-                          <span
-                            title={`Moral ${morale}`}
-                            className={`text-xl leading-none font-black text-center truncate w-full ${textColor}`}
-                          >
-                            {label}
-                          </span>
-                          <div className="h-2 w-full bg-surface-container-low/60 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
-                              style={{ width: `${morale * 2}%` }}
-                            />
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
+        (isEliminatedCupSpectator ? (
+          <div className="bg-surface-container border border-outline-variant/25 rounded-2xl flex flex-col items-center gap-4 py-10 text-center px-6">
+            <p className="text-5xl">🏆</p>
+            <p className="text-gray-300 font-bold text-sm leading-relaxed">
+              Já foste eliminado desta ronda da Taça.
+              <br />
+              Avança para observar os jogos e seguir em frente.
+            </p>
+            <button
+              onClick={handleReady}
+              disabled={!!myReady}
+              className={`mt-2 px-10 py-3.5 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
+              style={
+                myReady
+                  ? {}
+                  : { background: "linear-gradient(135deg, #4ade80, #22c55e)" }
+              }
+            >
+              {myReady ? "⏳ A aguardar..." : "Ver jogos da Taça"}
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 short:gap-1.5">
+            {/* COL 1 — só mobile; em desktop os controlos vivem na faixa de topo em linha */}
+            <div className="xl:hidden flex flex-col gap-2 short:gap-1.5">
+              {/* Próximo jogo — mobile: moral + mentality side by side */}
+              <div className="flex gap-2 xl:hidden">
+                {nextMatchSummary && (
+                  <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+                    <MoraleCard />
+                  </div>
+                )}
+                <div className="flex-1 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden flex flex-col">
+                  <div className="shrink-0 px-3 py-2 border-b border-outline-variant/15">
+                    <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+                      Mentalidade
+                    </span>
+                  </div>
+                  <MentalityChips />
                 </div>
-              )}
-              <div className="flex-1 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden flex flex-col">
-                <div className="shrink-0 px-3 py-2 border-b border-outline-variant/15">
+              </div>
+
+              {/* Formação mobile — chips horizontais */}
+              <FormationCard className="xl:hidden" heartbeat={heartbeat} />
+            </div>
+
+            {/* TOPO desktop — controlos em linha, 1 cartão por coluna */}
+            <div className="hidden xl:flex gap-3 short:gap-1.5">
+              {/* TOPO 1 — Formação (sobre Titulares) */}
+              <FormationCard
+                className="flex-1 min-w-0"
+                desktop
+                dataTour
+                heartbeat={heartbeat}
+              />
+
+              {/* TOPO 2 — Moral + Mentalidade (sobre Suplentes) */}
+              <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+                {nextMatchSummary && <MoraleCard glow />}
+                <div className="px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
                   <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                     Mentalidade
                   </span>
                 </div>
-                {(() => {
-                  const STYLES = ["Defensive", "Balanced", "Offensive"];
-                  const LABELS = {
-                    Defensive: "DEF",
-                    Balanced: "NEU",
-                    Offensive: "ATC",
-                  };
-                  const ICONS = {
-                    Defensive: "phase-start",
-                    Balanced: "form-flat",
-                    Offensive: "form-up",
-                  };
-                  const ACTIVE_STYLES = {
-                    Defensive: "bg-blue-500/15 border-blue-500/40 text-blue-400",
-                    Balanced:
-                      "bg-[#4ade80]/15 border-[#4ade80]/35 text-[#4ade80]",
-                    Offensive: "bg-rose-500/15 border-rose-500/40 text-rose-400",
-                  };
-                  return (
-                    <div className="flex flex-1 items-stretch gap-1 p-1.5">
-                      {STYLES.map((val) => {
-                        const isActive = tactic.style === val;
-                        return (
-                          <button
-                            key={val}
-                            onClick={() => updateTactic({ style: val })}
-                            className={`flex flex-1 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border px-0.5 py-1.5 transition-all active:scale-95 ${isActive ? ACTIVE_STYLES[val] : "border-transparent bg-surface-container-low/60 text-gray-500 hover:text-gray-300"}`}
-                          >
-                            <MatchIcon
-                              name={ICONS[val]}
-                              className={`h-3.5 w-3.5 shrink-0 ${isActive ? "" : "opacity-70"}`}
-                            />
-                            <span className="text-[9px] font-black uppercase tracking-wide">
-                              {LABELS[val]}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Formação mobile — chips horizontais */}
-            <div className={`xl:hidden bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden ${!isLineupComplete && !myReady ? "animate-heartbeat-border" : ""}`}>
-              <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant/15">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                  Formação
-                </span>
-                <button
-                  onClick={handleClearTactic}
-                  className="text-[9px] text-gray-600 uppercase hover:text-red-400 transition-colors font-bold"
-                >
-                  Limpar
-                </button>
-              </div>
-              <div className="p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
-                {TACTIC_FORMATIONS.map(({ value, label, badge, edge }) => {
-                  const isAvailable =
-                    formationAvailabilityByValue[value] === true;
-                  const isActive =
-                    titulares.length > 0 && tactic.formation === value;
-                  const best = getBestForFormation(value);
-                  return (
-                    <button
-                      key={value}
-                      disabled={!isAvailable}
-                      onClick={() => isAvailable && handleAutoPick(value)}
-                      className={`w-full px-1 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
-                        !isAvailable
-                          ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed"
-                          : isActive
-                            ? "text-[#0a1a0a] shadow-lg shadow-green-500/20"
-                            : "bg-surface-container-low/60 text-gray-300 hover:bg-white/5"
-                      }`}
-                      style={
-                        isActive
-                          ? {
-                              background:
-                                "linear-gradient(135deg,#4ade80,#22c55e)",
-                            }
-                          : {}
-                      }
-                    >
-                      <span className="flex flex-col items-center gap-0.5">
-                        {label}
-                        <span
-                          className={`text-[8px] font-black uppercase tracking-widest leading-none ${isActive ? "text-green-950/70" : (FORMATION_EDGE_TEXT[edge] ?? "text-gray-500")}`}
-                        >
-                          {badge}
-                        </span>
-                        <FamiliarityStars stars={best?.stars ?? 0} fill />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* TOPO desktop — controlos em linha, 1 cartão por coluna */}
-          <div className="hidden xl:flex gap-3 short:gap-1.5">
-            {/* TOPO 1 — Formação (sobre Titulares) */}
-            <div data-tour="tactic-lineup" className={`flex-1 min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden ${!isLineupComplete && !myReady ? "animate-heartbeat-border" : ""}`}>
-              <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant/15">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                  Formação
-                </span>
-                <button
-                  onClick={handleClearTactic}
-                  className="text-[9px] text-gray-600 uppercase hover:text-red-400 transition-colors font-bold"
-                >
-                  Limpar
-                </button>
-              </div>
-              {titulares.length > 0 &&
-                (() => {
-                  const activeProfile = TACTIC_FORMATIONS.find(
-                    (f) => f.value === tactic.formation,
-                  );
-                  if (!activeProfile) return null;
-                  return (
-                    <p className="px-4 short:px-3 pt-2 text-[9px] text-gray-500 font-semibold leading-snug">
-                      <span
-                        className={`uppercase tracking-widest font-black ${FORMATION_EDGE_TEXT[activeProfile.edge] ?? "text-gray-400"}`}
-                      >
-                        {activeProfile.badge}
-                      </span>{" "}— {activeProfile.blurb}
-                    </p>
-                  );
-                })()}
-
-              <div className="p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
-                {TACTIC_FORMATIONS.map(({ value, label, badge, edge }) => {
-                  const isAvailable =
-                    formationAvailabilityByValue[value] === true;
-                  const isActive =
-                    titulares.length > 0 && tactic.formation === value;
-                  const best = getBestForFormation(value);
-                  return (
-                    <button
-                      key={value}
-                      disabled={!isAvailable}
-                      onClick={() => isAvailable && handleAutoPick(value)}
-                      className={`w-full px-1 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
-                        !isAvailable
-                          ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed"
-                          : isActive
-                            ? "text-[#0a1a0a] shadow-lg shadow-green-500/20"
-                            : "bg-surface-container-low/60 text-gray-300 hover:bg-white/5"
-                      }`}
-                      style={
-                        isActive
-                          ? {
-                              background:
-                                "linear-gradient(135deg,#4ade80,#22c55e)",
-                            }
-                          : {}
-                      }
-                    >
-                      <span className="flex flex-col items-center gap-0.5">
-                        {label}
-                        <span
-                          className={`text-[8px] font-black uppercase tracking-widest leading-none ${isActive ? "text-green-950/70" : (FORMATION_EDGE_TEXT[edge] ?? "text-gray-500")}`}
-                        >
-                          {badge}
-                        </span>
-                        <FamiliarityStars stars={best?.stars ?? 0} fill />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* TOPO 2 — Moral + Mentalidade (sobre Suplentes) */}
-            <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-              {nextMatchSummary && (
-                <div className="border-b border-outline-variant/15">
-                  <div className="px-4 short:px-3 py-2 border-b border-outline-variant/15">
-                    <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                      Moral
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center gap-2 px-6 short:px-4 py-3">
-                    {(() => {
-                      const morale = teamInfo?.morale ?? 25;
-                      const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
-                      const label = getMoraleLabel(morale);
-                      return (
-                        <div className={`flex w-full flex-col items-center gap-2 ${textColor}`}>
-                          <span
-                            title={`Moral ${morale}`}
-                            className="text-lg leading-none font-black"
-                            style={{ textShadow: "0 0 14px currentColor" }}
-                          >
-                            {label}
-                          </span>
-                          <div
-                            className="h-2.5 w-full bg-surface-container-low/60 rounded-full overflow-hidden"
-                            style={{ filter: "drop-shadow(0 0 6px currentColor)" }}
-                          >
-                            <div
-                              className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
-                              style={{ width: `${morale * 2}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
+                <div className="flex flex-1 flex-col justify-center gap-2 px-3 short:px-2 py-3 short:py-1.5">
+                  <MentalityPills />
                 </div>
-              )}
-              <div className="px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                  Mentalidade
-                </span>
               </div>
-              <div className="flex flex-1 flex-col justify-center gap-2 px-3 short:px-2 py-3 short:py-1.5">
-                {(() => {
-                  const STYLES = ["Defensive", "Balanced", "Offensive"];
-                  const LABELS = {
-                    Defensive: "Defensivo",
-                    Balanced: "Neutro",
-                    Offensive: "Ofensivo",
-                  };
-                  const BLURBS = {
-                    Defensive: "Bloco baixo, sair a contragolpe.",
-                    Balanced: "Equilíbrio no meio, sem extremos.",
-                    Offensive: "Pressão alta, campo todo a favor.",
-                  };
-                  const PILL_COLORS = {
-                    Defensive: "rgba(59,130,246,0.28)",
-                    Balanced: "rgba(74,222,128,0.28)",
-                    Offensive: "rgba(244,63,94,0.28)",
-                  };
-                  const PILL_BORDERS = {
-                    Defensive: "rgba(59,130,246,0.6)",
-                    Balanced: "rgba(74,222,128,0.55)",
-                    Offensive: "rgba(244,63,94,0.6)",
-                  };
-                  const TEXT_COLORS = {
-                    Defensive: "text-blue-400",
-                    Balanced: "text-[#4ade80]",
-                    Offensive: "text-rose-400",
-                  };
-                  const idx = STYLES.indexOf(tactic.style ?? "Balanced");
-                  const safeIdx = idx < 0 ? 1 : idx;
-                  const activeStyle = tactic.style ?? "Balanced";
-                  return (
-                    <>
-                      <div className="relative flex bg-surface-container-low/60 rounded-full p-0.5">
-                        {/* Pill deslizante */}
-                        <div
-                          className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
-                          style={{
-                            left: `calc(${safeIdx * 33.333}% + 2px)`,
-                            width: "calc(33.333% - 4px)",
-                            background: PILL_COLORS[activeStyle],
-                            border: `1px solid ${PILL_BORDERS[activeStyle]}`,
-                          }}
-                        />
-                        {STYLES.map((val) => (
-                          <button
-                            key={val}
-                            onClick={() => updateTactic({ style: val })}
-                            className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${
-                              tactic.style === val
-                                ? TEXT_COLORS[val]
-                                : "text-gray-400 hover:text-gray-200"
-                            }`}
-                          >
-                            {LABELS[val]}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-[9px] text-gray-500 font-semibold leading-snug">
-                        {BLURBS[activeStyle]}
-                      </p>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
 
-            {/* TOPO 3 — Jogar (sobre Pitch) */}
-            <div data-tour="tactic-play" className="xl:w-72.5 shrink-0 self-start">
-              <button
-                onClick={isHalftime ? handleHalftimeReady : handleReady}
-                disabled={myReady || !canPlay}
-                className={`w-full inline-flex items-center justify-center gap-2 text-center px-4 py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
+              {/* TOPO 3 — Jogar (sobre Pitch) */}
+              <div data-tour="tactic-play" className="xl:w-72.5 shrink-0 self-start">
+                <button
+                  onClick={isHalftime ? handleHalftimeReady : handleReady}
+                  disabled={myReady || !canPlay}
+                  className={`w-full inline-flex items-center justify-center gap-2 text-center px-4 py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
 ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !canPlay ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
-                style={
-                  myReady || !canPlay
-                    ? {}
-                    : {
-                        background:
-                          "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
-                      }
-                }
-              >
-                {!myReady && canPlay && (
-                  <span className="absolute inset-0 bg-linear-to-r from-white/10 to-transparent pointer-events-none" />
-                )}
-                {!myReady && canPlay && (
-                  <span aria-hidden className="relative text-xs leading-none">▶</span>
-                )}
-                <span className="relative">{playLabel}</span>
-              </button>
-              {!canPlay && !myReady && (
-                <p className="text-[10px] font-bold text-red-400/70 mt-1.5 text-center">
-                  Faltam: 11 titulares (1 GR + 10) + {MAX_BENCH_SIZE} suplentes (1 GR)
-                </p>
-              )}
-              {canPlay && !myReady && (
-                <p className="text-[9px] text-center text-gray-700 mt-1">
-                  A jornada avança quando todos clicarem.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* LINHA DE BAIXO — Titulares | Suplentes | Pitch */}
-          <div className="flex-1 flex flex-col md:flex-row gap-2 short:gap-1.5 xl:gap-3 min-w-0 xl:items-start">
-            {/* Titulares */}
-            <div
-              className={`flex-1 min-w-0 bg-surface-container border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-outline-variant/25"}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (dragPlayerId) setDragOverSection("Titular");
-              }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget))
-                  setDragOverSection(null);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular");
-                setDragOverSection(null);
-              }}
-            >
-              <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                  Titulares
-                </span>
-                <span className="text-[10px] font-black">
-                  <span
-                    className={
-                      titCount === 11 ? "text-[#4ade80]" : "text-white"
-                    }
-                  >
-                    {titCount}
-                  </span>
-                  <span className="text-gray-700">/11</span>
-                </span>
-              </div>
-              <div className="px-2 short:px-1.5 py-1 short:py-0.5 space-y-0.5">
-                {annotatedSquad
-                  .filter((p) => p.status === "Titular")
-                  .map((player) => (
-                    <PlayerRow
-                      key={player.id}
-                      player={player}
-                      matchweekCount={matchweekCount}
-                      calendarIndex={calendarIndex}
-                      onClick
-                      draggable={!player.isJunior}
-                      onDragStart={handleDragStart}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setDragOverPlayerId(player.id);
-                      }}
-                      onDragLeave={() => setDragOverPlayerId(null)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (dragPlayerId && dragPlayerId !== player.id)
-                          handleSwapPlayerStatuses(dragPlayerId, player.id);
-                        else {
-                          setDragOverPlayerId(null);
-                          setDragPlayerId(null);
+                  style={
+                    myReady || !canPlay
+                      ? {}
+                      : {
+                          background:
+                            "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
                         }
-                        setDragOverSection(null);
-                      }}
-                      onDragEnd={() => {
-                        setDragOverPlayerId(null);
-                        setDragPlayerId(null);
-                      }}
-                      isOver={
-                        dragOverPlayerId === player.id &&
-                        dragPlayerId !== player.id
-                      }
-                      isDragging={dragPlayerId === player.id}
-                    >
-                      {!player.isJunior && (
-                        <StatusPicker
-                          player={player}
-                          openStatusPickerId={openStatusPickerId}
-                          tacticPositions={tactic.positions}
-                          annotatedSquad={annotatedSquad}
-                          handleSetPlayerStatus={handleSetPlayerStatus}
-                        />
-                      )}
-                    </PlayerRow>
-                  ))}
-                {titCount === 0 && (
-                  <p className="py-6 text-center text-[11px] text-gray-700 font-bold">
-                    Nenhum titular designado
+                  }
+                >
+                  {!myReady && canPlay && (
+                    <span className="absolute inset-0 bg-linear-to-r from-white/10 to-transparent pointer-events-none" />
+                  )}
+                  {!myReady && canPlay && (
+                    <span aria-hidden className="relative text-xs leading-none">▶</span>
+                  )}
+                  <span className="relative">{playLabel}</span>
+                </button>
+                {!canPlay && !myReady && (
+                  <p className="text-[10px] font-bold text-red-400/70 mt-1.5 text-center">
+                    Faltam: 11 titulares (1 GR + 10) + {MAX_BENCH_SIZE} suplentes (1 GR)
+                  </p>
+                )}
+                {canPlay && !myReady && (
+                  <p className="text-[9px] text-center text-gray-700 mt-1">
+                    A jornada avança quando todos clicarem.
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Suplentes + Nao convocados (coluna direita) */}
-            <div className="flex-1 min-w-0 flex flex-col gap-2 short:gap-1.5">
-              {/* Suplentes */}
+            {/* LINHA DE BAIXO — Titulares | Suplentes | Pitch */}
+            <div className="flex-1 flex flex-col md:flex-row gap-2 short:gap-1.5 xl:gap-3 min-w-0 xl:items-start">
+              {/* Titulares */}
               <div
-                className={`bg-surface-container border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/30 bg-yellow-500/2" : "border-outline-variant/25"}`}
+                className={`flex-1 min-w-0 bg-surface-container border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-outline-variant/25"}`}
                 onDragOver={(e) => {
                   e.preventDefault();
-                  if (dragPlayerId) setDragOverSection("Suplente");
+                  if (dragPlayerId) t.setDragOverSection("Titular");
                 }}
                 onDragLeave={(e) => {
                   if (!e.currentTarget.contains(e.relatedTarget))
-                    setDragOverSection(null);
+                    t.setDragOverSection(null);
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
                   if (dragPlayerId)
-                    handleDropToSection(dragPlayerId, "Suplente");
-                  setDragOverSection(null);
+                    t.handleDropToSection(dragPlayerId, "Titular");
+                  t.setDragOverSection(null);
                 }}
               >
                 <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
                   <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                    Suplentes
+                    Titulares
                   </span>
                   <span className="text-[10px] font-black">
-                    <span className="text-yellow-400">{subCount}</span>
-                    <span className="text-gray-700">/{MAX_BENCH_SIZE}</span>
+                    <span
+                      className={
+                        titCount === 11 ? "text-[#4ade80]" : "text-white"
+                      }
+                    >
+                      {titCount}
+                    </span>
+                    <span className="text-gray-700">/11</span>
                   </span>
                 </div>
                 <div className="px-2 short:px-1.5 py-1 short:py-0.5 space-y-0.5">
                   {annotatedSquad
-                    .filter((p) => p.status === "Suplente" && !p.isUnavailable)
+                    .filter((p) => p.status === "Titular")
                     .map((player) => (
                       <PlayerRow
                         key={player.id}
@@ -952,343 +1084,132 @@ ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !ca
                         matchweekCount={matchweekCount}
                         calendarIndex={calendarIndex}
                         onClick
-                        draggable={!player.isJunior}
-                        onDragStart={handleDragStart}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setDragOverPlayerId(player.id);
-                        }}
-                        onDragLeave={() => setDragOverPlayerId(null)}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (dragPlayerId && dragPlayerId !== player.id)
-                            handleSwapPlayerStatuses(dragPlayerId, player.id);
-                          else {
-                            setDragOverPlayerId(null);
-                            setDragPlayerId(null);
-                          }
-                          setDragOverSection(null);
-                        }}
-                        onDragEnd={() => {
-                          setDragOverPlayerId(null);
-                          setDragPlayerId(null);
-                        }}
-                        isOver={
-                          dragOverPlayerId === player.id &&
-                          dragPlayerId !== player.id
-                        }
-                        isDragging={dragPlayerId === player.id}
+                        {...rowDragProps(t, player)}
                       >
                         {!player.isJunior && (
-                          <StatusPicker
-                            player={player}
-                            openStatusPickerId={openStatusPickerId}
-                            tacticPositions={tactic.positions}
-                            annotatedSquad={annotatedSquad}
-                            handleSetPlayerStatus={handleSetPlayerStatus}
-                          />
+                          <StatusPicker player={player} />
                         )}
                       </PlayerRow>
                     ))}
-                  {subCount === 0 && (
-                    <p className="py-4 text-center text-[11px] text-gray-700 font-bold">
-                      Nenhum suplente
+                  {titCount === 0 && (
+                    <p className="py-6 text-center text-[11px] text-gray-700 font-bold">
+                      Nenhum titular designado
                     </p>
                   )}
                 </div>
-
-                {/* Nao convocados */}
-                {notCalledCount > 0 && (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (dragPlayerId) setDragOverSection("Excluído");
-                    }}
-                    onDragLeave={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget))
-                        setDragOverSection(null);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (dragPlayerId)
-                        handleDropToSection(dragPlayerId, "Excluído");
-                      setDragOverSection(null);
-                    }}
-                    className={`border-t transition-colors ${dragOverSection === "Excluído" ? "border-gray-500/30" : "border-outline-variant/15"}`}
-                  >
-                    <div className="px-4 py-2">
-                      <span className="text-[9px] uppercase tracking-widest text-gray-700 font-bold">
-                        Não Convocados
-                      </span>
-                    </div>
-                    <div className="px-2 pb-1 space-y-0.5 opacity-40">
-                      {annotatedSquad
-                        .filter(
-                          (p) =>
-                            !p.isJunior &&
-                            (p.isUnavailable ||
-                              (p.status !== "Titular" &&
-                                p.status !== "Suplente")),
-                        )
-                        .map((player) => (
-                          <PlayerRow
-                            key={player.id}
-                            player={player}
-                            matchweekCount={matchweekCount}
-                            calendarIndex={calendarIndex}
-                            draggable
-                            onDragStart={handleDragStart}
-                            onDragOver={(e) => {
-                              e.preventDefault();
-                              setDragOverPlayerId(player.id);
-                            }}
-                            onDragLeave={() => setDragOverPlayerId(null)}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (dragPlayerId && dragPlayerId !== player.id)
-                                handleSwapPlayerStatuses(
-                                  dragPlayerId,
-                                  player.id,
-                                );
-                              else {
-                                setDragOverPlayerId(null);
-                                setDragPlayerId(null);
-                              }
-                              setDragOverSection(null);
-                            }}
-                            onDragEnd={() => {
-                              setDragOverPlayerId(null);
-                              setDragPlayerId(null);
-                            }}
-                            isOver={
-                              dragOverPlayerId === player.id &&
-                              dragPlayerId !== player.id
-                            }
-                            isDragging={dragPlayerId === player.id}
-                          >
-                            <StatusPicker
-                              player={player}
-                              above
-                              openStatusPickerId={openStatusPickerId}
-                              tacticPositions={tactic.positions}
-                              annotatedSquad={annotatedSquad}
-                              handleSetPlayerStatus={handleSetPlayerStatus}
-                            />
-                          </PlayerRow>
-                        ))}
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-            {/* fim coluna direita */}
 
-          {/* COL 3 — CAMPO (desktop only — mobile usa FAB) */}
-          <div className="max-xl:hidden xl:w-72.5 shrink-0 flex flex-col gap-2 short:gap-1.5">
-            {/* Campo de futebol */}
-            <div
-              className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 short:max-h-[38dvh] ${dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" ? "ring-2 ring-[#4ade80]/40 shadow-lg shadow-[#4ade80]/10" : ""}`}
-              style={{
-                aspectRatio: "9/12",
-                background:
-                  "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (dragPlayerId) setDragOverSection("Titular");
-              }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget))
-                  setDragOverSection(null);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular");
-                setDragOverSection(null);
-              }}
-            >
-              {/* Linhas do campo SVG */}
-              <svg
-                className="absolute inset-0 w-full h-full pointer-events-none"
-                viewBox="0 0 9 12"
-                preserveAspectRatio="none"
-                fill="none"
-                stroke="rgba(255,255,255,0.15)"
-                strokeWidth="0.065"
-              >
-                <rect x="0.45" y="0.45" width="8.1" height="11.1" rx="0.05" />
-                <line x1="0.45" y1="6" x2="8.55" y2="6" />
-                <circle cx="4.5" cy="6" r="1.2" />
-                <rect x="1.9" y="8.9" width="5.2" height="2.65" />
-                <rect x="3.1" y="10.2" width="2.8" height="1.35" />
-                <rect x="1.9" y="0.45" width="5.2" height="2.65" />
-                <rect x="3.1" y="0.45" width="2.8" height="1.35" />
-                <circle
-                  cx="4.5"
-                  cy="9.8"
-                  r="0.07"
-                  fill="rgba(255,255,255,0.2)"
-                  stroke="none"
-                />
-                <circle
-                  cx="4.5"
-                  cy="2.2"
-                  r="0.07"
-                  fill="rgba(255,255,255,0.2)"
-                  stroke="none"
-                />
-                <circle
-                  cx="4.5"
-                  cy="6"
-                  r="0.07"
-                  fill="rgba(255,255,255,0.2)"
-                  stroke="none"
-                />
-              </svg>
-
-              <div className="absolute inset-0 bg-linear-to-b from-black/5 via-transparent to-black/25 pointer-events-none" />
-
-              {/* Jogadores no campo */}
-              {(() => {
-                const tits = annotatedSquad.filter(
-                  (p) => p.status === "Titular",
-                );
-                const rows = [
-                  tits.filter((p) => p.position === "ATA"),
-                  tits.filter((p) => p.position === "MED"),
-                  tits.filter((p) => p.position === "DEF"),
-                  tits.filter((p) => p.position === "GR"),
-                ];
-                const rowYs = ["6%", "27%", "52%", "75%"];
-                return rows.map((rowPlayers, ri) =>
-                  rowPlayers.length > 0 ? (
-                    <div
-                      key={ri}
-                      className="absolute w-full flex justify-evenly items-start px-3"
-                      style={{ top: rowYs[ri] }}
-                    >
-                      {rowPlayers.map((player) => {
-                        const pos = POS_COLORS[player.position] || {
-                          hex: "#6b7280",
-                        };
-                        const isDraggingThis = dragPlayerId === player.id;
-                        const isOverThis =
-                          dragOverPlayerId === player.id &&
-                          dragPlayerId !== player.id;
-                        return (
-                          <div
-                            key={player.id}
-                            className={`flex flex-col items-center transition-all duration-150 ${isDraggingThis ? "opacity-20 scale-90" : ""} ${isOverThis ? "scale-110" : ""}`}
-                            style={{ maxWidth: "58px" }}
-                            draggable
-                            data-player-id={player.id}
-                            data-player-status="Titular"
-                            onDragStart={handleDragStart}
-                            onDragOver={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setDragOverPlayerId(player.id);
-                            }}
-                            onDragLeave={() => setDragOverPlayerId(null)}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (dragPlayerId && dragPlayerId !== player.id)
-                                handleSwapPlayerStatuses(
-                                  dragPlayerId,
-                                  player.id,
-                                );
-                              else {
-                                setDragOverPlayerId(null);
-                                setDragPlayerId(null);
-                              }
-                              setDragOverSection(null);
-                            }}
-                            onDragEnd={() => {
-                              setDragOverPlayerId(null);
-                              setDragPlayerId(null);
-                            }}
-                          >
-                            <div
-                              className={`relative cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-50" : ""}`}
-                            >
-                              <PlayerAvatar player={player} size="w-10 h-10" />
-                              {player.isUnavailable && (
-                                <span className="absolute -top-1 -right-1 text-[9px] bg-black/60 rounded-full px-0.5 leading-none">
-                                  {(player.suspension_until_matchweek || 0) >
-                                  (calendarIndex ?? matchweekCount)
-                                    ? "🟥"
-                                    : (player.injury_until_matchweek || 0) >
-                                        (calendarIndex ?? matchweekCount)
-                                      ? "🩹"
-                                      : "✈️"}
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              className="mt-1 text-[8px] font-bold text-white/80 hover:text-[#4ade80] transition-colors leading-none px-1.5 py-0.5 rounded-lg bg-black/40"
-                              style={{
-                                maxWidth: "56px",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                              onClick={() =>
-                                socket.emit("requestPlayerHistory", {
-                                  playerId: player.id,
-                                })
-                              }
-                            >
-                              {player.name.split(" ").pop()}
-                            </button>
-                            <span
-                              className="text-[9px] font-black mt-0.5 leading-none"
-                              style={{
-                                color: pos.hex,
-                                textShadow: "0 1px 5px rgba(0,0,0,0.95)",
-                              }}
-                            >
-                              {player.skill}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null,
-                );
-              })()}
-
-              {/* Drop overlay */}
-              {dragPlayerId &&
-                dragOverSection === "Titular" &&
-                annotatedSquad.find((p) => p.id === dragPlayerId)?.status !==
-                  "Titular" && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-[#4ade80]/4">
-                    <div className="bg-black/55 border border-[#4ade80]/35 px-4 py-2.5 rounded-2xl backdrop-blur-sm">
-                      <p className="text-[#4ade80] font-black text-xs uppercase tracking-widest animate-pulse">
-                        ↓ Soltar para entrada
-                      </p>
-                    </div>
+              {/* Suplentes + Não convocados (coluna direita) */}
+              <div className="flex-1 min-w-0 flex flex-col gap-2 short:gap-1.5">
+                {/* Suplentes */}
+                <div
+                  className={`bg-surface-container border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/30 bg-yellow-500/2" : "border-outline-variant/25"}`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragPlayerId) t.setDragOverSection("Suplente");
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget))
+                      t.setDragOverSection(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragPlayerId)
+                      t.handleDropToSection(dragPlayerId, "Suplente");
+                    t.setDragOverSection(null);
+                  }}
+                >
+                  <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
+                    <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+                      Suplentes
+                    </span>
+                    <span className="text-[10px] font-black">
+                      <span className="text-yellow-400">{subCount}</span>
+                      <span className="text-gray-700">/{MAX_BENCH_SIZE}</span>
+                    </span>
                   </div>
-                )}
+                  <div className="px-2 short:px-1.5 py-1 short:py-0.5 space-y-0.5">
+                    {annotatedSquad
+                      .filter((p) => p.status === "Suplente" && !p.isUnavailable)
+                      .map((player) => (
+                        <PlayerRow
+                          key={player.id}
+                          player={player}
+                          matchweekCount={matchweekCount}
+                          calendarIndex={calendarIndex}
+                          onClick
+                          {...rowDragProps(t, player)}
+                        >
+                          {!player.isJunior && (
+                            <StatusPicker player={player} />
+                          )}
+                        </PlayerRow>
+                      ))}
+                    {subCount === 0 && (
+                      <p className="py-4 text-center text-[11px] text-gray-700 font-bold">
+                        Nenhum suplente
+                      </p>
+                    )}
+                  </div>
 
-              {!tactic.formation && titulares.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-white/30 text-xs font-bold text-center px-8 leading-relaxed">
-                    Arrasta jogadores para o campo ou escolhe uma formação
-                  </p>
+                  {/* Não convocados */}
+                  {notCalledCount > 0 && (
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (dragPlayerId) t.setDragOverSection("Excluído");
+                      }}
+                      onDragLeave={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget))
+                          t.setDragOverSection(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (dragPlayerId)
+                          t.handleDropToSection(dragPlayerId, "Excluído");
+                        t.setDragOverSection(null);
+                      }}
+                      className={`border-t transition-colors ${dragOverSection === "Excluído" ? "border-gray-500/30" : "border-outline-variant/15"}`}
+                    >
+                      <div className="px-4 py-2">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-700 font-bold">
+                          Não Convocados
+                        </span>
+                      </div>
+                      <div className="px-2 pb-1 space-y-0.5 opacity-40">
+                        {annotatedSquad
+                          .filter(
+                            (p) =>
+                              !p.isJunior &&
+                              (p.isUnavailable ||
+                                (p.status !== "Titular" &&
+                                  p.status !== "Suplente")),
+                          )
+                          .map((player) => (
+                            <PlayerRow
+                              key={player.id}
+                              player={player}
+                              matchweekCount={matchweekCount}
+                              calendarIndex={calendarIndex}
+                              {...rowDragProps(t, player)}
+                            >
+                              <StatusPicker player={player} above />
+                            </PlayerRow>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+              {/* fim coluna direita */}
+
+              {/* COL 3 — CAMPO (desktop only — mobile usa FAB) */}
+              <Pitch />
             </div>
           </div>
-        </div>
-        </div>
-      )
-      )}
+        ))}
 
       {/* Mobile FAB */}
       {(() => {
