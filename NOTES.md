@@ -1,3 +1,7 @@
+## roomhub-resp-test: provider em falta (2026-09-26)
+- O harness ficado para trás pelo refactor do `RoomHub` (consumo direto do `GameContext`): passava props mortos e chamava `useGame` sem provider → `useGame must be used within a <GameProvider>` nas 11 larguras (falha pré-existente nas suites). Fix: fixtures movidos para um `gameValue` fabricado injetado via `<GameContext.Provider>` (mesmo padrão do journal-resp-test; `matchweekCount` morto → `calendarIndex: 0` real, kick volta a ser visível).
+- Suite completa passa a **165/165 portrait + 198/198 landscape** (baseline anterior 160+192). Tactics em xl (1280/1440) verificado por screenshot: Formação/Mentalidade/Jogar/listas/campo corretos — buraco do refactor anterior fechado.
+
 ## TacticsView: review 7/10 → refactor DRY (2026-09-26)
 - Avaliação 1–10 pedida (global 7; DRY 4) → plano aprovado e executado. Só `client/src/views/TacticsView.jsx` (1354→1275 linhas, −79), zero mudança visual/lógica.
 - F1: bloco de drag handlers repetido 4× (Titulares/Suplentes/Não Convocados/campo) → helper de módulo `rowDragProps(t, player, stopOver)` (deps por chamada; flag cobre o `stopPropagation` extra do onDragOver do campo). Campos no campo passam a spread do helper (com `draggable` explícito por cima, como antes).

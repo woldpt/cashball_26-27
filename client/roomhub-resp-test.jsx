@@ -1,9 +1,12 @@
 // Mobile responsiveness harness — renders the REAL RoomHub with edge-case
 // fixture data and self-reports horizontal overflow measurements into #report.
 // Measures both sub-tabs (Sala + Global). NOT part of the app; verification only.
+// RoomHub não aceita props — consome o GameContext; o valor fabricado injeta
+// as fixtures via <GameContext.Provider> (padrão journal-resp-test).
 import { createRoot } from "react-dom/client";
 import { createRef } from "react";
 import "./src/index.css";
+import { GameContext } from "./src/contexts/GameContext.jsx";
 import { RoomHub } from "./src/components/chat/RoomHub.jsx";
 
 const noop = () => {};
@@ -42,42 +45,46 @@ const globalMessages = [
 
 const globalPlayers = ["Cobra", "Rui Filipe Alexandre Amoroso", "P. Pochettino Silva"];
 
-function hub(extra) {
-  return (
-    <RoomHub
-      me={me}
-      roomHubRef={createRef()}
-      roomHubOpen
-      setRoomHubOpen={noop}
-      roomMessages={roomMessages}
-      globalMessages={globalMessages}
-      globalPlayers={globalPlayers}
-      players={players}
-      teams={teams}
-      roomCreator="Cobra"
-      matchweekCount={0} // lobby: kick button visible
-      chatInput=""
-      setChatInput={noop}
-      avatarSeed="seed-teste-123"
-      unreadRoom={2}
-      unreadGlobal={0}
-      chatMessagesRef={createRef()}
-      addToast={noop}
-      awaitingCoaches={awaitingCoaches}
-      chatOpenRef={{ current: true }}
-      activeChatTabRef={{ current: "room" }}
-      {...extra}
-    />
-  );
-}
+// Valor fabricado do GameContext — as chaves são exatamente as que o RoomHub
+// desestrutura de useGame() (matchweekCount virou calendarIndex no refactor).
+const gameValue = {
+  me,
+  roomHubRef: createRef(),
+  roomHubOpen: true,
+  setRoomHubOpen: noop,
+  roomMessages,
+  globalMessages,
+  globalPlayers,
+  players,
+  teams,
+  roomCreator: "Cobra",
+  calendarIndex: 0, // lobby: kick button visível
+  unreadRoom: 2,
+  unreadGlobal: 0,
+  setUnreadRoom: noop,
+  setUnreadGlobal: noop,
+  chatInput: "",
+  setChatInput: noop,
+  avatarSeed: "seed-teste-123",
+  coachAvatars: {},
+  backendUrl: "http://127.0.0.1:9",
+  chatMessagesRef: createRef(),
+  awaitingCoaches,
+  chatOpenRef: { current: true },
+  activeChatTabRef: { current: "room" },
+};
 
 const root = createRoot(document.getElementById("root"));
 root.render(
-  <div className="min-h-screen bg-surface">
-    {/* Mimics GameLayout chrome the panel floats over */}
-    <div className="h-14 border-b border-outline-variant/30" />
-    <div className="p-4 lg:p-6">{hub({})}</div>
-  </div>
+  <GameContext.Provider value={gameValue}>
+    <div className="min-h-screen bg-surface">
+      {/* Mimics GameLayout chrome the panel floats over */}
+      <div className="h-14 border-b border-outline-variant/30" />
+      <div className="p-4 lg:p-6">
+        <RoomHub />
+      </div>
+    </div>
+  </GameContext.Provider>,
 );
 
 function measure() {
