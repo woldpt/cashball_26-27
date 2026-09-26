@@ -26,20 +26,19 @@ export const BriefingSkeleton = memo(function BriefingSkeleton() {
           <div className="lg:w-60 h-12 rounded-2xl bg-surface-bright animate-pulse" />
         </div>
       </div>
-      {/* Faixa amigável (só aparece em friendlies — skeleton genérico) */}
-      <div
-        aria-hidden
-        className="flex items-center gap-2 rounded-2xl border border-outline-variant/25 bg-surface-container px-4 short:px-3 py-2.5 short:py-2 animate-pulse"
-      />
-      {/* Grelha confronto + scouting */}
-      <div className="flex flex-col lg:flex-row gap-3">
+      {/* Grelha confronto + scouting (espelha lg:grid-cols-3 real) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div
           aria-hidden
-          className="flex-1 h-72 lg:flex-1 rounded-2xl bg-surface-container border border-outline-variant/25 animate-pulse"
+          className="h-72 rounded-2xl bg-surface-container border border-outline-variant/25 animate-pulse"
         />
         <div
           aria-hidden
-          className="lg:w-72 h-72 rounded-2xl bg-surface-container border border-outline-variant/25 animate-pulse"
+          className="h-72 rounded-2xl bg-surface-container border border-outline-variant/25 animate-pulse"
+        />
+        <div
+          aria-hidden
+          className="h-72 rounded-2xl bg-surface-container border border-outline-variant/25 animate-pulse"
         />
       </div>
     </div>

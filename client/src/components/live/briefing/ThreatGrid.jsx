@@ -39,7 +39,7 @@ export const ThreatGrid = memo(function ThreatGrid({ threats }) {
           const meta = THREAT_ROLE_META[t.role] ?? { icon: "❗", label: t.role };
           return (
             <div
-              key={t.role ?? `threat-${i}`}
+              key={`${t.role ?? "threat"}-${i}`}
               className="min-w-0 bg-surface-container-low/60 border border-outline-variant/25 rounded-xl px-2.5 py-2 flex items-center gap-2"
             >
               <span className="shrink-0 text-[8px] uppercase tracking-widest text-gray-600 font-black">

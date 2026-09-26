@@ -31,6 +31,23 @@ import {
  *
  * @returns {JSX.Element|null}
  */
+/**
+ * Faixa de recinto quando falta formação/estádio (só texto, sem dados novos).
+ * @param {string|null} venue Casa | Fora | Jamor
+ */
+function VenueFallback({ venue }) {
+  return (
+    <div className="min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl px-4 py-2.5 flex items-center justify-between">
+      <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
+        <span aria-hidden>🏟️</span> Estádio e ambiente
+      </span>
+      <span className="text-[11px] font-black text-white">
+        {venue === "Jamor" ? "Neutro — Jamor" : venue === "Casa" ? "Jogas em casa" : "Jogas fora"}
+      </span>
+    </div>
+  );
+}
+
 export function MatchBriefing() {
   const { teamInfo, setPrepPhase } = useTactics();
   const { nextMatchSummary, handleOpenTeamSquad, nextMatchSummaryLoading } = useGame();
@@ -86,36 +103,14 @@ export function MatchBriefing() {
                   teamColor={vm.opponentColor}
                 />
               ) : (
-                <div className="min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
-                    <span aria-hidden>🏟️</span> Estádio e ambiente
-                  </span>
-                  <span className="text-[11px] font-black text-white">
-                    {vm.venue === "Jamor"
-                      ? "Neutro — Jamor"
-                      : vm.venue === "Casa"
-                        ? "Jogas em casa"
-                        : "Jogas fora"}
-                  </span>
-                </div>
+                <VenueFallback venue={vm.venue} />
               )}
             </div>
             <div className="min-w-0 flex flex-col gap-3 short:gap-1.5">
               {vm.stadium ? (
                 <StadiumCard stadium={vm.stadium} />
               ) : vm.formation ? (
-                <div className="min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
-                    <span aria-hidden>🏟️</span> Estádio e ambiente
-                  </span>
-                  <span className="text-[11px] font-black text-white">
-                    {vm.venue === "Jamor"
-                      ? "Neutro — Jamor"
-                      : vm.venue === "Casa"
-                        ? "Jogas em casa"
-                        : "Jogas fora"}
-                  </span>
-                </div>
+                <VenueFallback venue={vm.venue} />
               ) : null}
               <ThreatGrid threats={vm.threats} />
               <MarketPanel odds={vm.odds} referee={vm.referee} />

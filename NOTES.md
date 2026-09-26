@@ -1898,3 +1898,10 @@ Plano C1+C2 (quando fizer):
 
 ## Armadilha: pkill do vite órfão mata o próprio shell (2026-09-26)
 - `pkill -f "bin/vite"` faz match à própria linha de comando do bash (a string está nela) → o shell recebe SIGTERM (exit 143). Usar sempre `pkill -f "[b]in/vite"`.
+
+## Briefing — fita limpa sem emblemas + dedup venue/skeleton (2026-09-26)
+- `FormBlock` (CompareRadar) sem `TeamCrest`: nome clicável + estado + chips V/E/D + registo; emblema vive só no `DuelHero`.
+- `MatchBriefing.jsx`: `VenueFallback` único substitui 2 blocos Jamor/Casa/Fora copiados.
+- `ThreatGrid`: key `${role}-${i}` contra papéis repetidos; `BriefingSkeleton`: fora a faixa de amigável, grelha `lg:grid-cols-3` como a real.
+- Saltado de propósito: embrulhar `MarketPanel` em div (fragmento chega dentro do flex-col com gap do pai).
+- Checks: eslint limpo nos 4 ficheiros; `check:types` OK; `test:mobile` 5/165 e `:landscape` 6/198 — só falha pré-existente `roomhub-resp-test` (useGame fora de Provider).

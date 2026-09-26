@@ -2,7 +2,6 @@ import { memo } from "react";
 import { getMoraleClasses } from "../../../utils/morale.js";
 import { teamTextColor } from "../liveHelpers.js";
 import { Tile } from "./Tile.jsx";
-import { TeamCrest } from "../TeamCrest.jsx";
 import { FormChips } from "./FormChips.jsx";
 import { RecordText } from "./RecordText.jsx";
 import { orderedPair } from "./orderedPair.js";
@@ -100,16 +99,16 @@ function formStatus(last5) {
 }
 
 /**
- * Cartão de forma de uma equipa (emblema + nome + momento + chips + registo).
- * @param {{ name: string, last5: string, team: Object|null, record: { v: number, e: number, d: number }, side: "home"|"away", isMine?: boolean, onOpenTeamSquad?: (team: Object) => void }} props
+ * Cartão de forma de uma equipa (nome + momento + chips + registo, sem
+ * emblema — o emblema vive só no DuelHero para não duplicar).
+ * @param {{ name: string, last5: string, team: Object|null, record: { v: number, e: number, d: number }, side: "home"|"away", onOpenTeamSquad?: (team: Object) => void }} props
  * @returns {JSX.Element}
  */
-const FormBlock = memo(function FormBlock({ name, last5, team, record, side, isMine = false, onOpenTeamSquad }) {
+const FormBlock = memo(function FormBlock({ name, last5, team, record, side, onOpenTeamSquad }) {
   const status = formStatus(last5);
   return (
     <div className="min-w-0 rounded-xl border border-outline-variant/25 bg-surface-container-low/60 px-2.5 py-2 flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5 min-w-0">
-        {team && <TeamCrest team={team} size="sm" isMine={isMine} />}
         <div className="flex-1 min-w-0">
           <button
             type="button"
@@ -219,7 +218,6 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
               team={formHome.team}
               record={recordHome}
               side="home"
-              isMine={vm.isHome}
               onOpenTeamSquad={onOpenTeamSquad}
             />
             <FormBlock
@@ -228,7 +226,6 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
               team={formAway.team}
               record={recordAway}
               side="away"
-              isMine={!vm.isHome}
               onOpenTeamSquad={onOpenTeamSquad}
             />
           </div>
