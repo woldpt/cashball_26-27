@@ -2110,3 +2110,8 @@ Plano C1+C2 (quando fizer):
 - Nova chave `--info=datasNasc`: extrai a DOB (ISO) da bio (`nascido/a em YYYY-MM-DD`, com sanidade 1950–ano atual) nas páginas de jogador e treinador; campo `dob` aditivo em ambos os tipos (idade e seed intocados).
 - Partilha o HTML com `fotoJogadores`/`fotoTreinador`: o salto passa a ser "foto OK e DOB OK"; relatório `datasNasc: N novas`, treinador marca `+DOB`; `--renew` força releitura.
 - Checks: `typecheck` verde; dry-run Bragança → `datasNasc: 22 novas` (só cache, nada gravado). Sem audits (só fetch).
+
+## zerozero — corrida real de fotos em falta (2026-09-26)
+- Varrimento: 0 equipas <22 jogadores; 68 jogadores sem foto (12 com zerozeroId buscáveis, 56 sem ID quase todos D5 distrital).
+- Corrida `fetch:tui -- --equipas="Rio Ave,Alverca,Moreirense,Lus. Lourosa,Penafiel" --info=fotoJogadores`: 10 fotos novas (Rio Ave 6, Alverca 2, Moreirense 1, Lourosa 1), 4 equipas a COMPLETO. Penafiel/Nfanseu sem foto — já fora do plantel da página (saída provável).
+- Verificação automática da TUI: typecheck + seed + audit 0 erros/warnings.

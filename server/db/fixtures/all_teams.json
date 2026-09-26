@@ -1574,7 +1574,7 @@
           "position": "MED",
           "age": 21,
           "zerozeroId": 1027349,
-          "photo": null
+          "photo": "/players/1027349.jpg"
         },
         {
           "name": "Nile John",
@@ -2660,7 +2660,7 @@
           "position": "DEF",
           "age": 22,
           "zerozeroId": 656867,
-          "photo": null
+          "photo": "/players/656867.png"
         },
         {
           "name": "André Ricardo",
@@ -8048,7 +8048,7 @@
           "position": "GR",
           "age": 35,
           "zerozeroId": 264030,
-          "photo": null
+          "photo": "/players/264030.png"
         },
         {
           "name": "Bastien Meupiyou",
@@ -8088,7 +8088,7 @@
           "position": "DEF",
           "age": 21,
           "zerozeroId": 1379845,
-          "photo": null
+          "photo": "/players/1379845.png"
         },
         {
           "name": "Isaac James",
@@ -8245,7 +8245,7 @@
           "position": "GR",
           "age": 26,
           "zerozeroId": 598942,
-          "photo": null
+          "photo": "/players/598942.jpg"
         },
         {
           "name": "Marious Vrousai",
@@ -8253,7 +8253,7 @@
           "position": "DEF",
           "age": 28,
           "zerozeroId": 478812,
-          "photo": null
+          "photo": "/players/478812.jpg"
         },
         {
           "name": "Pedro Amaral",
@@ -8325,7 +8325,7 @@
           "position": "MED",
           "age": 26,
           "zerozeroId": 824955,
-          "photo": null
+          "photo": "/players/824955.png"
         },
         {
           "name": "Tamás Nikitscher",
@@ -8365,7 +8365,7 @@
           "position": "ATA",
           "age": 27,
           "zerozeroId": 529104,
-          "photo": null
+          "photo": "/players/529104.jpg"
         },
         {
           "name": "Tamble Monteiro",
@@ -8373,7 +8373,7 @@
           "position": "ATA",
           "age": 25,
           "zerozeroId": 420705,
-          "photo": null
+          "photo": "/players/420705.png"
         },
         {
           "name": "Radek Siler",
@@ -8381,7 +8381,7 @@
           "position": "ATA",
           "age": 21,
           "zerozeroId": 1391543,
-          "photo": null
+          "photo": "/players/1391543.jpg"
         },
         {
           "name": "Rafael Lobato",
