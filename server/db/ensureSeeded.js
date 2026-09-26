@@ -23,6 +23,7 @@ const { execFileSync } = require("child_process");
 const dbPath = process.env.DB_PATH || path.join(process.cwd(), "db", "base.db");
 const fixturesPath = path.join(__dirname, "fixtures", "all_teams.json");
 const seedPath = path.join(__dirname, "seed.js");
+const seedEconPath = path.join(__dirname, "seedEcon.js");
 const schemaPath = path.join(__dirname, "schema.sql");
 
 // Tabelas essenciais — se alguma faltar, o base.db está de uma era anterior.
@@ -43,10 +44,12 @@ const REQUIRED_TABLES = [
 ];
 
 function templateHash() {
-  // Hash das fixtures + seed.js + schema.sql: qualquer alteração de conteúdo
-  // (valores, regras de seed ou schema) obriga a re-semear o base.db.
+  // Hash das fixtures + seed.js + seedEcon.js + schema.sql: qualquer
+  // alteração de conteúdo (valores, regras de seed ou schema) obriga a
+  // re-semear o base.db. Tem de cobrir os mesmos ficheiros que o
+  // fixtures_hash calculado em seed.js.
   const parts = [];
-  for (const p of [fixturesPath, seedPath, schemaPath]) {
+  for (const p of [fixturesPath, seedPath, seedEconPath, schemaPath]) {
     if (!fs.existsSync(p)) return null;
     parts.push(fs.readFileSync(p));
   }

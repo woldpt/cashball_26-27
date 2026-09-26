@@ -2072,3 +2072,11 @@ Plano C1+C2 (quando fizer):
 - Fix 2: medição do alvo com retry (`CoachTutorial.jsx`: imediato + intervalo 150ms, máx. ~1s) — a tab nova monta após a saída `mode="wait"` (~0,22s), a medição única aos 120ms falhava.
 - Extra: balão preso ao viewport por baixo (altura real via `ref`, deps `[balloonH, stepIndex]`); Escape fecha (= saltar); foco inicial no balão (`tabIndex={-1}`).
 - Checks: eslint sem erros nos ficheiros (2 erros pré-existentes noutros — confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (só atributo + timing, sem mudança estrutural) nem audits (sem lógica de jogo/sockets).
+
+## seed.js — correção completa F1–F6 (2026-09-26)
+- Novo `server/db/seedEcon.js` (JS puro, fonte única): `fairWeeklyWage`, `recalcPlayerValue`, `FANBASE/BUDGET/SKILL_RANGE_BY_DIVISION`, `WAGE_SEED_SPREAD`, `createRng` (mulberry32, `SEED` opt-in). `gameConstants.ts` re-exporta (mesmos nomes — 15 importadores intactos); `gameManager` usa `1+WAGE_SEED_SPREAD` no cap do rebalance em vez de `1.15` literal.
+- `seed.js` reescrita em `async/await`: gate no `BEGIN EXCLUSIVE`, `lastID` em vez de contadores manuais, `COMMIT` só no fim / `ROLLBACK`+`exit(1)` em falha, pre-check da diretoria do DB + listener `db.on("error")` (sem isto, `DB_PATH` inválido saía com 0 silencioso).
+- Validação de fixtures com contadores e fallbacks (posição→MED, skill clamp 1–50, idade, divisão); mágicos como consts no topo; moral via parâmetro em vez de literal no SQL.
+- `seedEcon.js` incluído no `fixtures_hash` (seed) e `templateHash()` (ensureSeeded) — base.db re-seeda sozinho.
+- Detetado: fixtures dos 3 grandes têm `skillRange [39,54]` → ~18 jogadores/seed clampados a 50 (escala unificada 1–50), visível no warn; economia equivalente à seed antiga (agregados por divisão desviam <3%, budgets/contagens idênticos).
+- Checks: `typecheck` + `build` OK; paridade seedEcon↔gameConstants (src e dist) OK; `SEED=42` 2× → md5 idêntico; seed aleatória OK (60 equipas/1320 jogadores); `audit:socketio` 0 erros (97 warnings pré-existentes, sem handlers tocados). Client intocado.

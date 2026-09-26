@@ -3,67 +3,184 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const db = require("./database");
-
-// Ensure schema exists before seeding
-const schemaPath = path.join(__dirname, "schema.sql");
-const schema = fs.readFileSync(schemaPath, "utf8");
-
-// Always load team fixtures from server/db/fixtures/all_teams.json
-const fixturesDir = path.join(__dirname, "fixtures");
-
-let allTeamsData = null;
-
-try {
-  const allTeamsFile = path.join(fixturesDir, "all_teams.json");
-  if (fs.existsSync(allTeamsFile)) {
-    const data = JSON.parse(fs.readFileSync(allTeamsFile, "utf8"));
-    if (data.teams && Array.isArray(data.teams)) {
-      allTeamsData = data.teams;
-    }
-  }
-} catch (e) {
-  console.error("Error loading all_teams.json:", e);
-  allTeamsData = null;
-}
-
-if (!allTeamsData || allTeamsData.length === 0) {
-  console.error("FATAL: all_teams.json not found or empty. Cannot seed.");
+// O sqlite3 emite 'error' no Database em falhas graves de abertura; sem
+// listener isso crasha com stack fora do try/catch. Rede de segurança com
+// mensagem limpa (erros de query vão às promises + ROLLBACK; sem COMMIT a
+// transação reverte sozinha ao fechar).
+db.on("error", (err) => {
+  console.error("[seed] FATAL (db):", err && err.message ? err.message : err);
   process.exit(1);
-}
+});
+const {
+  BUDGET_BY_DIVISION,
+  FANBASE_BY_DIVISION,
+  SKILL_RANGE_BY_DIVISION,
+  WAGE_SEED_SPREAD,
+  recalcPlayerValue,
+  fairWeeklyWage,
+  createRng,
+} = require("./seedEcon");
 
-// Nota: player_skill_snapshots (tabela + índices) é criada pelo schema.sql
-// dentro do db.serialize() — não duplicar aqui, ou o CREATE INDEX podia correr
-// antes do CREATE TABLE (sem serialize) e rebentar com erro não-apanhado.
-
-function randomAggressiveness() {
-  return 10 + Math.floor(Math.random() * 4) * 10;
-}
-const skillRanges = {
-  1: [36, 50],
-  2: [26, 35],
-  3: [16, 25],
-  4: [5, 15],
-  5: [5, 15],
+// ---------- Constantes da seed (antes espalhadas pelo código) ----------
+const REPUTATION_DEFAULT = 50;
+const MORALE_DEFAULT = 25;
+const FORM_MIN_SEED = 19;
+const FORM_MAX_SEED = 32;
+const RESISTANCE_SET = [1, 13, 26, 38, 50];
+const AGE_MIN_SEED = 18;
+const AGE_SPAN_SEED = 16; // 18..33
+const AGE_MIN_VALID = 15;
+const AGE_MAX_VALID = 50;
+const AGG_MIN = 10;
+const AGG_MAX = 40;
+const AGG_STEP = 10;
+const STAR_CHANCE = 0.1; // MED/ATA com 10% de probabilidade
+const STAR_POTENTIAL_BONUS = 4;
+const STAR_POTENTIAL_SPAN = 5;
+const BASE_POTENTIAL_SPAN = 4;
+const SKILL_MAX = 50;
+const FALLBACK_DIVISION = 4;
+const VALID_POSITIONS = new Set(["GR", "DEF", "MED", "ATA"]);
+const POSITION_MAP = {
+  GK: "GR",
+  MID: "MED",
+  ATK: "ATA",
+  DEF: "DEF",
+  GR: "GR",
+  MED: "MED",
+  ATA: "ATA",
 };
 
-function randomSkill(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+// RNG: determinístico com SEED=xxx, Math.random como antes sem SEED.
+const { rng, label: rngLabel } = createRng(process.env.SEED);
+const randInt = (min, max) => Math.floor(rng() * (max - min + 1)) + min;
+const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+
+// Nota: player_skill_snapshots (tabela + índices) é criada pelo schema.sql
+// dentro de transação — não duplicar aqui.
+
+function loadFixtures() {
+  const fixturesDir = path.join(__dirname, "fixtures");
+  const allTeamsFile = path.join(fixturesDir, "all_teams.json");
+  try {
+    if (!fs.existsSync(allTeamsFile)) return null;
+    const data = JSON.parse(fs.readFileSync(allTeamsFile, "utf8"));
+    if (data.teams && Array.isArray(data.teams) && data.teams.length > 0) {
+      return { teams: data.teams, fixturesDir };
+    }
+    return null;
+  } catch (e) {
+    console.error("[seed] Erro a ler all_teams.json:", e.message);
+    return null;
+  }
 }
 
-// Mesma fórmula que fairWeeklyWage (gameConstants.ts) — duplicada aqui porque
-// a seed corre em node puro (sem TS). Sub-linear: jogadores fracos ganham
-// muito menos, mantendo as folhas salariais das divisões baixas viáveis.
-function fairWeeklyWage(skill) {
-  const s = Math.max(1, Math.round(skill || 0));
-  return Math.round(Math.pow(s, 1.292) * 51);
+// Promisificados mínimos (sqlite3 usa `this`, por isso helpers manuais).
+const run = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.run(sql, params, function (err) {
+      if (err) reject(err);
+      else resolve(this);
+    });
+  });
+const exec = (sql) =>
+  new Promise((resolve, reject) => {
+    db.exec(sql, (err) => (err ? reject(err) : resolve()));
+  });
+
+// Valida e normaliza os jogadores do fixture; se inválido, corrige com
+// fallback e conta avisos em vez de abortar a seed inteira.
+function buildPlayers(providedPlayers, teamSkillRange, teamName, warnings) {
+  const rows = [];
+  for (const p of providedPlayers || []) {
+    if (!p || !p.name) {
+      warnings.nameless++;
+      continue;
+    }
+    let pos = POSITION_MAP[p.position] || p.position || "MED";
+    if (!VALID_POSITIONS.has(pos)) {
+      warnings.position++;
+      pos = "MED";
+    }
+    let skill = p.skill || randInt(teamSkillRange[0], teamSkillRange[1]);
+    if (skill < 1 || skill > SKILL_MAX) {
+      warnings.skill++;
+      skill = Math.min(SKILL_MAX, Math.max(1, Math.round(skill)));
+    }
+    let age = p.age || randInt(AGE_MIN_SEED, AGE_MIN_SEED + AGE_SPAN_SEED - 1);
+    if (age < AGE_MIN_VALID || age > AGE_MAX_VALID) {
+      warnings.age++;
+      age = randInt(AGE_MIN_SEED, AGE_MIN_SEED + AGE_SPAN_SEED - 1);
+    }
+    rows.push({
+      name: p.name,
+      pos,
+      skill,
+      age,
+      form: p.form || randInt(FORM_MIN_SEED, FORM_MAX_SEED),
+      res: pick(RESISTANCE_SET),
+      agg: AGG_MIN + Math.floor(rng() * ((AGG_MAX - AGG_MIN) / AGG_STEP + 1)) * AGG_STEP,
+      nat: p.nationality || p.country || "🇵🇹",
+      value: recalcPlayerValue(skill),
+      wage: Math.round(
+        fairWeeklyWage(skill) * (1 - WAGE_SEED_SPREAD + rng() * 2 * WAGE_SEED_SPREAD),
+      ),
+      isStar: (pos === "MED" || pos === "ATA") && rng() < STAR_CHANCE ? 1 : 0,
+      potential: 0, // calculado abaixo (depende de isStar)
+      photo: p.photo || null,
+      zerozeroId: p.zerozeroId || null,
+    });
+  }
+  for (const r of rows) {
+    r.potential = Math.min(
+      SKILL_MAX,
+      r.skill +
+        (r.isStar
+          ? STAR_POTENTIAL_BONUS + Math.floor(rng() * STAR_POTENTIAL_SPAN)
+          : Math.floor(rng() * BASE_POTENTIAL_SPAN)),
+    );
+  }
+  // Garantir pelo menos um craque por equipa: promover o melhor MED/ATA.
+  if (rows.length > 0 && !rows.some((r) => r.isStar === 1)) {
+    const eligibles = rows.filter((r) => r.pos === "MED" || r.pos === "ATA");
+    if (eligibles.length > 0) {
+      const best = eligibles.reduce((a, b) => (b.skill > a.skill ? b : a));
+      best.isStar = 1;
+      best.potential = Math.min(
+        SKILL_MAX,
+        best.skill + STAR_POTENTIAL_BONUS + Math.floor(rng() * STAR_POTENTIAL_SPAN),
+      );
+    } else {
+      warnings.noStarEligible++;
+    }
+  }
+  if (rows.length === 0) warnings.emptyTeam.push(teamName);
+  return rows;
 }
 
-db.configure("busyTimeout", 10000);
+async function main() {
+  // Falha rápida com mensagem limpa se a diretoria do DB não existir
+  // (caso contrário o open falha em fundo e o processo saía com 0).
+  const dbPath = process.env.DB_PATH || path.join(process.cwd(), "db", "base.db");
+  if (!fs.existsSync(path.dirname(dbPath))) {
+    console.error(`[seed] FATAL: diretoria inexistente: ${path.dirname(dbPath)}`);
+    process.exit(1);
+  }
+  const loaded = loadFixtures();
+  if (!loaded) {
+    console.error("[seed] FATAL: all_teams.json em falta ou vazio. Seed abortada.");
+    process.exit(1);
+  }
+  const { teams, fixturesDir } = loaded;
 
-// Drop tables in dependency order so that the schema is always recreated fresh.
-// This ensures new columns (e.g. stadium_name) are present even when reseeding
-// an existing database that was created with an older schema.
-const dropSchema = `
+  const schemaPath = path.join(__dirname, "schema.sql");
+  const schema = fs.readFileSync(schemaPath, "utf8");
+
+  db.configure("busyTimeout", 10000);
+
+  // Drop tables in dependency order so that the schema is always recreated
+  // fresh (novas colunas aparecem mesmo ao re-seedar uma base antiga).
+  const dropSchema = `
 DROP TABLE IF EXISTS room_events;
 DROP TABLE IF EXISTS room_seats;
 DROP TABLE IF EXISTS chat_messages;
@@ -82,290 +199,150 @@ DROP TABLE IF EXISTS managers;
 DROP TABLE IF EXISTS game_state;
 `;
 
-db.serialize(() => {
-  db.run("BEGIN EXCLUSIVE", (err) => {
-    if (err) {
-      console.error("[seed] Failed to start transaction:", err.message);
-      process.exit(1);
-    }
-  });
+  // O BEGIN é a porta de entrada: se falhar, nada mais corre (antes, a falta
+  // do gate deixava os drops/inserts correrem na mesma).
+  await run("BEGIN EXCLUSIVE");
+  try {
+    await exec(dropSchema);
+    await exec(schema);
 
-  // Drop all tables then recreate with the current schema so that any schema
-  // changes (e.g. added columns) are always applied when reseeding.
-  db.exec(dropSchema, (dropErr) => {
-    if (dropErr) {
-      console.error("[seed] Drop tables failed:", dropErr.message);
-      process.exit(1);
-    }
-  });
-  db.exec(schema, (schemaErr) => {
-    if (schemaErr) {
-      console.error("[seed] Schema init failed:", schemaErr.message);
-      process.exit(1);
-    }
-  });
+    console.log(`[seed] Seeding ${teams.length} teams from all_teams.json (${rngLabel})...`);
 
-  console.log(`Seeding ${allTeamsData.length} teams from all_teams.json...`);
-
-  const insertManager = db.prepare(
-    "INSERT INTO managers (name, reputation, photo, zerozero_id) VALUES (?, ?, ?, ?)",
-  );
-  const insertTeam = db.prepare(
-    "INSERT INTO teams (name, manager_id, division, stadium_capacity, stadium_name, budget, color_primary, color_secondary, crest, fanbase) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-  );
-  const insertPlayer = db.prepare(
-    "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, morale, nationality, value, wage, goals, is_star, potential, photo, zerozero_id, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, 25, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
-  );
-
-  let teamId = 1;
-  let managerId = 1;
-  const usedManagers = new Set();
-
-  const teamsToSeed = allTeamsData;
-
-  teamsToSeed.forEach((teamData) => {
-    // Insert manager
-    let managerName = teamData.manager?.name || "Treinador";
-    const base = managerName;
-    let candidate = base;
-    let suffix = 1;
-    while (usedManagers.has(candidate)) {
-      candidate = `${base} #${suffix}`;
-      suffix++;
-    }
-    managerName = candidate;
-    usedManagers.add(managerName);
-
-    insertManager.run(
-      managerName,
-      50,
-      teamData.manager?.photo || null,
-      teamData.manager?.zerozeroId || null,
-    );
-
-    // Colors from fixture or fallback
-    const colors = teamData.colors || {
-      primary: "#dc2626",
-      secondary: "#ffffff",
+    const warnings = {
+      nameless: 0,
+      position: 0,
+      skill: 0,
+      age: 0,
+      noStarEligible: 0,
+      emptyTeam: [],
     };
-    const primaryColor = colors.primary || "#dc2626";
-    const secondaryColor = colors.secondary || "#ffffff";
+    const usedManagers = new Set();
 
-    // Stadium from fixture
-    const stadium = teamData.stadium || {
-      name: "Generic Stadium",
-      capacity: 10000,
-    };
-    const stadiumCapacity = stadium.capacity || 10000;
-    const BUDGET_BY_DIVISION = {
-      1: 2500000,
-      2: 2000000,
-      3: 1500000,
-      4: 1000000,
-      5: 500000,
-    };
-    const budget = BUDGET_BY_DIVISION[teamData.division || 4] ?? 1000000;
-
-    const stadiumName = stadium.name || "";
-    const crest = teamData.crest || null;
-
-    // Massa adepta inicial: procura típica da divisão (raramente limita de
-    // arranque; limita a expansão). Espelha FANBASE_BY_DIVISION (gameConstants).
-    const FANBASE_SEED = { 1: 35000, 2: 15000, 3: 10000, 4: 7000, 5: 4000 };
-    const fanbase = Math.min(
-      stadiumCapacity,
-      FANBASE_SEED[teamData.division || 4] ?? 7000,
-    );
-
-    insertTeam.run(
-      teamData.name,
-      managerId,
-      teamData.division || 4,
-      stadiumCapacity,
-      stadiumName,
-      budget,
-      primaryColor,
-      secondaryColor,
-      crest,
-      fanbase,
-    );
-
-    // Load all players from fixture — no random names, no fixed limit
-    const providedPlayers = teamData.players || [];
-
-    // Map fixture positions to spec positions (GK→GR, MID→MED, ATK→ATA)
-    const POSITION_MAP = {
-      GK: "GR",
-      MID: "MED",
-      ATK: "ATA",
-      DEF: "DEF",
-      GR: "GR",
-      MED: "MED",
-      ATA: "ATA",
-    };
-
-    const division = teamData.division || 4;
-    // Intervalo de skill da equipa: por omissão o da divisão (skillRanges),
-    // mas clubes com skillRange próprio no fixture (ex.: Sporting, Benfica e
-    // Porto começam mais fortes que o resto da Primeira Liga) usam o seu.
-    const teamSkillRange =
-      Array.isArray(teamData.skillRange) && teamData.skillRange.length === 2
-        ? teamData.skillRange
-        : skillRanges[division] || [5, 20];
-
-    // Build full player list before inserting so we can guarantee ≥1 craque per team
-    const playersToInsert = providedPlayers
-      .filter((p) => p && p.name)
-      .map((p) => {
-        const pos = POSITION_MAP[p.position] || p.position || "MED";
-        const skill =
-          p.skill ||
-          randomSkill(teamSkillRange[0], teamSkillRange[1]);
-        const age = p.age || Math.floor(Math.random() * 16) + 18;
-        const form = p.form || Math.floor(Math.random() * 14) + 19;
-        const res = [1, 13, 26, 38, 50][Math.floor(Math.random() * 5)];
-        const agg = randomAggressiveness();
-        const nat = p.nationality || p.country || "🇵🇹";
-        // Mesma fórmula que recalcPlayerValue (gameConstants.ts) para o valor
-        // de mercado nunca divergir entre a seed e o runtime (treino/evolução).
-        // Piso fixo de €30.000 ajuda a economia das equipas pequenas (divisões 4–5).
-        const value = Math.round(skill * skill * 500 + skill * 2000 + 30000);
-        const wageFactor = 0.85 + Math.random() * 0.30; // ±15% de variação
-        const wage = Math.round(fairWeeklyWage(skill) * wageFactor);
-        const isStar =
-          (pos === "MED" || pos === "ATA") && Math.random() < 0.1 ? 1 : 0;
-        const potential = Math.min(
-          50,
-          skill + (isStar ? 4 + Math.floor(Math.random() * 5) : Math.floor(Math.random() * 4)),
-        );
-        return {
-          name: p.name,
-          pos,
-          skill,
-          age,
-          form,
-          res,
-          agg,
-          nat,
-          value,
-          wage,
-          isStar,
-          potential,
-          photo: p.photo || null,
-          zerozeroId: p.zerozeroId || null,
-        };
-      });
-
-    // Garantir pelo menos um craque por equipa: se nenhum foi escolhido
-    // aleatoriamente, promover o melhor MED ou ATA
-    const hasStar = playersToInsert.some((p) => p.isStar === 1);
-    if (!hasStar) {
-      const eligibles = playersToInsert.filter(
-        (p) => p.pos === "MED" || p.pos === "ATA",
+    for (const teamData of teams) {
+      // Treinador único (sufixo em colisão).
+      const base = teamData.manager?.name || "Treinador";
+      let managerName = base;
+      for (let suffix = 1; usedManagers.has(managerName); suffix++) {
+        managerName = `${base} #${suffix}`;
+      }
+      usedManagers.add(managerName);
+      const managerRow = await run(
+        "INSERT INTO managers (name, reputation, photo, zerozero_id) VALUES (?, ?, ?, ?)",
+        [managerName, REPUTATION_DEFAULT, teamData.manager?.photo || null, teamData.manager?.zerozeroId || null],
       );
-      if (eligibles.length > 0) {
-        const best = eligibles.reduce((a, b) => (b.skill > a.skill ? b : a));
-        best.isStar = 1;
+
+      const division =
+        teamData.division && BUDGET_BY_DIVISION[teamData.division]
+          ? teamData.division
+          : FALLBACK_DIVISION;
+      const stadium = teamData.stadium || {};
+      const stadiumCapacity = stadium.capacity || 10000;
+      const fanbase = Math.min(
+        stadiumCapacity,
+        FANBASE_BY_DIVISION[division] ?? FANBASE_BY_DIVISION[FALLBACK_DIVISION],
+      );
+      const teamRow = await run(
+        "INSERT INTO teams (name, manager_id, division, stadium_capacity, stadium_name, budget, color_primary, color_secondary, crest, fanbase) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          teamData.name,
+          managerRow.lastID,
+          division,
+          stadiumCapacity,
+          stadium.name || "",
+          BUDGET_BY_DIVISION[division] ?? BUDGET_BY_DIVISION[FALLBACK_DIVISION],
+          teamData.colors?.primary || "#dc2626",
+          teamData.colors?.secondary || "#ffffff",
+          teamData.crest || null,
+          fanbase,
+        ],
+      );
+
+      // Intervalo de skill: o da divisão, salvo skillRange próprio no fixture
+      // (ex.: Sporting/Benfica/Porto acima do resto da 1ª Liga).
+      const teamSkillRange =
+        Array.isArray(teamData.skillRange) && teamData.skillRange.length === 2
+          ? teamData.skillRange
+          : SKILL_RANGE_BY_DIVISION[division] || [5, 20];
+
+      const players = buildPlayers(teamData.players, teamSkillRange, teamData.name, warnings);
+      for (const pl of players) {
+        await run(
+          "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, morale, nationality, value, wage, goals, is_star, potential, photo, zerozero_id, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
+          [
+            pl.name, pl.pos, pl.skill, pl.age, pl.form, pl.res, pl.agg,
+            MORALE_DEFAULT, pl.nat, pl.value, pl.wage, pl.isStar,
+            pl.potential, pl.photo, pl.zerozeroId, teamRow.lastID,
+          ],
+        );
       }
     }
 
-    playersToInsert.forEach(
-      ({ name, pos, skill, age, form, res, agg, nat, value, wage, isStar, potential, photo, zerozeroId }) => {
-        insertPlayer.run(
-          name,
-          pos,
-          skill,
-          age,
-          form,
-          res,
-          agg,
-          nat,
-          value,
-          wage,
-          isStar,
-          potential,
-          photo,
-          zerozeroId,
-          teamId,
-        );
-      },
-    );
-
-    teamId++;
-    managerId++;
-  });
-
-  // Initialize game state defaults
-  db.run("INSERT INTO game_state (key, value) VALUES ('matchweek', '1')");
-  db.run("INSERT INTO game_state (key, value) VALUES ('matchState', 'idle')");
-  db.run("INSERT INTO game_state (key, value) VALUES ('season', '1')");
-  db.run("INSERT INTO game_state (key, value) VALUES ('cupRound', '0')");
-  db.run("INSERT INTO game_state (key, value) VALUES ('cupState', 'idle')");
-  // Sala nova arranca no amigável de pré-época (slot 0 do calendário v2).
-  db.run("INSERT INTO game_state (key, value) VALUES ('calendarIndex', '0')");
-  db.run("INSERT INTO game_state (key, value) VALUES ('calendarVersion', '2')");
-  db.run("INSERT INTO game_state (key, value) VALUES ('contractCutoverSeason', '1')");
-  // Marcador de versão das fixtures — usado pelo ensureSeeded.js para
-  // detetar quando o base.db está desatualizado (fixtures, seed ou schema novos).
-  // Tem de coincidir com templateHash() em ensureSeeded.js.
-  const fixturesHash = crypto
-    .createHash("sha256")
-    .update(
-      Buffer.concat([
-        fs.readFileSync(path.join(fixturesDir, "all_teams.json")),
-        fs.readFileSync(path.join(__dirname, "seed.js")),
-        fs.readFileSync(schemaPath),
-      ]),
-    )
-    .digest("hex");
-  db.run(
-    "INSERT OR REPLACE INTO game_state (key, value) VALUES ('fixtures_hash', ?)",
-    [fixturesHash],
-    (err) => {
-      if (err) console.error("[seed] fixtures_hash:", err.message);
-    },
-  );
-  // Marcador de escala 1–50 — evita que gameManager re-migre salas novas já na escala nova.
-  db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('scale_v2', '1')", (e) => {
-    if (e) console.error("[seed] scale_v2:", e.message);
-  });
-
-  insertManager.finalize();
-  insertTeam.finalize();
-  insertPlayer.finalize((err) => {
-    if (err) {
-      console.error("[seed] Error finalizing players:", err.message);
-      db.run("ROLLBACK", () => process.exit(1));
-      return;
+    const warned =
+      warnings.nameless + warnings.position + warnings.skill +
+      warnings.age + warnings.noStarEligible + warnings.emptyTeam.length;
+    if (warned > 0) {
+      console.warn(
+        `[seed] Fixtures com fallbacks — sem nome: ${warnings.nameless}, ` +
+          `posição: ${warnings.position}, skill: ${warnings.skill}, ` +
+          `idade: ${warnings.age}, sem craque elegível: ${warnings.noStarEligible}` +
+          (warnings.emptyTeam.length > 0 ? `, equipas vazias: ${warnings.emptyTeam.join(", ")}` : ""),
+      );
     }
-    // All seeded players start as "joined at matchweek 1" so agent renegotiations
-    // become eligible after 2 seasons (28 matchweeks) of gameplay.
-    db.run(
-      "UPDATE players SET joined_matchweek = 1 WHERE team_id IS NOT NULL",
-      (updateErr) => {
-        if (updateErr)
-          console.warn(
-            "[seed] joined_matchweek backfill failed:",
-            updateErr.message,
-          );
-        // Initial skill snapshots for all players (matchweek=1, season=1)
-        db.run(
-          `INSERT OR IGNORE INTO player_skill_snapshots (player_id, matchweek, season, skill)
-           SELECT id, 1, 1, skill FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL`,
-          (snapErr) => {
-            if (snapErr)
-              console.warn("[seed] skill snapshots failed:", snapErr.message);
-            db.run("COMMIT", (commitErr) => {
-              if (commitErr) {
-                console.error("[seed] COMMIT failed:", commitErr.message);
-                process.exit(1);
-              }
-              console.log("Base Seed complete.");
-              db.close(() => process.exit(0));
-            });
-          },
-        );
-      },
+
+    // Estado inicial do jogo.
+    const initialState = {
+      matchweek: "1",
+      matchState: "idle",
+      season: "1",
+      cupRound: "0",
+      cupState: "idle",
+      // Sala nova arranca no amigável de pré-época (slot 0 do calendário v2).
+      calendarIndex: "0",
+      calendarVersion: "2",
+      contractCutoverSeason: "1",
+      // Escala 1–50 — evita que o gameManager re-migre salas já na escala nova.
+      scale_v2: "1",
+    };
+    for (const [key, value] of Object.entries(initialState)) {
+      await run("INSERT INTO game_state (key, value) VALUES (?, ?)", [key, value]);
+    }
+    // Marcador de versão das fixtures — usado pelo ensureSeeded.js para
+    // detetar base.db desatualizado. Tem de cobrir os mesmos ficheiros que
+    // templateHash() em ensureSeeded.js.
+    const fixturesHash = crypto
+      .createHash("sha256")
+      .update(
+        Buffer.concat([
+          fs.readFileSync(path.join(fixturesDir, "all_teams.json")),
+          fs.readFileSync(path.join(__dirname, "seed.js")),
+          fs.readFileSync(path.join(__dirname, "seedEcon.js")),
+          fs.readFileSync(schemaPath),
+        ]),
+      )
+      .digest("hex");
+    await run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('fixtures_hash', ?)", [fixturesHash]);
+
+    // Jogadores semeados entram na jornada 1 (renegociações de agentes após
+    // 2 épocas) e com snapshot inicial de skill.
+    await run("UPDATE players SET joined_matchweek = 1 WHERE team_id IS NOT NULL");
+    await run(
+      `INSERT OR IGNORE INTO player_skill_snapshots (player_id, matchweek, season, skill)
+       SELECT id, 1, 1, skill FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL`,
     );
-  });
-});
+
+    await run("COMMIT");
+    console.log("[seed] Base Seed complete.");
+  } catch (err) {
+    try {
+      await run("ROLLBACK");
+    } catch (rollbackErr) {
+      console.error("[seed] ROLLBACK falhou:", rollbackErr.message);
+    }
+    console.error("[seed] FATAL:", err.message);
+    process.exit(1);
+  } finally {
+    await new Promise((resolve) => db.close(() => resolve()));
+  }
+}
+
+main();

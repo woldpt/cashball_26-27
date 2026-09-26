@@ -57,16 +57,21 @@ export const MAX_ATTENDANCE_BY_DIVISION: Record<number, number> = {
 export const STADIUM_UPKEEP_PER_SEAT_WEEK = 1.5;
 
 /**
- * Massa adepta inicial por divisão (novos clubes e base da migração).
- * Aproxima a procura típica: raramente limita de arranque, limita a expansão.
+ * Re-exportado de db/seedEcon.js (fonte única partilhada com a seed).
  */
-export const FANBASE_BY_DIVISION: Record<number, number> = {
-  1: 35000,
-  2: 15000,
-  3: 10000,
-  4: 7000,
-  5: 4000,
-};
+import {
+  FANBASE_BY_DIVISION as ECON_FANBASE,
+  BUDGET_BY_DIVISION as ECON_BUDGET,
+  SKILL_RANGE_BY_DIVISION as ECON_SKILL_RANGE,
+  WAGE_SEED_SPREAD as ECON_WAGE_SPREAD,
+  recalcPlayerValue as econRecalcPlayerValue,
+  fairWeeklyWage as econFairWeeklyWage,
+} from "./db/seedEcon.js";
+export const FANBASE_BY_DIVISION: Record<number, number> = ECON_FANBASE;
+export const BUDGET_BY_DIVISION: Record<number, number> = ECON_BUDGET;
+export const SKILL_RANGE_BY_DIVISION: Record<number, [number, number]> =
+  ECON_SKILL_RANGE;
+export const WAGE_SEED_SPREAD: number = ECON_WAGE_SPREAD;
 
 /**
  * Teto suave da massa adepta por divisão: sem subir de divisão não há
@@ -109,30 +114,17 @@ export const NPC_ACADEMY_COST = 500000;
 export const NPC_BUY_FLOOR_MARGIN = 10;
 
 /**
- * Valor de mercado base, derivado do skill (não-linear).
- * A elite vale desproporcionalmente mais: skill² × 500.
- * O termo linear (skill × 2000) e o piso fixo (€30.000) garantem que os
- * jogadores fracos (skills 5–15, divisões 4–5) rendem dinheiro às equipas
- * pequenas quando vendidos — sem inflacionar demasiado os craques da 1ª Liga.
- * Mesma fórmula usada na seed (seed.js) e no backfill do gameManager.
+ * Re-exportadas de db/seedEcon.js (fonte única partilhada com a seed).
  * O valor é recalculado sempre que o skill muda (treino, evolução, decaimento).
  */
-export function recalcPlayerValue(skill: number): number {
-  return Math.round(skill * skill * 500 + skill * 2000 + 30000);
-}
+export const recalcPlayerValue: (skill: number) => number =
+  econRecalcPlayerValue;
 
 /**
- * Salário semanal justo, derivado do skill (sub-linear).
- * Jogadores fracos (skill 5–15) ganham muito menos que os craques, mantendo
- * as folhas salariais das divisões baixas viáveis (a receita das equipas
- * pequenas escala com a divisão, não com o skill).
+ * Re-exportada de db/seedEcon.js (fonte única partilhada com a seed).
  * Âncoras: skill 10 → ~1000€/sem, skill 50 → ~8000€/sem.
- * Mesma fórmula usada na seed (seed.js) e no backfill do gameManager.
  */
-export function fairWeeklyWage(skill: number): number {
-  const s = Math.max(1, Math.round(skill || 0));
-  return Math.round(Math.pow(s, 1.292) * 51);
-}
+export const fairWeeklyWage: (skill: number) => number = econFairWeeklyWage;
 
 /**
  * Salário de assinatura para um novo contrato (compra / leilão / transferência NPC).

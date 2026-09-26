@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
+import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, WAGE_SEED_SPREAD, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
 import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
@@ -915,7 +915,8 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               },
             );
             // Rebalance salarial (one-shot, flag em game_state): cap salários
-            // acima de fairWeeklyWage(skill) × 1.15 (a variação ±15% da seed).
+            // acima de fairWeeklyWage(skill) × (1 + WAGE_SEED_SPREAD) (a
+            // variação da seed, canónica em db/seedEcon.js).
             // Só reduz, nunca aumenta. One-shot (não por load) porque salários
             // são negociáveis em jogo — renewals chegam a wage×1.25, e um cap
             // por load apagaria contratos legítimos após restart.
@@ -939,7 +940,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                       return;
                     }
                     for (const row of rows || []) {
-                      const cap = Math.round(fairWeeklyWage(row.skill) * 1.15);
+                      const cap = Math.round(fairWeeklyWage(row.skill) * (1 + WAGE_SEED_SPREAD));
                       if ((row.wage || 0) > cap) {
                         db.run(
                           "UPDATE players SET wage = ? WHERE id = ?",
