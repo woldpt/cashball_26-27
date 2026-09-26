@@ -1,249 +1,235 @@
+import { useMemo } from "react";
 import { readableColor } from "../utils/colorHelpers.js";
+import { TeamCrest } from "../components/shared/TeamCrest.jsx";
+import { Panel } from "../components/shared/Panel.jsx";
+import { EmptyState } from "../components/shared/EmptyState.jsx";
+import { TabBar } from "../components/shared/TabBar.jsx";
+import { Badge } from "../components/shared/Badge.jsx";
 
-function CrestCircle({ team, className = "w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-lg" }) {
-  if (team?.crest) {
-    return (
-      <>
-        <img
-          src={team.crest}
-          alt={team?.name || "crest"}
-          onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
-          className={`${className} rounded-full object-contain bg-white p-1 shrink-0 border border-white/10`}
-          loading="lazy"
-        />
-        <div className={`${className} rounded-full hidden items-center justify-center font-black shrink-0 border border-white/10`} style={{ background: team?.color_primary || "#333", color: team?.color_secondary || "#fff" }}>{team?.name?.[0] ?? "?"}</div>
-      </>
-    );
-  }
-  return <div className={`${className} rounded-full flex items-center justify-center font-black border border-white/10`} style={{ background: team?.color_primary || "#333", color: team?.color_secondary || "#fff" }}>{team?.name?.[0] ?? "?"}</div>;
+const CREST_SIZE = "w-9 h-9 text-xs sm:w-11 sm:h-11 sm:text-base";
+
+/**
+ * Linha de resultado em horizontal (brasão ao lado do nome), no espírito
+ * do PlayerRow: compacta e sem truncar nomes de forma agressiva.
+ */
+function ResultCard({ r, roundName, isFinal, hInfo, aInfo, isMyMatch }) {
+  const winnerInfo = r.winnerId === r.homeTeamId ? hInfo : aInfo;
+  const finalNote = r.decidedByPenalties
+    ? "Decidido nos penáltis"
+    : r.wentToET
+      ? "Após prolongamento"
+      : null;
+  return (
+    <div
+      className={`rounded-xl border overflow-hidden ${
+        isMyMatch
+          ? "border-primary/40 bg-primary/10"
+          : "border-outline-variant/25 bg-surface-container-low"
+      }`}
+    >
+      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3">
+        <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
+          <span
+            title={hInfo?.name || r.homeTeamId}
+            className="font-black text-sm text-right truncate min-w-0"
+            style={{ color: readableColor(hInfo?.color_primary) || "#fff" }}
+          >
+            {hInfo?.name || r.homeTeamId}
+          </span>
+          <TeamCrest team={hInfo} size={CREST_SIZE} />
+        </div>
+
+        <div className="flex flex-col items-center shrink-0">
+          <span className="text-xl sm:text-2xl font-black text-on-surface tabular-nums tracking-tight">
+            {r.homeGoals}–{r.awayGoals}
+          </span>
+          {r.decidedByPenalties && (
+            <span className="text-[10px] text-amber-400 font-bold tabular-nums">
+              ({r.penaltyHomeGoals}–{r.penaltyAwayGoals} g.p.)
+            </span>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <TeamCrest team={aInfo} size={CREST_SIZE} />
+          <span
+            title={aInfo?.name || r.awayTeamId}
+            className="font-black text-sm text-left truncate min-w-0"
+            style={{ color: readableColor(aInfo?.color_primary) || "#fff" }}
+          >
+            {aInfo?.name || r.awayTeamId}
+          </span>
+        </div>
+      </div>
+
+      {(isFinal || r.winnerId) && (
+        <div className="flex flex-wrap items-center gap-1.5 px-3 sm:px-4 pb-3">
+          <Badge variant="neutral" title={roundName}>
+            {roundName}
+          </Badge>
+          {finalNote && <Badge variant="warning">{finalNote}</Badge>}
+          {isFinal ? (
+            <Badge variant="warning">🏆 Campeão — {winnerInfo?.name}</Badge>
+          ) : (
+            r.winnerId && (
+              <Badge variant="info" title={winnerInfo?.name}>
+                ✓ {winnerInfo?.name}
+              </Badge>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
+/**
+ * @param {{
+ *   cupRoundResults?: { results?: object[], round?: number, roundName?: string, isFinal?: boolean }|null,
+ *   cupDraw?: { fixtures?: object[], roundName?: string, season?: string|number }|null,
+ *   me?: { teamId?: string }|null,
+ *   teams?: object[],
+ *   cupResultsFilter?: string,
+ *   setCupResultsFilter?: (f: string) => void,
+ * }} props
+ */
 export function CupTab({
   cupRoundResults,
   cupDraw,
   me,
-  teams,
-  cupResultsFilter,
+  teams = [],
+  cupResultsFilter = "all",
   setCupResultsFilter,
 }) {
+  // Lookup O(1) em vez de `teams.find` dentro do map.
+  const teamById = useMemo(
+    () => new Map((teams || []).map((t) => [t.id, t])),
+    [teams],
+  );
+  const myTeamId = me?.teamId;
+
+  if (!cupRoundResults && !cupDraw) {
+    return (
+      <EmptyState
+        emoji="🏆"
+        title="Sem dados de Taça disponíveis neste momento."
+        description="Os resultados da Taça aparecem aqui após cada eliminatória."
+      />
+    );
+  }
+
+  const allResults = cupRoundResults?.results || [];
+  const myResults = allResults.filter(
+    (r) => r.homeTeamId === myTeamId || r.awayTeamId === myTeamId,
+  );
+  // Se a equipa do utilizador já foi eliminada, ignorar o filtro "mine"
+  // para não prender o utilizador numa vista vazia.
+  const shown =
+    cupResultsFilter === "mine" && myResults.length > 0 ? myResults : allResults;
+  const competition =
+    cupRoundResults?.round === 0 ? "Amigável" : "Taça de Portugal";
+
   return (
-    <div className="space-y-6">
-      {!cupRoundResults && !cupDraw && (
-        <div className="bg-surface-container rounded-lg p-10 text-center">
-          <p className="text-4xl mb-3">🏆</p>
-          <p className="text-zinc-500 font-bold">
-            Sem dados de Taça disponíveis neste momento.
-          </p>
-        </div>
+    <div className="space-y-4">
+      {cupRoundResults && (
+        <Panel
+          icon="trophy"
+          title="Resultados"
+          meta={cupRoundResults.roundName}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <Badge variant="info">{competition}</Badge>
+            {myResults.length > 0 && (
+              <TabBar
+                tabs={[
+                  { key: "all", label: "Todos" },
+                  { key: "mine", label: "O meu jogo" },
+                ]}
+                active={cupResultsFilter}
+                onChange={setCupResultsFilter}
+              />
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {shown.map((r, idx) => (
+              <ResultCard
+                key={r.id ?? `${r.homeTeamId}-${r.awayTeamId}-${idx}`}
+                r={r}
+                roundName={cupRoundResults.roundName}
+                isFinal={cupRoundResults.isFinal}
+                hInfo={r.homeTeam || teamById.get(r.homeTeamId)}
+                aInfo={r.awayTeam || teamById.get(r.awayTeamId)}
+                isMyMatch={
+                  r.homeTeamId === myTeamId || r.awayTeamId === myTeamId
+                }
+              />
+            ))}
+          </div>
+        </Panel>
       )}
 
-      {cupRoundResults &&
-        (() => {
-          const allResults = cupRoundResults.results || [];
-          const myResults = allResults.filter(
-            (r) =>
-              r.homeTeamId === me.teamId || r.awayTeamId === me.teamId,
-          );
-          // If the user's team is not in this round (e.g. eliminated in a
-          // previous cup round), ignore the "mine" filter so the results
-          // are visible and the user isn't stuck on an empty view.
-          const shown =
-            cupResultsFilter === "mine" && myResults.length > 0
-              ? myResults
-              : allResults;
-          return (
-            <div>
-              <div className="flex flex-wrap gap-x-3 items-start justify-between mb-5">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-primary text-[10px] font-black uppercase tracking-widest">
-                      {cupRoundResults.round === 0 ? "Amigável" : "Taça de Portugal"}
-                    </span>
-                    <span className="text-zinc-500 text-xs font-semibold">
-                      {cupRoundResults.roundName}
-                    </span>
-                  </div>
-                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                    Resultados
-                  </h2>
-                </div>
-                {myResults.length > 0 && (
-                  <div className="flex rounded-lg border border-outline-variant/20 overflow-hidden text-xs font-black shrink-0">
-                    <button
-                      onClick={() => setCupResultsFilter("all")}
-                      className={`px-3 py-1.5 transition-colors ${cupResultsFilter === "all" ? "bg-primary text-on-primary" : "bg-surface text-zinc-400 hover:bg-surface-container"}`}
-                    >
-                      Todos
-                    </button>
-                    <button
-                      onClick={() => setCupResultsFilter("mine")}
-                      className={`px-3 py-1.5 transition-colors ${cupResultsFilter === "mine" ? "bg-primary text-on-primary" : "bg-surface text-zinc-400 hover:bg-surface-container"}`}
-                    >
+      {cupDraw && !cupRoundResults && (
+        <Panel
+          icon="trophy"
+          title={`Sorteio — ${cupDraw.roundName}`}
+          meta={`Taça de Portugal · ${cupDraw.season}`}
+        >
+          <div className="space-y-3">
+            {(cupDraw.fixtures || []).map((fixture, idx) => {
+              const hInfo = fixture.homeTeam;
+              const aInfo = fixture.awayTeam;
+              const isMine =
+                hInfo?.id === myTeamId || aInfo?.id === myTeamId;
+              return (
+                <div
+                  key={fixture.id ?? idx}
+                  className={`relative flex items-center gap-4 rounded-xl border px-5 py-3.5 ${
+                    isMine
+                      ? "border-amber-500/50 bg-amber-950/20"
+                      : "border-outline-variant/25 bg-surface-container-low"
+                  }`}
+                >
+                  {isMine && (
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-amber-500 rounded-full text-[10px] font-black text-black uppercase tracking-widest whitespace-nowrap">
                       O meu jogo
-                    </button>
+                    </span>
+                  )}
+                  <div className="flex-1 min-w-0 flex items-center justify-end gap-3">
+                    <span
+                      title={hInfo?.name || "?"}
+                      className="font-black text-sm text-right truncate min-w-0"
+                      style={{
+                        color: readableColor(hInfo?.color_primary) || "#fff",
+                      }}
+                    >
+                      {hInfo?.name || "?"}
+                    </span>
+                    <TeamCrest team={hInfo} size="w-9 h-9 text-sm" />
                   </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {shown.map((r, idx) => {
-                  const hInfo =
-                    r.homeTeam || teams.find((t) => t.id === r.homeTeamId);
-                  const aInfo =
-                    r.awayTeam || teams.find((t) => t.id === r.awayTeamId);
-                  const isWinnerHome = r.winnerId === r.homeTeamId;
-                  const isMyMatch =
-                    r.homeTeamId === me.teamId ||
-                    r.awayTeamId === me.teamId;
-                  const finalLabel = r.decidedByPenalties
-                    ? "Final (Grandes Pénaltis)"
-                    : r.wentToET
-                      ? "Final (Prolongamento)"
-                      : "Final";
-                  return (
-                    <div
-                      key={idx}
-                      className={`rounded-xl border overflow-hidden ${isMyMatch ? "border-primary/40" : "border-white/8"}`}
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-surface-bright border border-outline-variant/25 flex items-center justify-center">
+                    <span className="text-on-surface-variant text-[10px] font-black uppercase">
+                      vs
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0 flex items-center gap-3">
+                    <TeamCrest team={aInfo} size="w-9 h-9 text-sm" />
+                    <span
+                      title={aInfo?.name || "?"}
+                      className="font-black text-sm text-left truncate min-w-0"
+                      style={{
+                        color: readableColor(aInfo?.color_primary) || "#fff",
+                      }}
                     >
-                      <div
-                        className={`flex items-center justify-between px-4 py-2 ${isMyMatch ? "bg-primary/10" : "bg-white/3"}`}
-                      >
-                        <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
-                          {cupRoundResults.roundName}
-                        </span>
-                        {cupRoundResults.isFinal && (
-                          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-500/30">
-                            {finalLabel}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="px-3 sm:px-4 py-2.5 sm:py-5">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="flex-1 flex flex-col items-end gap-1.5">
-                            <CrestCircle team={hInfo} className="w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-lg" />
-                            <span
-                              className="font-black text-sm text-right truncate max-w-25"
-                              style={{
-                                color:
-                                  readableColor(hInfo?.color_primary) ||
-                                  "#fff",
-                              }}
-                            >
-                              {hInfo?.name || r.homeTeamId}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-col items-center shrink-0 gap-1">
-                            <span className="text-2xl sm:text-3xl font-black text-white tabular-nums tracking-tight">
-                              {r.homeGoals}{" "}
-                              <span className="text-zinc-600">–</span>{" "}
-                              {r.awayGoals}
-                            </span>
-                            {r.decidedByPenalties && (
-                              <span className="text-[10px] text-amber-400 font-bold">
-                                ({r.penaltyHomeGoals}–{r.penaltyAwayGoals} g.p.)
-                              </span>
-                            )}
-                            {r.winnerId && (
-                              <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/15 px-2 py-0.5 rounded mt-0.5">
-                                {cupRoundResults.isFinal
-                                  ? "🏆 Campeão"
-                                  : isWinnerHome
-                                    ? `✓ ${hInfo?.name?.split(" ")[0] || "Casa"}`
-                                    : `✓ ${aInfo?.name?.split(" ")[0] || "Fora"}`}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex-1 flex flex-col items-start gap-1.5">
-                            <CrestCircle team={aInfo} className="w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-lg" />
-                            <span
-                              className="font-black text-sm text-left truncate max-w-25"
-                              style={{
-                                color:
-                                  readableColor(aInfo?.color_primary) ||
-                                  "#fff",
-                              }}
-                            >
-                              {aInfo?.name || r.awayTeamId}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
-
-      {cupDraw &&
-        !cupRoundResults &&
-        (() => {
-          return (
-            <div>
-              <div className="mb-5">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-primary text-[10px] font-black uppercase tracking-widest">
-                    Taça de Portugal · {cupDraw.season}
-                  </span>
+                      {aInfo?.name || "?"}
+                    </span>
+                  </div>
                 </div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                  Sorteio — {cupDraw.roundName}
-                </h2>
-              </div>
-              <div className="space-y-3">
-                {(cupDraw.fixtures || []).map((fixture, idx) => {
-                  const hInfo = fixture.homeTeam;
-                  const aInfo = fixture.awayTeam;
-                  const isMine =
-                    hInfo?.id === me.teamId || aInfo?.id === me.teamId;
-                  return (
-                    <div
-                      key={idx}
-                      className={`relative flex items-center gap-4 rounded-xl border px-5 py-3.5 ${isMine ? "border-amber-500/50 bg-amber-950/20" : "border-white/8 bg-white/3"}`}
-                    >
-                      {isMine && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-amber-500 rounded-full text-[10px] font-black text-black uppercase tracking-widest whitespace-nowrap">
-                          O seu jogo
-                        </span>
-                      )}
-                      <div className="flex-1 min-w-0 flex items-center justify-end gap-3">
-                        <span
-                          className="font-black text-sm text-right truncate min-w-0"
-                          style={{
-                            color:
-                              readableColor(hInfo?.color_primary) || "#fff",
-                          }}
-                        >
-                          {hInfo?.name || "?"}
-                        </span>
-                        <CrestCircle team={hInfo} className="w-9 h-9 text-sm" />
-                      </div>
-                      <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center">
-                        <span className="text-zinc-500 text-[10px] font-black uppercase">vs</span>
-                      </div>
-                      <div className="flex-1 min-w-0 flex items-center gap-3">
-                        <CrestCircle team={aInfo} className="w-9 h-9 text-sm" />
-                        <span
-                          className="font-black text-sm text-left truncate min-w-0"
-                          style={{
-                            color:
-                              readableColor(aInfo?.color_primary) || "#fff",
-                          }}
-                        >
-                          {aInfo?.name || "?"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
+              );
+            })}
+          </div>
+        </Panel>
+      )}
     </div>
   );
 }

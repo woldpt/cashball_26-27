@@ -1838,3 +1838,9 @@ Plano C1+C2 (quando fizer):
 ## fixtures.js — guards + JSDoc + Map (2026-09-26)
 - `client/src/utils/fixtures.js`: guards de inputs (não-array→`[]`, filtra IDs não-inteiros, `matchweek` não-finita→`[]`, `Math.floor` + módulo seguro contra `%` negativo que gerava `undefined`), `Map` pré-calculado em vez de `indexOf` no ciclo, JSDoc (exigido no frontend); algoritmo e paridade com `server/game/engine.ts` intactos.
 - Checks: `check:types` OK; eslint limpo no ficheiro (2 erros pré-existentes noutros, `GameContext.jsx` intocado); `test:calendarsquad` FAIL em MW7 pré-existente (confirmado via `git stash`, falha igual sem a mudança).
+
+## CupTab — migração STYLE.md + TeamCrest partilhado (2026-09-26)
+- Novo `client/src/components/shared/TeamCrest.jsx`: fonte única do brasão com fallback (antes duplicado em `CupTab` e `CupDrawPopup`), fallback por estado React (`failedCrest`, sem `useEffect` — o lint `set-state-in-effect` exigiu; sem manipular DOM no `onError`, mesmo padrão do fix TeamHistoryView), prop `revealed` para o sorteio.
+- `CupTab.jsx` reescrito na apresentação (lógica de filtros intacta): `EmptyState` / `Panel` / `TabBar` / `Badge` (§10), tokens em vez de `zinc/white` hardcoded, tipografia com `font-headline`, cartão de resultado em linha horizontal (brasão ao lado do nome) sem `truncate` agressivo (`title` nos nomes), vencedor com nome completo (não `split(" ")[0]`), etiqueta "Final" sem duplicação, "O meu jogo" uniformizado, `me?.teamId`, `key` estável, `teams.find` → `Map` + `useMemo`.
+- `CupDrawPopup.jsx`: `TeamCrestIcon` local apagado, usa `TeamCrest` (resto do popup intocado — fora do âmbito).
+- Checks: `check:types`/JSDoc OK; lint limpo nos 3 ficheiros (2 erros pré-existentes noutros, confirmados em ficheiros não tocados); `test:mobile` 165/165 e `test:mobile:landscape` 198/198 PASS.

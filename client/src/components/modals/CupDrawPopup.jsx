@@ -1,5 +1,6 @@
 import { socket } from "../../socket.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
+import { TeamCrest } from "../shared/TeamCrest.jsx";
 import { Button } from "../shared/Button.jsx";
 import { MODAL_Z } from "../../constants/index.js";
 import { isDarkColor } from "../live/liveHelpers.js";
@@ -13,60 +14,6 @@ function teamNameColor(team) {
   return team?.color_primary && !isDarkColor(team.color_primary)
     ? team.color_primary
     : "#fff";
-}
-
-/**
- * Ícone de equipa: crest com fallback para inicial (mesmo padrão das
- * restantes páginas do jogo); círculo neutro enquanto não revelado.
- * @param {{ team: object|null, revealed: boolean }} props
- */
-function TeamCrestIcon({ team, revealed }) {
-  const initial = team?.name?.[0] ?? "?";
-  if (!revealed) {
-    return (
-      <div
-        className="w-8 h-8 rounded-full shrink-0 border border-white/10"
-        style={{ background: "#27272a" }}
-      />
-    );
-  }
-  if (team?.crest) {
-    return (
-      <>
-        <img
-          src={team.crest}
-          alt={team?.name || "crest"}
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-            const fb = e.currentTarget.nextElementSibling;
-            if (fb) fb.style.display = "flex";
-          }}
-          className="w-8 h-8 rounded-full object-contain bg-white p-1 shrink-0 border border-white/10"
-          loading="lazy"
-        />
-        <div
-          className="w-8 h-8 rounded-full hidden items-center justify-center font-black text-xs shrink-0 border border-white/10"
-          style={{
-            background: team?.color_primary || "#333",
-            color: team?.color_secondary || "#fff",
-          }}
-        >
-          {initial}
-        </div>
-      </>
-    );
-  }
-  return (
-    <div
-      className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 border border-white/10"
-      style={{
-        background: team?.color_primary || "#333",
-        color: team?.color_secondary || "#fff",
-      }}
-    >
-      {initial}
-    </div>
-  );
 }
 
 /**
@@ -174,7 +121,7 @@ export function CupDrawPopup({
                     </span>
                   )}
                 </div>
-                <TeamCrestIcon team={fixture.homeTeam} revealed={homeRevealed} />
+                <TeamCrest team={fixture.homeTeam} revealed={homeRevealed} size="w-8 h-8 text-xs" />
               </div>
 
               {/* VS badge */}
@@ -190,7 +137,7 @@ export function CupDrawPopup({
                   awayRevealed ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <TeamCrestIcon team={fixture.awayTeam} revealed={awayRevealed} />
+                <TeamCrest team={fixture.awayTeam} revealed={awayRevealed} size="w-8 h-8 text-xs" />
                 <div className="min-w-0">
                   <span
                     className="block font-black text-xs truncate"
