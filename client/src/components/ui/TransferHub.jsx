@@ -3,8 +3,9 @@
  * Estilo cromo face única idêntico ao AuctionCard: faixa por posição,
  * herói com halo + skill, tiles Forma/Jogos/Golos e rodapé de ação único.
  */
-import { useContext, useMemo, useState } from "react";
+import { memo, useContext, useMemo, useState } from "react";
 import { GameContext } from "../../contexts/GameContext.jsx";
+import { formatCurrency } from "../../utils/formatters.js";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { Badge } from "../shared/Badge.jsx";
@@ -21,14 +22,6 @@ import {
   POSITION_ACCENT_HEX,
 } from "../../constants/index.js";
 
-/** @param {number} value */
-function fmt(value) {
-  return new Intl.NumberFormat("pt-PT", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value || 0);
-}
 
 function statusConfig(status) {
   if (status === "auction") return { label: "Leilão", variant: "info" };
@@ -157,13 +150,13 @@ function TransferRow({ rec, teams = [], onOpenPlayer }) {
         </p>
       </div>
       <p className="shrink-0 font-mono font-black tabular-nums text-sm short:text-xs text-emerald-400">
-        {fmt(rec.amount || 0)}
+        {formatCurrency(rec.amount || 0)}
       </p>
     </div>
   );
 }
 
-function MarketCard({
+const MarketCard = memo(function MarketCard({
   player,
   budget,
   me,
@@ -172,22 +165,16 @@ function MarketCard({
   isSameTeamId,
   onOpenDetails,
   onBuy,
-  onBid,
   onAuction,
   onRemove,
   setGameDialog,
-  matchweekCount,
+  nowIdx,
 }) {
   const price = player.marketPrice ?? 0;
   const affordable = budget >= price;
   const status = statusConfig(player.transfer_status);
-  const isAuction = player.transfer_status === "auction";
-  const isFixed = player.transfer_status === "fixed";
-  const isListed = isAuction || isFixed;
-  const isMyAuction = isSameTeamId(player.auction_seller_team_id, me?.teamId);
+  const isListed = player.transfer_status === "fixed";
   const isOwn = isSameTeamId(player.team_id, me?.teamId);
-  const ctxIdx = useContext(GameContext)?.calendarIndex;
-  const nowIdx = ctxIdx ?? matchweekCount;
   const isSuspended = (player.suspension_until_matchweek ?? 0) > nowIdx;
   const isInjured = (player.injury_until_matchweek ?? 0) > nowIdx;
 
@@ -205,20 +192,10 @@ function MarketCard({
     : sellerName || "Sem clube";
 
   const formVal = player.form ?? 32;
-  const formMood = formVal >= 41 ? "💪" : formVal <= 22 ? "😩" : "👍";
   const formClass = formVal >= 41 ? "text-emerald-400" : formVal <= 22 ? "text-rose-400" : "text-zinc-200";
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpenDetails(player)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpenDetails(player);
-        }
-      }}
+    <article
       className={`relative flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[player.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg cursor-pointer ${POSITION_GLOW_CLASS[player.position] || ""}`}
     >
       {/* Faixa da posição */}
@@ -301,9 +278,14 @@ function MarketCard({
             {player.skill ?? 0}
           </span>
         </div>
-        <p className="mt-2 short:mt-1 font-headline font-black text-on-surface text-base short:text-sm leading-tight truncate max-w-full">
+        <button
+          type="button"
+          onClick={() => onOpenDetails(player)}
+          title="Ver detalhes do jogador"
+          className="mt-2 short:mt-1 font-headline font-black text-on-surface text-base short:text-sm leading-tight truncate max-w-full bg-transparent cursor-pointer hover:underline underline-offset-2"
+        >
           {player.name}
-        </p>
+        </button>
         <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
           {[player.nationality, countryName].filter(Boolean).join(" · ")}
         </p>
@@ -314,7 +296,7 @@ function MarketCard({
         <div className="min-w-0">
           <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">Preço</p>
           <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base ${affordable ? "text-on-surface" : "text-rose-400"}`}>
-            {fmt(price)}
+            {formatCurrency(price)}
           </p>
           <p className="text-[9px] text-zinc-500 truncate max-w-[130px]">
             {isListed ? (affordable ? "disponível" : "saldo insuficiente") : "sem lista"}
@@ -322,16 +304,14 @@ function MarketCard({
         </div>
         <div className="text-right shrink-0">
           <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/60">Salário/sem</p>
-          <p className="font-mono text-[11px] text-zinc-300 tabular-nums">{fmt(player.wage || 0)}</p>
+          <p className="font-mono text-[11px] text-zinc-300 tabular-nums">{formatCurrency(player.wage || 0)}</p>
         </div>
       </div>
 
       {/* Mini-stats */}
       <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
         <StatTile label="Forma">
-          <span className={`tabular-nums ${formClass}`}>
-            {formMood} {formVal}
-          </span>
+          <span className={`tabular-nums font-bold ${formClass}`}>{formVal}</span>
         </StatTile>
         <StatTile label="RES">
           <span
@@ -390,25 +370,6 @@ function MarketCard({
           <div className="rounded-lg py-2 text-center border border-outline-variant/15 bg-surface/40">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sem transferência</p>
           </div>
-        ) : isAuction ? (
-          isMyAuction ? (
-            <div className="rounded-lg py-2 text-center border border-indigo-500/25 bg-indigo-500/10">
-              <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">O teu leilão</p>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onBid(player);
-              }}
-              disabled={!affordable}
-              className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ background: posHex, color: "#0d0d14" }}
-            >
-              Licitar · {fmt(price)}
-            </button>
-          )
         ) : (
           <button
             type="button"
@@ -417,7 +378,7 @@ function MarketCard({
               setGameDialog({
                 mode: "confirm",
                 title: `Comprar ${player.name}`,
-                description: `${player.position} · Qualidade ${player.skill} · Preço: ${fmt(price)}`,
+                description: `${player.position} · Qualidade ${player.skill} · Preço: ${formatCurrency(price)}`,
                 confirmLabel: "Confirmar Compra",
                 onConfirm: () => onBuy(player.id),
                 onCancel: () => {},
@@ -427,13 +388,13 @@ function MarketCard({
             className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ background: posHex, color: "#0d0d14" }}
           >
-            {affordable ? `Comprar · ${fmt(price)}` : "Saldo insuficiente"}
+            {affordable ? `Comprar · ${formatCurrency(price)}` : "Saldo insuficiente"}
           </button>
         )}
       </div>
-    </div>
+    </article>
   );
-}
+});
 
 /**
  * @param {{
@@ -452,7 +413,6 @@ function MarketCard({
  *   buyPlayer: function,
  *   listPlayerAuction: function,
  *   removeFromTransferList: function,
- *   openAuctionBid: function,
  *   onOpenPlayerHistory: function,
  *   setGameDialog: function,
  *   matchweekCount: number,
@@ -474,12 +434,12 @@ export function TransferHub({
   buyPlayer,
   listPlayerAuction,
   removeFromTransferList,
-  openAuctionBid,
   onOpenPlayerHistory,
   setGameDialog,
   matchweekCount = 0,
 }) {
   const [search, setSearch] = useState("");
+  const nowIdx = useContext(GameContext)?.calendarIndex ?? matchweekCount;
 
   const teamColorById = useMemo(() => {
     const map = new Map();
@@ -512,7 +472,7 @@ export function TransferHub({
 
   return (
     <div className="flex flex-col gap-4 short:gap-2">
-    <Panel title="Mercado de Transferências" meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""}`}>
+    <Panel title="Mercado de Transferências" meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""} · ${formatCurrency(budget)}`}>
       <div className="p-3 md:p-4 short:p-2">
         {/* Search + filters */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 short:gap-1.5 mb-4 short:mb-2">
@@ -579,11 +539,10 @@ export function TransferHub({
                 isSameTeamId={isSameTeamId}
                 onOpenDetails={onOpenPlayerHistory}
                 onBuy={buyPlayer}
-                onBid={openAuctionBid}
                 onAuction={listPlayerAuction}
                 onRemove={removeFromTransferList}
                 setGameDialog={setGameDialog}
-                matchweekCount={matchweekCount}
+                nowIdx={nowIdx}
               />
             ))}
           </div>
@@ -597,8 +556,8 @@ export function TransferHub({
         title="Histórico de Transferências"
         meta={`${historyRecords.length} ${historyRecords.length === 1 ? "transferência" : "transferências"}`}
       >
-        <div className="flex flex-col gap-1.5">
-          {historyRecords.map((rec, i) => (
+        <div className="flex flex-col gap-1.5 max-h-80 overflow-y-auto pr-1">
+          {historyRecords.slice(0, 12).map((rec, i) => (
             <TransferRow
               key={rec.id ?? `${rec.player_id}-${rec.amount}-${i}`}
               rec={rec}

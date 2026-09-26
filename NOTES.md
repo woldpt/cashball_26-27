@@ -1798,3 +1798,11 @@ Plano C1+C2 (quando fizer):
 - Nota: lance vencedor num leilão onde já se lidera é bloqueado? Não — AuctionCard esconde o form a quem lidera; o modal da scout mostra "tu lideras" mas permite sobre-lance (servidor valida). Diferença consciente, coerente com "modal = lance manual".
 - WIP paralela noutra sessão tocou os mesmos ficheiros de constantes/imports — commits separados (`a7afb16a`, `1dbb12e2`) contêm só as mudanças da scout; ao fundir, confirmar que `POSITION_ACCENT_HEX`/`isSameTeamId` continuam nos paths usados.
 - Checks: server typecheck + audit:socketio (0 erros, 97 warnings pré-existentes) + test:connect-smoke OK; client lint (2 erros pré-existentes) + check:types + JSDoc OK; test:mobile portrait 160/160 e landscape 12/12 (com `--concurrency 2` — a 10 dá flake ERR_CONNECTION_REFUSED com dev server paralelo).
+
+## TransferHub — correções código + UX (2026-09-26)
+- `TransferHub.jsx` (único ficheiro): `calendarIndex` elevado ao pai (1 subscrição em vez de N), `fmt` local → `formatCurrency`, `MarketCard` em `memo`.
+- Ramo-morto de leilão apagado (Hipótese A): `visible` exclui `auction`, por isso `isAuction/isMyAuction/onBid/Licitar` nunca corriam; prop `openAuctionBid` removida (GameRoutes continua a passá-la — inofensiva).
+- Acessibilidade: wrapper `div role="button"` → `article`; detalhes abrem só no botão do nome (teclado incluído, sem interativos aninhados).
+- Forma sem emojis (só número + cor semântica; `BadgeSkills` completo duplicaria skill/RES já visíveis).
+- UX: orçamento no `meta` do Panel; histórico limitado às últimas 12 com scroll (`max-h-80`).
+- Checks: `check:types` OK; `lint` só os 2 erros pré-existentes (confirmado via `git stash`); `test:mobile` portrait 160/160 e landscape 192/192 PASS.
