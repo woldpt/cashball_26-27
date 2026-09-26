@@ -1,139 +1,84 @@
-export const playNotification = () => {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    [880, 1100].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.13);
-      gain.gain.setValueAtTime(0.07, ctx.currentTime + i * 0.13);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + i * 0.13 + 0.22,
-      );
-      osc.start(ctx.currentTime + i * 0.13);
-      osc.stop(ctx.currentTime + i * 0.13 + 0.22);
-    });
-  } catch {
-    // ignore
-  }
+let _ctx = null;
+
+const getCtx = () => {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!_ctx) _ctx = new AC();
+  if (_ctx.state === "suspended") _ctx.resume().catch(() => {});
+  return _ctx;
 };
 
-// Som especial para golos — mais grave, forte e memorável
-export const playGoalSound = () => {
+const playSequence = (sequence, type) => {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Sequência: nota curta de impacto + nota longa de celebração
-    const sequence = [
-      { freq: 523, time: 0, dur: 0.12, vol: 0.25 }, // Dó
-      { freq: 659, time: 0.1, dur: 0.12, vol: 0.22 }, // Mi
-      { freq: 784, time: 0.2, dur: 0.35, vol: 0.28 }, // Sol (nota de celebração)
-    ];
+    const ctx = getCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
     sequence.forEach(({ freq, time, dur, vol }) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
-      gain.gain.setValueAtTime(vol, ctx.currentTime + time);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + time + dur,
-      );
-      osc.start(ctx.currentTime + time);
-      osc.stop(ctx.currentTime + time + dur);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now + time);
+      gain.gain.setValueAtTime(vol, now + time);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + time + dur);
+      osc.start(now + time);
+      osc.stop(now + time + dur);
     });
   } catch {
     // ignore
   }
 };
 
+export const playNotification = () =>
+  playSequence(
+    [
+      { freq: 880, time: 0, dur: 0.22, vol: 0.07 },
+      { freq: 1100, time: 0.13, dur: 0.22, vol: 0.07 },
+    ],
+    "sine",
+  );
+
+// Som especial para golos — mais grave, forte e memorável
+export const playGoalSound = () =>
+  playSequence(
+    [
+      { freq: 523, time: 0, dur: 0.12, vol: 0.25 }, // Dó
+      { freq: 659, time: 0.1, dur: 0.12, vol: 0.22 }, // Mi
+      { freq: 784, time: 0.2, dur: 0.35, vol: 0.28 }, // Sol (nota de celebração)
+    ],
+    "triangle",
+  );
+
 // Fanfarra para contratação de jogador — arpejo ascendente festivo
-export const playSigningSound = () => {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const sequence = [
+export const playSigningSound = () =>
+  playSequence(
+    [
       { freq: 523, time: 0, dur: 0.14, vol: 0.16 }, // Dó
       { freq: 659, time: 0.11, dur: 0.14, vol: 0.18 }, // Mi
       { freq: 784, time: 0.22, dur: 0.14, vol: 0.2 }, // Sol
       { freq: 1046, time: 0.33, dur: 0.42, vol: 0.24 }, // Dó agudo (celebração)
-    ];
-    sequence.forEach(({ freq, time, dur, vol }) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
-      gain.gain.setValueAtTime(vol, ctx.currentTime + time);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + time + dur,
-      );
-      osc.start(ctx.currentTime + time);
-      osc.stop(ctx.currentTime + time + dur);
-    });
-  } catch {
-    // ignore
-  }
-};
+    ],
+    "triangle",
+  );
 
 // Som de vaia dos adeptos após derrota — drone descendente grave e curto
-export const playBooSound = () => {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const sequence = [
+export const playBooSound = () =>
+  playSequence(
+    [
       { freq: 330, time: 0, dur: 0.2, vol: 0.14 },
       { freq: 262, time: 0.16, dur: 0.24, vol: 0.16 },
       { freq: 196, time: 0.34, dur: 0.55, vol: 0.18 },
-    ];
-    sequence.forEach(({ freq, time, dur, vol }) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
-      gain.gain.setValueAtTime(vol, ctx.currentTime + time);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + time + dur,
-      );
-      osc.start(ctx.currentTime + time);
-      osc.stop(ctx.currentTime + time + dur);
-    });
-  } catch {
-    // ignore
-  }
-};
+    ],
+    "sawtooth",
+  );
 
 // Som descendente para golo anulado pelo VAR
-export const playVarSound = () => {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const sequence = [
+export const playVarSound = () =>
+  playSequence(
+    [
       { freq: 440, time: 0, dur: 0.16, vol: 0.11 },
       { freq: 330, time: 0.15, dur: 0.32, vol: 0.09 },
-    ];
-    sequence.forEach(({ freq, time, dur, vol }) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
-      gain.gain.setValueAtTime(vol, ctx.currentTime + time);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + time + dur,
-      );
-      osc.start(ctx.currentTime + time);
-      osc.stop(ctx.currentTime + time + dur);
-    });
-  } catch {
-    // ignore
-  }
-};
+    ],
+    "sine",
+  );

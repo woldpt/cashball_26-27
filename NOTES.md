@@ -2055,3 +2055,8 @@ Plano C1+C2 (quando fizer):
 - Fase 5: `generateCupDraw` com 1 INSERT em lote (como o amigável); `catch {}` do espelho do sorteio no Jornal passa a `console.error`; `catch {}` médicos (2×) mantidos — silêncio intencional.
 - Pausa intermédia: edição concorrente noutros ficheiros (commit e4b5df20) — retomado após confirmação de árvore limpa.
 - Checks finais: `typecheck` OK, `audit:gamestate V5AUDIT` 0 erros, `audit:socketio` 0 erros + `test:connect-smoke` OK (Fase 1).
+
+## audio.js — deduplicação + contexto partilhado (2026-09-26)
+- `getCtx()` partilhado (1 `AudioContext`, `resume()` se `suspended`); `playSequence(seq, type)` único; 5 exports mantêm assinatura e frequências/volumes.
+- Corrige fuga de contexto por chamada (browsers limitam a ~6) e duplicação ~80%.
+- Checks: eslint sem erros no ficheiro (2 erros pré-existentes noutros — confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (sem mudança de layout) nem audits (sem lógica de jogo).
