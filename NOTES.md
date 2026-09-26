@@ -1,3 +1,9 @@
+## TrainingPage: timeout-fallback nos emits + agrupamento único (2026-09-26)
+
+- Review 8/10 do `client/src/components/ui/TrainingPage.jsx` → dois fixes de código (UI intocada). Novo helper `emitWithTimeout(event, args, ms)` local: se o servidor nunca ackar, resolve `null` em vez de pendurar — usado nos 3 emits (`getTrainingFocus`, `getTrainingHistory`, `setTrainingFocus`), apagando o fallback ad-hoc de 4 s que só existia no set. Os dois gets tinham esse buraco: servidor morto = página eterna em «Nenhum»/vazio sem erro.
+- Agrupamento do histórico numa só passagem: `orderedGroups` (posição → players via `groupByPlayer`, ordenado GR→ATA + desconhecidas no fim); `visiblePlayerCount` = soma dos players de `orderedGroups` — relatório e widget derivam da mesma estrutura, nunca divergem. Fora as 3 estruturas paralelas (`historyByPosition` fica, mas `orderedPositions` + Set/filter duplicado desaparecem; −8 linhas líquidas).
+- Checks: `lint` só os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx` — confirmado por stash) · `check:types` OK. Só JS/lógica → sem mobile-resp-check.
+
 ## Limpeza do JournalTab (2026-09-26)
 
 - Plano `docs/plans/journaltab-cleanup.md` executado na íntegra. Só `client/src/views/JournalTab.jsx` (1038→990 linhas): fora `estimateReadTime`, `ReadingProgressBar`, `animate-pulse`, `aria-live` e emojis 📅⏱️; `LINK_CLS` + `TABLE_WRAP/CLS` + `THEAD_ROW_CLS` eliminam as classes repetidas; `RichParagraphs` com um só ramo de fallback; `getSnippet` sem corte aos 80; `selected` desestruturado em todo o detalhe.

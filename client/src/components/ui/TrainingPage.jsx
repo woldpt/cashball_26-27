@@ -26,6 +26,26 @@ function trainingFocusKey(roomCode) {
 }
 
 /**
+ * socket.emit com fallback de timeout — se o servidor nunca ackar,
+ * invoca o resolve com null em vez de deixar a UI pendurada.
+ * Substitui o timeout ad-hoc que só existia no setTrainingFocus.
+ * @template T
+ * @param {string} event
+ * @param {any[]} args
+ * @param {number} [ms]
+ * @returns {Promise<T|null>}
+ */
+function emitWithTimeout(event, args, ms = 3000) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    socket.emit(event, ...args, (result) => {
+      clearTimeout(timer);
+      resolve(result ?? null);
+    });
+  });
+}
+
+/**
  * @param {string} [roomCode]
  */
 function readStoredTrainingFocus(roomCode) {
@@ -329,20 +349,23 @@ export function TrainingPage({ me, matchweek }) {
   useEffect(() => {
     if (!me?.teamId) return;
 
-    socket.emit("getTrainingFocus", (focus) => {
-      setSavedTraining(focus);
-      setSelectedTraining(focus);
-    });
-
-    // Pass null → backend returns history for the latest event with rows
-    socket.emit("getTrainingHistory", null, (history) => {
-      setTrainingHistory(history || []);
-      if (history && history.length > 0 && history[0].calendar_index != null) {
-        setHistoryCalendarIndex(history[0].calendar_index);
-      } else {
-        setHistoryCalendarIndex(null);
+    let alive = true;
+    (async () => {
+      const [focus, history] = await Promise.all([
+        emitWithTimeout("getTrainingFocus", []),
+        emitWithTimeout("getTrainingHistory", [null]),
+      ]);
+      if (!alive) return;
+      if (focus != null) {
+        setSavedTraining(focus);
+        setSelectedTraining(focus);
       }
-    });
+      setTrainingHistory(history || []);
+      setHistoryCalendarIndex(history?.[0]?.calendar_index ?? null);
+    })();
+    return () => {
+      alive = false;
+    };
   }, [me?.teamId, matchweek]);
 
   const savedTimeoutRef = useRef(null);
@@ -366,31 +389,19 @@ export function TrainingPage({ me, matchweek }) {
     };
   }, [me?.teamId]);
 
-  const handleSetTraining = (trainingKey) => {
+  const handleSetTraining = async (trainingKey) => {
     if (!me?.teamId) return;
     setLoading(true);
     setError("");
 
-    let cleared = false;
-    const clearLoading = () => {
-      if (cleared) return;
-      cleared = true;
-      setLoading(false);
-    };
-
-    // Fallback in case the server never acks (avoid permanently disabled buttons)
-    const fallback = setTimeout(clearLoading, 4000);
-
-    socket.emit("setTrainingFocus", trainingKey, (ok) => {
-      clearTimeout(fallback);
-      if (ok) {
-        setSelectedTraining(trainingKey);
-        setSavedTraining(trainingKey);
-      } else {
-        setError("Erro ao guardar foco de treino.");
-      }
-      clearLoading();
-    });
+    const ok = await emitWithTimeout("setTrainingFocus", [trainingKey], 4000);
+    if (ok) {
+      setSelectedTraining(trainingKey);
+      setSavedTraining(trainingKey);
+    } else {
+      setError("Erro ao guardar foco de treino.");
+    }
+    setLoading(false);
   };
 
   // Group history by position
@@ -402,23 +413,28 @@ export function TrainingPage({ me, matchweek }) {
     historyByPosition[record.position].push(record);
   });
 
-  // Jogadores com pelo menos uma mudança real de atributo — os únicos que o
-  // relatório consegue mostrar (groupByPlayer ignora linhas sem mudança).
-  // O widget usa a mesma contagem para não divergir do relatório.
-  const visiblePlayerCount = new Set(
-    trainingHistory
-      .filter((r) => r.new_value !== r.old_value)
-      .map((r) => r.player_id),
-  ).size;
-
   // Grupos pela ordem canónica do plantel (GR→ATA); posições desconhecidas
   // (se alguma vez existirem) caem para o fim em vez de desaparecer.
-  const orderedPositions = [
-    ...POSITION_ORDER.filter((pos) => historyByPosition[pos]),
+  // Uma única passagem de agrupamento — o relatório e o widget derivam da
+  // mesma estrutura, por isso nunca divergem.
+  const orderedGroups = [
+    ...POSITION_ORDER,
     ...Object.keys(historyByPosition).filter(
       (pos) => !POSITION_ORDER.includes(pos),
     ),
-  ];
+  ]
+    .map((position) => ({
+      position,
+      players: groupByPlayer(historyByPosition[position]),
+    }))
+    .filter((g) => g.players.length > 0);
+
+  // Jogadores com pelo menos uma mudança real de atributo (o mesmo
+  // critério do groupByPlayer) — contador do widget.
+  const visiblePlayerCount = orderedGroups.reduce(
+    (sum, g) => sum + g.players.length,
+    0,
+  );
 
   // Resolve border accent do foco atual
   const focusStyle = savedTraining ? getMeta(savedTraining) : null;
@@ -548,13 +564,10 @@ export function TrainingPage({ me, matchweek }) {
             />
           ) : (
             <div className="space-y-5 short:space-y-3">
-              {orderedPositions.map((position) => {
-                const records = historyByPosition[position];
+              {orderedGroups.map(({ position, players }) => {
                 const posText =
                   POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
                 const posLabel = POSITION_LABELS[position] || position;
-                const players = groupByPlayer(records);
-                if (players.length === 0) return null;
 
                 return (
                   <div key={position} className="space-y-2 short:space-y-1">
