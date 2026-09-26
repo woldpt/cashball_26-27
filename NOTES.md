@@ -2157,3 +2157,8 @@ Plano C1+C2 (quando fizer):
 ## Copy do hero alinhada com o sorteio (2026-09-26)
 - O jogo atribui o clube por sorteio (`WelcomeModal` "🎲 Sorteio"); o hero dizia "Escolhe o clube". Corrigido para "O sorteio dá-te o clube…".
 - Checks: eslint + check:types verdes (só copy). Versão → `v26.09.7`.
+
+## Stars: só estrelas reais, sem apagadas nem número (2026-09-26)
+- Pedido: nas classificações só as estrelas reais; resto apagado e número fora. Grill com 4 perguntas → âmbito global, só estrelas, meia-estrela real (`⯪`), `0`/ausente vira `—`.
+- Só `client/src/components/shared/Stars.jsx` (4 chamadores herdam: `PitchFormation`, `PostMatchPitch`, `PlayerRow`, `PlayerHistoryModal`); `hideValue` mantido por compatibilidade (`void` para o lint não queixar).
+- Checks: eslint limpo no ficheiro (2 erros globais pré-existentes noutros ficheiros) · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check.
