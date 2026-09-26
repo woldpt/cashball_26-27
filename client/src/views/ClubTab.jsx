@@ -1,34 +1,39 @@
 import { useState, useMemo, useEffect } from "react";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
-import { DIVISION_NAMES } from "../constants/index.js";
+import { DIVISION_NAMES, WAGE_CAP } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 
-const INCOME_TYPES = new Set([
-  "transfer_out",
-  "weekly_income",
-  "ticket_revenue",
-  "loan_take",
-  "prize",
-]);
-
-const WAGE_CAP = 500000;
-
-const NEWS_ICONS = {
+/**
+ * Apresentação das notícias por tipo — mapa único.
+ * `credit` = caixa entra (+ verde); `label` = rótulo do montante.
+ * O ícone descreve o movimento de plantel, não de caixa:
+ * `transfer_out` é vermelho (jogador sai) mas `credit: true` (dinheiro entra).
+ */
+const NEWS_TYPES = {
   transfer_in: {
+    credit: false,
+    label: "Compra",
     bg: "bg-emerald-500/15",
     text: "text-emerald-400",
     icon: "trending_up",
   },
   transfer_out: {
+    credit: true,
+    label: "Venda",
     bg: "bg-error/15",
     text: "text-error",
     icon: "trending_down",
   },
+  weekly_income: { credit: true },
+  ticket_revenue: { credit: true },
+  loan_take: { credit: true },
+  prize: { credit: true },
   default: {
+    credit: false,
     bg: "bg-surface-container-high",
     text: "text-on-surface-variant",
     icon: "info",
@@ -36,14 +41,13 @@ const NEWS_ICONS = {
 };
 
 function NewsRow({ news }) {
-  const { bg, text, icon } =
-    NEWS_ICONS[news?.type] ?? NEWS_ICONS.default;
+  const t = { ...NEWS_TYPES.default, ...NEWS_TYPES[news?.type] };
   return (
     <div className="px-4 short:px-3 py-3 short:py-1.5 flex items-center gap-3 short:gap-2 hover:bg-white/[0.03] transition-colors">
       {/* Icon */}
-      <div className={`w-8 h-8 short:w-6 short:h-6 rounded flex items-center justify-center shrink-0 ${bg}`}>
-        <span className={`material-symbols-outlined text-sm ${text}`}>
-          {icon}
+      <div className={`w-8 h-8 short:w-6 short:h-6 rounded flex items-center justify-center shrink-0 ${t.bg}`}>
+        <span className={`material-symbols-outlined text-sm ${t.text}`}>
+          {t.icon}
         </span>
       </div>
 
@@ -65,19 +69,17 @@ function NewsRow({ news }) {
         <div className="text-right shrink-0">
           <p
             className={`font-headline font-black text-xs tabular-nums ${
-              INCOME_TYPES.has(news.type) ? "text-emerald-400" : "text-error"
+              t.credit ? "text-emerald-400" : "text-error"
             }`}
           >
-            {INCOME_TYPES.has(news.type) ? "+" : "-"}
+            {t.credit ? "+" : "-"}
             {formatCurrency(news.amount)}
           </p>
-          <p className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">
-            {news.type === "transfer_out"
-              ? "Venda"
-              : news.type === "transfer_in"
-                ? "Compra"
-                : ""}
-          </p>
+          {t.label && (
+            <p className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">
+              {t.label}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -89,6 +91,7 @@ function NewsRow({ news }) {
  *   teamInfo: object,
  *   seasonYear: number,
  *   me: object,
+ *   onReplayTutorial?: () => void,
  *   currentBudget: number,
  *   totalWeeklyWage: number,
  *   loanAmount: number,
@@ -118,8 +121,6 @@ export function ClubTab({
   const morale = teamInfo?.morale ?? 50;
   const moraleLabel = getMoraleLabel(morale).toUpperCase();
   const moraleTone = getMoraleClasses(morale);
-  const moraleTextColor = moraleTone.text;
-  const moraleBarColor = moraleTone.bar;
 
   // ── Agrupamento do histórico por ano ───────────────────────────────
   const groupedNews = useMemo(() => {
@@ -160,8 +161,6 @@ export function ClubTab({
       const next = new Set(prev);
       if (next.has(year)) next.delete(year);
       else next.add(year);
-      // Garante que pelo menos um ano fica visível
-      if (next.size === 0) next.add(year);
       return next;
     });
   };
@@ -192,7 +191,7 @@ export function ClubTab({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 short:gap-2">
 
         {/* Club hero card */}
-        <div className="md:col-span-2 rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
+        <div className="md:col-span-2 rounded-md border border-outline-variant/25 overflow-hidden relative bg-surface-container">
           {/* Team colour wash */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -269,13 +268,13 @@ export function ClubTab({
                   <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
                     Moral do Plantel
                   </span>
-                  <span className={`text-[9px] font-black ${moraleTextColor}`}>
+                  <span className={`text-[9px] font-black ${moraleTone.text}`}>
                     {moraleLabel}
                   </span>
                 </div>
                 <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${moraleBarColor}`}
+                    className={`h-full rounded-full transition-all ${moraleTone.bar}`}
                     style={{ width: `${morale}%` }}
                   />
                 </div>
@@ -353,7 +352,7 @@ export function ClubTab({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 short:gap-2">
 
         {/* Estádio */}
-        <div className="bg-surface-container rounded-lg border border-outline-variant/25 overflow-hidden flex flex-col">
+        <div className="bg-surface-container rounded-md border border-outline-variant/25 overflow-hidden flex flex-col">
           <div className="h-24 sm:h-28 short:h-16 relative flex items-end overflow-hidden">
             <StadiumIllustration
               capacity={teamInfo?.stadium_capacity || 10000}
@@ -446,20 +445,12 @@ export function ClubTab({
               })}
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-outline-variant/25 rounded p-6 short:p-3 bg-surface-container-high">
-              <span
-                className="material-symbols-outlined text-on-surface-variant/30 text-4xl short:text-2xl mb-2 short:mb-1"
-                style={{ fontVariationSettings: "'FILL' 0" }}
-              >
-                trophy
-              </span>
-              <p className="text-xs text-on-surface-variant font-black text-center">
-                Nenhum título conquistado.
-              </p>
-              <p className="text-[9px] text-on-surface-variant/40 font-black uppercase tracking-widest mt-1 text-center">
-                Constrói o teu legado hoje
-              </p>
-            </div>
+            <EmptyState
+              emoji="🏆"
+              title="Nenhum título conquistado."
+              description="Constrói o teu legado hoje"
+              className="flex-1"
+            />
           )}
         </div>
       </div>
@@ -507,7 +498,7 @@ export function ClubTab({
                 const isExpanded = expandedYears.has(year);
                 const isCurrentYear = String(year) === String(seasonYear);
                 return (
-                  <div key={year} className="group/year">
+                  <div key={year}>
                     {/* Cabeçalho do ano */}
                     <button
                       type="button"

@@ -422,6 +422,8 @@ export const LOAN_MAX = 2500000;
 export const LOAN_STEP = 500000;
 /** Taxa de juros semanal (por jornada) sobre a dívida. */
 export const LOAN_INTEREST_RATE = 0.015;
+/** Teto de apresentação da barra "Salários / jornada" no ClubTab (heurística visual, não regra de jogo). */
+export const WAGE_CAP = 500000;
 /** Custo de cada obra de expansão do estádio. */
 export const STADIUM_EXPANSION_COST = 300000;
 /** Rótulo da época em curso (marca, header, footer e ecrã de carregamento). */
