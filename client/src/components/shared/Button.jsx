@@ -38,6 +38,7 @@ const SIZE_CLASSES = {
  *   onClick?: (e: import("react").MouseEvent) => void,
  *   type?: string,
  *   title?: string,
+ *   "aria-label"?: string,
  * }} props
  */
 export function Button({
@@ -51,6 +52,7 @@ export function Button({
   onClick,
   type = "button",
   title,
+  "aria-label": ariaLabel,
 }) {
   return (
     <button
@@ -58,6 +60,7 @@ export function Button({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      aria-label={ariaLabel}
       className={`inline-flex items-center justify-center gap-1.5 rounded-md font-black transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed ${
         uppercase ? "uppercase tracking-widest" : "tracking-wide"
       } ${VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary} ${

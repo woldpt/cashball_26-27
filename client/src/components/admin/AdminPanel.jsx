@@ -38,7 +38,7 @@ import { UserTeamsSection } from "./UserTeamsSection.jsx";
  */
 export function AdminPanel({ open, onClose }) {
   const { me, adminUsers } = useGame();
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedName, setSelectedName] = useState(null);
   const isMobile = useIsMobile();
   const scrollContainerRef = useRef(null);
   const detailRef = useRef(null);
@@ -46,20 +46,39 @@ export function AdminPanel({ open, onClose }) {
   const isAdmin = isAdminCoach(me?.name);
   const { loading, error: usersError, fetchUsers } = useAdminUsers({ open: open && isAdmin });
 
+  // Seleção por nome + lookup no contexto: o objeto do utilizador está sempre
+  // fresco (renames e salas vindos do servidor refletem-se, sem snapshot obsoleto).
+  const selectedUser = selectedName ? adminUsers.find((u) => u.name === selectedName) ?? null : null;
+
+  /** @param {string} newName Nome novo do utilizador após rename. */
+  function handleRenamed(newName) {
+    setSelectedName(newName);
+    // A lista ainda tem o nome antigo até ao refetch — força-o para o lookup
+    // voltar a acertar (a subscrição `adminUsersUpdated` faria o mesmo).
+    fetchUsers();
+  }
+
+  function handleClearSelection() {
+    setSelectedName(null);
+    // Em mobile com scroll único, voltar ao topo da lista.
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   // Auto-scroll para o detalhe ao selecionar um utilizador em mobile
   // com lista por cima (scroll único). Dá feedback imediato sem procura manual.
   useEffect(() => {
-    if (!isMobile || !selectedUser || !detailRef.current) return;
+    if (!isMobile || !selectedName || !detailRef.current) return;
     const id = requestAnimationFrame(() => {
       detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     return () => cancelAnimationFrame(id);
-  }, [selectedUser, isMobile]);
+  }, [selectedName, isMobile]);
 
   if (!isAdmin) return null;
+  if (!open) return null;
 
   // Salas sempre "frescas" vindas do contexto (renomeias/remoções refletem-se).
-  const selectedRooms = adminUsers.find((u) => u.name === selectedUser?.name)?.rooms ?? [];
+  const selectedRooms = selectedUser?.rooms ?? [];
 
   // Conteúdo do painel de detalhe: reutilizado na layout de 2 colunas (desktop)
   // e na coluna única de mobile (ao ver um utilizador).
@@ -76,7 +95,7 @@ export function AdminPanel({ open, onClose }) {
         key={`profile-${selectedUser.name}`}
         user={selectedUser}
         onRenamed={handleRenamed}
-        onDeleted={() => setSelectedUser(null)}
+        onDeleted={() => setSelectedName(null)}
       />
       <div className="border-t border-outline-variant/15" />
       <UserRoomsSection user={selectedUser} rooms={selectedRooms} onChanged={fetchUsers} />
@@ -85,17 +104,6 @@ export function AdminPanel({ open, onClose }) {
       <UserTeamsSection key={`teams-${selectedRooms.join("|") || "none"}`} rooms={selectedRooms} />
     </>
   );
-
-  /** @param {string} newName Nome novo do utilizador após rename. */
-  function handleRenamed(newName) {
-    setSelectedUser((u) => (u ? { ...u, name: newName } : u));
-  }
-
-  function handleClearSelection() {
-    setSelectedUser(null);
-    // Em mobile com scroll único, voltar ao topo da lista.
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }
 
   // ── Mobile (< 768px): ecrã inteiro — lista por cima do detalhe ────────────
   // O card "xl" é convertido num sheet vertical quase cheio (h = 100dvh menos o
@@ -122,6 +130,7 @@ export function AdminPanel({ open, onClose }) {
                 size="sm"
                 onClick={handleClearSelection}
                 title="Voltar à lista"
+                aria-label="Voltar à lista"
                 className="shrink-0 -ml-1"
               >
                 <span className="material-symbols-outlined">arrow_back</span>
@@ -149,14 +158,14 @@ export function AdminPanel({ open, onClose }) {
               </div>
             </>
           )}
-          <Button variant="ghost" size="sm" onClick={onClose} title="Fechar" className="shrink-0">
+          <Button variant="ghost" size="sm" onClick={onClose} title="Fechar" aria-label="Fechar" className="shrink-0">
             <span className="material-symbols-outlined">close</span>
           </Button>
         </header>
 
         {/* Erro de carregamento da lista */}
         {usersError && (
-          <div className="px-4 py-2 border-b border-error/20 bg-error/10 text-error font-bold text-xs break-words shrink-0">
+          <div aria-live="polite" className="px-4 py-2 border-b border-error/20 bg-error/10 text-error font-bold text-xs break-words shrink-0">
             {usersError}
           </div>
         )}
@@ -168,8 +177,8 @@ export function AdminPanel({ open, onClose }) {
             disableInternalScroll
             users={adminUsers}
             loading={loading}
-            selectedName={selectedUser?.name ?? null}
-            onSelect={(u) => setSelectedUser(u)}
+            selectedName={selectedName}
+            onSelect={(u) => setSelectedName(u?.name ?? null)}
           />
           {selectedUser && (
             <div
@@ -212,14 +221,14 @@ export function AdminPanel({ open, onClose }) {
             <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">{adminUsers.length} utilizadores registados</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose} title="Fechar" className="shrink-0">
+        <Button variant="ghost" size="sm" onClick={onClose} title="Fechar" aria-label="Fechar" className="shrink-0">
           <span className="material-symbols-outlined">close</span>
         </Button>
       </div>
 
       {/* Erro de carregamento da lista (não é feedback de ações — cada secção tem o seu próprio) */}
       {usersError && (
-        <div className="px-6 py-2 border-b border-error/20 bg-error/10 text-error font-bold text-xs break-words shrink-0">{usersError}</div>
+        <div aria-live="polite" className="px-6 py-2 border-b border-error/20 bg-error/10 text-error font-bold text-xs break-words shrink-0">{usersError}</div>
       )}
 
       {/* Body — Desktop: 2 colunas lado-a-lado. */}
@@ -229,8 +238,8 @@ export function AdminPanel({ open, onClose }) {
           <UserList
             users={adminUsers}
             loading={loading}
-            selectedName={selectedUser?.name ?? null}
-            onSelect={(u) => setSelectedUser(u)}
+            selectedName={selectedName}
+            onSelect={(u) => setSelectedName(u?.name ?? null)}
           />
         </div>
 
