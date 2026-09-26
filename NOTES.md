@@ -1942,3 +1942,10 @@ Plano C1+C2 (quando fizer):
 - Confirmação sair/apagar via `ModalShell` (só montado com sala pendente + guards, contra a regressão dos children); `labels` em email/ano/palavras-passe, `aria-label` nos botões de ícone, `role=alert/status` nas mensagens; novo acordo ("atual", "ação").
 - Saltado de propósito: migrar `location.reload` do switch/delete para navegação por estado (padrão atual da app, arrastava troca de sessão); `useMemo` na lista de anos (~86 itens).
 - Checks: eslint limpo no ficheiro; `check:types` OK; server `typecheck` OK; `test:connect-smoke` OK; `test:mobile` 5/165 e `:landscape` 6/198 — só `roomhub-resp-test` pré-existente (useGame fora de Provider), `settings-resp-test` PASS em todas as larguras.
+
+## PenaltyShootoutPopup — correções avaliação 7,5 (2026-09-26)
+- Guardas nulos: `teams || []`, `homeGoals/awayGoals ?? running` (cobre failsafe do servidor: golo sem remate), `round.home?.` simétrico ao `away`.
+- Morte súbita lê `home || away` (antes só `home`).
+- Linha de vencedor "🏆 X passa à próxima eliminatória" derivada no cliente (`homeGoals > awayGoals`, sem payload novo); botão "Saltar" (ghost) que avança `kickIdx` para o fim — temporizador do `GameContext` intacto.
+- JSDoc movido para cima do componente; indentação do cabeçalho normalizada.
+- Checks: eslint limpo no ficheiro (2 erros pré-existentes noutros: `landing-resp-test`, `GameContext`); `check:types` OK. Sem `test:mobile` (sem mudança estrutural) nem audits (sem lógica de servidor).

@@ -1,9 +1,10 @@
-/**
- * @param {{ cupPenaltyPopup: object|null, cupPenaltyKickIdx: number, teams: Array, setCupPenaltyPopup: function, setCupPenaltyKickIdx: function }} props
- */
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { Button } from "../shared/Button.jsx";
 import { MODAL_Z } from "../../constants/index.js";
+
+/**
+ * @param {{ cupPenaltyPopup: object|null, cupPenaltyKickIdx: number, teams: Array, setCupPenaltyPopup: function, setCupPenaltyKickIdx: function }} props
+ */
 
 export function PenaltyShootoutPopup({
   cupPenaltyPopup,
@@ -17,8 +18,9 @@ export function PenaltyShootoutPopup({
   const kicks = cupPenaltyPopup.kicks || [];
   const visibleKicks = kicks.slice(0, cupPenaltyKickIdx);
   const allRevealed = cupPenaltyKickIdx >= kicks.length;
-  const homeTeam = teams.find((t) => t.id === cupPenaltyPopup.homeTeamId);
-  const awayTeam = teams.find((t) => t.id === cupPenaltyPopup.awayTeamId);
+  const safeTeams = teams || [];
+  const homeTeam = safeTeams.find((t) => t.id === cupPenaltyPopup.homeTeamId);
+  const awayTeam = safeTeams.find((t) => t.id === cupPenaltyPopup.awayTeamId);
 
   let runningHome = 0;
   let runningAway = 0;
@@ -26,6 +28,13 @@ export function PenaltyShootoutPopup({
     if (k.team === "home" && k.scored) runningHome++;
     if (k.team === "away" && k.scored) runningAway++;
   });
+
+  const finalHome = cupPenaltyPopup.homeGoals ?? runningHome;
+  const finalAway = cupPenaltyPopup.awayGoals ?? runningAway;
+  const winnerName =
+    finalHome === finalAway
+      ? null
+      : (finalHome > finalAway ? homeTeam : awayTeam)?.name ?? null;
 
   const rounds = [];
   for (let i = 0; i < kicks.length; i += 2) {
@@ -39,44 +48,49 @@ export function PenaltyShootoutPopup({
   return (
     <ModalShell visible={!!cupPenaltyPopup} z={MODAL_Z.penalty} variant="md">
       <div className="bg-amber-900/20 px-6 py-4 border-b border-amber-800/30 text-center">
-          <p className="text-[10px] text-amber-400 uppercase font-black tracking-widest">
-            Taça de Portugal
-          </p>
-          <h2 className="text-lg font-black text-white mt-1">
-            Grandes Penalidades
-          </h2>
-          <div className="flex items-center justify-center gap-4 mt-3">
-            <div className="flex items-center gap-2">
-              <span
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: homeTeam?.color_primary || "#666" }}
-              />
-              <span className="font-black text-sm text-white">
-                {homeTeam?.name}
-              </span>
-            </div>
+        <p className="text-[10px] text-amber-400 uppercase font-black tracking-widest">
+          Taça de Portugal
+        </p>
+        <h2 className="text-lg font-black text-white mt-1">
+          Grandes Penalidades
+        </h2>
+        <div className="flex items-center justify-center gap-4 mt-3">
+          <div className="flex items-center gap-2">
             <span
-              className={`text-2xl font-black px-4 py-1 rounded border ${
-                allRevealed
-                  ? "text-white bg-surface border-outline-variant/30"
-                  : "text-zinc-500 bg-surface border-outline-variant/20 animate-pulse"
-              }`}
-            >
-              {allRevealed
-                ? `${cupPenaltyPopup.homeGoals} – ${cupPenaltyPopup.awayGoals}`
-                : `${runningHome} – ${runningAway}`}
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{ backgroundColor: homeTeam?.color_primary || "#666" }}
+            />
+            <span className="font-black text-sm text-white">
+              {homeTeam?.name}
             </span>
-            <div className="flex items-center gap-2">
-              <span className="font-black text-sm text-white">
-                {awayTeam?.name}
-              </span>
-              <span
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: awayTeam?.color_primary || "#666" }}
-              />
-            </div>
+          </div>
+          <span
+            className={`text-2xl font-black px-4 py-1 rounded border ${
+              allRevealed
+                ? "text-white bg-surface border-outline-variant/30"
+                : "text-zinc-500 bg-surface border-outline-variant/20 animate-pulse"
+            }`}
+          >
+            {allRevealed
+              ? `${finalHome} – ${finalAway}`
+              : `${runningHome} – ${runningAway}`}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-black text-sm text-white">
+              {awayTeam?.name}
+            </span>
+            <span
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{ backgroundColor: awayTeam?.color_primary || "#666" }}
+            />
           </div>
         </div>
+          {allRevealed && winnerName && (
+            <p className="mt-2 text-xs font-black uppercase tracking-widest text-amber-300">
+              🏆 {winnerName} passa à próxima eliminatória
+            </p>
+          )}
+      </div>
 
         <div className="p-4 max-h-80 overflow-y-auto">
           <table className="w-full text-xs">
@@ -95,22 +109,22 @@ export function PenaltyShootoutPopup({
               {rounds.map((round, ri) => {
                 const homeVisible = cupPenaltyKickIdx > ri * 2;
                 const awayVisible = cupPenaltyKickIdx > ri * 2 + 1;
-                const isSuddenDeath = round.home?.suddenDeath;
+                const isSuddenDeath = round.home?.suddenDeath || round.away?.suddenDeath;
                 return (
                   <tr
                     key={ri}
                     className={`border-t border-zinc-800/50 ${isSuddenDeath ? "bg-amber-900/10" : ""}`}
                   >
                     <td className="text-right pr-2 py-1.5">
-                      {homeVisible ? (
+                      {homeVisible && round.home ? (
                         <span className="inline-flex items-center gap-1.5 justify-end">
                           <span className="text-zinc-400 truncate max-w-25">
-                            {round.home.playerName}
+                            {round.home?.playerName ?? "?"}
                           </span>
                           <span
-                            className={`font-black text-sm ${round.home.scored ? "text-emerald-400" : "text-red-400"}`}
+                            className={`font-black text-sm ${round.home?.scored ? "text-emerald-400" : "text-red-400"}`}
                           >
-                            {round.home.scored ? "✓" : "✗"}
+                            {round.home?.scored ? "✓" : "✗"}
                           </span>
                         </span>
                       ) : (
@@ -146,10 +160,17 @@ export function PenaltyShootoutPopup({
             </tbody>
           </table>
           {!allRevealed && (
-            <div className="text-center py-3">
+            <div className="flex flex-col items-center gap-1 py-3">
               <span className="animate-pulse text-amber-400 text-xs font-black uppercase tracking-widest">
                 A rematar…
               </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCupPenaltyKickIdx(kicks.length)}
+              >
+                Saltar
+              </Button>
             </div>
           )}
         </div>
