@@ -140,6 +140,7 @@ import {
   getTeamsWithCoachNames,
   logClubNews,
   logClubNewsOnce,
+  slimMatchResult,
   snapshotBalanceHistory,
 } from "./coreHelpers";
 import {
@@ -1327,9 +1328,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             pickRefereeSummary,
           );
 
-          // Store in history
+          // Store in history (projeção magra — o payload completo segue no emit)
           game.allMatchResults = game.allMatchResults ?? {};
-          game.allMatchResults[completedMatchweek] = fullTimeFixtures;
+          game.allMatchResults[completedMatchweek] = fullTimeFixtures.map(slimMatchResult);
 
           io.to(game.roomCode).emit("matchResults", {
             matchweek: completedMatchweek,

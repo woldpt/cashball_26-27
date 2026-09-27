@@ -3,7 +3,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, WAGE_SEED_SPREAD, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
-import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec } from "./coreHelpers";
+import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec, slimMatchResult } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { dealDisplaySponsors } from "./game/sponsors";
 import { getOfflineCoaches } from "./presenceHelpers";
@@ -1441,10 +1441,12 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                 try {
                   const parsed = JSON.parse(st["allMatchResults"]);
                   if (parsed && typeof parsed === "object") {
+                    // .map(slim): salas com o blob antigo (fixture completo)
+                    // ficam magras já neste load — não só a partir da 1.ª jornada nova.
                     game.allMatchResults = Object.fromEntries(
                       Object.entries(parsed).map(([k, v]) => [
                         Number(k),
-                        Array.isArray(v) ? (v as any[]) : [],
+                        Array.isArray(v) ? (v as any[]).map(slimMatchResult) : [],
                       ]),
                     );
                   }

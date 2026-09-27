@@ -215,6 +215,17 @@ export interface CoachMarketEvent {
 }
 
 /**
+ * Resultado de jornada como o cliente o consome (histórico de jornadas nas
+ * classificações): equipas + marcador final. Ver `slimMatchResult`.
+ */
+export interface SlimMatchResult {
+  homeTeamId: number;
+  awayTeamId: number;
+  finalHomeGoals?: number;
+  finalAwayGoals?: number;
+}
+
+/**
  * Single unified state machine replacing the old matchState + cupState dual machines.
  * Transitions are always linear: no concurrent league+cup activity.
  */
@@ -299,7 +310,10 @@ export interface ActiveGame {
   tacticFamiliarity: Record<number, { history: Array<string | { first: string; second: string }> }>;
 
   // ── Histórico de resultados de todas as jornadas ──
-  allMatchResults: Record<number, any[]>; // matchweek → [{homeTeamId, awayTeamId, homeGoals, awayGoals, ...}, ...]
+  // Projeção magra (SlimMatchResult): é só isto que o cliente lê no histórico
+  // de jornadas. O fixture completo (lineups/eventos/campos internos) pesava
+  // ~118 KB/jogo e era reescrito inteiro em cada saveGameState.
+  allMatchResults: Record<number, SlimMatchResult[]>;
 
   // ── Coach dismissal & job offers ──
   pendingJobOffers: Record<string, { fromTeamId: number; toTeamId: number }>;

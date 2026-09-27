@@ -1,4 +1,4 @@
-import type { ActiveGame } from "./types";
+import type { ActiveGame, SlimMatchResult } from "./types";
 import {
   MAX_ATTENDANCE_BY_DIVISION,
   MATCH_TUNING,
@@ -351,6 +351,22 @@ export function pickRefereeSummary(
   const seed = hashString(`${roomCode}:${matchweek}:${teamId}:${opponentId}`);
   const refereeName = refereeNames[seed % refereeNames.length];
   return { name: refereeName };
+}
+
+/**
+ * Projeção magra de um resultado de jornada para `game.allMatchResults`.
+ * O fixture completo (~118 KB: lineups, eventos, campos `_` da simulação)
+ * era guardado e reescrito inteiro em cada saveGameState; o cliente só lê
+ * equipas + marcador no histórico de jornadas. Usar também no load, para
+ * migrar salas com o blob antigo.
+ */
+export function slimMatchResult(f: AnyRow): SlimMatchResult {
+  return {
+    homeTeamId: f.homeTeamId,
+    awayTeamId: f.awayTeamId,
+    finalHomeGoals: f.finalHomeGoals,
+    finalAwayGoals: f.finalAwayGoals,
+  };
 }
 
 /**
