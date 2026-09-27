@@ -40,10 +40,15 @@ export function RoomPauseBar({ pause }) {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[99997] bg-rose-600 text-white text-center text-xs font-semibold py-1.5 px-3 tracking-wide break-words"
+      className="fixed top-0 left-0 right-0 z-[99997] bg-rose-600 text-white text-center text-[13px] font-extrabold uppercase tracking-widest py-2.5 px-3 shadow-lg flex items-center justify-center gap-2"
     >
-      ⏸ Sala em pausa — à espera de {who}
-      {since ? ` desde as ${since}` : ""}. O jogo só continua quando voltar.
+      <span aria-hidden className="material-symbols-outlined text-[18px] leading-none shrink-0">
+        pause_circle
+      </span>
+      <span className="break-words">
+        Sala em pausa — à espera de {who}
+        {since ? ` desde as ${since}` : ""}. A semana só avança quando voltar.
+      </span>
     </div>
   );
 }

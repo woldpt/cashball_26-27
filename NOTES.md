@@ -1,3 +1,8 @@
+## Sala bloqueada: fim da duplicação, barra vermelha com destaque (2026-09-27)
+- Pedido: print mostrava o aviso duas vezes (barra vermelha no topo + cartão âmbar «Sala bloqueada — semana em espera» no conteúdo).
+- Fix: sai o cartão âmbar do `GameLayout.jsx` (bloco `roomBlocked` + lógica `offlineLocked`; `players`/`lockedCoaches` fora do destructure); a `RoomPauseBar` passa a ser o único aviso, com texto «Sala em pausa — à espera de {nomes} desde as {hora}. A semana só avança quando voltar.» e visual médio (`py-2.5`, `text-[13px] font-extrabold uppercase`, ícone `pause_circle`, `shadow-lg`, mantém `fixed top-0`).
+- Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · `test:mobile` **PASS 165/165**.
+
 ## Perfil de equipa: cabeçalho rola com a página (2026-09-27)
 - Pedido: o cabeçalho do perfil de clube (cor, escudo, nome, treinador, linha de contexto, tabs) ficava fixo enquanto só o conteúdo rolava; passa a rolar para cima junto com o resto.
 - Causa: `OtherSquadsTab` era `flex flex-col overflow-hidden` e o scroll estava só no wrapper do conteúdo (`flex-1 min-h-0 overflow-y-auto`), fora do cabeçalho.

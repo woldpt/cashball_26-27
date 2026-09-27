@@ -25,7 +25,6 @@ import { GroupBackdrop } from "./components/shared/GroupBackdrop.jsx";
 export function GameLayout({ handleLogout, setAuthPhase }) {
   // ── All game state from GameContext ─────────────────────────────────────
   const {
-    players,
     activeTab,
     welcomeModal,
     setWelcomeModal,
@@ -38,7 +37,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     navigateTab,
     // Derived
     isMatchInProgress,
-    lockedCoaches,
     panelMode,
   } = useGame();
 
@@ -76,12 +74,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   useLayoutEffect(() => {
     contentRef.current?.scrollTo(0, 0);
   }, [activeTab]);
-
-  // Sala com 2+ coaches humanos bloqueada até todos estarem online (semana em espera)
-  const offlineLocked = lockedCoaches.filter(
-    (n) => !players.some((p) => p.name === n),
-  );
-  const roomBlocked = lockedCoaches.length >= 2 && offlineLocked.length > 0;
 
   // Telemóvel em landscape (abaixo de lg): margens do conteúdo.
   const isMobileLandscape = useMobileLandscape();
@@ -138,22 +130,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 : "flex-1 min-h-0 overflow-y-auto p-4 lg:p-6"
             }
           >
-            {roomBlocked && (
-              <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                <span className="material-symbols-outlined text-amber-400 text-[20px] leading-none mt-0.5">
-                  lock
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-black uppercase tracking-widest text-amber-400">
-                    Sala bloqueada — semana em espera
-                  </p>
-                  <p className="text-[11px] text-on-surface-variant/80 font-semibold mt-0.5 leading-snug">
-                    A semana só avança quando todos os coaches estiverem online.
-                    Aguardando: {offlineLocked.join(", ")}.
-                  </p>
-                </div>
-              </div>
-            )}
             <div
               className={
                 isFullBleedTab
