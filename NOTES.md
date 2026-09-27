@@ -2428,3 +2428,9 @@ Plano C1+C2 (quando fizer):
 - Screenshot (desktop) provou: passo 7 navegava para a tab tactic mas esta abre no briefing ("Avançar para a tática") — editor desmontado, sem alvos, sem spotlight.
 - Fix: `handleTutorialNavigate` no `GameLayout.jsx` chama `setPrepPhase("tactics")` quando `step.tab === "tactic"` (TacticsProvider envolve o GameLayout, sem ciclo). Cobre passos 7–9, todos os breakpoints.
 - Checks: eslint limpo no ficheiro; `check:types` OK.
+
+## BadgeSkills: número SKILL com largura fixa 2ch (2026-09-27)
+- Queixa: célula SKILL não uniforme entre 1 e 2 dígitos (print do pasteboard inacessível — landing/404; seguido pelo sintoma confirmado).
+- Causa: `min-w-[3ch]` mede `ch` na fonte do corpo, dígitos rendem em `font-headline` black (mais larga) — 2 dígitos excediam o mínimo.
+- Fix (1 linha): `span` passa a `inline-block w-[2ch] text-center` — `ch` medido na fonte dos dígitos + `tabular-nums`: 1 dígito centra, 2 preenchem. FORMA/MOR ficam (11px, não pedido).
+- Checks: eslint + `check:types`. Sem test:mobile (só constância de largura, sem mudança de layout).

@@ -85,7 +85,7 @@ export function BadgeSkills({
       className={`flex items-center justify-center bg-amber-400/12 min-w-[3ch] ${!hideStats ? (skillLast ? "border-l border-amber-400/20" : "border-r border-amber-400/20") : ""} ${cellCls}`}
     >
       <span
-        className={`font-black font-headline tabular-nums leading-none ${skillColor} ${skillCls}`}
+        className={`inline-block w-[2ch] text-center font-black font-headline tabular-nums leading-none ${skillColor} ${skillCls}`}
         style={glowStyle}
       >
         {skill ?? "—"}
