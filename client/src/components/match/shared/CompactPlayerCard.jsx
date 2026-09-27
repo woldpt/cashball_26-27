@@ -25,6 +25,7 @@ import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
  * @param {boolean} [props.showFatigue] - Mostrar indicador de fadiga inline.
  * @param {boolean} [props.hideStats] - Ocultar o badge de skills (jogadores adversários).
  * @param {boolean} [props.skillLast] - SKILL em último (Intervenção em vertical).
+ * @param {boolean} [props.posRight] - Posição à extrema direita (banco mobile).
  * @param {boolean} [props.forcedOut] - Substitução obrigatória (destaque vermelho).
  * @param {boolean} [props.draggable] - Arrastável (DnD desktop).
  */
@@ -38,6 +39,7 @@ export function CompactPlayerCard({
   showFatigue = true,
   hideStats = false,
   skillLast = false,
+  posRight = false,
   goals = 0,
   yellowCards = 0,
   forcedOut = false,
@@ -60,6 +62,22 @@ export function CompactPlayerCard({
       : disabled
         ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
         : `cursor-pointer border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30`;
+
+  // Chip de posição — à esquerda por omissão; com `posRight` (banco
+  // mobile) rende-se à extrema direita, após o BadgeSkills, para o peek
+  // da stack mostrar Skill + Posição sem virar a lista.
+  const posBadge = (
+    <span
+      title={POSITION_FULL_LABELS[player.position]}
+      className={`shrink-0 px-1.5 py-0.5 self-center rounded text-[10px] font-bold uppercase tracking-widest border ${
+        selected
+          ? "bg-white/20 text-white border-white/40"
+          : `${s.badgeBg} ${s.badgeText} ${s.badgeBorder}`
+      } ${disabled ? "opacity-40" : ""}`}
+    >
+      {POSITION_SHORT_LABELS[player.position] || "?"}
+    </span>
+  );
 
   return (
     <button
@@ -84,17 +102,8 @@ export function CompactPlayerCard({
       {/* Position accent bar */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${selected ? "from-white via-white to-white/60" : s.bar}`} />
 
-      {/* Position badge */}
-      <span
-        title={POSITION_FULL_LABELS[player.position]}
-        className={`shrink-0 px-1.5 py-0.5 self-center rounded text-[10px] font-bold uppercase tracking-widest border ${
-          selected
-            ? "bg-white/20 text-white border-white/40"
-            : `${s.badgeBg} ${s.badgeText} ${s.badgeBorder}`
-        } ${disabled ? "opacity-40" : ""}`}
-      >
-        {POSITION_SHORT_LABELS[player.position] || "?"}
-      </span>
+      {/* Position badge — à esquerda por omissão; no banco mobile (`posRight`) vai para a extrema direita. */}
+      {!posRight && posBadge}
 
       {/* Nome + globs inline (golos/amarelos) + fadiga — ocupa o espaço disponível */}
       <span className="flex flex-1 min-w-0 items-center gap-1 ml-2">
@@ -145,6 +154,7 @@ export function CompactPlayerCard({
             size="sm"
           />
         )}
+        {posRight && posBadge}
       </div>
     </button>
   );

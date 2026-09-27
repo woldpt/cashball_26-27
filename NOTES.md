@@ -2572,3 +2572,8 @@ Plano C1+C2 (quando fizer):
 - Pedido (print): no mobile vertical o badge mostrava 5 células e os pills EM CAMPO/BANCO eram `span` não clicáveis.
 - Fix: `PlayerLists` aceita `skillLast` nas colunas `flat` e passa ao `CompactPlayerCard`; `SubsPanel` passa `skillLast={portraitPhone}` só na stack vertical e converte os pills em `button` com `setUserPage` + `aria-pressed`. Swipe/peek e salto auto para o banco mantêm-se.
 - Checks: eslint limpo nos ficheiros · `check:types` OK · `test:mobile` **PASS 165/165** (intervencao 5/5 sem overflow nem clipping).
+
+## Banco mobile: posição à direita + label FOR (2026-09-27)
+- Pedido (print inacessível — pasteboard exige JS; seguido pela descrição): no banco, chip de posição (G/D/M/A) à extrema direita para ler posição + skill sem virar a lista (o peek de 96px mostra Skill + Posição); label FORMA passa a FOR no badge.
+- Fix: `CompactPlayerCard` ganha `posRight` (chip sai da esquerda, rende-se após o `BadgeSkills`); `SuplentesColumn` encaminha; `SubsPanel` passa `posRight` no banco vertical e landscape (titulares e desktop intactos). `BadgeSkills`: célula `Forma` → `For` em todos os tamanhos; tooltip e legenda desktop mantêm `Forma`.
+- Checks: eslint limpo nos 4 ficheiros · `check:types` OK · `test:mobile` **PASS 165/165** (intervencao 5/5 sem overflow nem clipping; smallTargets 31/34 igual à corrida anterior).

@@ -6,11 +6,11 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  *
  * Retângulo de cantos arredondados com os valores sempre
  * pela mesma ordem: SKILL dourado (maior, negrito, glow só no número)
- * | FORMA verde | MOR violeta | RES azul | AGR vermelha (número na cor
+ * | FOR verde | MOR violeta | RES azul | AGR vermelha (número na cor
  * do tier, etiqueta só no tooltip; escondida com hideStats). Uma só
  * receita para Plantel, Tática, intervenção/substituições e mercado.
  * Exceção: `skillLast` (Intervenção em vertical) mostra só
- * FORMA · MOR · SKILL, com o SKILL em último.
+ * FOR · MOR · SKILL, com o SKILL em último.
  *
  * Sem label "Skill" — só o número dourado a negrito com glow.
  * Na semana em que a skill muda (`prevSkill` do backend, só preenchido
@@ -118,7 +118,7 @@ export function BadgeSkills({
         <>
           <div className={`flex flex-col items-center justify-center gap-0.5 bg-emerald-500/10 border-r border-emerald-500/20 ${cellCls}`}>
             <span className={`${labelCls} text-emerald-200/70`}>
-              Forma
+              For
             </span>
             <span className={`font-black tabular-nums leading-none text-emerald-400 ${numCls}`}>
               {form ?? "–"}

@@ -449,6 +449,7 @@ export function SubsPanel({
                       onPick={() => handlePickIn(p)}
                       showFatigue={false}
                       skillLast={portraitPhone}
+                      posRight
                       showMatchStats
                       goals={stats?.goals ?? 0}
                       yellowCards={stats?.yellowCards ?? 0}
@@ -597,6 +598,7 @@ export function SubsPanel({
             <SuplentesColumn
               flat
               skillLast={portraitPhone}
+              posRight
               players={benchPlayers}
               isEmergencyGk={isEmergencyGk}
               cardCtx={cardCtx}
