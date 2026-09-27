@@ -81,6 +81,14 @@
 - Teste de regressão no padrão do projeto (7 invariantes: fila vazia, penáltis exclusivo, despedimento aguarda, fim de época sempre o último, espera suprimida/drenada, `isPostMatchQueueActive` ≡ `!showWaiting`). Consumidores (`GameOverlays`, `TacticsView`) intactos.
 - Checks: `test:postmatchflow` 7/7 · lint limpo nos ficheiros tocados (2 erros pré-existentes globais) · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check; client-only → sem audits.
 
+## Diagnóstico: sem celebração na segunda parte (2026-09-26)
+- Queixa: golo próprio na 2.ª parte com som mas sem confete/GOLO!, a ver no tab Jogo. Só diagnóstico (pedido), zero edições.
+- Pipeline é igual nas duas partes (ticks `matchMinuteUpdate` + efeito flash no `GameContext` + `GoalFlashOverlay`, sem portas de parte) — nada no código desliga a festa na 2.ª parte.
+- Divergência som≠visual existe por desenho: som dispara para qualquer jogo com humano (`isHumanMatch` via players); overlay da página exige `me.teamId` == fixture naquele tick. `me` a sincronizar após rejoin → som sai, visual perde-se (frescura 2,2s).
+- Reconnect na 2.ª parte (`session.js`, `playing_second_half`): `isPlayingMatch=false` + `matchReplay` em fast-forward silencioso — golos do intervalo sem cobertura entram no marcador sem festa.
+- Suspeito principal: pausa longa do intervalo → telemóvel adormece/socket cai → rejoin já na 2.ª parte. Utilizador não sabe se houve soluço. Para confirmar da próxima: reparar em "A entrar…"/freeze/herói a repovoar ao intervalo.
+- Fix proposto (pendente de OK): catch-up sóbrio no replay — som + flash dos golos perdidos, sem burst fullscreen.
+
 ## CelebrationBurst: seed a sério + auto-desmontar + a11y (2026-09-26)
 - Avaliação 1–10 pedida (global 7,4; a11y 4) → plano completo aprovado (só relatório primeiro, depois "sim" para executar). Só `client/src/components/shared/CelebrationBurst.jsx`.
 - `seed` só entrava na `key` — o leque era sempre igual: novo `hashSeed` (×31, barato, determinístico) alimenta o `jitter`, `useMemo` com deps `[seed]` (acaba o aviso de lint). Mesmo seed = mesmo leque.
