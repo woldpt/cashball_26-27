@@ -2,9 +2,11 @@
 // state) inside the real GameProvider + TacticsProvider. NOT part of the app;
 // used only for mobile responsiveness verification (see .pi/skills/mobile-resp-check).
 import { createRoot } from "react-dom/client";
+import { useEffect } from "react";
+/* eslint-disable react-refresh/only-export-components -- harness de teste sem exports */
 import "./src/index.css";
-import { GameProvider } from "./src/contexts/GameContext.jsx";
-import { TacticsProvider } from "./src/contexts/TacticsContext.jsx";
+import { GameContext, GameProvider, useGame } from "./src/contexts/GameContext.jsx";
+import { TacticsProvider, useTactics } from "./src/contexts/TacticsContext.jsx";
 import { TacticsView } from "./src/views/TacticsView.jsx";
 
 const noop = () => {};
@@ -12,6 +14,34 @@ const noop = () => {};
 /* Minimal auth bridge — no backend in the harness, so state stays at its
  * initial (empty) values. All context accesses to `me` are optional-chained. */
 const meFixture = { name: "", teamId: 1, roomCode: "TEST01" };
+
+/* Fixture do próximo jogo (liga) — alimenta o cartão sob o botão JOGAR e o
+ * Moral/Mentalidade do TOPO. Nome comprido para testar truncamento. */
+const nextMatchFixture = {
+  matchweek: 6,
+  isCup: false,
+  venue: "Casa",
+  opponent: {
+    name: "As Voadores Do Sportinguismax Da Póvoa",
+    color_primary: "#0f9d58",
+  },
+  referee: { name: "Fábio Veríssimo (AF Leiria)" },
+};
+
+/** Sobreposição do GameContext com o próximo jogo — o Provider real não
+ * expõe o setter (o resumo chega por socket), por isso aninhamos um Provider
+ * com o valor atual + fixture. */
+function SeedNextMatch({ children }) {
+  const value = { ...useGame(), nextMatchSummary: nextMatchFixture, nextMatchSummaryLoading: false };
+  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
+}
+
+/** Salta a fase briefing (default) → vista de táticas. */
+function SeedPrepPhase() {
+  const { setPrepPhase } = useTactics();
+  useEffect(() => setPrepPhase("tactics"), [setPrepPhase]);
+  return null;
+}
 
 createRoot(document.getElementById("root")).render(
   <GameProvider
@@ -25,11 +55,14 @@ createRoot(document.getElementById("root")).render(
     joinTimerRef={{ current: null }}
     backendUrl="http://127.0.0.1:9"
   >
-    <TacticsProvider>
-      <div className="min-h-screen bg-surface p-4 lg:p-6">
-        <TacticsView />
-      </div>
-    </TacticsProvider>
+    <SeedNextMatch>
+      <TacticsProvider>
+        <SeedPrepPhase />
+        <div className="min-h-screen bg-surface p-4 lg:p-6">
+          <TacticsView />
+        </div>
+      </TacticsProvider>
+    </SeedNextMatch>
   </GameProvider>
 );
 

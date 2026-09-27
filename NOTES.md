@@ -1,3 +1,8 @@
+## TacticsView: cartão próximo jogo + truncate da Moral (2026-09-27)
+- `TacticsView.jsx`: cartão "Próximo jogo" sob o botão JOGAR (desktop) — jornada/taça, adversário com cor, casa/fora e árbitro; `MoraleCard` com `min-w-0 truncate` no rótulo para não rebentar o flex.
+- `tactics-resp-test.jsx`: fixture de próximo jogo com nome comprido (teste de truncamento) + `SeedNextMatch`/`SeedPrepPhase` (salta para as táticas).
+- Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · `test:mobile -- tactics-resp-test` PASS 5/5 · `test:mobile:landscape -- tactics-resp-test` PASS 6/6 · screenshots 390 portrait + 667 landscape revistos (a 390 o rótulo trunca como desenhado, sem overflow). Só cliente → sem audits.
+
 ## Família de badges — nome honesto + fim do shim SkillBadge (2026-09-27)
 - Pedido: avaliar os 6 ficheiros *badge* (1–10) → família média 8,7/10, nits aprovados à correção.
 - `SkillBadge.jsx` (shim de 1 linha, 6 importadores) removido; `TacticsView`, `PlayerRow` (×2), `OpponentGridCard`, `BenchPlayers`, `CompactPlayerCard`, `MatchPlayerCard` passam a importar/usar `BadgeSkills`.

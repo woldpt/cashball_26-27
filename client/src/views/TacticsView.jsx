@@ -450,7 +450,7 @@ function MoraleCard({ glow = false }) {
         <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
           Moral
         </span>
-        <span className={`text-[9px] font-black uppercase ${textColor}`}>
+        <span className={`min-w-0 truncate text-[9px] font-black uppercase ${textColor}`}>
           {label}
         </span>
       </div>
@@ -1036,6 +1036,43 @@ ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !ca
                   <p className="text-[9px] text-center text-gray-700 mt-1">
                     A jornada avança quando todos clicarem.
                   </p>
+                )}
+                {/* Próximo jogo — preenche o espaço sob o botão (desktop):
+                    adversário, casa/fora e árbitro antes de clicar. */}
+                {nextMatchSummary && (
+                  <div className="mt-2 short:mt-1.5 bg-surface-container border border-outline-variant/25 rounded-2xl px-3 py-2.5 short:py-1.5 flex flex-col gap-1">
+                    <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+                      {nextMatchSummary.isCup
+                        ? (nextMatchSummary.cupRoundName ?? "Taça")
+                        : `Jornada ${nextMatchSummary.matchweek ?? "—"}`}
+                    </span>
+                    {nextMatchOpponent ? (
+                      <>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            aria-hidden
+                            className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20"
+                            style={{
+                              background: nextMatchOpponent.color_primary ?? "#666",
+                            }}
+                          />
+                          <span className="text-xs font-black text-gray-200 truncate">
+                            {nextMatchOpponent.name}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 truncate">
+                          {nextMatchSummary.venue}
+                          {nextMatchSummary.referee?.name
+                            ? ` · Árbitro ${nextMatchSummary.referee.name}`
+                            : ""}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-gray-500 leading-snug">
+                        {nextMatchSummary.headline ?? "Sem adversário definido."}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
