@@ -11,7 +11,8 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  * inset-0` (o pai LiveMatchHero tem overflow-hidden, que encerraria o
  * festejo ao card):
  *   - marcas TU → explosão de confete + "GOLO!" com glow verde;
- *   - golo ADVERSÁRIO → o mesmo festejo com wash vermelho + shake.
+ *   - golo ADVERSÁRIO → wash vermelho + shake + uma interjeição ("GAITA!"),
+ *     SEM confete: a festa é só nossa.
  *
  * É alimentado pelo `goalFlashRef` do GameContext ({ ts, n } por fixture+lado).
  * O `freshGoalFlashes` só aceita flashes com menos de ~2s, por isso não há
@@ -26,8 +27,8 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  * Variante `card` (cards de jogos com treinador humano no `LiveFixtureRow`):
  * a mesma fila, mas renderizada inline (`absolute inset-0`, sem portal) e em
  * ponto pequeno — wash + carimbo "GOLO!" quando marca o lado do humano,
- * variante vermelha quando marca o NPC. Com `CelebrationBurst` compacto
- * (`showChampagne={false}`, cortado pelo overflow-hidden do card).
+ * variante vermelha quando marca o NPC. Confete compacto (`showChampagne`
+ * false) só no golo do lado do humano; o do NPC leva só o carimbo vermelho.
  * ─────────────────────────────────────────────────────────────────────────
  *
  * @param {Object} props
@@ -40,6 +41,22 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  *   a frescura do flash (~2s) já garante que só celebra em direto.
  * @param {"page"|"card"} [props.variant="page"]
  */
+
+/* Interjeições de golo sofrido (pt-PT) — a festa é nossa, o golo do
+ * adversário leva desabafo em vez de "GOLO!". Escolha determinística por um
+ * contador de golos sofridos (não muda a meio do festejo, ao contrário de um
+ * `Math.random()` no render) e roda pela lista em ordem. */
+const INTERJECTIONS = [
+  "GAITA!",
+  "FÓNIX!",
+  "FOSGA-SE!",
+  "CARAÇAS!",
+  "BOLAS!",
+  "Ó RAIO!",
+  "QUE AZAR!",
+  "EH PÁ!",
+];
+
 export function GoalFlashOverlay({
   goalFlashRef,
   homeId,
@@ -51,24 +68,32 @@ export function GoalFlashOverlay({
   // Fila de momentos (um por golo) + o que está no ecrã é sempre a cabeça.
   // Sem fila, dois golos no mesmo minuto colapsavam num só festejo: o
   // efeito só via o timestamp máximo (`bestTs`) e consumia-o de vez.
-  const [moments, setMoments] = useState([]); // [{ mine, side, ts, seq }]
+  const [moments, setMoments] = useState([]); // [{ mine, side, ts, seq, word }]
   const consumedRef = useRef({ home: { ts: 0, n: 0 }, away: { ts: 0, n: 0 } });
   const seqRef = useRef(0);
+  const lossRef = useRef(0);
 
   useEffect(() => {
     // Só celebramos em jogos onde somos participante.
     if (!homeIsMine && !awayIsMine) return;
     const fresh = freshGoalFlashes(goalFlashRef, homeId, awayId, consumedRef.current);
     if (!fresh.length) return;
-    setMoments((q) => [
-      ...q,
-      ...fresh.map(({ side, ts }) => ({
-        mine: (side === "home" && homeIsMine) || (side === "away" && awayIsMine),
+    // A palavra fica gravada no momento: re-renders a meio do festejo não a
+    // trocam (era o risco de decidir a interjeição no render).
+    const stamped = fresh.map(({ side, ts }) => {
+      const mine =
+        (side === "home" && homeIsMine) || (side === "away" && awayIsMine);
+      return {
+        mine,
         side,
         ts,
         seq: ++seqRef.current,
-      })),
-    ]);
+        word: mine
+          ? "GOLO!"
+          : INTERJECTIONS[lossRef.current++ % INTERJECTIONS.length],
+      };
+    });
+    setMoments((q) => [...q, ...stamped]);
   }, [
     goalFlashRef,
     homeId,
@@ -91,16 +116,18 @@ export function GoalFlashOverlay({
   const mine = moment.mine;
   const color = mine ? "#22c55e" : "#ef4444";
 
-  // Variante card: festejo contido no card (sem portal, sem confete).
+  // Variante card: festejo contido no card (confete só no golo do humano).
   if (variant === "card") {
     // Confete por portal para o <body>: o card tem overflow-hidden, que cortava
     // o festejo. O wash + "GOLO!" ficam contidos no card; só o confete escapa.
-    const confete = createPortal(
-      <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
-        <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} showChampagne={false} />
-      </div>,
-      document.body,
-    );
+    const confete =
+      mine &&
+      createPortal(
+        <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
+          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} showChampagne={false} />
+        </div>,
+        document.body,
+      );
     return (
       <div
         key={`${moment.side}-${moment.ts}-${moment.seq}`}
@@ -172,17 +199,20 @@ export function GoalFlashOverlay({
         />
       )}
 
-      {/* Confete em todos os golos (o wash verde/vermelho distingue quem marcou) */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1, 1, 0] }}
-        transition={{ duration: 1.95, times: [0, 0.15, 0.82, 1] }}
-      >
-        <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} />
-      </motion.div>
+      {/* Confete SÓ no golo da minha equipa — o do adversário leva wash +
+          shake + desabafo, sem festa. */}
+      {mine && (
+        <motion.div
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 1.95, times: [0, 0.15, 0.82, 1] }}
+        >
+          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} />
+        </motion.div>
+      )}
 
-      {/* Palavra de celebração em todos os golos, na cor de quem marcou. */}
+      {/* Palavra do momento: "GOLO!" no nosso, interjeição no do adversário. */}
       <div className="absolute inset-0 flex items-center justify-center px-4">
         <motion.span
           className="font-headline font-black uppercase tracking-tight leading-none text-center"
@@ -195,7 +225,7 @@ export function GoalFlashOverlay({
           animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.18, 1.02, 1.1], y: [6, 0, 0, -4] }}
           transition={{ duration: 1.9, times: [0, 0.16, 0.8, 1] }}
         >
-          GOLO!
+          {moment.word}
         </motion.span>
       </div>
     </div>
