@@ -2317,3 +2317,7 @@ Plano C1+C2 (quando fizer):
 - Pedido: tag e rebuild no rick (push dos 3 commits já feito na tarefa anterior).
 - Tag v26.09.8 (marcas transparentes, 12 pictogramas redesenhados, festejo de golo global).
 - Rick: `git pull` (71 ficheiros) + `docker compose up --build -d` → backend Healthy, frontend e backups arrancados.
+
+## Skill rick-upgrade (2026-09-27)
+- Pedido: automatizar o "upgrade no rick". Grill em 3 perguntas, OK dado (direto sem perguntas, tag vAA.MM.N com reset mensal, NOTES com commit local).
+- Nova `.pi/skills/rick-upgrade/SKILL.md`: push → tag auto (incrementa no mês, recomeça em 1 noutro mês) → pull + rebuild no rick com confirmação Healthy → NOTES + commit local sem push. Regras: sem `add -A`, sem `--force`, falha num passo pára tudo.
