@@ -31,8 +31,8 @@ cd client && npm run test:mobile
 ```
 
 > **Fast:** the runner runs all `*-test.html` harnesses × the 5 widths in
-> **parallel** (default `--concurrency 10`). Full 33-harness run takes
-> **~1–2 minutes** (exit 0, RESULT `165/165`). Use a modest bash timeout (e.g.
+> **parallel** (default `--concurrency 20`). Full 33-harness run takes
+> **~45 seconds** (exit 0, RESULT `165/165`). Use a modest bash timeout (e.g.
 > `timeout 180s`) — no need for `600s` anymore. Tune with `--concurrency <n>`
 > (lower on constrained machines; `1` reproduces the old sequential behaviour).
 

@@ -2331,3 +2331,8 @@ Plano C1+C2 (quando fizer):
 - Pedido: plano de melhoria após avaliação das skills (8/10, matriz duplicava o AGENTS.md). OK dado.
 - Só `.pi/skills/verify-before-done/SKILL.md`: matriz de 7 linhas trocada por apontador para o `AGENTS.md` + mapeamento grosseiro (servidor/cliente, audits, mobile-resp-check, regressões); regra 3 estendida a harnesses mobile (`journal-resp-test` como exemplo). Resta 1 menção a `audit:gamestate` na regra 2, como exemplo de salto legítimo — não é especificação de comando.
 - Checks: N/A (só docs; verificado por leitura + grep).
+
+## Runner mobile: default concurrency 10 → 20 (2026-09-27)
+- Queixa: testes de responsividade demoram imenso. Investigação com 3 medições portrait (165 checks): C=10 → 59,6s · C=20 → 43s · C=33 → 40,9s. CPU total constante (~54s user, 12 cores) — joelho nos ~20, mesmos 5 FAIL determinísticos nas 3 corridas.
+- `client/scripts/mobileRespCheck.mjs`: default 10→20 (+ help). Skill atualizada (default 20, ~45s).
+- Checks: `mobile-resp-test` + `scout-resp-test` a 2 larguras, 4/4 PASS em ~5s.

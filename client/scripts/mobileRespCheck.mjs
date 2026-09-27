@@ -24,7 +24,7 @@
  *   --height <n>         Viewport height (default 844)
  *   --screenshots <dir>  Save a viewport PNG per harness×width
  *   --keep-server        Do not kill the vite server started by this script
- *   --concurrency <n>    How many pages to run in parallel (default 10)
+ *   --concurrency <n>    How many pages to run in parallel (default 20)
  *
  * Env:
  *   CHROMIUM_PATH        Chromium executable (default: auto-detect)
@@ -47,7 +47,7 @@ const opts = {
   height: 844,
   screenshots: null,
   keepServer: false,
-  concurrency: 10,
+  concurrency: 20,
   harnesses: [],
 };
 for (let i = 0; i < argv.length; i++) {
