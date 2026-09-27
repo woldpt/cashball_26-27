@@ -2321,3 +2321,8 @@ Plano C1+C2 (quando fizer):
 ## Skill rick-upgrade (2026-09-27)
 - Pedido: automatizar o "upgrade no rick". Grill em 3 perguntas, OK dado (direto sem perguntas, tag vAA.MM.N com reset mensal, NOTES com commit local).
 - Nova `.pi/skills/rick-upgrade/SKILL.md`: push → tag auto (incrementa no mês, recomeça em 1 noutro mês) → pull + rebuild no rick com confirmação Healthy → NOTES + commit local sem push. Regras: sem `add -A`, sem `--force`, falha num passo pára tudo.
+
+## mobile-resp-check: contagens e mapa atualizados (2026-09-27)
+- Pedido: plano de melhoria após avaliação das skills (7/10, desatualizada). OK dado.
+- Só `.pi/skills/mobile-resp-check/SKILL.md`: "26 harnesses / 130/130" → 33 harnesses, `165/165` portrait + `198/198` landscape; mapa harness→componente expandido de 4 para 33 (levantado dos imports reais dos `*-test.jsx`; os 6 com `GameContext` confirmados pelo componente renderizado). Estrutura, contrato, templates e regras intactos.
+- Checks: N/A (só docs; contagem verificada por grep: 33 linhas no mapa, sem ocorrências de 26/130).

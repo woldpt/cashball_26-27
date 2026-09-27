@@ -31,8 +31,8 @@ cd client && npm run test:mobile
 ```
 
 > **Fast:** the runner runs all `*-test.html` harnesses × the 5 widths in
-> **parallel** (default `--concurrency 10`). Full 26-harness run takes
-> **~1 minute** (exit 0, RESULT `130/130`). Use a modest bash timeout (e.g.
+> **parallel** (default `--concurrency 10`). Full 33-harness run takes
+> **~1–2 minutes** (exit 0, RESULT `165/165`). Use a modest bash timeout (e.g.
 > `timeout 180s`) — no need for `600s` anymore. Tune with `--concurrency <n>`
 > (lower on constrained machines; `1` reproduces the old sequential behaviour).
 
@@ -62,7 +62,8 @@ cd client && npm run test:mobile:landscape
 # affected harness only: npm run test:mobile:landscape -- mobile-resp-test
 ```
 
-The check is only complete when **both passes PASS** (exit code 0 each).
+The check is only complete when **both passes PASS** (exit code 0 each —
+`165/165` portrait, `198/198` landscape).
 
 ## Run only the affected harness
 
@@ -90,10 +91,39 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 
 | Harness file (client root) | Renders |
 | :------------------------- | :------ |
-| `mobile-resp-test.html`    | `views/PlayersTab.jsx` |
-| `scout-resp-test.html`     | `views/PlayerSearchView.jsx` |
-| `intervencao-test.html`    | `components/match/tabs/IntervencaoView.jsx` |
+| `auctions-resp-test.html` | `pages/AuctionsPage.jsx` |
+| `briefing-resp-test.html` | `components/live/briefing/` (briefing pré-jogo) |
+| `calendario-resp-test.html` | `views/CalendarioTab.jsx` |
+| `club-resp-test.html` | `views/ClubTab.jsx` |
+| `cup-resp-test.html` | `views/CupTab.jsx` |
+| `cupfinal-resp-test.html` | `components/live/CupFinalStage.jsx` |
+| `finances-resp-test.html` | `views/FinancesTab.jsx` |
 | `game-landscape-test.html` | `GameLayout.jsx` — skeleton do ramo mobile-landscape (banda vazia à esquerda + pill "AO VIVO" a cobrir o fim do conteúdo). Já corre na landscape pass (`npm run test:mobile:landscape`). |
+| `intervencao-test.html` | `components/match/tabs/IntervencaoView.jsx` |
+| `journal-resp-test.html` | `views/JournalTab.jsx` |
+| `landing-resp-test.html` | `components/auth/LandingPage.jsx` |
+| `livehero-resp-test.html` | `components/live/LiveMatchHero.jsx` |
+| `match-spectate-resp-test.html` | `components/match/tabs/MatchView.jsx` |
+| `mobile-resp-test.html` | `views/PlayersTab.jsx` |
+| `playerhistory-resp-test.html` | `components/modals/PlayerHistoryModal.jsx` |
+| `roomhub-resp-test.html` | `components/chat/RoomHub.jsx` |
+| `roompause-resp-test.html` | `components/shared/RoomPauseBanner.jsx` |
+| `roomselect-resp-test.html` | `components/auth/RoomSelectScreen.jsx` |
+| `room-settings-resp-test.html` | `components/room/RoomSettings.jsx` |
+| `scout-resp-test.html` | `views/PlayerSearchView.jsx` |
+| `settings-resp-test.html` | `pages/UserSettingsPage.jsx` |
+| `stadium-resp-test.html` | `components/shared/StadiumIllustration.jsx` |
+| `stadiumtab-resp-test.html` | `views/StadiumTab.jsx` |
+| `standings-resp-test.html` | `components/ui/LeagueStandings.jsx` |
+| `tactics-resp-test.html` | `views/TacticsView.jsx` |
+| `teamhistory-resp-test.html` | `views/TeamHistoryView.jsx` |
+| `topwidgets-resp-test.html` | widgets de topo (SummaryWidget e irmãos) sobre várias tabs |
+| `training-resp-test.html` | `components/ui/TrainingPage.jsx` |
+| `transfer-resp-test.html` | `components/ui/TransferHub.jsx` |
+| `useradmin-panel-resp-test.html` | `components/admin/AdminPanel.jsx` |
+| `useradmin-resp-test.html` | componentes admin (`UserList`/`UserProfileSection`/`UserRoomsSection`/`UserTeamsSection`) |
+| `waiting-coaches-test.html` | `components/modals/WaitingCoachesModal.jsx` |
+| `welcome-resp-test.html` | `components/modals/WelcomeModal.jsx` |
 
 - Changed file maps to a harness → run that harness.
 - Changed file is shared (`GameLayout.jsx`, `src/components/**`, `index.css`,
