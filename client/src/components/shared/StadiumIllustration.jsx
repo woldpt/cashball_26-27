@@ -12,7 +12,7 @@ import { memo, useId } from "react";
  * as cores da equipa.
  *
  * Escalões:
- * - ≤ 5k: pelado — 1 anel estreito (0.62×), sem cobertura, sem postes
+ * - ≤ 5k: pelado — 1 anel estreito (0.50×), sem cobertura, sem postes
  *   de luz, sem bandeirolas nem portões laterais (só bancada, muro e relvado)
  * - 5–15k: 1 anel, sem cobertura, 2 postes de luz baixos
  * - 15–30k: 1 anel + cobertura + 4 postes de suporte
@@ -119,16 +119,20 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const screen = capacity >= 50000;
   const bare = capacity <= 5000;
   const colossal = capacity > 80000;
+  // Bancada plana nos pequenos: sem faces laterais e sem avanços —
+  // o avanço lateral do corpo (`capIn`) vai a 0 (o do relvado fica).
+  const noCaps = capacity < 15000;
+  const capIn = noCaps ? 0 : CAP_INSET;
 
   // ── Escala de largura: os estádios pequenos ocupam menos espaço ──
-  // 0.62× no pelado (≤5k), 0.78× entre 5k e 15k, crescendo linearmente
+  // 0.50× no pelado (≤5k), 0.70× entre 5k e 15k, crescendo linearmente
   // até 1× aos 50k; ≥50k mantém o desenho atual (o `bulk` trata do
   // crescimento acima).
   const span =
     capacity <= 5000
-      ? 0.62
+      ? 0.5
       : capacity < 15000
-        ? 0.78
+        ? 0.7
         : capacity < 50000
           ? 0.78 + ((capacity - 15000) / 35000) * 0.22
           : 1;
@@ -492,15 +496,19 @@ export const StadiumIllustration = memo(function StadiumIllustration({
             className={moodBand === "high" ? "stadium-bounce" : undefined}
             style={moodBand === "high" ? { animationDuration: `${[0.5, 0.63, 0.47][i % 3]}s` } : undefined}
           >
-            {/* Faces laterais (profundidade) */}
-            <polygon
-              points={`${standX0},${seatTop} ${standX0 - CAP_INSET},${seatTop - 6} ${standX0 - CAP_INSET},${seatBottom + 8} ${standX0},${seatBottom}`}
-              fill={url("endcap")}
-            />
-            <polygon
-              points={`${standX1},${seatTop} ${standX1 + CAP_INSET},${seatTop - 6} ${standX1 + CAP_INSET},${seatBottom + 8} ${standX1},${seatBottom}`}
-              fill={url("endcap")}
-            />
+            {/* Faces laterais (profundidade; os pequenos são planos) */}
+            {!noCaps && (
+              <>
+                <polygon
+                  points={`${standX0},${seatTop} ${standX0 - CAP_INSET},${seatTop - 6} ${standX0 - CAP_INSET},${seatBottom + 8} ${standX0},${seatBottom}`}
+                  fill={url("endcap")}
+                />
+                <polygon
+                  points={`${standX1},${seatTop} ${standX1 + CAP_INSET},${seatTop - 6} ${standX1 + CAP_INSET},${seatBottom + 8} ${standX1},${seatBottom}`}
+                  fill={url("endcap")}
+                />
+              </>
+            )}
             {/* Faixa de camarotes por baixo dos anéis superiores */}
             {boxes && i >= 1 && (
               <g>
@@ -544,8 +552,8 @@ export const StadiumIllustration = memo(function StadiumIllustration({
               );
             })}
             {/* Passadeira de betão entre anéis + sombra ambiente */}
-            <rect x={standX0 - CAP_INSET} y={seatBottom - 3} width={standX1 - standX0 + CAP_INSET * 2} height={6} fill={url("concrete")} opacity="0.9" />
-            <rect x={standX0 - CAP_INSET} y={seatBottom + 1} width={standX1 - standX0 + CAP_INSET * 2} height={2.5} fill="#000000" opacity="0.2" />
+            <rect x={standX0 - capIn} y={seatBottom - 3} width={standX1 - standX0 + capIn * 2} height={6} fill={url("concrete")} opacity="0.9" />
+            <rect x={standX0 - capIn} y={seatBottom + 1} width={standX1 - standX0 + capIn * 2} height={2.5} fill="#000000" opacity="0.2" />
           </g>
         );
       })}
@@ -583,14 +591,14 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       {/* Corrimão do topo + bandeirolas (o pelado não tem) */}
       {!bare && (
         <g>
-          <rect x={standX0 - CAP_INSET} y={topY - 2} width={standX1 - standX0 + CAP_INSET * 2} height={3} fill={away} opacity="0.9" />
+          <rect x={standX0 - capIn} y={topY - 2} width={standX1 - standX0 + capIn * 2} height={3} fill={away} opacity="0.9" />
           {pennants}
         </g>
       )}
 
       {/* Muro base com portões */}
-      <rect x={standX0 - CAP_INSET} y={WALL_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={PITCH_TOP - WALL_TOP} fill={url("concrete")} />
-      <rect x={standX0 - CAP_INSET} y={WALL_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={4} fill={home} opacity="0.95" />
+      <rect x={standX0 - capIn} y={WALL_TOP} width={standX1 - standX0 + capIn * 2} height={PITCH_TOP - WALL_TOP} fill={url("concrete")} />
+      <rect x={standX0 - capIn} y={WALL_TOP} width={standX1 - standX0 + capIn * 2} height={4} fill={home} opacity="0.95" />
       <path d={gatePath(372, 56, WALL_TOP + 4, PITCH_TOP)} fill="#0f172a" opacity="0.92" stroke="#e2e8f0" strokeOpacity="0.25" />
       {!bare &&
         sideGates.map((x) => (

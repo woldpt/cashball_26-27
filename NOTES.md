@@ -285,6 +285,12 @@
 - **Lógica de contrato duplicada (e divergente)**: o client recalculava `contractLocked` com fórmula própria (branch `currentSlot > 0` com 14/20) que divergia do servidor (`coreHelpers.currentEpoch` usa `contractCutoverSeason` com 14 jornadas para épocas antigas). Fix: servidor calcula `contract_locked` (CAST 0/1) no SELECT da pesquisa, mesmo `currentEpoch` do filtro `onlyAvailable`; client apagou as ~12 linhas de matemática (imports `SEASON_*` e props `season`/`currentSlot` removidos do `PlayerSearchView`).
 - "Licitar" → navegação para tab leilões mantida (padrão consistente no repo: TransferHub e PlayerHistoryModal fazem igual); `tabular-nums`/filtros colapsáveis ficam para tarefa própria.
 - Checks: server `typecheck` OK; client `lint` (2 erros pré-existentes, confirmados via stash) + `check:types` OK; `audit:socketio` 0 erros (warning `playerSearchResults` pré-existente — listener dinâmico invisível ao analisador).
+## Ilustração: pequenos planos e mais pequenos (2026-09-27)
+
+- Pedido: fora muros laterais nos pequenos + encolher mais. Decisões: laterais somem em todos <15k; spans pelado 0.62→0.50 e 5–15k 0.78→0.70.
+- Só `StadiumIllustration.jsx`: `noCaps` (<15k) esconde os 2 polígonos `endcap`; `capIn` (0 nos pequenos) tira o avanço lateral do muro base, corrimão e passadeiras — sem beirais a flutuar. Relvado (sombra, perspetiva, postes) mantém `CAP_INSET`. JSDoc/spans atualizados.
+- Checks: lint só pré-existentes · check:types OK · 165/165 + 198/198 · screenshot 390: 4k/8k planos e estreitos, 20k+ iguais.
+
 ## Ilustração: animação por mood (2026-09-27)
 
 - Ideia faraónica grelhada antes de fazer: escala do mood indefinida (label diz 1–50, Tab usava `?? 60`), ~1100 nós se animasse a multidão, tiras `slice` onde mal se vê, renda 60fps para estado semanal. Servidor confirmou escala real 1–50 (`MIN/MAX`, default 30). Decisões por perguntas: só hero StadiumTab · esvazia mesmo com casa cheia · bandas <23/23–37/≥38.
