@@ -2312,3 +2312,8 @@ Plano C1+C2 (quando fizer):
 - `PlayerRow.jsx`: `Stars` sai da linha do nome para coluna própria `Nota` (etiqueta + tooltip pt-PT) junto ao `SkillBadge` — desktop na coluna de atributos, mobile na linha extra; nome do craque com glow dourado subtil; `StarMark` fora do `<p truncate>` para a pílula não cortar.
 - `BadgeSkills.jsx`: célula SKILL com `min-w-[3ch]` (largura fixa 2 dígitos, cresce com ▲/▼); `PlayerHistoryModal.jsx`: cai o `className="text-sm"` do `StarMark` (tamanho único da pílula).
 - Checks: `check:types` OK · eslint limpo nos 4 tocados (2 erros globais pré-existentes noutros ficheiros) · portrait 160/165 e landscape 192/198 — só `journal-resp-test`, pré-existente (provado via stash em HEAD limpa; vista não usa estes componentes) · screenshots frescos `mobile-resp-test` (Nota separada) e `transfer-resp-test` (pílula ★ CRAQUE).
+
+## Deploy v26.09.8 no rick (2026-09-27)
+- Pedido: tag e rebuild no rick (push dos 3 commits já feito na tarefa anterior).
+- Tag v26.09.8 (marcas transparentes, 12 pictogramas redesenhados, festejo de golo global).
+- Rick: `git pull` (71 ficheiros) + `docker compose up --build -d` → backend Healthy, frontend e backups arrancados.
