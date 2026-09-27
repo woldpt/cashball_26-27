@@ -407,12 +407,9 @@ export function ClubTab({
               checkroom
             </span>
           </div>
-          <div className="flex-1 flex items-center justify-center py-2 short:py-1 min-h-28">
-            <TeamKit team={teamInfo} className="h-28 sm:h-32 short:h-20 object-contain" />
+          <div className="flex-1 flex items-center justify-center py-2 short:py-1 min-h-40">
+            <TeamKit team={teamInfo} className="h-40 sm:h-44 short:h-28 object-contain" />
           </div>
-          <p className="text-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Principal
-          </p>
         </div>
 
         {/* Palmarés */}

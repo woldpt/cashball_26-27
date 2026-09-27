@@ -435,11 +435,8 @@ export function TeamSquadView({
       {/* Content — scroll interno */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
         {activeTab === "kit" ? (
-          <div className="p-6 sm:p-8 flex flex-col items-center gap-3">
-            <TeamKit team={selectedTeam} className="h-48 sm:h-64 object-contain" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-              Equipamento principal · Época {seasonYear}
-            </p>
+          <div className="p-6 sm:p-8 flex flex-col items-center">
+            <TeamKit team={selectedTeam} className="h-64 sm:h-80 object-contain" />
           </div>
         ) : activeTab === "history" ? (
           <TeamHistoryView
