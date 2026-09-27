@@ -6,7 +6,9 @@
  *  - 3 ofertas distintas por equipa, uma de cada perfil A/B/C.
  *  - Totais sobre a base da divisão: A 100%, B 120% (20 semanas), C 110%.
  *  - `taken` exclui marcas já atribuídas; pote curto devolve as que houver.
- *  - Logos sem `clipPath` (regra do projeto).
+ *  - Marcas: símbolo transparente 100x100, sem `<text>` nem `clipPath`
+ *    (o nome é escrito pelos componentes e não desenhado no SVG).
+ *  - Nomes compridos têm nome curto para o patch da camisola.
  *
  * Run: cd server && npm run test:sponsor
  */
@@ -26,8 +28,9 @@ const {
 	drawNpcChoice,
 	sponsorBaseFor,
 	sponsorById,
-	sponsorsByTier,
 	sponsorLogo,
+	sponsorShortName,
+	sponsorsByTier,
 } = sponsors;
 
 function assertEq(actual: unknown, expected: unknown, msg: string) {
@@ -103,15 +106,31 @@ for (const division of [1, 2, 3, 4, 5]) {
 	assert(mine.every((d) => sponsorById(d.sponsorId)?.tier === division), `display D${division} no escalão certo`);
 }
 
-// Ficheiros fixos: 1 SVG por marca, válido e com o nome
+// Ficheiros fixos: 1 símbolo por marca, transparente e sem texto desenhado
 const logoDir = path.join(import.meta.dirname, "..", "..", "client", "public", "sponsors");
 let logoOk = 0;
 for (const s of SPONSORS) {
 	const p = path.join(logoDir, `${s.id}.svg`);
 	const body = fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : "";
-	const esc = s.name.replace(/&/g, "&amp;").replace(/'/g, "&#x27;");
-	if (body.includes("<svg") && (body.includes(s.name) || body.includes(esc)) && !body.includes("clipPath")) logoOk++;
-	else console.error(`FAIL: logo em falta/ inválido: ${s.id}`);
+	const ok =
+		body.includes('viewBox="0 0 100 100"') &&
+		body.includes("<image") === false &&
+		!body.includes("<text") &&
+		!body.includes("clipPath") &&
+		body.includes('data-art="1"') &&
+		!body.includes('fill="#ffffff" stroke="#000000"');
+	if (ok) logoOk++;
+	else console.error(`FAIL: símbolo em falta/ inválido: ${s.id}`);
 }
-assertEq(logoOk, 60, "60 logos fixos válidos");
+assertEq(logoOk, 60, "60 símbolos válidos (transparentes, sem texto)");
+
+// O patch da camisola cabe em 2 linhas: nome curto até 13 caracteres e sem
+// palavras maiores que 11 (a partir daí o SVG tem de apertar a linha).
+for (const s of SPONSORS) {
+	const short = sponsorShortName(s.name);
+	assert(
+		short.length <= 13 && short.split(" ").every((w) => w.length <= 11),
+		`nome curto do patch: ${s.name} -> ${short}`,
+	);
+}
 console.log("\nPASS test:sponsor-logos");

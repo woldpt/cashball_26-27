@@ -8,7 +8,7 @@ import {
   fairWeeklyWage,
 } from "./gameConstants";
 import { getWeatherForFixture } from "./game/matchCalculations";
-import { sponsorById } from "./game/sponsors";
+import { sponsorById, sponsorShortName } from "./game/sponsors";
 import type { RatingRow } from "./game/ratings";
 
 type Db = any;
@@ -276,7 +276,7 @@ function withSponsorBrand(t: AnyRow): AnyRow {
   if (!s) return t;
   return {
     ...t,
-    sponsorBrand: { sponsorId: s.id, name: s.name, bg: s.bg, fg: s.fg, glyph: s.glyph, shape: s.shape },
+    sponsorBrand: { sponsorId: s.id, name: s.name, short: sponsorShortName(s.name), bg: s.bg, fg: s.fg, glyph: s.glyph, shape: s.shape },
   };
 }
 

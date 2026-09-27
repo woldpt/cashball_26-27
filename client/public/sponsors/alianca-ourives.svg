@@ -1,5 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 124" role="img" aria-label="Ourivesaria Aliança">
-<rect x="8" y="4" width="84" height="116" rx="10" fill="#ffffff" stroke="#000000" stroke-opacity="0.15"/>
-<path d="M32,32 L50,52 L68,32 L62,26 L38,26 Z" fill="#fde68a" stroke="#713f12" stroke-width="3"/><circle cx="50" cy="62" r="12" fill="none" stroke="#713f12" stroke-width="6"/>
-<text x="50" y="110" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="800" fill="#1c1917" textLength="80" lengthAdjust="spacingAndGlyphs">Ourivesaria Aliança</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Ourivesaria Aliança">
+<g transform="translate(-27.08,-27.08) scale(1.5417)"><g data-halo="1" fill="#fff"><path d="M32,32 L50,52 L68,32 L62,26 L38,26 Z" fill="#fff" stroke="#fff" stroke-width="6.243243243243243" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50" cy="62" r="12" fill="none" stroke="#fff" stroke-width="9.243243243243242" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M32,32 L50,52 L68,32 L62,26 L38,26 Z" fill="#fde68a" stroke="#713f12" stroke-width="3"/><circle cx="50" cy="62" r="12" fill="none" stroke="#713f12" stroke-width="6"/></g></g>
 </svg>

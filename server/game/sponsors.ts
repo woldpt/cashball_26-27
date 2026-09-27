@@ -145,6 +145,67 @@ export function sponsorBaseFor(division: number): number {
 }
 
 /**
+ * Nome curto para o patch da camisola (≤ 13 caracteres). Só existe nos nomes
+ * compridos: o ícone já diz o setor (cruz = farmácia), a palavra diz qual é.
+ */
+const SHORT_NAMES: Record<string, string> = {
+	"Serralharia Irmãos Unidos": "Irmãos Unidos",
+	"Lavandaria Branca Espuma": "Branca Espuma",
+	"Minimercado Preço Mínimo": "Preço Mínimo",
+	"Livraria Página Aberta": "Página Aberta",
+	"Pizzaria Forno a Lenha": "Forno Lenha",
+	"Cervejaria O Copo Sujo": "Copo Sujo",
+	"Alfaiate Remendo Certo": "Remendo Certo",
+	"Pastelaria Três Coroas": "Três Coroas",
+	"Construções Horizonte": "Horizonte",
+	"Sapataria Passo Certo": "Passo Certo",
+	"Drogaria Sol Nascente": "Sol Nascente",
+	"Vidraria Transparente": "Vidraria",
+	"Queijaria Serra Alta": "Serra Alta",
+	"Pastelaria Doce Fado": "Doce Fado",
+	"Barbearia Corte Fino": "Corte Fino",
+	"Mercearia da Esquina": "Mercearia",
+	"Venda da Dona Lurdes": "Dona Lurdes",
+	"Kiosque Sorte Grande": "Sorte Grande",
+	"Ourivesaria Aliança": "Aliança",
+	"Restaurante O Lagar": "O Lagar",
+	"Farmácia da Avenida": "Avenida",
+	"Farmácia da Estação": "Estação",
+	"Óticas Visão Clara": "Visão Clara",
+	"Florista Margarida": "Margarida",
+	"Padaria Pão Quente": "Pão Quente",
+	"Peixaria Maré Viva": "Maré Viva",
+	"Seguros Confiança": "Confiança",
+	"Papelaria Central": "Papelaria",
+	"Ginásio Corpo São": "Corpo São",
+	"Sapataria Estrela": "Estrela",
+	"Quiosque do Largo": "Quiosque",
+	"Tasca do Zé Manel": "Zé Manel",
+	"Oficina Auto Pronta": "Auto Pronta",
+	"Lenha Seca & Carvão": "Lenha Seca",
+	"Malte Imperial": "Malte",
+	"Santa Esperança": "Esperança",
+	"Águas das Caldas": "Caldas",
+	"Rápido do Minho": "Minho",
+	"Quinta do Vale": "Quinta Vale",
+	"Clínica Sorriso": "Sorriso",
+	"Hotel Miradouro": "Miradouro",
+	"Talhos Carne Boa": "Carne Boa",
+	"Foto Instantânea": "Instantânea",
+	"Jardim Florido": "Jardim",
+	"Tesoura de Ouro": "Tesoura Ouro",
+	"Agro Campo Verde": "Campo Verde",
+};
+
+/** Comprimento do nome a partir do qual o patch usa o nome curto. */
+export const SPONSOR_SHORT_MAX = 13;
+
+/** Nome a coser no patch: o curto quando o completo não cabe. */
+export function sponsorShortName(name: string): string {
+	return name.length > SPONSOR_SHORT_MAX ? SHORT_NAMES[name] || name : name;
+}
+
+/**
  * Logotipo SVG inline (formas geométricas puras, sem clipPath).
  * O cliente usa esta mesma receita a partir dos parâmetros da oferta.
  */

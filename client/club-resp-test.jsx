@@ -18,6 +18,18 @@ const teamInfo = {
   morale: 32,
   stadium_name: "Estádio do Dragão Norte",
   stadium_capacity: 15000,
+  // Camisola clara + nome de patrocinador no pior caso (25 caracteres) para
+  // medir o patch do `TeamKit` no tamanho real.
+  crest: "/logos/estoril.png",
+  sponsorBrand: {
+    sponsorId: "irmaos-unidos",
+    name: "Serralharia Irmãos Unidos",
+    short: "Irmãos Unidos",
+    bg: "#475569",
+    fg: "#ffffff",
+    glyph: "IU",
+    shape: 0,
+  },
 };
 
 const me = { id: "coach-1", teamId: 1, name: "Treinador Teste" };

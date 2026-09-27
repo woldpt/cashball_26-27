@@ -1,5 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 124" role="img" aria-label="Quinta do Vale">
-<rect x="8" y="4" width="84" height="116" rx="10" fill="#ffffff" stroke="#000000" stroke-opacity="0.15"/>
-<rect x="43" y="22" width="14" height="12" fill="#7f1d1d"/><path d="M43,34 L43,58 C43,68 57,68 57,58 L57,34 Z" fill="#7f1d1d"/><rect x="45" y="40" width="10" height="14" fill="#fecdd3" opacity="0.7"/>
-<text x="50" y="110" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="800" fill="#1c1917" textLength="80" lengthAdjust="spacingAndGlyphs">Quinta do Vale</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Quinta do Vale">
+<g transform="translate(-35.06,-24.43) scale(1.7011)"><g data-halo="1" fill="#fff"><rect x="43" y="22" width="14" height="12" fill="#fff" stroke="#fff" stroke-width="2.9391891891891895" stroke-linejoin="round" stroke-linecap="round"/><path d="M43,34 L43,58 C43,68 57,68 57,58 L57,34 Z" fill="#fff" stroke="#fff" stroke-width="2.9391891891891895" stroke-linejoin="round" stroke-linecap="round"/><rect x="45" y="40" width="10" height="14" fill="#fff" stroke="#fff" stroke-width="2.9391891891891895" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><rect x="43" y="22" width="14" height="12" fill="#7f1d1d"/><path d="M43,34 L43,58 C43,68 57,68 57,58 L57,34 Z" fill="#7f1d1d"/><rect x="45" y="40" width="10" height="14" fill="#fecdd3" opacity="0.7"/></g></g>
 </svg>
