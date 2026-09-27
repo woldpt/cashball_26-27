@@ -31,7 +31,7 @@ import { isSameTeamId } from "./utils/teamHelpers.js";
  * sozinho (sem props além de auth). Separado do GameLayout para o ficheiro
  * de chrome não agregar o switch de páginas.
  */
-export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
+export function GameRoutes({ handleLogout, setAuthPhase }) {
   const {
     // active tab + helpers de navegação usados aqui
     activeTab,
@@ -439,7 +439,6 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         teamInfo={teamInfo}
                         seasonYear={seasonYear}
                         me={me}
-                        onReplayTutorial={replayTutorial}
                         currentBudget={currentBudget}
                         totalWeeklyWage={totalWeeklyWage}
                         loanAmount={loanAmount}

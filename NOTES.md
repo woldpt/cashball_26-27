@@ -1,3 +1,8 @@
+## Rever tutorial no menu do utilizador (2026-09-27)
+- Pedido: migrar o botão «Rever tutorial» para o menu de opções do utilizador (canto superior direito).
+- `GameHeader.jsx` ganha o item «Rever tutorial» (ícone `school`) após «Opções»; `GameLayout.jsx` passa `replayTutorial` ao header; `ClubTab`/`GameRoutes` perdem o botão e o prop-drilling.
+- Checks: `eslint` limpo nos 4 ficheiros (2 erros globais pré-existentes, confirmados via stash) · `check:types` OK. Item de menu com padrão existente → sem `test:mobile`.
+
 ## Deploy v26.09.12 no rick (2026-09-27)
 - Tag `v26.09.12` (CalVer rolling): bump `APP_VERSION`, push master, rebuild `docker compose` no rick.
 - `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).

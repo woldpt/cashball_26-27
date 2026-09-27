@@ -106,6 +106,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         handleLogout={handleLogout}
         setAuthPhase={setAuthPhase}
         scrollToTop={() => contentRef.current?.scrollTo(0, 0)}
+        replayTutorial={replayTutorial}
       />
 
       <Sidebar scrollToTop={() => contentRef.current?.scrollTo(0, 0)} />
@@ -175,7 +176,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     <GameRoutes
                         handleLogout={handleLogout}
                         setAuthPhase={setAuthPhase}
-                        replayTutorial={replayTutorial}
                     />
 
                   </motion.div>

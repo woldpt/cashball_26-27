@@ -12,9 +12,9 @@ import { useMobileLandscape } from "../../hooks/useIsMobile.js";
  * Barra superior do jogo: marca, relógio de direto, sala/chat e menu do utilizador.
  * Lê tudo do `useGame()`; só recebe callbacks de fora.
  *
- * @param {{ handleLogout: () => void, setAuthPhase: (phase: string) => void, scrollToTop: () => void }} props
+ * @param {{ handleLogout: () => void, setAuthPhase: (phase: string) => void, scrollToTop: () => void, replayTutorial?: () => void }} props
  */
-export function GameHeader({ handleLogout, setAuthPhase, scrollToTop }) {
+export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTutorial }) {
   const {
     players,
     awaitingCoaches,
@@ -308,6 +308,23 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop }) {
                     </span>
                     Opções
                   </button>
+
+                  {/* Rever tutorial passo a passo */}
+                  {replayTutorial && (
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        replayTutorial();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-bright transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+                        school
+                      </span>
+                      Rever tutorial
+                    </button>
+                  )}
 
                   {/* Mudar de Jogo — vai para a landing sem logout */}
                   <button
