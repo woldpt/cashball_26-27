@@ -2506,3 +2506,9 @@ Plano C1+C2 (quando fizer):
 ## Coach tutorial — passo BadgeSkills (2026-09-27)
 - Novo passo "Lê as skills" (tutorial passa a 10 passos): `data-tour="player-skills"` incondicional na raiz do `BadgeSkills` (cobre desktop+mobile; `findTarget` escolhe o primeiro visível) + step após o plantel com a explicação (dourado, FORMA/MOR/RES/AGR, verde/vermelho na semana de mudança).
 - Checks: eslint limpo nos ficheiros; `check:types` OK.
+
+## BadgeSkills: vazio à direita no modal → fix local (2026-09-27)
+- Queixa (print): células do `ATRIBUTOS` não ocupavam a largura — vazio à direita do `AGR` no `PlayerHistoryModal` (`size="lg"`). Causa: raiz do `BadgeSkills` é `flex` block-level e estica à coluna (`flex flex-col` do modal); células têm largura de conteúdo.
+- Pelo caminho: a sessão paralela comitou em `9bf83162` o mesmo fix que eu tinha aprovado (`w-fit max-w-full` na raiz partilhada) + `data-tour`. Provei por harness que esse fix partilhado **regride o scout** (320–414: badge limitado a `max-w-full` corta as próprias células, 10 clipped rows; sem ele: scout 5/5 PASS).
+- Fix final (2 linhas): revertido o `w-fit max-w-full` na raiz partilhada (fica o `data-tour` deles) + `className="self-start max-w-full"` só no uso do modal. Modal encosta ao conteúdo (borda termina após AGR, confirmado em screenshot 390), resto intacto.
+- Checks: `lint` limpo nos 2 ficheiros · `check:types` OK · `scout + playerhistory` **PASS 10/10** · screenshot playerhistory-390 revisto (antes: vazio; depois: sem vazio). Suite completa falha em `cup/topwidgets/training` com `waitForSelector` timeout (`pageErr=0`) — harnesses importam views a meio de renames/eliminações das sessões paralelas (`CupTab` apagado no HEAD, `OtherSquadsTab` sem ficheiro); flaps entre corridas; fora do meu âmbito.

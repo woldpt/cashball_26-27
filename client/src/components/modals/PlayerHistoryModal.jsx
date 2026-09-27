@@ -339,6 +339,7 @@ export function PlayerHistoryModal({
                 <div className="flex flex-col gap-4">
                   <BadgeSkills
                     size="lg"
+                    className="self-start max-w-full"
                     skill={skill}
                     resistance={player.resistance}
                     form={player.form}
