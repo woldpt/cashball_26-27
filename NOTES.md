@@ -2413,3 +2413,8 @@ Plano C1+C2 (quando fizer):
 ## Deploy v26.09.10 no rick (2026-09-27)
 - Inclui fixes do coach tutorial (spotlight mobile + retry + reancoragem dos passos finais).
 - Push master + tag v26.09.10; rebuild no rick com backend Healthy.
+
+## Skill rick-upgrade — bump de versão (2026-09-27)
+- Novo passo 2 na skill: determinar a próxima tag, atualizar `APP_VERSION` em `client/src/constants/index.js` (fonte da versão no rodapé da landing) e commit só desse ficheiro antes do push. Regra da tag extraída para secção própria.
+- Nota: a versão não vive na `LandingPage.jsx` — o rodapé (`LandingFooter`) lê `APP_VERSION`/`SEASON_LABEL` das constants.
+- Sincronizado `APP_VERSION` v26.09.8 → v26.09.10 (commit fix separado, fica local até ao próximo deploy).
