@@ -1,3 +1,7 @@
+## Audit 2cb50ae2 + comentário stale TeamCrest (2026-09-27)
+- Audit ao rename (só leitura): renomes/moves íntegros, imports do `TrainingTab` corretos, remoção `CupTab` limpa (`CupBracketPage`/`BracketTab` intactos, `cupDraw`/`cupRoundResults` vivos no contexto). `lint` só pré-existentes · `check:types` OK.
+- Resto único: comentário stale em `TeamCrest.jsx` (`CupTab` → `CupBracketPage`; consumidores atuais são `CupBracketPage` + `CupDrawPopup`). Fix 1 linha, checks repetidos sem novos erros.
+
 ## Renomear páginas: harmonizar nomes às keys do menu (2026-09-27)
 - Pedido: renomear ficheiros de páginas "confusos e não harmoniosos" — 5 renomes (2 com nomes do utilizador) + remoção do morto.
 - `views/PlayersTab.jsx` → `views/MySquadTab.jsx` (key `players`, menu "Plantel") · `views/TeamSquadView.jsx` → `views/OtherSquadsTab.jsx` (key `squad`) · `views/PlayerSearchView.jsx` → `views/ScoutView.jsx` · `components/ui/TrainingPage.jsx` → `views/TrainingTab.jsx` · `pages/AuctionsPage.jsx` → `views/AuctionsTab.jsx` (mover p/ `views/` — os três últimos eram tabs do menu fora de `views/`).

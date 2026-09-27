@@ -3,7 +3,7 @@ import { useState } from "react";
 /**
  * TeamCrest — brasão da equipa com fallback para a inicial.
  *
- * Fonte única do padrão antes duplicado em `CupTab` e `CupDrawPopup`:
+ * Fonte única do padrão antes duplicado em `CupBracketPage` e `CupDrawPopup`:
  * o fallback usa estado React em vez do `onError` imperativo que
  * manipulava `style.display` no DOM.
  *
