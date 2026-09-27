@@ -12,11 +12,15 @@ import { memo, useId } from "react";
  * as cores da equipa.
  *
  * Escalões:
- * - < 15k: 1 anel, sem cobertura, 2 postes de luz baixos
+ * - ≤ 5k: pelado — 1 anel estreito (0.62×), sem cobertura, sem postes
+ *   de luz, sem bandeirolas nem portões laterais (só bancada, muro e relvado)
+ * - 5–15k: 1 anel, sem cobertura, 2 postes de luz baixos
  * - 15–30k: 1 anel + cobertura + 4 postes de suporte
  * - 30–50k: 2 anéis + faixa de camarotes
  * - ≥ 50k: 3 anéis + cobertura maior + telão
- * Acima de 50k o desenho escala ligeiramente até aos 120k.
+ * - > 80k: presença colossal — o corpo cresce mais íngreme (até ~1.25
+ *   aos 120k), testeira mais grossa e telão maior
+ * Entre 50k e 80k o desenho escala ligeiramente como antes.
  *
  * @param {{
  *   capacity?: number,
@@ -105,16 +109,21 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const grandRoof = capacity >= 50000;
   const boxes = capacity >= 30000;
   const screen = capacity >= 50000;
+  const bare = capacity <= 5000;
+  const colossal = capacity > 80000;
 
   // ── Escala de largura: os estádios pequenos ocupam menos espaço ──
-  // 0.78× abaixo de 15k, crescendo linearmente até 1× aos 50k;
-  // ≥50k mantém o desenho atual (o `bulk` trata do crescimento acima).
+  // 0.62× no pelado (≤5k), 0.78× entre 5k e 15k, crescendo linearmente
+  // até 1× aos 50k; ≥50k mantém o desenho atual (o `bulk` trata do
+  // crescimento acima).
   const span =
-    capacity < 15000
-      ? 0.78
-      : capacity < 50000
-        ? 0.78 + ((capacity - 15000) / 35000) * 0.22
-        : 1;
+    capacity <= 5000
+      ? 0.62
+      : capacity < 15000
+        ? 0.78
+        : capacity < 50000
+          ? 0.78 + ((capacity - 15000) / 35000) * 0.22
+          : 1;
   const standX0 = 400 - ((STAND_X1 - STAND_X0) / 2) * span;
   const standX1 = 400 + ((STAND_X1 - STAND_X0) / 2) * span;
   const goalHalfBot = GOAL_HALF_BOT * span;
@@ -122,9 +131,16 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const netHalf = GOAL_HALF_TOP * span;
   // Mastro de luz mais baixo, à escala do estádio (só <15k).
   const poleTop = PITCH_TOP - (PITCH_TOP - 66) * span;
-  // Crescimento subtil do corpo acima dos 50k (até +15% aos 120k).
+  // Crescimento do corpo acima dos 50k: subtil até aos 80k (igual ao
+  // anterior, +6.4%), íngreme depois (até ~1.25 aos 120k — colossal).
   const bulk =
-    capacity > 50000 ? 1 + ((Math.min(capacity, 120000) - 50000) / 70000) * 0.15 : 1;
+    capacity <= 50000
+      ? 1
+      : 1 +
+          ((Math.min(capacity, 80000) - 50000) / 30000) * 0.064 +
+          (capacity > 80000
+            ? ((Math.min(capacity, 120000) - 80000) / 40000) * 0.19
+            : 0);
   // Ocupação 0..1 (`null` = bancada cheia, comportamento anterior).
   const occ = occupancy == null ? 1 : Math.max(0, Math.min(1, occupancy));
   // Núcleo de claques ao centro (cor do clube, esvazia em último).
@@ -296,7 +312,16 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   ));
 
   // ── Telão ────────────────────────────────────────────────────────
-  const screenTop = roofTopY - 10;
+  // Escala com o corpo (1 até aos 50k, maior no colossal); o topo fica
+  // preso ao canvas porque o pico do telhado sai dele nos gigantes.
+  const screenScale = bulk;
+  const screenW = 128 * screenScale;
+  const screenH = 26 * screenScale;
+  const screenX = 400 - screenW / 2;
+  const screenTop = Math.max(2, roofTopY - 10);
+  const screenPadX = 7 * screenScale;
+  const screenPadTop = 5 * screenScale;
+  const screenInnerH = 16 * screenScale;
   const screenLabel = `${Math.round(capacity / 1000)}K`;
 
   // ── Bandeirolas no corrimão do topo ──────────────────────────────
@@ -409,9 +434,9 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       <path d="M 520 164 Q 690 88 820 164 Z" fill="#93a88f" opacity="0.55" />
       <rect x="0" y="64" width={W} height="32" fill={url("haze")} />
 
-      {/* Torres de luz baixas (só nos pequenos, sem cobertura) — mais
-          baixas e junto às bancadas, à escala do estádio */}
-      {!roofed &&
+      {/* Torres de luz baixas (só nos pequenos com cobertura por fazer,
+          sem o pelado) — mais baixas e junto às bancadas, à escala */}
+      {!roofed && !bare &&
         [standX0 - CAP_INSET - 4, standX1 + CAP_INSET + 4].map((x) => (
           <g key={`light-${Math.round(x)}`}>
             <rect x={x - 3} y={poleTop} width={6} height={PITCH_TOP - poleTop} fill="#475569" />
@@ -490,17 +515,22 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         );
       })}
 
-      {/* Corrimão do topo + bandeirolas */}
-      <rect x={standX0 - CAP_INSET} y={topY - 2} width={standX1 - standX0 + CAP_INSET * 2} height={3} fill={away} opacity="0.9" />
-      {pennants}
+      {/* Corrimão do topo + bandeirolas (o pelado não tem) */}
+      {!bare && (
+        <g>
+          <rect x={standX0 - CAP_INSET} y={topY - 2} width={standX1 - standX0 + CAP_INSET * 2} height={3} fill={away} opacity="0.9" />
+          {pennants}
+        </g>
+      )}
 
       {/* Muro base com portões */}
       <rect x={standX0 - CAP_INSET} y={WALL_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={PITCH_TOP - WALL_TOP} fill={url("concrete")} />
       <rect x={standX0 - CAP_INSET} y={WALL_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={4} fill={home} opacity="0.95" />
       <path d={gatePath(372, 56, WALL_TOP + 4, PITCH_TOP)} fill="#0f172a" opacity="0.92" stroke="#e2e8f0" strokeOpacity="0.25" />
-      {sideGates.map((x) => (
-        <path key={`gate-${x}`} d={gatePath(x, 22, WALL_TOP + 7, PITCH_TOP)} fill="#0f172a" opacity="0.85" />
-      ))}
+      {!bare &&
+        sideGates.map((x) => (
+          <path key={`gate-${x}`} d={gatePath(x, 22, WALL_TOP + 7, PITCH_TOP)} fill="#0f172a" opacity="0.85" />
+        ))}
 
       {/* Cobertura */}
       {roofed && (
@@ -513,19 +543,19 @@ export const StadiumIllustration = memo(function StadiumIllustration({
           <path d={canopyD} fill={url("roof")} stroke="#64748b" strokeOpacity="0.4" strokeWidth="1.5" />
           {ribs}
           {/* Testeira com a cor do clube, a acompanhar o arco */}
-          <path d={fasciaD} fill="none" stroke={home} strokeWidth={grandRoof ? 9 : 7} opacity="0.95" />
-          <path d={fasciaD} fill="none" stroke={shade(home, 0.3)} strokeWidth={grandRoof ? 2 : 1.5} opacity="0.6" />
+          <path d={fasciaD} fill="none" stroke={home} strokeWidth={colossal ? 12 : grandRoof ? 9 : 7} opacity="0.95" />
+          <path d={fasciaD} fill="none" stroke={shade(home, 0.3)} strokeWidth={colossal ? 2.5 : grandRoof ? 2 : 1.5} opacity="0.6" />
         </g>
       )}
 
       {/* Telão assente na cobertura (só nos grandes) */}
       {screen && (
         <g>
-          <ellipse cx={400} cy={screenTop + 13} rx={95} ry={30} fill={url("screenGlow")} />
-          <rect x={336} y={screenTop} width={128} height={26} rx={4} fill="#0f172a" stroke={away} strokeOpacity="0.7" strokeWidth="2" />
-          <rect x={343} y={screenTop + 5} width={114} height={16} rx={2} fill={home} opacity="0.95" />
-          <rect x={343} y={screenTop + 5} width={114} height={16} rx={2} fill={url("sheen")} />
-          <text x={400} y={screenTop + 16.5} textAnchor="middle" fontSize="11" fontWeight="900" fill="#020617">
+          <ellipse cx={400} cy={screenTop + screenH / 2} rx={95 * screenScale} ry={30 * screenScale} fill={url("screenGlow")} />
+          <rect x={screenX} y={screenTop} width={screenW} height={screenH} rx={4} fill="#0f172a" stroke={away} strokeOpacity="0.7" strokeWidth="2" />
+          <rect x={screenX + screenPadX} y={screenTop + screenPadTop} width={screenW - screenPadX * 2} height={screenInnerH} rx={2} fill={home} opacity="0.95" />
+          <rect x={screenX + screenPadX} y={screenTop + screenPadTop} width={screenW - screenPadX * 2} height={screenInnerH} rx={2} fill={url("sheen")} />
+          <text x={400} y={screenTop + screenPadTop + screenInnerH - 4.5 * screenScale} textAnchor="middle" fontSize={11 * screenScale} fontWeight="900" fill="#020617">
             {screenLabel}
           </text>
         </g>

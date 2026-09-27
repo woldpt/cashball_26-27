@@ -264,6 +264,13 @@
 - **Lógica de contrato duplicada (e divergente)**: o client recalculava `contractLocked` com fórmula própria (branch `currentSlot > 0` com 14/20) que divergia do servidor (`coreHelpers.currentEpoch` usa `contractCutoverSeason` com 14 jornadas para épocas antigas). Fix: servidor calcula `contract_locked` (CAST 0/1) no SELECT da pesquisa, mesmo `currentEpoch` do filtro `onlyAvailable`; client apagou as ~12 linhas de matemática (imports `SEASON_*` e props `season`/`currentSlot` removidos do `PlayerSearchView`).
 - "Licitar" → navegação para tab leilões mantida (padrão consistente no repo: TransferHub e PlayerHistoryModal fazem igual); `tabular-nums`/filtros colapsáveis ficam para tarefa própria.
 - Checks: server `typecheck` OK; client `lint` (2 erros pré-existentes, confirmados via stash) + `check:types` OK; `audit:socketio` 0 erros (warning `playerSearchResults` pré-existente — listener dinâmico invisível ao analisador).
+## Ilustração: pelado ≤5k + colossal >80k (2026-09-27)
+
+- Pedido: ≤5000 mais pequeno/rudimentar, >80000 gigantesco. Decisões por perguntas: pelado total em baixo, só mais presença (sem 4.º anel) em cima.
+- Só `client/src/components/shared/StadiumIllustration.jsx`: `bare` (≤5000) → span 0.62, sem postes de luz, sem corrimão/bandeirolas, sem portões laterais (portão central, muro, multidão e relvado ficam); `colossal` (>80000) → curva `bulk` contínua com a antiga até 80k (1.064, zero mudança 50–80k) e íngreme depois (até ~1.25 aos 120k), testeira 9→12, telão escalado por `bulk` com topo preso a ≥2 (o pico do telhado já o empurrava para fora do canvas). Escalões 15/30/50k intocados; JSDoc dos escalões atualizado.
+- Harness `stadium-resp-test`: caso 4k (pelado) novo; 100k passa a «colossal». Screenshots vistos: 4k estreito/despido vs 8k com luz, 100k imponente com telão grande.
+- Checks: `lint` só pré-existentes (2 erros + 1 warning, confirmados via stash) · `check:types` OK · portrait 165/165 · landscape 198/198 (1.ª passagem deu 1 falha flaky no briefing a 926 — briefing não usa a ilustração; isolado passa, repetição total passa).
+
 ## StadiumTab: review 7/10 → correções (2026-09-26)
 
 - Avaliação 1–10 pedida (código 7,5 · UX 7). Fixes no diálogo de expansão: usava `SEATS_PER_BUILD * 15` (preço hardcodado, mentia com bilhete ≠15€) e título/descrição com «300.000€»/«5.000» fixos — agora `ticketPrice` + `formatCurrency(EXPANSION_COST)`/`SEATS_PER_BUILD`. Fallback hex `#4ade80` → classe `text-primary`. pt-PT: «Actual»→«Atual» (AO90), «Mood»→«Moral dos adeptos».
