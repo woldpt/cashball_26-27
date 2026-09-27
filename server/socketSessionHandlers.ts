@@ -850,18 +850,18 @@ export function registerSessionSocketHandlers(
 		try {
 			const leagueMatches = await runAll(
 				game.db,
-				"SELECT id, matchweek, home_team_id, away_team_id, home_score, away_score, attendance, home_lineup, away_lineup, narrative FROM matches WHERE played = 1 AND season = ? ORDER BY matchweek, id",
+				"SELECT id, matchweek, home_team_id, away_team_id, home_score, away_score, attendance FROM matches WHERE played = 1 AND season = ? ORDER BY matchweek, id",
 				[game.season],
 			);
 
-			// Parse JSON fields from database
+			// Calendário magro: narrative/lineups nunca são consumidos do calendarData
 			const parsedLeagueMatches = leagueMatches.map((match: any) => ({
 				...match,
 				finalHomeGoals: match.home_score,
 				finalAwayGoals: match.away_score,
-				events: safeParse(match.narrative, []),
-				homeLineup: safeParse(match.home_lineup, []),
-				awayLineup: safeParse(match.away_lineup, []),
+				events: [],
+				homeLineup: [],
+				awayLineup: [],
 			}));
 
 			const cupMatches = await runAll(
@@ -941,7 +941,7 @@ export function registerSessionSocketHandlers(
 			try {
 				const trophies = await runAll(
 					game.db,
-					`SELECT pa.season, pa.achievement, pa.coach_name, pa.is_human_coach, t.name as team_name
+					`SELECT pa.season, pa.achievement, pa.coach_name, pa.is_human_coach, pa.player_id, t.name as team_name
 					 FROM palmares pa
 					 JOIN teams t ON t.id = pa.team_id
 					 WHERE pa.team_id = ?
@@ -1000,6 +1000,13 @@ export function registerSessionSocketHandlers(
 					 WHERE played = 1`,
 				);
 
+				// Nomes das equipas: só para identificar o campeão de cada época na
+				// trajetória (o resto da query de época já vem por team_id).
+				const teamNameRows = await runAll(game.db, `SELECT id, name FROM teams`);
+				const teamNameById: Map<number, string> = new Map(
+					(teamNameRows || []).map((r: any) => [r.id, r.name]),
+				);
+
 				// Liga é round-robin por divisão: a componente conexa das jogos de uma
 				// época é a própria divisão. Usa union-find para reconstruir a divisão
 				// de cada equipa por época (a divisão atual não vale para o histórico).
@@ -1045,6 +1052,9 @@ export function registerSessionSocketHandlers(
 					goalsFor: number;
 					goalsAgainst: number;
 					points: number;
+					divisionSize: number;
+					championName: string | null;
+					championPoints: number;
 				}> = [];
 				for (const [season, rows] of bySeason) {
 					// Época corrente ainda não acabou — só histórico das concluídas.
@@ -1065,6 +1075,8 @@ export function registerSessionSocketHandlers(
 					const idx = sorted.findIndex((r) => r.team_id === teamId);
 					if (idx === -1) continue;
 					const row = sorted[idx];
+					// A componente conexa da época é a divisão: o líder dela é o campeão.
+					const champion = sorted[0];
 					seasonRecords.push({
 						year: baseYear + season,
 						season,
@@ -1075,6 +1087,9 @@ export function registerSessionSocketHandlers(
 						goalsFor: row.goals_for,
 						goalsAgainst: row.goals_against,
 						points: 3 * row.wins + row.draws,
+						divisionSize: group.length,
+						championName: teamNameById.get(champion.team_id) ?? null,
+						championPoints: 3 * champion.wins + champion.draws,
 					});
 				}
 				seasonRecords.sort((a, b) => b.season - a.season);

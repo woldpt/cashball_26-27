@@ -124,6 +124,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     selectedTeamLoading,
     handleOpenTeamSquad,
     handleCloseTeamSquad,
+    refreshCalendar,
     navigateTab,
     resetGameState,
     setMe,
@@ -560,6 +561,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                             playerId: player.id,
                           })
                         }
+                        onRequestCalendar={refreshCalendar}
                       />
                     )}
 

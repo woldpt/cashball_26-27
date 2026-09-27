@@ -14,7 +14,7 @@ import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
 import { TeamKit } from "../components/shared/TeamKit.jsx";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { TeamHistoryView } from "./TeamHistoryView.jsx";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /**
  * @param {{
@@ -36,6 +36,7 @@ import { useMemo, useState } from "react";
  *   onBack: function,
  *   onOpenTeamSquad: function,
  *   onOpenPlayerHistory?: (player: object) => void,
+ *   onRequestCalendar?: () => void,
  * }} props
  */
 export function TeamSquadView({
@@ -57,8 +58,15 @@ export function TeamSquadView({
   onBack,
   onOpenTeamSquad,
   onOpenPlayerHistory,
+  onRequestCalendar,
 }) {
   const [activeTab, setActiveTab] = useState("squad");
+
+  // O calendário global só é refrescado ao visitar o Calendário — sem isto,
+  // a tab local mostrava estados de uma semana anterior.
+  useEffect(() => {
+    if (activeTab === "calendar") onRequestCalendar?.();
+  }, [activeTab, selectedTeam?.id, onRequestCalendar]);
 
   const isOwnTeam = isSameTeamId(selectedTeam?.id, me?.teamId);
   const isNpcTeam =
@@ -81,6 +89,8 @@ export function TeamSquadView({
   const seasonYear = calendarData?.year ?? new Date().getFullYear();
 
   const teamFixtures = useMemo(() => {
+    // Só a tab Calendário consome isto — fora dela nem se calcula.
+    if (activeTab !== "calendar") return [];
     const curIdx = calendarData?.calendarIndex ?? 0;
     const divTeams = (teams ?? [])
       .filter((t) => t.division === selectedTeamDivision)
@@ -159,7 +169,7 @@ export function TeamSquadView({
         };
       })
       .filter(Boolean);
-  }, [calendarData, selectedTeam, selectedTeamDivision, teams]);
+  }, [activeTab, calendarData, selectedTeam, selectedTeamDivision, teams]);
 
   return (
     <div className="min-h-0 flex-1 w-full bg-surface text-on-surface flex flex-col overflow-hidden">
@@ -443,6 +453,9 @@ export function TeamSquadView({
             selectedTeam={selectedTeam}
             clubHistory={clubHistory}
             clubHistoryTeamId={clubHistoryTeamId}
+            teams={teams}
+            onOpenTeamSquad={onOpenTeamSquad}
+            onOpenPlayerHistory={onOpenPlayerHistory}
           />
         ) : activeTab === "calendar" ? (
           <div className="space-y-2 p-6">

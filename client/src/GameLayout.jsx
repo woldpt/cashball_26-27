@@ -161,7 +161,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               }
             >
               <div className={isFullBleedTab ? "flex flex-col min-h-0" : undefined}>
-                <AnimatePresence mode="wait" initial={false}>
+                <AnimatePresence mode="sync" initial={false}>
                   <motion.div
                     key={activeTab}
                     className={

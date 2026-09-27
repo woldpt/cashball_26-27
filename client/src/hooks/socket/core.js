@@ -63,6 +63,9 @@ export function registerCoreListeners(handlers, refs, ctx) {
 		handlers.setCalendarData(null);
 		});
 	socket.on("teamSquadData", ({ teamId, squad }) => {
+		if (refs.squadCacheRef) {
+			refs.squadCacheRef.current.set(teamId, squad || []);
+		}
 		if (
 			refs.selectedTeamRef.current &&
 			refs.selectedTeamRef.current.id === teamId

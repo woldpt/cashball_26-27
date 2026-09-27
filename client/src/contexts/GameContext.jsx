@@ -263,6 +263,9 @@ export function GameProvider({
 	const matchReplayActiveRef = useRef(false);
 	const liveMinuteRef = useRef(0);
 	const selectedTeamRef = useRef(null);
+	// Cache de plantéis por teamId (SWR): reabrir uma equipa mostra o último
+	// plantel de imediato e revalida por trás. Limpo em mudança de época.
+	const squadCacheRef = useRef(new Map());
 	// Chaves anti-repetição do humor pós-jogo, UMA POR COMPETIÇÃO: com uma
 	// só chave partilhada, o ramo da Taça recriava o modal da ronda anterior
 	// por cima do da Liga (e vice-versa), porque `matchResults`/`cupRoundResults`
@@ -884,6 +887,11 @@ year: seasonYear,
 		socket.emit("requestCalendar");
 	}, [activeTab, matchweekCount]);
 
+	// Plantéis em cache só valem dentro da época (mercado/época nova muda tudo).
+	useEffect(() => {
+		squadCacheRef.current.clear();
+	}, [season]);
+
 	// ── Chat / RoomHub effects ──────────────────────────────────────────────
 	useEffect(() => {
 		if (chatMessagesRef.current) {
@@ -1101,6 +1109,7 @@ year: seasonYear,
 			pendingDismissalRef,
 			matchReplayActiveRef,
 			selectedTeamRef,
+			squadCacheRef,
 			marketPairsRef,
 			injuryCountdownRef,
 			goalFlashRef,
@@ -1156,17 +1165,20 @@ year: seasonYear,
 		}
 		setActiveTab("squad");
 		setSelectedTeam(full?.sponsorBrand && !team?.sponsorBrand ? { ...team, sponsorBrand: full.sponsorBrand } : team);
-		setSelectedTeamSquad([]);
-		setSelectedTeamLoading(true);
+		const cached = squadCacheRef.current.get(team.id);
+		if (cached) {
+			// SWR: mostra o último plantel de imediato e revalida por trás.
+			setSelectedTeamSquad(cached);
+			setSelectedTeamLoading(false);
+		} else {
+			setSelectedTeamSquad([]);
+			setSelectedTeamLoading(true);
+		}
 		socket.emit("requestTeamSquad", team.id);
 		socket.emit("requestPalmares", { teamId: team.id });
 		socket.emit("requestClubHistory", { teamId: team.id });
-		// O calendário do plantel deriva os estados (done/current/future) de
-		// calendarData.calendarIndex. Esse snapshot só é refrescado quando o
-		// utilizador visita o separador Calendário — sem isto, abrir o plantel
-		// de OUTRA equipa mostra estados de uma semana anterior (jornada já
-		// jogada marcada como "Próximo Jogo" e a atual como "Agendado").
-		socket.emit("requestCalendar");
+		// Sem requestCalendar aqui (era MBs por abertura): a tab local
+		// Calendário do TeamSquadView pede-o ao ativar via refreshCalendar.
 	}, []);
 
 	const handleCloseTeamSquad = useCallback(() => {
@@ -1216,8 +1228,14 @@ year: seasonYear,
 				);
 				if (team) {
 					setSelectedTeam(team);
-					setSelectedTeamSquad([]);
-					setSelectedTeamLoading(true);
+					const cached = squadCacheRef.current.get(team.id);
+					if (cached) {
+						setSelectedTeamSquad(cached);
+						setSelectedTeamLoading(false);
+					} else {
+						setSelectedTeamSquad([]);
+						setSelectedTeamLoading(true);
+					}
 					socket.emit("requestTeamSquad", team.id);
 					socket.emit("requestPalmares", { teamId: team.id });
 					socket.emit("requestClubHistory", { teamId: team.id });
@@ -1235,6 +1253,12 @@ year: seasonYear,
 		};
 		window.addEventListener("popstate", onPopState);
 		return () => window.removeEventListener("popstate", onPopState);
+	}, []);
+
+	// Pedido explícito de calendário (tab Calendário global e tab local do
+	// TeamSquadView). A abertura de plantel já não o pede (era MBs por clique).
+	const refreshCalendar = useCallback(() => {
+		socket.emit("requestCalendar");
 	}, []);
 
 	const closeRefereePopup = useCallback(() => setRefereePopup(null), []);
@@ -1468,17 +1492,25 @@ year: seasonYear,
 	);
 
 	const mySideInHalftime = myMatch?.homeTeamId === me?.teamId ? "home" : "away";
-	const redCardedHalftimeIds = new Set(
-		(myMatch?.events || [])
-			.filter((e) => e.type === "red" && e.team === mySideInHalftime)
-			.map((e) => e.playerId)
-			.filter(Boolean),
+	const redCardedHalftimeIds = useMemo(
+		() =>
+			new Set(
+				(myMatch?.events || [])
+					.filter((e) => e.type === "red" && e.team === mySideInHalftime)
+					.map((e) => e.playerId)
+					.filter(Boolean),
+			),
+		[myMatch, mySideInHalftime],
 	);
-	const injuredHalftimeIds = new Set(
-		(myMatch?.events || [])
-			.filter((e) => e.type === "injury" && e.team === mySideInHalftime)
-			.map((e) => e.playerId)
-			.filter(Boolean),
+	const injuredHalftimeIds = useMemo(
+		() =>
+			new Set(
+				(myMatch?.events || [])
+					.filter((e) => e.type === "injury" && e.team === mySideInHalftime)
+					.map((e) => e.playerId)
+					.filter(Boolean),
+			),
+		[myMatch, mySideInHalftime],
 	);
 
 	const myTeamInCup =
@@ -1695,7 +1727,7 @@ year: seasonYear,
 	}, []);
 
 	// ── Context value ────────────────────────────────────────────────────────
-	const value = {
+	const value = useMemo(() => ({
 		// State
 		teams,
 		setTeams,
@@ -1912,6 +1944,7 @@ year: seasonYear,
 		handleHalftimeReady,
 		handleOpenTeamSquad,
 		handleCloseTeamSquad,
+		refreshCalendar,
 		closeRefereePopup,
 		handleResolveMatchAction,
 		handleCloseMatch,
@@ -1944,7 +1977,49 @@ year: seasonYear,
 		loanInterestPerWeek,
 		currentBudget,
 		filteredMarketPlayers,
-	};
+	}), [
+		teams, setTeams, prevStandings, setPrevStandings, teamForms, setTeamForms,
+		players, setPlayers, mySquad, setMySquad, disconnected, setDisconnected,
+		sessionDisplaced, setSessionDisplaced, toasts, chatPeek, reconnectFlash, lockedCoaches,
+		awaitingCoaches, roomCreator, simSpeed, matchResults, allMatchResults, matchweekCount,
+		season, seasonYear, activeTab, setActiveTab, navigateTab, topScorers,
+		standingsStale, marketPairs, marketPositionFilter, setMarketPositionFilter, marketSort, setMarketSort,
+		showOwnMarketPlayers, setShowOwnMarketPlayers, auctionBid, selectedAuctionPlayer, isAuctionExpanded, setIsAuctionExpanded,
+		myAuctionBid, setMyAuctionBid, auctionResult, activeAuctions, highlightedAuctionId, setHighlightedAuctionId,
+		transferHistory, globalNews, nextMatchSummary, nextMatchSummaryLoading, setNextMatchSummaryLoading, refereePopup,
+		setRefereePopup, gameDialog, setGameDialog, contractQueue, contractAnswering, respondContractRequest,
+pendingRoomInvite, setPendingRoomInvite, onAcceptRoomInvite, cupDraw, setCupDraw, showCupDrawPopup, setShowCupDrawPopup,
+		cupDrawRevealIdx, setCupDrawRevealIdx, cupRoundResults, cupResultsFilter, setCupResultsFilter, cupPenaltyPopup,
+		setCupPenaltyPopup, cupPenaltyKickIdx, setCupPenaltyKickIdx, pendingCupRoundResults, welcomeModal, setWelcomeModal,
+		jobOfferModal, setJobOfferModal, dismissalModal, setDismissalModal, boardWarning, setBoardWarning,
+		coachMarketReport, setCoachMarketReport, seasonEndModal, setSeasonEndModal, adminPanelOpen, setAdminPanelOpen,
+		adminUsers, setAdminUsers, userDropdownOpen, setUserDropdownOpen, isCupMatch, calendarIndex,
+		cupPreMatch, cupMatchRoundName, currentCupRound, cupExtraTimeBadge, isCupExtraTime, cupActiveTeamIds,
+		palmares, palmaresTeamId, clubHistory, clubHistoryTeamId, clubNews, playerHistoryModal,
+		setPlayerHistoryModal, financeData, sponsorState, setSponsorState, showTransferSales, setShowTransferSales,
+		showTransferPurchases, setShowTransferPurchases, showTicketBreakdown, setShowTicketBreakdown, selectedTeam, selectedTeamSquad,
+		selectedTeamLoading,
+transferProposalModal, setTransferProposalModal, signingCelebration, setSigningCelebration, postMatchMood, setPostMatchMood,
+		playerSearchData, setPlayerSearchData, playerSearchLoading, setPlayerSearchLoading, nextPlayerSearchId, cupBracketData,
+		calendarData, calFilter, setCalFilter, tactic, setTactic, tacticFamiliarity,
+		setTacticFamiliarity, allTacticFamiliarity, setAllTacticFamiliarity, liveMinute, isPlayingMatch, waitingForResults,
+		resultsWaitTimedOut, isLiveSimulation, showHalftimePanel, matchAction, isMatchActionPending, injuryCountdown,
+		subsMade, setSubsMade, goalFlashRef, substitutionPause, renderError, swapSource,
+		setSwapSource, swapTarget, setSwapTarget, subbedOut, setSubbedOut, confirmedSubs,
+		setConfirmedSubs, penaltySuspense, showMatchDetail, setShowMatchDetail, matchDetailFixture, setMatchDetailFixture,
+		roomHubOpen, setRoomHubOpen, roomSettingsOpen, setRoomSettingsOpen, roomMessages, setRoomMessages,
+		globalMessages, setGlobalMessages, globalPlayers, setGlobalPlayers, unreadRoom, unreadGlobal,
+		setUnreadRoom, setUnreadGlobal, chatInput, setChatInput, mobileSubMenu, setMobileSubMenu, sidebarCollapsed,
+		setSidebarCollapsed, avatarSeed, setAvatarSeed, coachAvatars, setCoachAvatars, injuryCountdownRef,
+		chatMessagesRef, roomHubRef, chatOpenRef, activeChatTabRef, me, setMe,
+		meRef, roomCodeRef, joinTimerRef, backendUrl, addToast, dismissToast,
+		handleHalftimeReady, handleOpenTeamSquad, handleCloseTeamSquad, refreshCalendar, closeRefereePopup, handleResolveMatchAction,
+		handleCloseMatch, buyPlayer, renewPlayerContract, listPlayerAuction, listPlayerFixed, removeFromTransferList,
+		openAuctionBid, resetGameState, isMatchInProgress, teamInfo, myMatch, mySideInHalftime,
+		redCardedHalftimeIds, injuredHalftimeIds, myTeamInCup, annotatedSquad, panelMode, panelFixture,
+		panelIsReady, nextMatchOpponent, nextMatchReferee, currentJornada, completedJornada, totalWeeklyWage,
+		capacityRevPerGame, loanAmount, loanInterestPerWeek, currentBudget, filteredMarketPlayers,
+	]);
 
 	return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
