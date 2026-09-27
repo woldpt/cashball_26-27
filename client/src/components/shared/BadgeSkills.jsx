@@ -11,6 +11,9 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  * receita para Plantel, Tática, intervenção/substituições e mercado.
  *
  * Sem label "Skill" — só o número dourado a negrito com glow.
+ * Na semana em que a skill muda (`prevSkill` do backend, só preenchido
+ * nessa semana), o número pinta-se de verde (subiu) ou vermelho (desceu)
+ * em vez do dourado — sem setas.
  */
 
 /**
@@ -20,7 +23,7 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  *   form?: number,
  *   morale?: number,
  *   aggressiveness?: number|string,
- *   delta?: number,
+ *   prevSkill?: number|null,
  *   hideStats?: boolean,
  *   size?: "md"|"sm",
  *   className?: string,
@@ -32,7 +35,7 @@ export function BadgeSkills({
   form,
   morale,
   aggressiveness,
-  delta = 0,
+  prevSkill = null,
   hideStats = false,
   size = "md",
   className = "",
@@ -55,29 +58,31 @@ export function BadgeSkills({
   // receita (px-1 <360px) desde a 5.ª célula AGR, que tirava 10px às
   // linhas h-10 do CompactPlayerCard a 320px (intervencao harness).
   const cellCls = sm ? "px-1 min-[360px]:px-1.5 py-0.5" : "px-1 min-[360px]:px-2 py-0.5";
+  // Tendência semanal: prevSkill só vem preenchido na semana da mudança
+  // (o backend limpa-o nas outras). Só o número muda de cor — sem setas.
+  const trend =
+    prevSkill != null && skill != null && prevSkill !== skill
+      ? Math.sign(skill - prevSkill)
+      : 0;
+  const skillColor =
+    trend > 0 ? "text-emerald-400" : trend < 0 ? "text-red-400" : "text-amber-300";
   // Glow só no número — textShadow estático forte (sem keyframes novos
   // para não regressar o briefing em landscape, ver 2262acd986f6).
+  // Acompanha a cor do número para não misturar âmbar com verde/vermelho.
+  const glowRgb = trend > 0 ? "52,211,153" : trend < 0 ? "248,113,113" : "251,191,36";
   const glowStyle = {
-    textShadow:
-      "0 0 10px rgba(251,191,36,0.9), 0 0 22px rgba(251,191,36,0.45), 0 0 36px rgba(251,191,36,0.20)",
+    textShadow: `0 0 10px rgba(${glowRgb},0.9), 0 0 22px rgba(${glowRgb},0.45), 0 0 36px rgba(${glowRgb},0.20)`,
   };
   return (
     <div
-      title={`Skill ${skill ?? "—"} · RES ${resistance ?? "—"} · Forma ${form ?? "—"} · Moral ${morale ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`}
+      title={`Skill ${skill ?? "—"}${trend !== 0 ? ` (desde ${prevSkill})` : ""} · RES ${resistance ?? "—"} · Forma ${form ?? "—"} · Moral ${morale ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`}
       className={`flex items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
     >
       <div
-        className={`flex items-center justify-center gap-1 bg-amber-400/12 min-w-[3ch] ${!hideStats ? "border-r border-amber-400/20" : ""} ${cellCls}`}
+        className={`flex items-center justify-center bg-amber-400/12 min-w-[3ch] ${!hideStats ? "border-r border-amber-400/20" : ""} ${cellCls}`}
       >
-        {delta !== 0 && (
-          <span
-            className={`text-[10px] font-black leading-none ${delta > 0 ? "text-emerald-400" : "text-red-400"}`}
-          >
-            {delta > 0 ? "▲" : "▼"}
-          </span>
-        )}
         <span
-          className={`font-black font-headline tabular-nums leading-none text-amber-300 ${skillCls}`}
+          className={`font-black font-headline tabular-nums leading-none ${skillColor} ${skillCls}`}
           style={glowStyle}
         >
           {skill ?? "—"}

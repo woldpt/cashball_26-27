@@ -130,6 +130,7 @@ export function MatchPlayerCard({
             form={player.form}
             morale={player.morale}
             aggressiveness={player.aggressiveness}
+            prevSkill={player.prev_skill}
           />
         )}
       </div>

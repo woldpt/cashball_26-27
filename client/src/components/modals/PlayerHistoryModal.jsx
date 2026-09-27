@@ -97,11 +97,6 @@ export function PlayerHistoryModal({
   const barColor = POSITION_ACCENT_HEX[pos] || POSITION_ACCENT_HEX.MED;
   const isStar = player.is_star === 1;
   const skill = player.skill ?? 0;
-  const skillDelta =
-    player.prev_skill != null && player.prev_skill !== skill
-      ? skill - player.prev_skill
-      : 0;
-
   // Season stats
   const sGames = player.games_played ?? 0;
   const sGoals = player.goals ?? 0;
@@ -348,7 +343,7 @@ export function PlayerHistoryModal({
                     form={player.form}
                     morale={player.morale}
                     aggressiveness={player.aggressiveness}
-                    delta={skillDelta}
+                    prevSkill={player.prev_skill}
                   />
                   {player.last_rating != null && (
                     <div className="flex justify-between items-end">

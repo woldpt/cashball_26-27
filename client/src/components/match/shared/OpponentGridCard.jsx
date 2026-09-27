@@ -44,6 +44,7 @@ export function OpponentGridCard({ player, posStyle, hideStats = false }) {
         form={player.form}
         morale={player.morale}
         aggressiveness={player.aggressiveness}
+        prevSkill={player.prev_skill}
         hideStats={hideStats}
         size="sm"
       />

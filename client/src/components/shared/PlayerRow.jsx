@@ -61,11 +61,6 @@ export function PlayerRow({
     !!player.is_star &&
     (player.position === "MED" || player.position === "ATA");
 
-  const skillDelta =
-    player.prev_skill != null && player.prev_skill !== player.skill
-      ? player.skill - player.prev_skill
-      : 0;
-
   const bar = POSITION_BAR_CLASS[player.position] || "from-zinc-500 to-zinc-600";
   const glow = POSITION_GLOW_CLASS[player.position] || "";
   const bgGrad =
@@ -156,7 +151,7 @@ export function PlayerRow({
           form={player.form}
           morale={player.morale}
           aggressiveness={player.aggressiveness}
-          delta={skillDelta}
+          prevSkill={player.prev_skill}
         />
       </div>
 
@@ -286,7 +281,7 @@ export function PlayerRow({
               form={player.form}
               morale={player.morale}
               aggressiveness={player.aggressiveness}
-              delta={skillDelta}
+              prevSkill={player.prev_skill}
               size="sm"
             />
             {showLastRating && player.last_rating != null && (

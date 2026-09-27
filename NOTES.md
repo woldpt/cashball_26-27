@@ -2386,3 +2386,9 @@ Plano C1+C2 (quando fizer):
 - Pedido: retirar o efeito glow pulsante. Grill (1 pergunta) → só nas classificações, não na familiaridade tática.
 - 2 ficheiros: `PitchFormation.jsx` e `SwapControls.jsx` perdem a classe `animate-fam-glow`; âmbar + `drop-shadow` estático ficam. Keyframes no `index.css` intactos (ainda usados em `TacticsView` + `TransferHub`).
 - Checks: eslint limpo nos 2 ficheiros · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check.
+
+## BadgeSkills: delta/▲▼ fora, número pinta verde/vermelho (2026-09-27)
+- Pedido: eliminar `delta` e pintar a skill de verde/vermelha na mudança. Grill (4 perguntas): só o número muda de cor; só cor sem seta (risco daltónico assumido, mitigado com `(desde X)` no tooltip); duração = última jornada (já garantida pelo backend, que limpa `prev_skill` nas outras semanas — `engine.ts:3583-85`); âmbito = todos os usos, oponente incluído (1 linha para reverter).
+- `shared/BadgeSkills.jsx`: prop `delta` → `prevSkill`; tendência calculada dentro (elimina `skillDelta` duplicado em `PlayerRow`/`HistoryModal`); glow acompanha a cor; célula mantém fundo/borda âmbar.
+- 8 usos em 7 ficheiros passam `prevSkill={player.prev_skill}`: `PlayerRow` ×2, `PlayerHistoryModal`, `TacticsView`, `MatchPlayerCard`, `CompactPlayerCard`, `OpponentGridCard`, `BenchPlayers`. `STYLE.md` §10 atualizado.
+- Checks: eslint nos ficheiros tocados · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check.
