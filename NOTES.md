@@ -2336,3 +2336,8 @@ Plano C1+C2 (quando fizer):
 - Queixa: testes de responsividade demoram imenso. Investigação com 3 medições portrait (165 checks): C=10 → 59,6s · C=20 → 43s · C=33 → 40,9s. CPU total constante (~54s user, 12 cores) — joelho nos ~20, mesmos 5 FAIL determinísticos nas 3 corridas.
 - `client/scripts/mobileRespCheck.mjs`: default 10→20 (+ help). Skill atualizada (default 20, ~45s).
 - Checks: `mobile-resp-test` + `scout-resp-test` a 2 larguras, 4/4 PASS em ~5s.
+
+## verify-before-done: regra de âmbito mínimo (2026-09-27)
+- Ideia do utilizador: verificações só sobre os ficheiros afetados. Medições: typecheck 0,5s · lint 9,5s · check:types 0,15s · mobile ~43s.
+- Nova secção "Âmbito": lint só nos ficheiros da tarefa (`npx eslint <paths>`, acaba com o stash de prova na maioria dos casos), mobile só no harness do mapa, typecheck/types sempre inteiros, audits saltam com registo se o diff não toca jogo/sockets/presença.
+- Checks: N/A (só docs; verificado por leitura).

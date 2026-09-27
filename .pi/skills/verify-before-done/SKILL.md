@@ -20,6 +20,21 @@ fonte de verdade, não duplicada aqui:
 - Regressão nova ou alterada (`scripts/*Regression*`, harnesses) → correr o
   script/harness tocado.
 
+## Âmbito: só os ficheiros afetados
+
+Cada check corre no âmbito mínimo que mantém o sinal:
+
+- `lint` → só os ficheiros da tarefa (`npx eslint <paths>`, ~1–2 s em vez
+  de ~10 s). Bónus: erros pré-existentes noutros ficheiros não aparecem —
+  sem `stash` de prova.
+- Mobile → só o(s) harness(es) do mapa da skill
+  (`npm run test:mobile -- <harness>` + landscape); passagem completa só se
+  o ficheiro é partilhado ou não tem harness.
+- `typecheck` e `check:types` → sempre inteiros (fração de segundo; fatiar
+  não paga e o `tsc` não se fatia bem).
+- Audits → não se fatiam por ficheiro; saltam com registo no `NOTES.md` se
+  nada no diff toca lógica de jogo, sockets ou presença.
+
 ## Regras
 
 1. **Sem saída verificada, sem "feito".** Só conta a saída real do comando,
