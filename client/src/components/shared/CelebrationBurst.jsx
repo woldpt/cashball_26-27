@@ -1,14 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
-const PARTICLES = ["🍾", "🥂", "✨", "🎉", "💫", "🎊"];
+const PARTICLES = [
+  "🍾",
+  "🥂",
+  "✨",
+  "🎉",
+  "💫",
+  "🎊",
+  "✨",
+  "🎉",
+  "🥂",
+  "💫",
+  "🎊",
+  "🍾",
+  "✨",
+  "🎉",
+];
+
+/** Vida da festa: partículas extintas a ~2,15s (delay ≤0,25 + 1,9s). */
+const DISMOUNT_MS = 2300;
 
 /**
  * Explosão de champanhe e partículas de festejo — reutilizada pelos modais
  * de celebração (contratação, vitória).
  *
  * Distribuição determinística (função do índice + seed) — mesmo seed,
- * mesmo leque.
+ * mesmo leque. O raio do leque acompanha o ecrã (ver `radius`): 14
+ * partículas espalhadas por toda a largura, para a festa ser vista de
+ * relance em vez de procurada no centro.
  *
  * @param {{
  *   seed: string|number,
@@ -28,7 +48,7 @@ function hashSeed(seed) {
 }
 
 export function CelebrationBurst({ seed, showChampagne = true }) {
-  // Auto-desmonta após a festa (~2,2s): os modais que o usam ficam abertos
+  // Auto-desmonta após a festa (~2,3s): os modais que o usam ficam abertos
   // e acumulariam nós invisíveis (opacity 0) no DOM. O reset vive no render
   // (padrão documentado do React), não no efeito — lint proíbe setState
   // síncrono em efeitos.
@@ -40,9 +60,21 @@ export function CelebrationBurst({ seed, showChampagne = true }) {
   }
   useEffect(() => {
     if (done) return;
-    const t = window.setTimeout(() => setDone(true), 2200);
+    const t = window.setTimeout(() => setDone(true), DISMOUNT_MS);
     return () => window.clearTimeout(t);
   }, [done, seed]);
+
+  // Raio máximo do leque, 1× por montagem (o componente nasce e morre com
+  // cada festejo): proporcional ao ecrã, para o telemóvel não atirar confete
+  // para fora e o desktop não o encolher num canto.
+  const radius = useMemo(
+    () =>
+      Math.min(
+        520,
+        Math.max(150, Math.min(window.innerWidth, window.innerHeight) * 0.58),
+      ),
+    [],
+  );
 
   const particles = useMemo(() => {
     const base = hashSeed(seed);
@@ -51,14 +83,14 @@ export function CelebrationBurst({ seed, showChampagne = true }) {
       return {
         id: i,
         emoji,
-        angle: (Math.PI * 2 * i) / PARTICLES.length + jitter * 0.5,
-        dist: 90 + jitter * 120,
-        size: 16 + jitter * 22,
-        delay: jitter * 0.3,
-        rot: jitter * 120 - 60,
+        angle: (Math.PI * 2 * i) / PARTICLES.length + jitter * 0.45,
+        dist: radius * (0.4 + jitter * 0.6),
+        size: 18 + jitter * 26,
+        delay: jitter * 0.25,
+        rot: jitter * 180 - 90,
       };
     });
-  }, [seed]);
+  }, [seed, radius]);
 
   if (done) return null;
 
@@ -74,13 +106,14 @@ export function CelebrationBurst({ seed, showChampagne = true }) {
           animate={{
             x: Math.cos(p.angle) * p.dist,
             y: Math.sin(p.angle) * p.dist - 40,
-            opacity: [0, 1, 0],
-            scale: [0.4, 1.1, 0.7],
+            opacity: [0, 1, 1, 0],
+            scale: [0.4, 1.15, 1, 0.75],
             rotate: p.rot,
           }}
           transition={{
-            duration: 1.6,
+            duration: 1.9,
             delay: p.delay,
+            times: [0, 0.16, 0.68, 1],
             ease: "easeOut",
           }}
         >
@@ -91,20 +124,20 @@ export function CelebrationBurst({ seed, showChampagne = true }) {
       {showChampagne && (
         <>
           <motion.div
-            className="absolute left-4 top-6 pointer-events-none select-none text-4xl"
+            className="absolute left-4 top-6 pointer-events-none select-none text-5xl"
             aria-hidden="true"
-            initial={{ rotate: -30, y: 0, opacity: 0 }}
-            animate={{ rotate: -55, y: [0, -10, 0], opacity: 1 }}
-            transition={{ duration: 1.4, delay: 0.2 }}
+            initial={{ rotate: -30, y: 0, opacity: 0, scale: 0.7 }}
+            animate={{ rotate: -55, y: [0, -14, 0], opacity: 1, scale: 1 }}
+            transition={{ duration: 1.7, delay: 0.15 }}
           >
             🍾
           </motion.div>
           <motion.div
-            className="absolute right-4 top-6 pointer-events-none select-none text-4xl"
+            className="absolute right-4 top-6 pointer-events-none select-none text-5xl"
             aria-hidden="true"
-            initial={{ rotate: 30, y: 0, opacity: 0 }}
-            animate={{ rotate: 55, y: [0, -10, 0], opacity: 1 }}
-            transition={{ duration: 1.4, delay: 0.2 }}
+            initial={{ rotate: 30, y: 0, opacity: 0, scale: 0.7 }}
+            animate={{ rotate: 55, y: [0, -14, 0], opacity: 1, scale: 1 }}
+            transition={{ duration: 1.7, delay: 0.15 }}
           >
             🍾
           </motion.div>

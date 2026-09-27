@@ -6,7 +6,7 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
 
 /* ── GoalFlashOverlay — momento de golo ao vivo ─────────────────────────
  *
- * Overlay efémero (~2s) DE PÁGINA INTEIRA quando um golo é revelado em
+ * Overlay efémero (~2,2s) DE PÁGINA INTEIRA quando um golo é revelado em
  * direto no teu jogo. Renderizado via portal para o <body> como `fixed
  * inset-0` (o pai LiveMatchHero tem overflow-hidden, que encerraria o
  * festejo ao card):
@@ -77,10 +77,11 @@ export function GoalFlashOverlay({
     awayIsMine,
   ]);
 
-  // Auto-dismiss da cabeça da fila (~2s por golo).
+  // Auto-dismiss da cabeça da fila (~2,2s por golo — o tempo de vida da
+  // festa: as partículas do `CelebrationBurst` extinguem-se a ~2,15s).
   useEffect(() => {
     if (!moments.length) return;
-    const t = window.setTimeout(() => setMoments((q) => q.slice(1)), 1950);
+    const t = window.setTimeout(() => setMoments((q) => q.slice(1)), 2200);
     return () => window.clearTimeout(t);
   }, [moments]);
 

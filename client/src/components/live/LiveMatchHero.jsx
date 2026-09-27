@@ -2,7 +2,6 @@ import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
 import { PreMatchIntro, KickoffBadge } from "../match/shared/index.js";
-import { GoalFlashOverlay } from "../match/shared/GoalFlashOverlay.jsx";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
 
@@ -513,16 +512,6 @@ export function LiveMatchHero({
           />
         )}
       </div>
-
-      {/* ── Momento de golo ao vivo (overlay efémero) ── */}
-      <GoalFlashOverlay
-        goalFlashRef={goalFlashRef}
-        homeId={myMatch.homeTeamId}
-        awayId={myMatch.awayTeamId}
-        homeIsMine={homeIsMine}
-        awayIsMine={awayIsMine}
-        isPlayingMatch={isPlayingMatch}
-      />
     </div>
   );
 }

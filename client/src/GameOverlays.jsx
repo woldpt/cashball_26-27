@@ -6,6 +6,7 @@ import { computePostMatchFlow } from "./utils/postMatchFlow.js";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
 import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
 import { GameDialog } from "./components/shared/GameDialog.jsx";
+import { GoalFlashOverlay } from "./components/match/shared/GoalFlashOverlay.jsx";
 import { InviteRoomModal } from "./components/modals/InviteRoomModal.jsx";
 import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.jsx";
 import { PenaltyTakerPopup } from "./components/modals/PenaltyTakerPopup.jsx";
@@ -46,6 +47,8 @@ export function GameOverlays() {
     currentJornada,
     dismissalModal,
     gameDialog,
+    // Festejo de golo do meu jogo — global, não preso ao tab Jogo (abaixo).
+    goalFlashRef,
     handleCloseMatch,
     handleHalftimeReady,
     handleResolveMatchAction,
@@ -204,7 +207,22 @@ export function GameOverlays() {
 
   return (
     <>
-
+      {/* ── Festejo de golo do MEU jogo, montado no topo da app ──────────
+       * Vive aqui, e não dentro do `LiveMatchHero`, porque o som de golo
+       * nasce no GameContext (global) enquanto o herói só existe no tab
+       * "Jogo": um golo marcado com o utilizador noutro tab (Plantel,
+       * Mercado, Classificações...) tocava o som e falhava a festa. O
+       * overlay renderiza `null` sem momento — custo zero quando ocioso.
+       */}
+      {myMatch && (
+        <GoalFlashOverlay
+          goalFlashRef={goalFlashRef}
+          homeId={myMatch.homeTeamId}
+          awayId={myMatch.awayTeamId}
+          homeIsMine={myMatch.homeTeamId === me?.teamId}
+          awayIsMine={myMatch.awayTeamId === me?.teamId}
+        />
+      )}
 
       <TransferProposalModal
         transferProposalModal={transferProposalModal}
