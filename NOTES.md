@@ -11,6 +11,11 @@
 - Peripécias: import `../ui/Button.jsx` inexistente no modal (lint/types passaram, o harness acusou 500) → `./Button.jsx`; journal-resp-test FAIL nas duas passagens é pré-existente (confirmado via stash: mesma `label sr-only` no HEAD limpo).
 - Checks: server `typecheck` OK · `audit:socketio` 0 erros (100 avisos, +3 benignos da mesma classe "invisível ao analisador") · `test:sponsor` 19/19 · `test:crash-recovery` PASS · client `lint` só os 2 erros pré-existentes · `check:types` OK · `test:mobile` 160/165 + landscape 192/198 (só journal pré-existente). Sem sala viva → `audit:gamestate` fica para a próxima.
 
+## Camisolas no jogo: TeamKit + ClubTab + TeamSquadView (2026-09-27)
+- Novo `shared/TeamKit.jsx`: `<img>` do `/kits/<slug>.svg` com slug derivado do `crest` (sem mapa novo); sem crest/erro → null (padrão `TeamCrest`).
+- `ClubTab` ROW 2 passa a 3 cols (Estádio + Equipamento + Palmarés); `TeamSquadView` ganha tab «Equipamento» (mobile + desktop, mesmo ramo de conteúdo).
+- Checks: eslint limpo nos 3 · `check:types` OK · portrait 160/165 + landscape 192/198 — falhas só `journal-resp-test` (pré-existente, confirmado via stash: 5/165 iguais sem as mudanças; harness sem refs aos ficheiros). `club-resp-test` 5/5 PASS + screenshot a 390 com crest real (camisola do Porto OK; o fallback "F" é o 404 pré-existente do `/logos/*.png` vs `.webp`). Nota: tab «Equipamento» pode truncar a 320px no mobile (expand flex-1, sem harness que a cubra) — sem quebra de layout.
+
 ## URLs zerozero: 5 clubes corrigidos (2026-09-27)
 - Âmbito "só URLs" aprovado. `teamsSource.ts` + `candidates_2026_27.json`: lusitano-evora/4270→lusitano-gc/2173, oliveira-hospital/3598→fc-oliv-hospital/3618, alcochetense/3592→alcochetense/3548, o-elvas/3604→o-elvas/2180, sintrense/3590→sintrense/3655 (apontavam para Randers/Lourinhanense/Infesta/Maria da Fonte/Gondomar).
 - Cache envenenado apagado (5 HTML + 5 fotos); `fetchZerozeroKits.ts` re-sacou as fotos certas (59/60, escouralense esperado) e os `<title>` confirmam os clubes. Brasões e plantéis em jogo estavam e continuam certos; plantéis nem se auditaram (fora do âmbito).

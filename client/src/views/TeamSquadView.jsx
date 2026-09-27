@@ -11,6 +11,7 @@ import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
+import { TeamKit } from "../components/shared/TeamKit.jsx";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { TeamHistoryView } from "./TeamHistoryView.jsx";
 import { useMemo, useState } from "react";
@@ -258,6 +259,7 @@ export function TeamSquadView({
               { key: "squad", label: "Plantel" },
               { key: "calendar", label: "Calendário" },
               { key: "history", label: "História" },
+              { key: "kit", label: "Equipamento" },
             ]}
             active={activeTab}
             onChange={setActiveTab}
@@ -422,6 +424,7 @@ export function TeamSquadView({
               { key: "squad", label: "Plantel" },
               { key: "calendar", label: "Calendário" },
               { key: "history", label: "História" },
+              { key: "kit", label: "Equipamento" },
             ]}
             active={activeTab}
             onChange={setActiveTab}
@@ -431,7 +434,14 @@ export function TeamSquadView({
 
       {/* Content — scroll interno */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        {activeTab === "history" ? (
+        {activeTab === "kit" ? (
+          <div className="p-6 sm:p-8 flex flex-col items-center gap-3">
+            <TeamKit team={selectedTeam} className="h-48 sm:h-64 object-contain" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+              Equipamento principal · Época {seasonYear}
+            </p>
+          </div>
+        ) : activeTab === "history" ? (
           <TeamHistoryView
             selectedTeam={selectedTeam}
             clubHistory={clubHistory}

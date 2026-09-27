@@ -4,6 +4,7 @@ import { DIVISION_NAMES, WAGE_CAP } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { TeamKit } from "../components/shared/TeamKit.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 
@@ -348,8 +349,8 @@ export function ClubTab({
         </SummaryWidget>
       </div>
 
-      {/* ── ROW 2: ESTÁDIO + PALMARÉS ─────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 short:gap-2">
+      {/* ── ROW 2: ESTÁDIO + EQUIPAMENTO + PALMARÉS ─────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 short:gap-2">
 
         {/* Estádio */}
         <div className="bg-surface-container rounded-md border border-outline-variant/25 overflow-hidden flex flex-col">
@@ -394,6 +395,24 @@ export function ClubTab({
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Equipamento */}
+        <div className="bg-surface-container rounded-md border border-outline-variant/25 p-4 short:p-2.5 flex flex-col">
+          <div className="flex justify-between items-center mb-2 short:mb-1">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+              Equipamento
+            </h3>
+            <span className="material-symbols-outlined text-on-surface-variant" aria-hidden>
+              checkroom
+            </span>
+          </div>
+          <div className="flex-1 flex items-center justify-center py-2 short:py-1 min-h-28">
+            <TeamKit team={teamInfo} className="h-28 sm:h-32 short:h-20 object-contain" />
+          </div>
+          <p className="text-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+            Principal
+          </p>
         </div>
 
         {/* Palmarés */}
