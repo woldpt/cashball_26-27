@@ -142,8 +142,9 @@ export function PlayerRow({
         </div>
       </div>
 
-      {/* Skills — badge único SKILL·RES·FORMA */}
-      <div className="shrink-0 self-center flex items-center px-1.5 sm:px-2">
+      {/* Skills — badge único SKILL·RES·FORMA·MOR·AGR (só md+; em mobile
+          vive na linha extra em baixo para o nome não cortar) */}
+      <div className="hidden md:flex shrink-0 self-center items-center px-1.5 sm:px-2">
         <SkillBadge
           skill={player.skill}
           resistance={player.resistance}
@@ -273,7 +274,16 @@ export function PlayerRow({
 
         {/* Linha extra em mobile: atributos + golos + salário (escondidos ≥md) */}
         <div className="md:hidden flex items-center justify-between gap-2 px-2 py-1.5 border-t border-outline-variant/10">
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <SkillBadge
+              skill={player.skill}
+              resistance={player.resistance}
+              form={player.form}
+              morale={player.morale}
+              aggressiveness={player.aggressiveness}
+              delta={skillDelta}
+              size="sm"
+            />
             <span className="flex flex-col items-center">
               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
                 Golos

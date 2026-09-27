@@ -6,9 +6,9 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  *
  * Retângulo de cantos arredondados com os valores sempre
  * pela mesma ordem: SKILL dourado (maior, negrito, glow só no número)
- * | RES azul | FORMA verde | MOR violeta | AGR vermelha (só md+,
- * escondida com hideResForm). Uma só receita para Plantel,
- * Tática, intervenção/substituições e mercado.
+ * | RES azul | FORMA verde | MOR violeta | AGR vermelha (número na cor
+ * do tier, etiqueta só no tooltip; escondida com hideResForm). Uma só
+ * receita para Plantel, Tática, intervenção/substituições e mercado.
  *
  * Sem label "Skill" — só o número dourado a negrito com glow.
  */
@@ -39,7 +39,7 @@ export function BadgeSkills({
 }) {
   const sm = size === "sm";
   // AGR: número 10–50 pintado com a cor do tier; etiqueta só no tooltip.
-  // Célula só em md+ (mobile não tem largura) e escondida com hideResForm.
+  // Visível em todas as larguras (inclusive mobile); escondida com hideResForm.
   const hasAgg = aggressiveness != null;
   const aggKey = hasAgg ? aggLabel(aggressiveness) : null;
   const aggColor = (aggKey && AGG_TIERS[aggKey]?.color) || "text-zinc-400";
@@ -51,8 +51,10 @@ export function BadgeSkills({
   const numCls = sm ? "text-[11px]" : "text-[12px] sm:text-[13px]";
   // Abaixo de 360px o padding encolhe (4.ª célula MOR): a 320px o badge
   // de 4 células excedia a linha em 25px (topwidgets harness); 360+ passa
-  // com px-2, por isso o breakpoint é 360 e não sm.
-  const cellCls = sm ? "px-1.5 py-0.5" : "px-1 min-[360px]:px-2 py-0.5";
+  // com px-2, por isso o breakpoint é 360 e não sm. O sm segue a mesma
+  // receita (px-1 <360px) desde a 5.ª célula AGR, que tirava 10px às
+  // linhas h-10 do CompactPlayerCard a 320px (intervencao harness).
+  const cellCls = sm ? "px-1 min-[360px]:px-1.5 py-0.5" : "px-1 min-[360px]:px-2 py-0.5";
   // Glow só no número — textShadow estático forte (sem keyframes novos
   // para não regressar o briefing em landscape, ver 2262acd986f6).
   const glowStyle = {
@@ -107,7 +109,7 @@ export function BadgeSkills({
               {morale ?? "–"}
             </span>
           </div>
-          <div className={`hidden md:flex flex-col items-center justify-center gap-0.5 bg-red-500/10 ${cellCls}`}>
+          <div className={`flex flex-col items-center justify-center gap-0.5 bg-red-500/10 ${cellCls}`}>
             <span className="text-[7px] uppercase tracking-widest text-red-200/70 font-bold leading-none">
               Agr
             </span>

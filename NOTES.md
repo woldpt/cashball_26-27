@@ -2240,6 +2240,12 @@ Plano C1+C2 (quando fizer):
 - `PlayerRow.jsx`: passa `aggressiveness` ao badge; apagadas coluna AGR `md+` e `span` AGR mobile + import do `AggBadge`. Propagada a prop em `TacticsView`, `MatchPlayerCard`, `CompactPlayerCard`, `OpponentGridCard` (`BenchPlayers` usa `hideResForm`, sem mexer). `TransferHub`/`AuctionCard`/`PlayerHistoryModal` fora de âmbito.
 - Checks: eslint limpo nos 6 tocados (2 erros globais pré-existentes noutros ficheiros) · `check:types` OK · portrait 160/165 e landscape 192/198 — as falhas são todas do `journal-resp-test` (`<label sr-only>`/scroll-x), pré-existentes (confirmado via stash em HEAD limpa) numa vista que não usa estes componentes.
 
+## AGR no badge em mobile + nome sem corte (2026-09-27)
+- Queixa (screenshot): no Plantel mobile o nome cortava ("João Afon…") e a AGR não aparecia no badge. Grill (2 perguntas) → badge para a linha extra + AGR em todos os badges mobile.
+- `BadgeSkills.jsx`: célula AGR sempre visível (cai o `hidden md:flex`); `cellCls` do `sm` segue a receita do `md` (`px-1 min-[360px]:px-1.5`) — sem isto a 5.ª célula tirava 10px às linhas `h-10` do `CompactPlayerCard` a 320px (intervencao harness: clipEls 0→10, reposto a 0).
+- `PlayerRow.jsx`: badge da linha 1 só `md+` (`hidden md:flex`); linha extra mobile ganha badge `sm` de 5 células (SKILL·RES·FORMA·MOR·AGR) + Golos + salário. Nomes compridos cabem ("Manuel José Carlos Ferreira" sem ellipsis, screenshot do harness a 320px).
+- Checks: eslint limpo · `check:types` OK · portrait 160/165 e landscape 192/198 — só jornal pré-existente; `transfer` clipEls=1 também pré-existente (confirmado via stash).
+
 ## BadgeSkills no PlayerHistoryModal (2026-09-26)
 - Pedido: integrar o badge colorido de skills no modal e harmonizar as skills no jogo todo; intervalos mobile fora de âmbito. Grill recusado → plano com 4 pressupostos, "avanca".
 - A meio: descoberta de que o `BadgeSkills` já tinha 5.ª célula AGR (`md+`, commit 53766dfe) e o `PlayerRow` já passava `aggressiveness` sem AGR separada — a leitura inicial estava desatualizada. Decisão: paridade total com o `PlayerRow` (badge leva tudo, sem barras duplicadas).
