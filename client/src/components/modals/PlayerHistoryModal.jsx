@@ -338,6 +338,7 @@ export function PlayerHistoryModal({
                 </p>
                 <div className="flex flex-col gap-4">
                   <BadgeSkills
+                    size="lg"
                     skill={skill}
                     resistance={player.resistance}
                     form={player.form}
