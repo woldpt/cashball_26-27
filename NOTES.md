@@ -89,6 +89,10 @@
 - Peripécias: import `../ui/Button.jsx` inexistente no modal (lint/types passaram, o harness acusou 500) → `./Button.jsx`; journal-resp-test FAIL nas duas passagens é pré-existente (confirmado via stash: mesma `label sr-only` no HEAD limpo).
 - Checks: server `typecheck` OK · `audit:socketio` 0 erros (100 avisos, +3 benignos da mesma classe "invisível ao analisador") · `test:sponsor` 19/19 · `test:crash-recovery` PASS · client `lint` só os 2 erros pré-existentes · `check:types` OK · `test:mobile` 160/165 + landscape 192/198 (só journal pré-existente). Sem sala viva → `audit:gamestate` fica para a próxima.
 
+## Patch do patrocinador: sem sombra + nome legível (2026-09-27)
+- O quadrado da screenshot era o patch da sessão das marcas (`ac0a4136`, overlay em `TeamKit`, não nos SVGs): tinha `stroke` escuro (parecia sombra) e o nome em 3.2un (~4-6px, parecia "faltar").
+- `TeamKit.jsx`: rect sem stroke e opaco; patch 22x23→30x26; texto mín. 3.2→4.2un (~8px na tab Equipamento). Só 1 ficheiro; prova no `club-resp-test` (pior caso 25 chars) PASS.
+
 ## Camisolas no jogo: TeamKit + ClubTab + TeamSquadView (2026-09-27)
 - Novo `shared/TeamKit.jsx`: `<img>` do `/kits/<slug>.svg` com slug derivado do `crest` (sem mapa novo); sem crest/erro → null (padrão `TeamCrest`).
 - `ClubTab` ROW 2 passa a 3 cols (Estádio + Equipamento + Palmarés); `TeamSquadView` ganha tab «Equipamento» (mobile + desktop, mesmo ramo de conteúdo).

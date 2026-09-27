@@ -48,9 +48,10 @@ export function TeamKit({ team, className = "h-28 object-contain" }) {
   const lines = brand ? wrap2(brand.short || brand.name).map((l) => l.toUpperCase()) : [];
   // O texto encolhe para caber na largura do patch (~0,74 unidades por
   // carácter em 900); abaixo do mínimo, `textLength` aperta o que sobra.
-  const inner = 19.2;
+  // Patch de 30x26 centrado no peito (cabe no corpo da camisola, x28-72).
+  const inner = 26;
   const width = 0.74 * Math.max(...lines.map((l) => l.length), 1);
-  const size = Math.min(4.4, Math.max(3.2, inner / width));
+  const size = Math.min(5, Math.max(4.2, inner / width));
   return (
     <span className="relative inline-block">
       <img
@@ -62,15 +63,16 @@ export function TeamKit({ team, className = "h-28 object-contain" }) {
       />
       {brand && (
         <svg viewBox="0 0 100 100" role="img" aria-label={brand.name} className="absolute inset-0 h-full w-full">
-          <rect x="31" y="30" width="22" height="23" rx="2" fill="#fff" fillOpacity="0.94" stroke="#000" strokeOpacity="0.25" strokeWidth="0.6" />
-          <image href={`/sponsors/${brand.sponsorId}.svg`} x="36.5" y="32" width="11" height="11" />
+          {/* Patch cosido: branco opaco sem rebordo (o stroke escuro parecia sombra). */}
+          <rect x="35" y="29" width="30" height="26" rx="2" fill="#fff" />
+          <image href={`/sponsors/${brand.sponsorId}.svg`} x="44" y="31" width="12" height="12" />
           {lines.map((line, i) => {
             const over = 0.74 * line.length * size > inner;
             return (
               <text
                 key={i}
-                x="42"
-                y={lines.length === 1 ? 48.6 : 46.8 + i * 5}
+                x="50"
+                y={lines.length === 1 ? 51.5 : 48.5 + i * 5}
                 textAnchor="middle"
                 fontSize={size}
                 fontWeight="900"
