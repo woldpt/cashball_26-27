@@ -18,6 +18,7 @@ const sponsors = require("../game/sponsors.ts") as typeof import("../game/sponso
 const {
 	SPONSORS,
 	SPONSOR_WEEKS,
+	dealDisplaySponsors,
 	drawOffers,
 	drawOffersAny,
 	drawNpcChoice,
@@ -87,5 +88,17 @@ const almostAll = new Set(SPONSORS.slice(0, 59).map((s) => s.id));
 const fallback = drawOffersAny(almostAll, 3);
 assertEq(fallback.length, 1, "global com 1 livre devolve 1");
 assertEq(fallback[0].sponsorId, SPONSORS[59].id, "fallback é a marca livre");
+
+// Exibição época 1: 40 equipas (8×5), 1 marca cada, única no escalão
+const fakeTeams = [1, 2, 3, 4, 5].flatMap((division) =>
+	Array.from({ length: 8 }, (_, i) => ({ id: division * 100 + i, division })),
+);
+const dealt = dealDisplaySponsors(fakeTeams);
+assertEq(dealt.length, 40, "display cobre as 40 equipas");
+for (const division of [1, 2, 3, 4, 5]) {
+	const mine = dealt.filter((d) => fakeTeams.find((t) => t.id === d.teamId)?.division === division);
+	assertEq(new Set(mine.map((d) => d.sponsorId)).size, 8, `display D${division} sem repetições`);
+	assert(mine.every((d) => sponsorById(d.sponsorId)?.tier === division), `display D${division} no escalão certo`);
+}
 
 console.log("\nPASS test:sponsor");

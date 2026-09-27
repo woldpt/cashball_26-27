@@ -5,6 +5,7 @@ import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, WAGE_SEED_SPREAD, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
 import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
+import { dealDisplaySponsors } from "./game/sponsors";
 import { getOfflineCoaches } from "./presenceHelpers";
 import {
   backfillSeats,
@@ -645,6 +646,26 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               friendlyParams.push(FRIENDLY_ROUND, shuffledFriendly[i], shuffledFriendly[i + 1]);
             }
             if (friendlyVals.length) tmp.prepare(`INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES ${friendlyVals.join(",")}`).run(...friendlyParams);
+            // Patrocinador de exibição da época 1 (só visual, sem dinheiro):
+            // 1 marca por clube, única no escalão. Colunas criadas aqui para
+            // não depender da idade do base.db (a migração no open cobre o
+            // resto). sponsor_season=0 mantém o fixo antigo no fim da época 1.
+            for (const col of [
+              "sponsor_pending INTEGER DEFAULT 0",
+              "sponsor_offers TEXT",
+              "sponsor_id TEXT",
+              "sponsor_profile TEXT",
+              "sponsor_season INTEGER DEFAULT 0",
+              "sponsor_upfront INTEGER DEFAULT 0",
+              "sponsor_weekly INTEGER DEFAULT 0",
+              "sponsor_second_half INTEGER DEFAULT 0",
+              "sponsor_paid_second INTEGER DEFAULT 0",
+            ]) {
+              try { tmp.exec(`ALTER TABLE teams ADD COLUMN ${col}`); } catch { /* já existe */ }
+            }
+            const displayTeams: Array<{ id: number; division: number }> = tmp.prepare("SELECT id, division FROM teams").all();
+            const displayUpd = tmp.prepare("UPDATE teams SET sponsor_id = ?, sponsor_season = 0, sponsor_pending = 0 WHERE id = ?");
+            for (const d of dealDisplaySponsors(displayTeams)) displayUpd.run(d.sponsorId, d.teamId);
           tmp.exec("COMMIT");
           console.log(`[gameManager] Sala ${roomCode}: pool 60→40 filtrado (keep ${keepIds.length}, drop ${dropIds.length})`);
         } finally {

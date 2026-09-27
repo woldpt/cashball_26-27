@@ -203,6 +203,30 @@ export function drawOffers(division: number, takenIds: Set<string> = new Set(), 
 	return pool.slice(0, count).map((s, i) => buildOffer(s, base, profiles[i % profiles.length]));
 }
 
+/**
+ * Distribuição de exibição (época 1, só visual): 1 marca por equipa,
+ * única dentro do escalão. Salas reais têm 8 equipas/divisão para 12
+ * marcas; se algum dia houver mais equipas que marcas, o pote roda
+ * (só aí com repetição).
+ */
+export function dealDisplaySponsors(teams: Array<{ id: number; division: number }>): Array<{ teamId: number; sponsorId: string }> {
+	const out: Array<{ teamId: number; sponsorId: string }> = [];
+	const byDiv = new Map<number, number[]>();
+	for (const t of teams) {
+		const list = byDiv.get(t.division) ?? [];
+		list.push(t.id);
+		byDiv.set(t.division, list);
+	}
+	for (const [division, ids] of byDiv) {
+		const pool = shuffle(sponsorsByTier(division));
+		const loose = pool.length > 0 ? pool : shuffle(SPONSORS);
+		ids.forEach((teamId, i) => {
+			out.push({ teamId, sponsorId: loose[i % loose.length].id });
+		});
+	}
+	return out;
+}
+
 /** Escolha aleatória direta (NPC): patrocinador + perfil ao acaso. */
 export function drawNpcChoice(division: number, takenIds: Set<string> = new Set()): SponsorOffer | null {
 	const offers = drawOffers(division, takenIds, 1);
