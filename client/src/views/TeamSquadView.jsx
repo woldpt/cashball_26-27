@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import {
   DIVISION_NAMES,
   POSITION_TEXT_CLASS,
@@ -6,15 +7,175 @@ import {
 import { generateLeagueFixtures } from "../utils/fixtures.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
+import { rankStandings } from "../utils/standingsRank.js";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
+import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { StatTile } from "../components/shared/StatTile.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
+import { TeamCrest } from "../components/shared/TeamCrest.jsx";
 import { TeamKit } from "../components/shared/TeamKit.jsx";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
+import { Panel } from "../components/shared/Panel.jsx";
+import { EmptyState } from "../components/shared/EmptyState.jsx";
+import { FormDots } from "../components/shared/FormDots.jsx";
 import { TeamHistoryView } from "./TeamHistoryView.jsx";
-import { useEffect, useMemo, useState } from "react";
+
+const POS_ORDER = ["GR", "DEF", "MED", "ATA"];
+const POS_GROUP_LABEL = {
+  GR: "Guarda-redes",
+  DEF: "Defesas",
+  MED: "Médios",
+  ATA: "Avançados",
+};
+
+const GAME_LABEL = { league: "Liga", cup: "Taça", friendly: "Amigável" };
+const GAME_VARIANT = { league: "info", cup: "warning", friendly: "cooldown" };
+
+const RESULT_META = {
+  V: { letter: "V", title: "Vitória", bar: "bg-emerald-400", text: "text-emerald-400" },
+  E: { letter: "E", title: "Empate", bar: "bg-amber-400", text: "text-amber-400" },
+  D: { letter: "D", title: "Derrota", bar: "bg-red-400", text: "text-red-400" },
+};
+
+/**
+ * Uma linha de jogo do clube (últimos jogos, próximo jogo e calendário).
+ * Marcador sempre na perspetiva do clube — o badge de resultado decide.
+ *
+ * @param {{ match: object, onOpenTeam?: (team: object) => void }} props
+ */
+function MatchLine({ match, onOpenTeam }) {
+  const meta = match.result ? RESULT_META[match.result] : null;
+  const opponent = match.opponent;
+  const when = match.roundName
+    ? match.roundName
+    : `Jornada ${match.matchweek ?? "—"}`;
+  const clickable = !!opponent?.id && typeof onOpenTeam === "function";
+
+  const content = (
+    <>
+      <span
+        aria-hidden
+        className={`w-1 self-stretch rounded-full ${meta ? meta.bar : "bg-outline-variant/40"}`}
+      />
+      {meta ? (
+        <span
+          title={meta.title}
+          className={`w-4 shrink-0 text-center text-[10px] font-black ${meta.text}`}
+        >
+          {meta.letter}
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className="w-4 shrink-0 text-center text-[10px] font-black text-on-surface-variant/40"
+        >
+          ·
+        </span>
+      )}
+      <TeamCrest team={opponent || { name: "?" }} size="w-7 h-7 text-[10px]" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-black text-on-surface">
+          {opponent?.name ?? "Adversário por definir"}
+        </p>
+        <div className="flex items-center gap-1.5 text-[9px] font-bold text-on-surface-variant/70">
+          <span className="shrink-0">{match.imHome ? "Casa" : "Fora"}</span>
+          <span className="text-on-surface-variant/40">·</span>
+          <span className="truncate">{when}</span>
+          <Badge
+            variant={GAME_VARIANT[match.kind] || "neutral"}
+            className="ml-auto shrink-0"
+          >
+            {GAME_LABEL[match.kind] || match.kind}
+          </Badge>
+        </div>
+      </div>
+      <div className="shrink-0 text-right">
+        {match.result ? (
+          <>
+            <p className="font-headline text-sm font-black tabular-nums text-on-surface">
+              {match.myScore}–{match.opScore}
+            </p>
+            {match.hasPen && (
+              <p className="text-[8px] font-bold tabular-nums text-on-surface-variant/60">
+                {match.myPen}–{match.opPen} g.p.
+              </p>
+            )}
+          </>
+        ) : match.isCurrent ? (
+          <Badge variant="info">Hoje</Badge>
+        ) : (
+          <Badge variant="neutral">VS</Badge>
+        )}
+      </div>
+      {clickable && (
+        <span
+          aria-hidden
+          className="material-symbols-outlined hidden text-[16px] text-on-surface-variant/30 group-hover:text-on-surface-variant sm:inline"
+        >
+          chevron_right
+        </span>
+      )}
+    </>
+  );
+
+  const className =
+    "flex w-full items-center gap-2 rounded-md border border-outline-variant/25 bg-surface-container-low px-2.5 py-2 text-left transition-colors";
+
+  if (!clickable) return <div className={className}>{content}</div>;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenTeam(opponent)}
+      title={`Abrir clube: ${opponent?.name ?? ""}`}
+      className={`group ${className} hover:border-outline-variant/50 hover:bg-surface-container-high`}
+    >
+      {content}
+    </button>
+  );
+}
+
+/**
+ * Destaque do plantel (top por skill) na tab Resumo.
+ *
+ * @param {{ player: object, onOpenPlayerHistory?: (player: object) => void }} props
+ */
+function HighlightRow({ player, onOpenPlayerHistory }) {
+  const skillClass = POSITION_TEXT_CLASS[player.position] || "text-on-surface";
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenPlayerHistory?.(player)}
+      title="Abrir histórico do jogador"
+      className="flex w-full items-center gap-3 rounded-md border border-outline-variant/25 bg-surface-container-low px-2.5 py-2 text-left transition-colors hover:border-outline-variant/50 hover:bg-surface-container-high"
+    >
+      <PlayerAvatar
+        seed={player.id}
+        position={player.position}
+        nationality={player.nationality}
+        photo={player.photo || null}
+        size="mdR"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-black text-on-surface">
+          {player.name}
+        </p>
+        <p className="truncate text-[9px] font-bold text-on-surface-variant/70">
+          {POS_GROUP_LABEL[player.position] || player.position} · {player.age} anos
+          {player.goals ? ` · ${player.goals} golos` : ""}
+        </p>
+      </div>
+      <span
+        className={`shrink-0 font-headline text-lg font-black tabular-nums ${skillClass}`}
+        style={{ textShadow: "0 0 10px currentColor" }}
+      >
+        {player.skill}
+      </span>
+    </button>
+  );
+}
 
 /**
  * @param {{
@@ -33,6 +194,7 @@ import { useEffect, useMemo, useState } from "react";
  *   currentMatchweek: number,
  *   calendarData,
  *   teams,
+ *   teamForms?: Object, {teamId: "VVEDE"} forma dos últimos 5 jogos
  *   onBack: function,
  *   onOpenTeamSquad: function,
  *   onOpenPlayerHistory?: (player: object) => void,
@@ -55,12 +217,13 @@ export function TeamSquadView({
   currentMatchweek = 1,
   calendarData,
   teams,
+  teamForms = {},
   onBack,
   onOpenTeamSquad,
   onOpenPlayerHistory,
   onRequestCalendar,
 }) {
-  const [activeTab, setActiveTab] = useState("squad");
+  const [activeTab, setActiveTab] = useState("summary");
 
   // O calendário global só é refrescado ao visitar o Calendário — sem isto,
   // a tab local mostrava estados de uma semana anterior.
@@ -85,31 +248,78 @@ export function TeamSquadView({
     : `coach|${selectedTeam?.coach_name ?? selectedTeam?.id ?? "?"}`;
 
   const selectedTeamDivision = selectedTeam?.division;
-
   const seasonYear = calendarData?.year ?? new Date().getFullYear();
 
-  const teamFixtures = useMemo(() => {
-    // Só a tab Calendário consome isto — fora dela nem se calcula.
-    if (activeTab !== "calendar") return [];
-    const curIdx = calendarData?.calendarIndex ?? 0;
-    const divTeams = (teams ?? [])
-      .filter((t) => t.division === selectedTeamDivision)
-      .sort((a, b) => a.id - b.id);
+  // Linha fresca da classificação (o objeto clicado pode vir do briefing,
+  // sem pontos/forma atualizados).
+  const teamRow = useMemo(
+    () => (teams || []).find((t) => isSameTeamId(t.id, selectedTeam?.id)) || selectedTeam,
+    [teams, selectedTeam],
+  );
+  const teamsById = useMemo(
+    () => new Map((teams || []).map((t) => [t.id, t])),
+    [teams],
+  );
 
-    // calendarIndex é um índice misto (0–18, liga + taça) enquanto matchweek
-    // só avança nas jornadas de liga — o estado tem de vir de
-    // entry.calendarIndex, não de tratar calendarIndex como número de jornada.
-    return SEASON_CALENDAR.filter((entry) => entry.type === "league")
-      .map((entry) => {
+  const divisionTeams = useMemo(
+    () => (teams || []).filter((t) => t.division === selectedTeamDivision),
+    [teams, selectedTeamDivision],
+  );
+
+  const position = useMemo(() => {
+    const idx = rankStandings(divisionTeams).findIndex((t) =>
+      isSameTeamId(t.id, selectedTeam?.id),
+    );
+    return idx >= 0 ? idx + 1 : null;
+  }, [divisionTeams, selectedTeam]);
+
+  // Calendário da época do clube: liga (jogada ou gerada) + taça/amigáveis.
+  const { fixtures, lastFive, nextMatch } = useMemo(() => {
+    const curIdx = calendarData?.calendarIndex ?? 0;
+    const divTeams = [...divisionTeams].sort((a, b) => a.id - b.id);
+    const seeds =
+      calendarData?.fixtureSeeds?.[selectedTeamDivision] ??
+      divTeams.map((t) => t.id);
+    const playedLeague = calendarData?.leagueMatches ?? [];
+    const cupMatches = calendarData?.cupMatches ?? [];
+    const myId = selectedTeam?.id;
+
+    const normalize = (homeTeamId, awayTeamId, slot, kind, extra) => {
+      const imHome = isSameTeamId(homeTeamId, myId);
+      const opponentId = imHome ? awayTeamId : homeTeamId;
+      const opponent = teamsById.get(opponentId) || null;
+      const result = extra.result ?? null;
+      return {
+        slot,
+        kind,
+        imHome,
+        opponentId,
+        opponent,
+        matchweek: extra.matchweek ?? null,
+        roundName: extra.roundName ?? null,
+        myScore: result ? (imHome ? result.home_score : result.away_score) : null,
+        opScore: result ? (imHome ? result.away_score : result.home_score) : null,
+        myPen: result ? (imHome ? result.home_penalties : result.away_penalties) : 0,
+        opPen: result ? (imHome ? result.away_penalties : result.home_penalties) : 0,
+        hasPen:
+          !!result &&
+          ((result.home_penalties || 0) > 0 || (result.away_penalties || 0) > 0),
+        winnerTeamId: result?.winner_team_id ?? null,
+      };
+    };
+
+    const list = [];
+    for (const entry of SEASON_CALENDAR) {
+      if (entry.type === "league") {
         const status =
           entry.calendarIndex < curIdx
             ? "done"
             : entry.calendarIndex === curIdx
               ? "current"
               : "future";
-        const divFixtures =
+        const fixturesForWeek =
           status === "done"
-            ? (calendarData?.leagueMatches ?? [])
+            ? playedLeague
                 .filter(
                   (m) =>
                     m.matchweek === entry.matchweek &&
@@ -121,334 +331,268 @@ export function TeamSquadView({
                   awayTeamId: m.away_team_id,
                   result: m,
                 }))
-            : generateLeagueFixtures(
-                calendarData?.fixtureSeeds?.[selectedTeamDivision] ??
-                  divTeams.map((t) => t.id),
-                entry.matchweek,
-              ).map((f) => ({ ...f, result: null }));
-        const myFixture = divFixtures.find(
+            : generateLeagueFixtures(seeds, entry.matchweek).map((f) => ({
+                ...f,
+                result: null,
+              }));
+        const mine = fixturesForWeek.find(
           (f) =>
-            f.homeTeamId === selectedTeam.id ||
-            f.awayTeamId === selectedTeam.id,
+            isSameTeamId(f.homeTeamId, myId) || isSameTeamId(f.awayTeamId, myId),
         );
-        if (!myFixture) return null;
-        const imHome = myFixture.homeTeamId === selectedTeam.id;
-        const opponent = teams.find(
-          (t) =>
-            t.id === (imHome ? myFixture.awayTeamId : myFixture.homeTeamId),
+        if (!mine) continue;
+        list.push(
+          normalize(mine.homeTeamId, mine.awayTeamId, entry.calendarIndex, "league", {
+            matchweek: entry.matchweek,
+            result: mine.result,
+          }),
         );
-        const stadiumTeam = imHome ? selectedTeam : opponent;
-        const myScore = myFixture.result
-          ? imHome
-            ? myFixture.result.home_score
-            : myFixture.result.away_score
-          : null;
-        const opScore = myFixture.result
-          ? imHome
-            ? myFixture.result.away_score
-            : myFixture.result.home_score
-          : null;
-        const won = myFixture.result
-          ? imHome
-            ? myFixture.result.home_score > myFixture.result.away_score
-            : myFixture.result.away_score > myFixture.result.home_score
-          : null;
-        const drew = myFixture.result
-          ? myFixture.result.home_score === myFixture.result.away_score
-          : null;
-        return {
-          fixture: { ...myFixture, matchweek: entry.matchweek },
-          status,
-          imHome,
-          opponent,
-          stadiumTeam,
-          myScore,
-          opScore,
-          won,
-          drew,
-        };
-      })
-      .filter(Boolean);
-  }, [activeTab, calendarData, selectedTeam, selectedTeamDivision, teams]);
+        continue;
+      }
+      // Taça e amigável: existem em cup_matches a partir do sorteio.
+      const cup = cupMatches.find(
+        (m) =>
+          Number(m.round) === entry.round &&
+          (isSameTeamId(m.home_team_id, myId) || isSameTeamId(m.away_team_id, myId)),
+      );
+      if (!cup) continue;
+      list.push(
+        normalize(
+          cup.home_team_id,
+          cup.away_team_id,
+          entry.calendarIndex,
+          entry.type === "friendly" ? "friendly" : "cup",
+          {
+            roundName: entry.roundName,
+            result: cup.played ? cup : null,
+          },
+        ),
+      );
+    }
+
+    list.sort((a, b) => a.slot - b.slot);
+    // Resultado: na taça quem decide é o winner_team_id (empate com vitória
+    // nos penáltis é V, não E).
+    for (const m of list) {
+      m.isCurrent = m.slot === curIdx && m.myScore == null;
+      if (m.myScore == null) {
+        m.result = null;
+        continue;
+      }
+      const decided = m.kind === "cup" && m.winnerTeamId != null;
+      const won = decided
+        ? isSameTeamId(m.winnerTeamId, myId)
+        : m.myScore > m.opScore;
+      const drew = decided ? false : m.myScore === m.opScore;
+      m.result = won ? "V" : drew ? "E" : "D";
+    }
+
+    const played = list.filter((m) => m.result);
+    return {
+      fixtures: list,
+      lastFive: played.slice(-5).reverse(),
+      nextMatch: list.find((m) => !m.result) || null,
+    };
+  }, [calendarData, divisionTeams, selectedTeamDivision, selectedTeam, teamsById]);
+
+  // Plantel: totais + destaques (só quando o requestTeamSquad respondeu).
+  const squadLoaded = !selectedTeamLoading && selectedTeamSquad.length > 0;
+  const squadStats = useMemo(() => {
+    if (!squadLoaded) return null;
+    let skill = 0;
+    let value = 0;
+    let wage = 0;
+    for (const p of selectedTeamSquad) {
+      skill += p.skill || 0;
+      value += p.value || 0;
+      wage += p.wage || 0;
+    }
+    return {
+      count: selectedTeamSquad.length,
+      avgSkill: Math.round(skill / selectedTeamSquad.length),
+      value,
+      wage,
+    };
+  }, [selectedTeamSquad, squadLoaded]);
+
+  const highlights = useMemo(
+    () =>
+      squadLoaded
+        ? [...selectedTeamSquad].sort((a, b) => (b.skill || 0) - (a.skill || 0)).slice(0, 3)
+        : [],
+    [selectedTeamSquad, squadLoaded],
+  );
+
+  const trophies = clubHistoryTeamId === selectedTeam?.id ? clubHistory?.trophies ?? [] : [];
+  const lastTrophySeason = trophies.reduce(
+    (max, t) => Math.max(max, t.season ?? 0),
+    0,
+  );
+  const brand = teamRow?.sponsorBrand;
 
   return (
     <div className="min-h-0 flex-1 w-full bg-surface text-on-surface flex flex-col overflow-hidden">
-      {/* Header mobile — barra compacta + monograma (cor da equipa como acento) */}
-      <div className="sm:hidden relative overflow-hidden border-b border-outline-variant/60 bg-surface-container-low">
-        {/* Hairline nas cores da equipa */}
+      {/* ── CABEÇALHO (um só, responsivo) ─────────────────────── */}
+      <div
+        className="relative overflow-hidden border-b border-black/30"
+        style={{ background: selectedTeam?.color_primary || "#18181b" }}
+      >
+        {/* Estádio do clube, desvanecido sobre a cor (desktop) */}
         <div
-          className="h-0.5 w-full"
+          className="pointer-events-none absolute inset-y-0 right-0 hidden w-[55%] sm:block"
           style={{
-            background: `linear-gradient(90deg, ${selectedTeam.color_primary || "#2d6a4f"}, ${
-              selectedTeam.color_secondary || "#e9c349"
+            maskImage: "linear-gradient(to left, black 45%, transparent 95%)",
+            WebkitMaskImage: "linear-gradient(to left, black 45%, transparent 95%)",
+          }}
+        >
+          <StadiumIllustration
+            capacity={selectedTeam?.stadium_capacity || 10000}
+            primary={selectedTeam?.color_primary}
+            secondary={selectedTeam?.color_secondary}
+            className="h-full w-full"
+          />
+        </div>
+        {/* Hairline nas cores do clube */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 z-10 h-0.5"
+          style={{
+            background: `linear-gradient(90deg, ${selectedTeam?.color_primary || "#2d6a4f"}, ${
+              selectedTeam?.color_secondary || "#e9c349"
             })`,
           }}
         />
-        {/* Estádio da equipa, desvanecido à esquerda */}
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-[75%]"
-          style={{
-            maskImage: "linear-gradient(to left, black 40%, transparent 95%)",
-            WebkitMaskImage: "linear-gradient(to left, black 40%, transparent 95%)",
-          }}
-        >
-          <StadiumIllustration
-            capacity={selectedTeam.stadium_capacity || 10000}
-            primary={selectedTeam.color_primary}
-            secondary={selectedTeam.color_secondary}
-            className="h-full w-full"
-          />
-        </div>
-        <div className="relative flex items-center gap-3 px-4 pt-2.5 pb-2">
+
+        <div className="relative z-10 px-4 pb-3 pt-2.5 sm:px-6 sm:pb-5 sm:pt-4">
           <button
             onClick={onBack}
-            aria-label="Voltar"
-            className="-ml-1 shrink-0 p-1.5 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[22px]">
-              arrow_back
-            </span>
-          </button>
-          {/* Crest / Monograma */}
-          {selectedTeam.crest ? (
-            <img
-              src={selectedTeam.crest}
-              alt={selectedTeam.name}
-              onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
-              className="w-10 h-10 rounded-lg object-contain bg-white p-1 shrink-0 border border-white/10"
-              loading="lazy"
-            />
-          ) : null}
-          <div
-            className={`w-10 h-10 rounded-lg items-center justify-center text-lg font-black shrink-0 border border-white/10 ${selectedTeam.crest ? "hidden" : "flex"}`}
-            style={{
-              background: selectedTeam.color_primary || "#2d6a4f",
-              color: selectedTeam.color_secondary || "#fff",
-            }}
-          >
-            {selectedTeam.name?.[0] || "?"}
-          </div>
-          {/* Nome + meta */}
-          <div className="flex-1 min-w-0">
-            <h1 className="font-headline text-lg font-black tracking-tight leading-tight truncate text-on-surface">
-              {selectedTeam.name}
-            </h1>
-            <p className="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant truncate">
-              {DIVISION_NAMES[selectedTeam.division] ||
-                `Divisão ${selectedTeam.division}`}
-              · Época {seasonYear}
-            </p>
-          </div>
-          {/* Saldo (só equipa própria) */}
-          {isOwnTeam && (
-            <div
-              className="shrink-0 rounded-md bg-surface px-2.5 py-1 border-l-4"
-              style={{
-                borderLeftColor: selectedTeam.color_primary || "#2d6a4f",
-              }}
-            >
-              <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant">
-                Saldo
-              </p>
-              <p
-                className={`font-headline text-sm font-black tabular-nums leading-tight ${
-                  myBudget >= 0 ? "text-on-surface" : "text-error"
-                }`}
-              >
-                {formatCurrency(myBudget)}
-              </p>
-            </div>
-          )}
-        </div>
-        <div className="relative px-4 pb-3">
-          {/* Segmented control: partilha a largura, sem scroll horizontal */}
-          <TabBar
-            size="sm"
-            expand
-            tabs={[
-              { key: "squad", label: "Plantel" },
-              { key: "calendar", label: "Calendário" },
-              { key: "history", label: "História" },
-              { key: "kit", label: "Equipamento" },
-            ]}
-            active={activeTab}
-            onChange={setActiveTab}
-          />
-        </div>
-      </div>
-
-      {/* Header desktop — banner colorido (inalterado) */}
-      <div
-        className="hidden sm:block relative px-6 py-4 sm:py-8 border-b border-zinc-800 overflow-hidden"
-        style={{
-          background: selectedTeam.color_primary || "#18181b",
-        }}
-      >
-        {/* Ambient glow blobs */}
-        <div
-          className="pointer-events-none absolute -top-16 -left-16 w-80 h-80 rounded-full blur-[100px] opacity-15"
-          style={{ background: selectedTeam.color_primary || "#2d6a4f" }}
-        />
-        <div
-          className="pointer-events-none absolute top-24 -right-16 w-64 h-64 rounded-full blur-[80px] opacity-10"
-          style={{ background: selectedTeam.color_secondary || "#e9c349" }}
-        />
-
-        {/* Gradient overlay */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: selectedTeam.color_primary
-              ? `linear-gradient(to right, ${selectedTeam.color_primary}40, transparent 70%)`
-              : "linear-gradient(to right, #2d6a4f40, transparent 70%)",
-          }}
-        />
-
-        {/* Estádio da equipa, desvanecido à esquerda sobre a cor do clube */}
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-[55%]"
-          style={{
-            maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
-            WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
-          }}
-        >
-          <StadiumIllustration
-            capacity={selectedTeam.stadium_capacity || 10000}
-            primary={selectedTeam.color_primary}
-            secondary={selectedTeam.color_secondary}
-            className="h-full w-full"
-          />
-        </div>
-
-        {/* Back */}
-        <div className="relative z-10">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/80 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-white/80 transition-colors hover:text-white"
           >
             <span className="material-symbols-outlined text-[18px]">
               arrow_back
             </span>
             Voltar
           </button>
-        </div>
 
-        {/* Hero section */}
-        <div className="relative flex flex-col sm:flex-row gap-3 sm:gap-5 items-start sm:items-center">
-          {/* Team badge — crest com fallback */}
-          {selectedTeam.crest ? (
-            <img
-              src={selectedTeam.crest}
-              alt={selectedTeam.name}
-              onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
-              className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl object-contain bg-white p-2 shrink-0 shadow-lg border border-white/10"
-              loading="lazy"
+          <div className="mt-1.5 flex items-center gap-3 sm:mt-3 sm:gap-5">
+            <TeamCrest
+              team={teamRow}
+              size="w-11 h-11 sm:w-20 sm:h-20 text-lg sm:text-4xl"
+              className="shadow-lg"
             />
-          ) : null}
-          <div
-            className={`w-12 h-12 sm:w-20 sm:h-20 rounded-xl items-center justify-center text-xl sm:text-4xl font-black shrink-0 shadow-lg border border-white/10 ${selectedTeam.crest ? "hidden" : "flex"}`}
-            style={{
-              background: selectedTeam.color_primary || "#201f1f",
-              color: selectedTeam.color_secondary || "#fff",
-            }}
-          >
-            {selectedTeam.name?.[0] || "?"}
-          </div>
-
-          {/* Team info */}
-          <div className="flex-1 min-w-0">
-            <p
-              className="text-xs uppercase tracking-widest font-black mb-1"
-              style={{ color: selectedTeam.color_secondary || "#fff" }}
-            >
-              {DIVISION_NAMES[selectedTeam.division] ||
-                `Divisão ${selectedTeam.division}`}
-            </p>
-            <h1
-              className="font-headline text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter leading-none mb-1 truncate"
-              style={{ color: selectedTeam.color_secondary || "#ffffff" }}
-            >
-              {selectedTeam.name}
-            </h1>
-            <p className="text-sm text-on-surface-variant/80 font-bold">
-              Época {seasonYear}
-            </p>
-          </div>
-
-          {/* Coach — pastilha escura sobre o estádio para garantir contraste */}
-          <div className="shrink-0 text-right hidden sm:block rounded-lg bg-black/55 backdrop-blur-sm border border-white/10 px-3 py-2 shadow-md shadow-black/50">
-            <p className="text-[10px] uppercase tracking-widest text-white/70 font-black mb-1 flex items-center justify-end gap-1.5 [text-shadow:0_1px_8px_rgba(0,0,0,0.9)]">
-              Treinador
-              {!isOwnTeam && isHumanCoached && (
-                <Badge variant="warning" size="sm">
-                  Humano
-                </Badge>
-              )}
-            </p>
-            <div className="flex items-center justify-end gap-2">
+            <div className="min-w-0 flex-1">
               <p
-                className={`font-headline font-black text-lg tracking-tight [text-shadow:0_1px_8px_rgba(0,0,0,0.9)] ${
-                  !isOwnTeam && isHumanCoached
-                    ? "text-amber-300"
-                    : "text-white"
-                }`}
+                className="text-[10px] font-black uppercase tracking-widest sm:text-xs"
+                style={{ color: selectedTeam?.color_secondary || "#fff" }}
               >
-                {coachName}
+                {DIVISION_NAMES[selectedTeamDivision] ||
+                  `Divisão ${selectedTeamDivision}`}
               </p>
-              <CoachAvatar
-                name={coachName}
-                seed={coachAvatarSeed}
-                teamColor={selectedTeam.color_primary}
-                size="md"
-                coachAvatars={coachAvatars}
-                backendUrl={backendUrl}
-                photo={selectedTeam.coach_photo || null}
-              />
+              <h1
+                className="truncate font-headline text-lg font-black leading-tight tracking-tighter sm:text-3xl md:text-4xl"
+                style={{ color: selectedTeam?.color_secondary || "#ffffff" }}
+              >
+                {selectedTeam?.name}
+              </h1>
+            </div>
+
+            {/* Treinador — avatar em mobile, pastilha completa em sm+ */}
+            <div className="shrink-0 rounded-lg border border-white/10 bg-black/45 px-2 py-1.5 backdrop-blur-sm sm:px-3 sm:py-2">
+              <p className="mb-1 hidden items-center justify-end gap-1.5 text-[10px] font-black uppercase tracking-widest text-white/70 sm:flex">
+                Treinador
+                {!isOwnTeam && isHumanCoached && (
+                  <Badge variant="warning" size="sm">
+                    Humano
+                  </Badge>
+                )}
+              </p>
+              <div className="flex items-center gap-2">
+                <p
+                  className={`hidden max-w-[12rem] truncate font-headline text-lg font-black tracking-tight sm:block ${
+                    !isOwnTeam && isHumanCoached ? "text-amber-300" : "text-white"
+                  }`}
+                >
+                  {coachName}
+                </p>
+                <CoachAvatar
+                  name={coachName}
+                  seed={coachAvatarSeed}
+                  teamColor={selectedTeam?.color_primary}
+                  size="md"
+                  coachAvatars={coachAvatars}
+                  backendUrl={backendUrl}
+                  photo={selectedTeam?.coach_photo || null}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Budget widget (only for own team) */}
-        {isOwnTeam && (
-          <div className="relative mt-3 sm:mt-5">
-            <SummaryWidget
-              compactMobile
-              label="Saldo Disponível"
-              value={formatCurrency(myBudget)}
-              valueClass="text-lg sm:text-2xl"
-              valueColorClass={myBudget >= 0 ? "text-on-surface" : "text-error"}
-              className="h-auto"
-              accentStyle={{
-                borderLeftColor: selectedTeam.color_primary || "#2d6a4f",
-              }}
+          {/* Linha de contexto: posição · pontos · forma (· saldo, equipa própria) */}
+          <div
+            className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] font-black uppercase tracking-widest sm:mt-3"
+            style={{ color: selectedTeam?.color_secondary || "#fff" }}
+          >
+            <span>Época {seasonYear}</span>
+            {position != null && (
+              <>
+                <span className="opacity-50">·</span>
+                <span>{position}º lugar</span>
+              </>
+            )}
+            {teamRow?.points != null && (
+              <>
+                <span className="opacity-50">·</span>
+                <span>{teamRow.points} pts</span>
+              </>
+            )}
+            {(teamForms?.[selectedTeam?.id] || "").length > 0 && (
+              <>
+                <span className="opacity-50">·</span>
+                <FormDots form={teamForms[selectedTeam.id]} size="sm" />
+              </>
+            )}
+            {isOwnTeam && (
+              <>
+                <span className="opacity-50">·</span>
+                <span className={myBudget >= 0 ? "" : "text-red-200"}>
+                  Saldo {formatCurrency(myBudget)}
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="mt-3 sm:mt-5">
+            <TabBar
+              size="sm"
+              expand
+              className="sm:hidden"
+              tabs={[
+                { key: "summary", label: "Resumo" },
+                { key: "squad", label: "Plantel" },
+                { key: "calendar", label: "Jogos" },
+                { key: "history", label: "História" },
+              ]}
+              active={activeTab}
+              onChange={setActiveTab}
+            />
+            <TabBar
+              size="md"
+              className="hidden sm:flex"
+              tabs={[
+                { key: "summary", label: "Resumo" },
+                { key: "squad", label: "Plantel" },
+                { key: "calendar", label: "Jogos" },
+                { key: "history", label: "História" },
+              ]}
+              active={activeTab}
+              onChange={setActiveTab}
             />
           </div>
-        )}
-
-        {/* Tab Navigation */}
-        <div className="relative mt-3 sm:mt-5">
-          <TabBar
-            size="md"
-            className="overflow-x-auto"
-            tabs={[
-              { key: "squad", label: "Plantel" },
-              { key: "calendar", label: "Calendário" },
-              { key: "history", label: "História" },
-              { key: "kit", label: "Equipamento" },
-            ]}
-            active={activeTab}
-            onChange={setActiveTab}
-          />
         </div>
       </div>
 
-      {/* Content — scroll interno */}
+      {/* Conteúdo — scroll interno */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        {activeTab === "kit" ? (
-          <div className="p-6 sm:p-8 flex flex-col items-center">
-            <TeamKit team={selectedTeam} className="h-64 sm:h-80 object-contain" />
-          </div>
-        ) : activeTab === "history" ? (
+        {activeTab === "history" ? (
           <TeamHistoryView
             selectedTeam={selectedTeam}
             clubHistory={clubHistory}
@@ -458,223 +602,283 @@ export function TeamSquadView({
             onOpenPlayerHistory={onOpenPlayerHistory}
           />
         ) : activeTab === "calendar" ? (
-          <div className="space-y-2 p-6">
-            {teamFixtures.length === 0 && (
-              <div className="bg-surface-container rounded-lg p-8 text-center">
-                <p className="text-on-surface-variant text-sm">
-                  Sem jogos para mostrar.
-                </p>
-              </div>
-            )}
-            {teamFixtures.map(
-              ({
-                imHome,
-                opponent,
-                stadiumTeam,
-                myScore,
-                opScore,
-                won,
-                drew,
-                fixture,
-                status,
-              }) => {
-                const matchweek = fixture.matchweek;
-                const isCurrent = status === "current";
-                const isDone = status === "done";
-
-                const outcomeClass =
-                  !isDone || myScore === null
-                    ? ""
-                    : won
-                      ? "border-l-2 border-l-emerald-500"
-                      : drew
-                        ? "border-l-2 border-l-amber-500"
-                        : "border-l-2 border-l-red-500";
-
-                const cardBase = `flex items-stretch gap-0 rounded-lg overflow-hidden transition-opacity ${
-                  isDone
-                    ? "bg-surface-container"
-                    : isCurrent
-                      ? "bg-surface-container border border-primary/40"
-                      : "bg-surface-container opacity-60"
-                } ${outcomeClass}`;
-
-                const weekLabel = `Jornada ${matchweek}`;
-
-                const scoreBlock =
-                  isDone && myScore !== null ? (
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
-                        Resultado
-                      </span>
-                      <span
-                        className={`text-xl font-headline font-black leading-none ${
-                          won
-                            ? "text-emerald-400"
-                            : drew
-                              ? "text-amber-400"
-                              : "text-red-400"
-                        }`}
-                      >
-                        {imHome ? myScore : opScore} –{" "}
-                        {imHome ? opScore : myScore}
-                      </span>
-                      <span
-                        className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
-                          won
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : drew
-                              ? "bg-amber-500/20 text-amber-400"
-                              : "bg-red-500/20 text-red-400"
-                        }`}
-                      >
-                        {won ? "Vitória" : drew ? "Empate" : "Derrota"}
-                      </span>
-                    </div>
-                  ) : isCurrent ? (
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
-                        Próximo Jogo
-                      </span>
-                      <span className="text-xl font-headline font-black text-on-surface-variant/60">
-                        VS
-                      </span>
-                      <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-primary/20 text-primary animate-pulse">
-                        Ativo
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-surface-bright text-on-surface-variant/40">
-                        Agendado
-                      </span>
-                    </div>
-                  );
-
-                return (
-                  <div key={matchweek} className={cardBase}>
-                    <div className="w-16 sm:w-28 shrink-0 flex flex-col justify-center gap-1 px-2 sm:px-3 py-3 border-r border-outline-variant/10">
-                      <span
-                        className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start bg-primary/20 text-primary`}
-                      >
-                        Liga
-                      </span>
-                      <span className="text-[10px] font-black text-on-surface leading-tight">
-                        {weekLabel}
-                      </span>
-                      {opponent && (
-                        <span
-                          className={`hidden sm:inline-block text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start ${
-                            imHome
-                              ? "bg-emerald-500/20 text-emerald-400"
-                              : "bg-sky-500/20 text-sky-400"
-                          }`}
-                        >
-                          {imHome ? "Casa" : "Fora"}
-                        </span>
-                      )}
-                      {isCurrent && (
-                        <span className="text-[9px] text-primary font-bold">
-                          Hoje
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-3 min-w-0">
-                      <div
-                        className={`hidden sm:flex shrink-0 w-8 h-8 rounded items-center justify-center text-xs font-black border ${"border-primary/30 text-primary bg-primary/10"}`}
-                      >
-                        ⚽
-                      </div>
-                      {opponent?.crest ? (
-                        <>
-                          <img src={opponent.crest} alt={opponent.name} onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }} className="shrink-0 w-10 h-10 rounded-full object-contain bg-white p-1 border border-white/10" loading="lazy" />
-                          <div className="shrink-0 w-10 h-10 rounded-full hidden items-center justify-center text-sm font-black border border-white/10" style={{ background: opponent?.color_primary || "#333", color: opponent?.color_secondary || "#fff" }}>{opponent?.name?.[0] ?? "?"}</div>
-                        </>
-                      ) : (
-                        <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-black border border-white/10" style={{ background: opponent?.color_primary || "#333", color: opponent?.color_secondary || "#fff" }}>{opponent?.name?.[0] ?? "?"}</div>
-                      )}
-                      <div className="flex flex-col min-w-0">
-                        <button
-                          className="text-sm font-black text-on-surface text-left truncate hover:text-primary transition-colors"
-                          onClick={() => opponent && onOpenTeamSquad(opponent)}
-                        >
-                          {opponent?.name ?? "TBD"}
-                        </button>
-                        <span className="hidden sm:block text-[10px] text-on-surface-variant/60 truncate">
-                          {stadiumTeam?.stadium_name
-                            ? `${stadiumTeam.stadium_name.toUpperCase()} (${imHome ? "Casa" : "Fora"})`
-                            : imHome
-                              ? "Casa"
-                              : "Fora"}
-                        </span>
-                        {opponent && (
-                          <span
-                            className={`sm:hidden text-[8px] font-black uppercase tracking-widest ${
-                              imHome ? "text-emerald-400" : "text-sky-400"
-                            }`}
-                          >
-                            {imHome ? "Casa" : "Fora"}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 flex items-center justify-end px-2 sm:px-4 py-3">
-                      {scoreBlock}
-                    </div>
-                  </div>
-                );
-              },
-            )}
-          </div>
-        ) : selectedTeamLoading ? (
-          <div className="p-8 text-center text-zinc-400 font-bold">
-            A carregar plantel...
-          </div>
-        ) : selectedTeamSquad.length === 0 ? (
-          <div className="p-12 text-center text-zinc-500 font-bold">
-            Sem jogadores encontrados.
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1.5 px-3 py-4 sm:p-6">
-            {["GR", "DEF", "MED", "ATA"].map((pos) => {
-              const group = selectedTeamSquad.filter((p) => p.position === pos);
-              if (!group.length) return null;
-              const posLabel =
-                pos === "GR"
-                  ? "Guarda-redes"
-                  : pos === "DEF"
-                    ? "Defesas"
-                    : pos === "MED"
-                      ? "Médios"
-                      : "Avançados";
-              return (
-                <div key={pos}>
-                  <div className="flex items-center gap-2 px-1 py-2 mt-1 first:mt-0">
-                    <span
-                      className={`text-[10px] font-black uppercase tracking-widest ${POSITION_TEXT_CLASS[pos] || "text-zinc-400"}`}
-                    >
-                      {posLabel}
-                    </span>
-                    <span className="text-[9px] text-on-surface-variant/30 font-bold">
-                      {group.length}
-                    </span>
-                  </div>
-                  {group.map((player) => (
-                    <PlayerRow
-                      key={player.id}
-                      player={player}
-                      matchweekCount={currentMatchweek}
-                      showProposalCol={showProposalCol}
-                      myBudget={myBudget}
-                      onOpenPlayerHistory={onOpenPlayerHistory}
-                      onProposal={(data) => setTransferProposalModal(data)}
+          <div className="space-y-3 p-3 sm:p-6">
+            {fixtures.length === 0 ? (
+              <EmptyState
+                emoji="📅"
+                title="Sem jogos para mostrar"
+                description="O calendário desta equipa ainda não está sorteado."
+              />
+            ) : (
+              <Panel
+                title="Calendário da época"
+                icon="calendar_month"
+                meta={`${fixtures.length} jogos · Época ${seasonYear}`}
+              >
+                <div className="flex flex-col gap-1.5">
+                  {fixtures.map((match) => (
+                    <MatchLine
+                      key={`${match.kind}-${match.slot}-${match.opponentId}`}
+                      match={match}
+                      onOpenTeam={onOpenTeamSquad}
                     />
                   ))}
                 </div>
-              );
-            })}
+              </Panel>
+            )}
+          </div>
+        ) : activeTab === "summary" ? (
+          /* ── RESUMO ─────────────────────────────────────────── */
+          <div className="space-y-4 p-3 sm:p-6">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
+              <SummaryWidget
+                compactMobile
+                label="Posição"
+                value={position != null ? `${position}º` : "—"}
+                sub={
+                  DIVISION_NAMES[selectedTeamDivision] ||
+                  `Divisão ${selectedTeamDivision}`
+                }
+                valueClass="text-lg sm:text-2xl"
+                accentClass="border-primary"
+                valueColorClass="text-primary"
+              />
+              <SummaryWidget
+                compactMobile
+                label="Pontos"
+                value={teamRow?.points ?? "—"}
+                sub={
+                  teamRow
+                    ? `${teamRow.wins ?? 0}V ${teamRow.draws ?? 0}E ${teamRow.losses ?? 0}D`
+                    : "—"
+                }
+                valueClass="text-lg sm:text-2xl"
+                accentClass="border-tertiary"
+              />
+              <SummaryWidget
+                compactMobile
+                label="Plantel"
+                value={squadStats ? squadStats.count : "—"}
+                sub={squadStats ? formatCurrency(squadStats.value) : "—"}
+                valueClass="text-lg sm:text-2xl"
+              />
+              <SummaryWidget
+                compactMobile
+                label="Troféus"
+                value={trophies.length}
+                sub={
+                  lastTrophySeason > 0
+                    ? `Último: ${lastTrophySeason}`
+                    : "Sem títulos"
+                }
+                valueClass="text-lg sm:text-2xl"
+                accentClass="border-amber-500"
+                valueColorClass="text-amber-400"
+              />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+              <Panel
+                title="Últimos jogos"
+                icon="sports_soccer"
+                meta={`${lastFive.length} ${lastFive.length === 1 ? "jogo" : "jogos"}`}
+                className="min-w-0 lg:col-span-2"
+              >
+                {lastFive.length === 0 ? (
+                  <EmptyState
+                    emoji="⚽"
+                    title="Ainda sem jogos esta época"
+                    description="Os resultados aparecem aqui depois da primeira jornada."
+                  />
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {lastFive.map((match) => (
+                      <MatchLine
+                        key={`${match.kind}-${match.slot}-${match.opponentId}`}
+                        match={match}
+                        onOpenTeam={onOpenTeamSquad}
+                      />
+                    ))}
+                  </div>
+                )}
+              </Panel>
+
+              <div className="flex min-w-0 flex-col gap-4">
+                <Panel title="Próximo jogo" icon="flag">
+                  {nextMatch ? (
+                    <MatchLine
+                      match={nextMatch}
+                      onOpenTeam={onOpenTeamSquad}
+                    />
+                  ) : (
+                    <p className="px-1 text-[11px] font-bold text-on-surface-variant/70">
+                      Sem jogo agendado.
+                    </p>
+                  )}
+                </Panel>
+
+                <Panel
+                  title="Destaques do plantel"
+                  icon="star"
+                  meta={squadStats ? `Skill médio ${squadStats.avgSkill}` : ""}
+                >
+                  {selectedTeamLoading ? (
+                    <p className="px-1 text-[11px] font-bold text-on-surface-variant/70">
+                      A carregar plantel...
+                    </p>
+                  ) : highlights.length === 0 ? (
+                    <p className="px-1 text-[11px] font-bold text-on-surface-variant/70">
+                      Sem jogadores encontrados.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      {highlights.map((player) => (
+                        <HighlightRow
+                          key={player.id}
+                          player={player}
+                          onOpenPlayerHistory={onOpenPlayerHistory}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              </div>
+            </div>
+
+            <Panel title="Clube" icon="shield">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="flex shrink-0 justify-center sm:w-40">
+                  <TeamKit
+                    team={teamRow}
+                    className="h-32 object-contain sm:h-36"
+                  />
+                </div>
+                <dl className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div>
+                    <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+                      Cores
+                    </dt>
+                    <dd className="mt-1 flex items-center gap-2">
+                      {[teamRow?.color_primary, teamRow?.color_secondary]
+                        .filter(Boolean)
+                        .map((color) => (
+                          <span
+                            key={color}
+                            className="h-5 w-5 rounded-full border border-outline-variant/40"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                    </dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+                      Patrocinador
+                    </dt>
+                    <dd className="mt-1 truncate text-xs font-black text-on-surface">
+                      {brand?.name || "—"}
+                    </dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+                      Estádio
+                    </dt>
+                    <dd className="mt-1 truncate text-xs font-black text-on-surface">
+                      {teamRow?.stadium_name || "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+                      Capacidade
+                    </dt>
+                    <dd className="mt-1 text-xs font-black tabular-nums text-on-surface">
+                      {(teamRow?.stadium_capacity || 10000).toLocaleString("pt-PT")}{" "}
+                      lugares
+                    </dd>
+                  </div>
+                  {isOwnTeam && squadStats && (
+                    <div className="min-w-0">
+                      <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+                        Folha semanal
+                      </dt>
+                      <dd className="mt-1 truncate text-xs font-black tabular-nums text-on-surface">
+                        {formatCurrency(squadStats.wage)}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            </Panel>
+          </div>
+        ) : selectedTeamLoading ? (
+          <div className="p-6 sm:p-8">
+            <EmptyState emoji="👥" title="A carregar plantel..." />
+          </div>
+        ) : selectedTeamSquad.length === 0 ? (
+          <div className="p-6 sm:p-8">
+            <EmptyState
+              emoji="👥"
+              title="Sem jogadores encontrados"
+              description="Este clube ainda não tem plantel registado."
+            />
+          </div>
+        ) : (
+          /* ── PLANTEL ─────────────────────────────────────────── */
+          <div className="space-y-4 p-3 sm:p-6">
+            <Panel
+              title="Plantel"
+              icon="group"
+              meta={`${selectedTeamSquad.length} jogadores`}
+            >
+              <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <StatTile label="Jogadores">
+                  {selectedTeamSquad.length}
+                </StatTile>
+                <StatTile label="Skill médio">
+                  {squadStats?.avgSkill ?? "—"}
+                </StatTile>
+                <StatTile label="Valor">
+                  {formatCurrency(squadStats?.value ?? 0)}
+                </StatTile>
+                <StatTile label="Salários/semana">
+                  {formatCurrency(squadStats?.wage ?? 0)}
+                </StatTile>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                {POS_ORDER.map((pos) => {
+                  const group = selectedTeamSquad.filter(
+                    (p) => p.position === pos,
+                  );
+                  if (!group.length) return null;
+                  const wage = group.reduce((sum, p) => sum + (p.wage || 0), 0);
+                  return (
+                    <section key={pos} aria-label={POS_GROUP_LABEL[pos]}>
+                      <div className="flex items-center gap-2 px-1 py-2">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                          {POS_GROUP_LABEL[pos]}
+                        </h3>
+                        <span className="text-[9px] font-bold tabular-nums text-on-surface-variant/70">
+                          {group.length} · {formatCurrency(wage)}/sem
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {group.map((player) => (
+                          <PlayerRow
+                            key={player.id}
+                            player={player}
+                            matchweekCount={currentMatchweek}
+                            showProposalCol={showProposalCol}
+                            myBudget={myBudget}
+                            onOpenPlayerHistory={onOpenPlayerHistory}
+                            onProposal={(data) => setTransferProposalModal(data)}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </Panel>
           </div>
         )}
       </div>

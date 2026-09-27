@@ -554,6 +554,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         currentMatchweek={matchweekCount + 1}
                         calendarData={calendarData}
                         teams={teams}
+                        teamForms={teamForms}
                         onBack={handleCloseTeamSquad}
                         onOpenTeamSquad={handleOpenTeamSquad}
                         onOpenPlayerHistory={(player) =>
