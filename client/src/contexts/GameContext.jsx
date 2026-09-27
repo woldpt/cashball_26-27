@@ -89,7 +89,7 @@ export function GameProvider({
 	const [activeTab, setActiveTab] = useState(() => {
 		try {
 			const saved = sessionStorage.getItem("cashball_tab");
-			if (saved && !["club", "standings", "players", "finances", "tactic", "live", "calendar", "market", "cup", "bracket", "user_settings", "squad", "jornal"].includes(saved)) return "jornal";
+			if (saved && !["club", "standings", "players", "finances", "tactic", "live", "calendar", "market", "bracket", "user_settings", "squad", "jornal"].includes(saved)) return "jornal";
 			return saved || "jornal";
 		} catch {
 			return "club";
@@ -1178,7 +1178,7 @@ year: seasonYear,
 		socket.emit("requestPalmares", { teamId: team.id });
 		socket.emit("requestClubHistory", { teamId: team.id });
 		// Sem requestCalendar aqui (era MBs por abertura): a tab local
-		// Calendário do TeamSquadView pede-o ao ativar via refreshCalendar.
+		// Calendário do OtherSquadsTab pede-o ao ativar via refreshCalendar.
 	}, []);
 
 	const handleCloseTeamSquad = useCallback(() => {
@@ -1256,7 +1256,7 @@ year: seasonYear,
 	}, []);
 
 	// Pedido explícito de calendário (tab Calendário global e tab local do
-	// TeamSquadView). A abertura de plantel já não o pede (era MBs por clique).
+	// OtherSquadsTab). A abertura de plantel já não o pede (era MBs por clique).
 	const refreshCalendar = useCallback(() => {
 		socket.emit("requestCalendar");
 	}, []);

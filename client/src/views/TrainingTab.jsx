@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { socket } from "../../socket";
+import { socket } from "../socket.js";
 import {
   POSITION_TEXT_CLASS,
   POSITION_GLOW_CLASS,
   POSITION_BG_GRADIENT_CLASS,
   POSITION_BAR_CLASS,
   POSITION_BORDER_CLASS,
-} from "../../constants/index.js";
-import { Badge } from "../shared/Badge.jsx";
-import { Panel } from "../shared/Panel.jsx";
-import { SummaryWidget } from "../shared/SummaryWidget.jsx";
-import { EmptyState } from "../shared/EmptyState.jsx";
+} from "../constants/index.js";
+import { Badge } from "../components/shared/Badge.jsx";
+import { Panel } from "../components/shared/Panel.jsx";
+import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { EmptyState } from "../components/shared/EmptyState.jsx";
 
 const TRAINING_FOCUS_STORAGE_BASE_KEY = "cashball_training_focus";
 
@@ -127,7 +127,7 @@ const POSITION_LABELS = {
   ATA: "Avançados",
 };
 
-// Ordem canónica dos grupos no relatório — igual à do plantel em PlayersTab.
+// Ordem canónica dos grupos no relatório — igual à do plantel em MySquadTab.
 const POSITION_ORDER = ["GR", "DEF", "MED", "ATA"];
 
 const ATTR_COLUMNS = [
@@ -320,7 +320,7 @@ function PlayerReportRow({ player, position, highlightAttr, highlightClass }) {
  *   matchweek: number,
  * }} props
  */
-export function TrainingPage({ me, matchweek }) {
+export function TrainingTab({ me, matchweek }) {
   const [selectedTraining, setSelectedTraining] = useState(() => {
     return readStoredTrainingFocus(me?.roomCode);
   });

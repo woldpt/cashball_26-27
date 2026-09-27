@@ -1,7 +1,7 @@
 # AGENTS.md — CashBall · Operações & Regras
 
 > **pt-PT (europeu) SEMPRE** — UI, mensagens, narração, comentários. "Auto-golo" (nunca "golo de contra"/"contra" — pt-BR); "marcador"/"resultado" (nunca "placar").
-> **Leia antes de trabalhar:** arranque de sessão → `NOTES.md` · backend/arquitetura → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/PlayersTab.jsx`.
+> **Leia antes de trabalhar:** arranque de sessão → `NOTES.md` · backend/arquitetura → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/MySquadTab.jsx`.
 
 ## 🤝 Protocolo antes de editar (sempre)
 
@@ -62,4 +62,4 @@ Replay seguro pós-restart (`applied_weeks`, `recoverFinalizedSlot`), WAL e back
 - **Commit automático** após cada alteração verificada — skill `.pi/skills/auto-commit/SKILL.md`. Mensagem foca no **porquê** (ex. `fix: prevent duplicate NPC bids in auctions`). Nunca push sem pedido explícito.
 - **Memória:** ao fim de cada tarefa atualizar `NOTES.md` antes de commitar/terminar. Regra permanente → mover para os docs acima e remover de `NOTES.md`.
 - **Mudança estrutural de layout** (nova view/tab/modal, `GameLayout.jsx`, `index.css`, componente partilhado, grid/flex/larguras) → skill `mobile-resp-check` com as **duas** passagens antes de terminar/commitar. Tweaks (padding, cores, texto, `className` pontual) não disparam.
-- **Design:** seguir `STYLE.md`; referência: `client/src/views/PlayersTab.jsx`.
+- **Design:** seguir `STYLE.md`; referência: `client/src/views/MySquadTab.jsx`.

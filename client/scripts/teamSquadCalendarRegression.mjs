@@ -1,6 +1,6 @@
 /**
  * Regression test — "o calendário das outras equipas não está a aparecer
- * correctamente" (TeamSquadView Calendário tab).
+ * correctamente" (OtherSquadsTab Calendário tab).
  *
  * Root cause (confirmed): `calendarData` on the client is only refreshed when
  * the user visits the main Calendário tab (`GameContext.jsx` tab-driven
@@ -12,7 +12,7 @@
  * tab, the just-played week is shown as "Próximo Jogo / Hoje" (its result
  * hidden) and the real current week as "Agendado". The user's own calendar
  * looks fine because it is normally seen via the main tab (self-refreshing);
- * other teams' calendars are seen via TeamSquadView → stale → broken.
+ * other teams' calendars are seen via OtherSquadsTab → stale → broken.
  *
  * This test encodes the contract:
  *   1. With FRESH calendarData (what `requestCalendar` returns), the squad
@@ -68,7 +68,7 @@ for (let mw = 1; mw <= 6; mw++) {
 const SERVER_CALENDAR_INDEX = 8;
 
 /**
- * TeamSquadView `teamFixtures` logic, copied verbatim from the view.
+ * OtherSquadsTab `teamFixtures` logic, copied verbatim from the view.
  * Returns Map<matchweek, { status, hasResult }> for the selected team.
  */
 function squadCalendar(selectedTeamId, clientCalendarIndex) {

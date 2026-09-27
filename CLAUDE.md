@@ -1,6 +1,6 @@
 # CLAUDE.md — CashBall · Arquitetura & Padrões
 
-> Operações/comandos/regressões: `AGENTS.md` · Design/tokens: `STYLE.md` · UI de referência: `client/src/views/PlayersTab.jsx`.
+> Operações/comandos/regressões: `AGENTS.md` · Design/tokens: `STYLE.md` · UI de referência: `client/src/views/MySquadTab.jsx`.
 
 ## 🛠️ Stack
 
@@ -60,6 +60,6 @@
 - `contexts/` — `GameContext.jsx` (estado do jogo), `TacticsContext.jsx` (UI de táticas)
 - `hooks/useSocketListeners.js` — eventos de socket
 - `GameLayout.jsx` — container principal (consome os contextos)
-- `views/` — tabs do jogo · `pages/` — páginas fora das tabs (`AuctionsPage.jsx`, `UserSettingsPage.jsx`)
+- `views/` — tabs do jogo · `pages/` — `UserSettingsPage.jsx`
 - `GameRoutes.jsx` — roteamento das tabs · `GameOverlays.jsx` — modais globais · `constants/` — navegação, tuning
 - `components/` — `modals/`, `ui/` (incl. `TransferHub.jsx`, o hub de transferências), `shared/` · `utils/` — áudio, formatters, cache

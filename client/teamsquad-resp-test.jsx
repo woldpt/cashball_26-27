@@ -1,10 +1,10 @@
-// TeamSquadView mobile responsiveness harness — renders the REAL
-// TeamSquadView (perfil de clube: Plantel / Calendário / História /
+// OtherSquadsTab mobile responsiveness harness — renders the REAL
+// OtherSquadsTab (perfil de clube: Plantel / Calendário / História /
 // Equipamento) with edge-case fixture data and reports overflow per tab.
 // NOT part of the app; used only for verification.
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
-import { TeamSquadView } from "./src/views/TeamSquadView.jsx";
+import { OtherSquadsTab } from "./src/views/OtherSquadsTab.jsx";
 
 function mk(id, position, name, extra = {}) {
   return {
@@ -137,7 +137,7 @@ const clubHistory = {
 const root = createRoot(document.getElementById("root"));
 root.render(
   <div className="h-screen flex flex-col bg-surface">
-    <TeamSquadView
+    <OtherSquadsTab
       selectedTeam={selectedTeam}
       selectedTeamSquad={selectedTeamSquad}
       selectedTeamLoading={false}

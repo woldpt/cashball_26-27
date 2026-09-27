@@ -1,8 +1,8 @@
 /**
  * PlayerRow — linha/card de jogador unificada (STYLE.md §4).
  *
- * Resultado da fusão de `SquadRow` (PlayersTab) e `TeamSquadCard`
- * (TeamSquadView). Propriedades opcionais ativam o
+ * Resultado da fusão de `SquadRow` (MySquadTab) e `TeamSquadCard`
+ * (OtherSquadsTab). Propriedades opcionais ativam o
  * comportamento de cada contexto:
  *  - `onOpenPlayerHistory`: torna a linha clicável (histórico do jogador);
  *  - `showContractBadges`: mostra "Renovado" / "À venda" (só na própria equipa);

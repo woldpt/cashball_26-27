@@ -11,7 +11,7 @@ import { BidForm } from "../auctions/BidForm.jsx";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
 
 /**
- * Modal de lance inline para a scout (PlayerSearchView) — licita sem sair
+ * Modal de lance inline para a scout (ScoutView) — licita sem sair
  * da pesquisa. `player` é o snapshot da pesquisa; `liveAuction` (item de
  * `activeAuctions`, ao vivo) sobrepõe-se quando disponível para o modal
  * acompanhar lances de outros treinadores enquanto está aberto.

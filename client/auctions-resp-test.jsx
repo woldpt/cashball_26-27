@@ -1,4 +1,4 @@
-// AuctionsPage mobile responsiveness harness — renders the REAL AuctionsPage
+// AuctionsTab mobile responsiveness harness — renders the REAL AuctionsTab
 // (full-bleed, single scroll) with edge-case fixture data and self-reports
 // overflow measurements into #report.
 // NOT part of the app; used only for verification.
@@ -11,7 +11,7 @@
 //     clippingElements, verdict ("PASS" | "FAIL")
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
-import { AuctionsPage } from "./src/pages/AuctionsPage.jsx";
+import { AuctionsTab } from "./src/views/AuctionsTab.jsx";
 
 // ── Fixture data: cover edge cases ──────────────────────────────────────────
 // Todos os estados do AuctionCard (aberto com liderança/venda/pausa/urgente,
@@ -54,10 +54,10 @@ const auctions = [
 const root = createRoot(document.getElementById("root"));
 root.render(
   // Mimics o shell real (GameLayout): raiz com altura fixa + wrapper
-  // full-bleed com overflow-hidden; a AuctionsPage gere o próprio scroll.
+  // full-bleed com overflow-hidden; a AuctionsTab gere o próprio scroll.
   <div className="h-dvh bg-surface text-on-surface font-body tracking-tight flex flex-col">
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-      <AuctionsPage
+      <AuctionsTab
         activeAuctions={auctions}
         me={me}
         teams={teams}

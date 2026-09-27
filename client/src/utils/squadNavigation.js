@@ -3,7 +3,7 @@
  *
  * Contexto: `handleOpenTeamSquad` regista a abertura de um plantel no
  * histórico do browser (`{ teamSquad, teamId }`), para que o "Voltar" (botão
- * do TeamSquadView, botão do modal de historial ou back do browser) volte à
+ * do OtherSquadsTab, botão do modal de historial ou back do browser) volte à
  * equipa anterior da cadeia (A → B → C) em vez de saltar níveis.
  *
  * Estes helpers concentram as DECISÕES de navegação, mantendo a lógica fora

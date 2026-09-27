@@ -447,7 +447,7 @@ export function TeamHistoryView({
   );
 
   // `onOpenPlayerHistory` segue a convenção da casa (recebe um objeto
-  // jogador — PlayersTab/PlayerRow); troféus e eventos só têm o id.
+  // jogador — MySquadTab/PlayerRow); troféus e eventos só têm o id.
   const openPlayer = useMemo(
     () =>
       onOpenPlayerHistory

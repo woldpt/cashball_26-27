@@ -31,7 +31,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		});
 	});
 	socket.on("auctionStarted", (auctionData) => {
-		// Add to activeAuctions list (used by AuctionsPage and toast)
+		// Add to activeAuctions list (used by AuctionsTab and toast)
 		handlers.setActiveAuctions((prev) => {
 			const exists = prev.find((a) => a.playerId === auctionData.playerId);
 			if (exists) return prev;

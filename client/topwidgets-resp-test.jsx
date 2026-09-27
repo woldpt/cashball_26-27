@@ -1,6 +1,6 @@
 // Topo mobile responsiveness harness — renderiza os blocos de topo (SummaryWidgets /
-// heróis) das páginas TrainingPage, ClubTab, FinancesTab, StadiumTab, CalendarioTab
-// e TeamSquadView
+// heróis) das páginas TrainingTab, ClubTab, FinancesTab, StadiumTab, CalendarioTab
+// e OtherSquadsTab
 // com fixture data de edge cases, e auto-reporta overflow/clipping em #report.
 // NOT part of o app; usado apenas para verificação.
 //
@@ -10,14 +10,14 @@
 //     data-status="done"
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
-import { TrainingPage } from "./src/components/ui/TrainingPage.jsx";
+import { TrainingTab } from "./src/views/TrainingTab.jsx";
 import { ClubTab } from "./src/views/ClubTab.jsx";
 import { FinancesTab } from "./src/views/FinancesTab.jsx";
 import { StadiumTab } from "./src/views/StadiumTab.jsx";
 import { CalendarioTab } from "./src/views/CalendarioTab.jsx";
-import { TeamSquadView } from "./src/views/TeamSquadView.jsx";
+import { OtherSquadsTab } from "./src/views/OtherSquadsTab.jsx";
 
-// Foco de treino pré-definido (TrainingPage lê do localStorage no init)
+// Foco de treino pré-definido (TrainingTab lê do localStorage no init)
 try {
   localStorage.setItem("cashball_training_focus", "Defesas");
 } catch {
@@ -153,7 +153,7 @@ root.render(
   // Mimica o container mobile do GameLayout: <main> > div.p-4 > conteúdo do tab
   <div className="min-h-screen bg-surface">
     <div className="p-4 lg:p-6 space-y-8">
-      {section("TrainingPage (topo)", <TrainingPage me={me} matchweek={5} />)}
+      {section("TrainingTab (topo)", <TrainingTab me={me} matchweek={5} />)}
 
       {section(
         "ClubTab (topo)",
@@ -222,8 +222,8 @@ root.render(
       )}
 
       {section(
-        "TeamSquadView (topo, equipa própria)",
-        <TeamSquadView
+        "OtherSquadsTab (topo, equipa própria)",
+        <OtherSquadsTab
           selectedTeam={teams[0]}
           selectedTeamSquad={squad}
           selectedTeamLoading={false}
@@ -243,8 +243,8 @@ root.render(
       )}
 
       {section(
-        "TeamSquadView (NPC — linhas com CTA de proposta)",
-        <TeamSquadView
+        "OtherSquadsTab (NPC — linhas com CTA de proposta)",
+        <OtherSquadsTab
           selectedTeam={teams[1]}
           selectedTeamSquad={squad}
           selectedTeamLoading={false}

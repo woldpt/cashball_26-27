@@ -1,6 +1,6 @@
 # STYLE.md — CashBall · Design System
 
-> Referência única de estilo. Componentes partilhados: §10 (usá-los sempre). Exemplo completo: `client/src/views/PlayersTab.jsx`.
+> Referência única de estilo. Componentes partilhados: §10 (usá-los sempre). Exemplo completo: `client/src/views/MySquadTab.jsx`.
 
 ## 1. Cores semânticas (tokens CSS)
 

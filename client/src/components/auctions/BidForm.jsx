@@ -5,7 +5,7 @@ import { emitComAck } from "../../socket.js";
 
 /**
  * Form de lance de leilão — partilhado entre AuctionCard (tab de leilões)
- * e o modal de lance inline da scout (PlayerSearchView).
+ * e o modal de lance inline da scout (ScoutView).
  *
  * Validação idêntica ao original (mínimo = lance atual + passo; orçamento),
  * emit `placeAuctionBid` com ack + anti-duplicação (__actionId no servidor).

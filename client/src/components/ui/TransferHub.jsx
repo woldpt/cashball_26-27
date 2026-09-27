@@ -462,7 +462,7 @@ export function TransferHub({
     return list.filter((rec) => rec.source !== "auction");
   }, [transferHistory]);
 
-  // Contagens por posição para os chips (padrão PlayersTab): base não filtrada
+  // Contagens por posição para os chips (padrão MySquadTab): base não filtrada
   // por posição (marketPairs do contexto) com as mesmas regras da lista
   // (sem leilões + regra dos próprios à venda).
   const posCounts = useMemo(() => {

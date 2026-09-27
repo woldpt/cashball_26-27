@@ -201,7 +201,7 @@ function HighlightRow({ player, onOpenPlayerHistory }) {
  *   onRequestCalendar?: () => void,
  * }} props
  */
-export function TeamSquadView({
+export function OtherSquadsTab({
   selectedTeam,
   selectedTeamSquad,
   selectedTeamLoading,

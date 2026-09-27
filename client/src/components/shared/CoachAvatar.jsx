@@ -3,7 +3,7 @@ import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import { AVATAR_SIZE_MAP } from "./avatarSizes.js";
 
 /**
- * Avatar de coach para uso na sala (RoomHub, WaitingCoachesModal, TeamSquadView,
+ * Avatar de coach para uso na sala (RoomHub, WaitingCoachesModal, OtherSquadsTab,
  * Definições). Se o coach tem imagem carregada (`coachAvatars[name]` traz a
  * versão/timestamp), mostra o `<img>` circular; caso contrário usa o avatar
  * procedural existente (PlayerAvatar) com o seed determinístico.

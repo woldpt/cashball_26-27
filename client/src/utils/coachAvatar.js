@@ -1,10 +1,10 @@
 /**
  * Seed determinístico do avatar procedural (PlayerAvatar) de um coach.
  *
- * Convenção partilhada com GameLayout / UserSettingsPage / TeamSquadView:
+ * Convenção partilhada com GameLayout / UserSettingsPage / OtherSquadsTab:
  * - Coach próprio: `nome|avatarSeed` (face muda quando o utilizador regenera
  *   o seed nas Definições, em todos os locais).
- * - Outros coaches: `coach|nome` (mesmo prefixo da TeamSquadView; estável em
+ * - Outros coaches: `coach|nome` (mesmo prefixo da OtherSquadsTab; estável em
  *   todos os clientes porque não depende de seeds que só o dono conhece).
  *
  * @param {string} name Nome do coach

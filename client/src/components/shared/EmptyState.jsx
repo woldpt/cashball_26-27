@@ -3,7 +3,7 @@
  *
  * Formato canónico: card token-based com emoji + título + descrição.
  * Substitui os estados vazios `text-zinc-500` hardcoded e as variações
- * de card em TransferHub/AuctionsPage.
+ * de card em TransferHub/AuctionsTab.
  */
 
 /**

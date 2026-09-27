@@ -10,19 +10,18 @@ import {
 } from "./components/live/index.js";
 import { StandingsTab } from "./views/StandingsTab.jsx";
 import { BracketTab } from "./views/BracketTab.jsx";
-import { CupTab } from "./views/CupTab.jsx";
 import { CalendarioTab } from "./views/CalendarioTab.jsx";
 import { ClubTab } from "./views/ClubTab.jsx";
 import { JournalTab } from "./views/JournalTab.jsx";
 import { FinancesTab } from "./views/FinancesTab.jsx";
 import { StadiumTab } from "./views/StadiumTab.jsx";
-import { PlayersTab } from "./views/PlayersTab.jsx";
-import { TeamSquadView } from "./views/TeamSquadView.jsx";
-import { TrainingPage } from "./components/ui/TrainingPage.jsx";
+import { MySquadTab } from "./views/MySquadTab.jsx";
+import { OtherSquadsTab } from "./views/OtherSquadsTab.jsx";
+import { TrainingTab } from "./views/TrainingTab.jsx";
 import { TacticsView } from "./views/TacticsView.jsx";
 import { TransferHub } from "./components/ui/TransferHub.jsx";
-import { AuctionsPage } from "./pages/AuctionsPage.jsx";
-import { PlayerSearchView } from "./views/PlayerSearchView.jsx";
+import { AuctionsTab } from "./views/AuctionsTab.jsx";
+import { ScoutView } from "./views/ScoutView.jsx";
 import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
 import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
@@ -74,10 +73,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     clubNews,
     // taça
     cupBracketData,
-    cupDraw,
     cupRoundResults,
-    cupResultsFilter,
-    setCupResultsFilter,
     // calendário
     calendarData,
     calFilter,
@@ -426,17 +422,6 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                       />
                     )}
 
-                    {activeTab === "cup" && (
-                      <CupTab
-                        cupRoundResults={cupRoundResults}
-                        cupDraw={cupDraw}
-                        me={me}
-                        teams={teams}
-                        cupResultsFilter={cupResultsFilter}
-                        setCupResultsFilter={setCupResultsFilter}
-                      />
-                    )}
-
                     {activeTab === "calendario" && (
                       <CalendarioTab
                         calendarData={calendarData}
@@ -523,7 +508,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                     )}
 
                     {activeTab === "players" && (
-                      <PlayersTab
+                      <MySquadTab
                         annotatedSquad={annotatedSquad}
                         matchweekCount={matchweekCount}
                         season={season}
@@ -536,7 +521,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                     )}
 
                     {activeTab === "squad" && (
-                      <TeamSquadView
+                      <OtherSquadsTab
                         selectedTeam={selectedTeam}
                         selectedTeamSquad={selectedTeamSquad}
                         selectedTeamLoading={selectedTeamLoading}
@@ -567,7 +552,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                     )}
 
                     {activeTab === "training" && (
-                      <TrainingPage me={me} matchweek={currentJornada} />
+                      <TrainingTab me={me} matchweek={currentJornada} />
                     )}
 
                     {activeTab === "tactic" && <TacticsView />}
@@ -601,7 +586,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                     )}
 
                     {activeTab === "leiloes" && (
-                      <AuctionsPage
+                      <AuctionsTab
                         activeAuctions={activeAuctions}
                         highlightAuctionId={highlightedAuctionId}
                         me={me}
@@ -618,7 +603,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                     )}
 
                     {activeTab === "scout" && (
-                      <PlayerSearchView
+                      <ScoutView
                         me={me}
                         players={players}
                         myBudget={currentBudget}

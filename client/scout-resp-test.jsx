@@ -1,9 +1,9 @@
-// Mobile responsiveness harness — renders the REAL PlayerSearchView (Scout)
+// Mobile responsiveness harness — renders the REAL ScoutView (Scout)
 // with edge-case fixture data and self-reports horizontal overflow measurements
 // into #report. NOT part of the app; used only for verification.
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
-import { PlayerSearchView } from "./src/views/PlayerSearchView.jsx";
+import { ScoutView } from "./src/views/ScoutView.jsx";
 
 function mk(id, position, teamId, teamName, extra = {}) {
   return {
@@ -140,7 +140,7 @@ root.render(
   // Mimics the GameLayout mobile container: <main> > div.p-4 > tab content
   <div className="min-h-screen bg-surface">
     <div className="p-4 lg:p-6">
-      <PlayerSearchView
+      <ScoutView
         me={{ teamId: ME_TEAM_ID }}
         players={[
           { teamId: ME_TEAM_ID, name: "FC Longuíssimo" },

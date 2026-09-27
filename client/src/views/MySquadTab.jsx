@@ -43,7 +43,7 @@ const SORT_COMPARATORS = {
  *   onOpenPlayerHistory: (player: object) => void,
  * }} props
  */
-export function PlayersTab({
+export function MySquadTab({
   annotatedSquad,
   matchweekCount,
   season = 1,

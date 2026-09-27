@@ -1,4 +1,4 @@
-// TrainingPage mobile responsiveness harness — renders the REAL TrainingPage
+// TrainingTab mobile responsiveness harness — renders the REAL TrainingTab
 // with fixture data and self-reports overflow measurements.
 // NOT part of the app; used only for verification.
 // Nota: o socket não responde em headless → histórico fica em EmptyState
@@ -6,7 +6,7 @@
 // badge "Ativo" (card mais alto) na grelha de opções.
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
-import { TrainingPage } from "./src/components/ui/TrainingPage.jsx";
+import { TrainingTab } from "./src/views/TrainingTab.jsx";
 
 localStorage.setItem("cashball_training_focus", "Defesas");
 
@@ -16,7 +16,7 @@ const root = createRoot(document.getElementById("root"));
 root.render(
   <div className="min-h-screen bg-surface text-on-surface">
     <div className="p-4">
-      <TrainingPage me={me} matchweek={7} />
+      <TrainingTab me={me} matchweek={7} />
     </div>
   </div>,
 );

@@ -65,7 +65,7 @@ function inputClass() {
  *   activeAuctions: Array,
  * }} props
  */
-export function PlayerSearchView({
+export function ScoutView({
   me,
   players,
   myBudget = 0,

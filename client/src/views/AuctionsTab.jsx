@@ -1,5 +1,5 @@
 /**
- * AuctionsPage — Página de leilões ativos e recentes.
+ * AuctionsTab — Página de leilões ativos e recentes.
  * Aplica o design system da STYLE.md: tokens semânticos, cards com header,
  * grid responsivo e estados vazios padronizados.
  *
@@ -20,7 +20,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { staggerItemProps } from "../motion.js";
 
-export function AuctionsPage({ activeAuctions = [], highlightAuctionId = null, me, teams = [], teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
+export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me, teams = [], teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
   const [positionFilter, setPositionFilter] = useState("all");
 
   // Navegação com contexto (ex.: fallback do modal da scout): leva o cromo
@@ -79,7 +79,7 @@ export function AuctionsPage({ activeAuctions = [], highlightAuctionId = null, m
         />
       </div>
 
-      {/* ── Filtro de posição: chips (padrão TabBar, como PlayersTab) ───── */}
+      {/* ── Filtro de posição: chips (padrão TabBar, como MySquadTab) ───── */}
       {activeAuctions.length > 0 && (
         <div className="px-2 sm:px-4 short:px-2 pb-1.5 short:pb-1 shrink-0">
           <TabBar tabs={positionTabs} active={positionFilter} onChange={setPositionFilter} expand />
