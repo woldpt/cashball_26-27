@@ -109,8 +109,9 @@ export function BadgeSkills({
   const title = skillLast ? `${statsTitle} · ${skillTitle}` : `${skillTitle} · ${statsTitle}`;
   return (
     <div
+      data-tour="player-skills"
       title={title}
-      className={`flex items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
+      className={`flex w-fit max-w-full items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
     >
       {!skillLast && skillCell}
       {!hideStats && (

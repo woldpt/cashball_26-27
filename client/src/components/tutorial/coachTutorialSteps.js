@@ -42,6 +42,14 @@ export const COACH_TUTORIAL_STEPS = [
     text: "Conhece os teus jogadores: posição, skill e estado físico. Toca num jogador para ver o histórico. Precisas de 1 guarda-redes e 10 de campo para jogar.",
   },
   {
+    id: "skills",
+    tab: "players",
+    submenu: "gestao",
+    targets: ['[data-tour="player-skills"]'],
+    title: "Lê as skills",
+    text: "O número dourado é a skill principal: quanto maior, melhor o jogador. A seguir vêm Forma, Moral, Resistência e Agressividade. Na semana em que a skill muda, o número fica verde (subiu) ou vermelho (desceu).",
+  },
+  {
     id: "training",
     tab: "training",
     submenu: "gestao",
