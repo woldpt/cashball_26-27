@@ -1,3 +1,8 @@
+## Deploy v26.09.9 no rick (2026-09-27)
+- `v26.09.9` → origin (master 12 commits à frente; push direto, sem rebase).
+- Rick: `git pull` + `docker compose up --build -d` → `cashball-backend-1 Healthy`.
+- Sem push pós-registo — o rick fica exatamente na tag `v26.09.9`.
+
 ## TacticsView: cartão próximo jogo + truncate da Moral (2026-09-27)
 - `TacticsView.jsx`: cartão "Próximo jogo" sob o botão JOGAR (desktop) — jornada/taça, adversário com cor, casa/fora e árbitro; `MoraleCard` com `min-w-0 truncate` no rótulo para não rebentar o flex.
 - `tactics-resp-test.jsx`: fixture de próximo jogo com nome comprido (teste de truncamento) + `SeedNextMatch`/`SeedPrepPhase` (salta para as táticas).
