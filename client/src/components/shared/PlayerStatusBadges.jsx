@@ -82,13 +82,14 @@ export function PlayerStatusBadges({
 }
 
 /**
- * Estrela de "Craque" — renderizada junto ao nome do jogador.
+ * Badge de "Craque" — pílula com contorno próprio para não se
+ * confundir com as estrelas âmbar da última classificação.
  * @param {{ className?: string }} props
  */
 export function StarMark({ className = "" }) {
   return (
-    <span className={`ml-1 text-amber-400 font-black ${className}`} title="Craque">
-      ★
-    </span>
+    <Badge variant="warning" title="Craque" className={`ml-1 shrink-0 ${className}`}>
+      ★ Craque
+    </Badge>
   );
 }

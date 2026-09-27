@@ -2269,3 +2269,10 @@ Plano C1+C2 (quando fizer):
 - Pedido: push + versão + tag + pull e rebuild no rick. Grill em 2 perguntas, OK dado (tag v26.09.7, tudo).
 - Push 15 commits (desde v26.09.6: kits SVG, fix 5 URLs zerozero, patrocinadores época 1 + mercado + patch no peito, TeamKit no ClubTab/TeamSquadView, TeamHistoryView, BadgeSkills, finanças/Jornal) + tag v26.09.7. Árvore limpa — untracked locais (`server/saves/*`, `*.bak`, `docs/plans/`) não seguiram.
 - Rick: `git pull` + `docker compose up --build -d` → backend Healthy, frontend e backups arrancados.
+
+## Craque vs classificação + SKILL uniforme (2026-09-27)
+- Queixa (pasteboard inacessível — devolvia HTML; contexto confirmado por perguntas): a ★ de craque confundia-se com as estrelas da última classificação; a célula SKILL do badge variava de largura (1 vs 2 dígitos).
+- `PlayerStatusBadges.jsx`: `StarMark` passa de ★ solto a pílula `★ Craque` (`Badge variant="warning"`) — fix único propaga a Plantel, TransferHub, leilões e histórico.
+- `PlayerRow.jsx`: `Stars` sai da linha do nome para coluna própria `Nota` (etiqueta + tooltip pt-PT) junto ao `SkillBadge` — desktop na coluna de atributos, mobile na linha extra; nome do craque com glow dourado subtil; `StarMark` fora do `<p truncate>` para a pílula não cortar.
+- `BadgeSkills.jsx`: célula SKILL com `min-w-[3ch]` (largura fixa 2 dígitos, cresce com ▲/▼); `PlayerHistoryModal.jsx`: cai o `className="text-sm"` do `StarMark` (tamanho único da pílula).
+- Checks: `check:types` OK · eslint limpo nos 4 tocados (2 erros globais pré-existentes noutros ficheiros) · portrait 160/165 e landscape 192/198 — só `journal-resp-test`, pré-existente (provado via stash em HEAD limpa; vista não usa estes componentes) · screenshots frescos `mobile-resp-test` (Nota separada) e `transfer-resp-test` (pílula ★ CRAQUE).

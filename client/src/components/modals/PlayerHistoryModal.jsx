@@ -200,7 +200,7 @@ export function PlayerHistoryModal({
                 <h2 className="font-black font-headline text-lg sm:text-2xl tracking-tight text-on-surface uppercase leading-none">
                   {player.name}
                 </h2>
-                {isStar && <StarMark className="text-sm" />}
+                {isStar && <StarMark />}
                 <PlayerStatusBadges
                   player={player}
                   matchweekCount={matchweekCount}

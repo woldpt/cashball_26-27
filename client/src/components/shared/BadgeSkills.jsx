@@ -67,7 +67,7 @@ export function BadgeSkills({
       className={`flex items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
     >
       <div
-        className={`flex items-center justify-center gap-1 bg-amber-400/12 ${!hideResForm ? "border-r border-amber-400/20" : ""} ${cellCls}`}
+        className={`flex items-center justify-center gap-1 bg-amber-400/12 min-w-[3ch] ${!hideResForm ? "border-r border-amber-400/20" : ""} ${cellCls}`}
       >
         {delta !== 0 && (
           <span

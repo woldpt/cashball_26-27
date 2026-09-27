@@ -7,7 +7,7 @@
  *  - `onOpenPlayerHistory`: torna a linha clicável (histórico do jogador);
  *  - `showContractBadges`: mostra "Renovado" / "À venda" (só na própria equipa);
  *  - `showProposalCol`: coluna de proposta para equipas NPC;
- *  - `showLastRating`: estrelas da última classificação a seguir ao nome.
+ *  - `showLastRating`: última classificação junto aos atributos (coluna Nota).
  */
 import { SkillBadge } from "./SkillBadge.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
@@ -118,10 +118,10 @@ export function PlayerRow({
           >
             {player.nationality || "—"}
           </span>
-          <p className={`font-black font-headline text-sm leading-tight ${player.isJunior ? "" : "uppercase"} tracking-tight text-on-surface truncate`}>
+          <p className={`font-black font-headline text-sm leading-tight ${player.isJunior ? "" : "uppercase"} tracking-tight text-on-surface truncate`} style={star ? { textShadow: "0 0 12px rgba(251,191,36,0.45)" } : undefined}>
             <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
-            {star && <StarMark />}
           </p>
+          {star && <StarMark />}
           {subtitle && (
             <p className="text-[10px] text-on-surface-variant/70 truncate mt-0.5">
               {subtitle}
@@ -133,18 +133,23 @@ export function PlayerRow({
             showContractBadges={showContractBadges}
             season={season}
           />
-          {showLastRating && player.last_rating != null && (
-            <Stars
-              value={player.last_rating}
-              className="text-amber-400 text-[11px] shrink-0"
-            />
-          )}
         </div>
       </div>
 
       {/* Skills — badge único SKILL·RES·FORMA·MOR·AGR (só md+; em mobile
           vive na linha extra em baixo para o nome não cortar) */}
-      <div className="hidden md:flex shrink-0 self-center items-center px-1.5 sm:px-2">
+      <div className="hidden md:flex shrink-0 self-center items-center gap-2 px-1.5 sm:px-2">
+        {showLastRating && player.last_rating != null && (
+          <span
+            className="flex flex-col items-center"
+            title={`Última classificação: ${String(player.last_rating).replace(".", ",")} de 10 estrelas`}
+          >
+            <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5 leading-none">
+              Nota
+            </span>
+            <Stars value={player.last_rating} className="text-amber-400 text-[11px] shrink-0 leading-none" />
+          </span>
+        )}
         <SkillBadge
           skill={player.skill}
           resistance={player.resistance}
@@ -284,6 +289,17 @@ export function PlayerRow({
               delta={skillDelta}
               size="sm"
             />
+            {showLastRating && player.last_rating != null && (
+              <span
+                className="flex flex-col items-center"
+                title={`Última classificação: ${String(player.last_rating).replace(".", ",")} de 10 estrelas`}
+              >
+                <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5 leading-none">
+                  Nota
+                </span>
+                <Stars value={player.last_rating} className="text-amber-400 text-[11px] leading-none" />
+              </span>
+            )}
             <span className="flex flex-col items-center">
               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
                 Golos
