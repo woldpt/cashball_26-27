@@ -2381,3 +2381,8 @@ Plano C1+C2 (quando fizer):
 - Bug: `⯪` (U+2BEA) virava retângulo de caráter inválido no mobile (fonte de sistema não o traz). Grill (1 pergunta) → meia cortada em CSS.
 - Só `client/src/components/shared/Stars.jsx`: meia = `★` a `opacity-40` com `★` cheio por cima cortado a `w-1/2` (`overflow-hidden`, sem `clipPath`); `aria-hidden` no decorativo (valor exato continua no `aria-label` do contentor).
 - Checks: eslint limpo no ficheiro · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check.
+
+## Glow pulsante fora das classificações (2026-09-26)
+- Pedido: retirar o efeito glow pulsante. Grill (1 pergunta) → só nas classificações, não na familiaridade tática.
+- 2 ficheiros: `PitchFormation.jsx` e `SwapControls.jsx` perdem a classe `animate-fam-glow`; âmbar + `drop-shadow` estático ficam. Keyframes no `index.css` intactos (ainda usados em `TacticsView` + `TransferHub`).
+- Checks: eslint limpo nos 2 ficheiros · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check.
