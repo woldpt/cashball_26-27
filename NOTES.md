@@ -2409,3 +2409,7 @@ Plano C1+C2 (quando fizer):
 - Passo 8 ("Confirma a jornada"): desktop já estava bem (coluna Jogar); em mobile o FAB só existe com o 11 completo, por isso fallback `[tactic-play, tactic-titulares]` + texto novo ("quando o 11 estiver completo, aparece o botão de jogar").
 - Passo 9 ("Rumo à simulação"): apontava ao botão JOGAR da navegação estando já na tab tática; passa a `targets: []` = balão final centrado, sem spotlight. `CoachTutorial` salta o retry quando o passo não tem alvos.
 - Checks: eslint limpo nos ficheiros; `check:types` OK. Sem `test:mobile` (só atributos + lógica, sem mudança estrutural) nem audits.
+
+## Deploy v26.09.10 no rick (2026-09-27)
+- Inclui fixes do coach tutorial (spotlight mobile + retry + reancoragem dos passos finais).
+- Push master + tag v26.09.10; rebuild no rick com backend Healthy.
