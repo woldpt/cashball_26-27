@@ -2236,3 +2236,8 @@ Plano C1+C2 (quando fizer):
 - Só `client/src/components/modals/PlayerHistoryModal.jsx`: `BadgeSkills` com skill/resistance/form/morale/aggressiveness/delta (`prev_skill`, mesmo cálculo do `PlayerRow`; `SELECT p.*` já traz tudo, sem backend); apagadas `SkillBar` Qualidade/Resistência/Forma/Agressividade + definição local do `SkillBar` + imports `AggBadge`/`aggLabel` + helpers agg. Secção Atributos fica: badge + Última classificação.
 - Consequência assumida: em mobile o modal deixa de mostrar AGR (célula AGR é `md+`, igual ao `PlayerRow`). Intervalos (`CompactPlayerCard`/`BenchPlayers`) intocados.
 - Checks: eslint limpo no ficheiro (2 erros globais pré-existentes noutros) · `check:types` OK · `playerhistory-resp-test` 5/5 portrait + 6/6 landscape · full runs só falham no `journal-resp-test`, pré-existente (provado via stash em HEAD limpa).
+
+## Deploy v26.09.7 no rick (2026-09-27)
+- Pedido: push + versão + tag + pull e rebuild no rick. Grill em 2 perguntas, OK dado (tag v26.09.7, tudo).
+- Push 15 commits (desde v26.09.6: kits SVG, fix 5 URLs zerozero, patrocinadores época 1 + mercado + patch no peito, TeamKit no ClubTab/TeamSquadView, TeamHistoryView, BadgeSkills, finanças/Jornal) + tag v26.09.7. Árvore limpa — untracked locais (`server/saves/*`, `*.bak`, `docs/plans/`) não seguiram.
+- Rick: `git pull` + `docker compose up --build -d` → backend Healthy, frontend e backups arrancados.
