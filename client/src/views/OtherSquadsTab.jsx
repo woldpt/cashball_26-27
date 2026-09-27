@@ -439,7 +439,7 @@ export function OtherSquadsTab({
   const brand = teamRow?.sponsorBrand;
 
   return (
-    <div className="min-h-0 flex-1 w-full bg-surface text-on-surface flex flex-col overflow-hidden">
+    <div className="min-h-0 flex-1 w-full overflow-y-auto overscroll-contain bg-surface text-on-surface">
       {/* ── CABEÇALHO (um só, responsivo) ─────────────────────── */}
       <div
         className="relative overflow-hidden border-b border-black/30"
@@ -599,8 +599,8 @@ export function OtherSquadsTab({
         </div>
       </div>
 
-      {/* Conteúdo — scroll interno */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+      {/* Conteúdo — rola junto com o cabeçalho (um só scroll) */}
+      <div>
         {activeTab === "history" ? (
           <TeamHistoryView
             selectedTeam={selectedTeam}

@@ -1,6 +1,6 @@
 // OtherSquadsTab mobile responsiveness harness — renders the REAL
-// OtherSquadsTab (perfil de clube: Plantel / Calendário / História /
-// Equipamento) with edge-case fixture data and reports overflow per tab.
+// OtherSquadsTab (perfil de clube: Resumo / Plantel / Jogos / História)
+// with edge-case fixture data and reports overflow per tab.
 // NOT part of the app; used only for verification.
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
@@ -215,7 +215,7 @@ function measure() {
   };
 }
 
-const TAB_LABELS = ["Resumo", "Plantel", "Calendário", "História"];
+const TAB_LABELS = ["Resumo", "Plantel", "Jogos", "História"];
 
 // Passa por todas as tabs (as colapsadas não seriam medidas) e soma os
 // problemas de cada uma.

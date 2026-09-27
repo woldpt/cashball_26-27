@@ -1,3 +1,10 @@
+## Perfil de equipa: cabeçalho rola com a página (2026-09-27)
+- Pedido: o cabeçalho do perfil de clube (cor, escudo, nome, treinador, linha de contexto, tabs) ficava fixo enquanto só o conteúdo rolava; passa a rolar para cima junto com o resto.
+- Causa: `OtherSquadsTab` era `flex flex-col overflow-hidden` e o scroll estava só no wrapper do conteúdo (`flex-1 min-h-0 overflow-y-auto`), fora do cabeçalho.
+- Fix: o scroll sobe para o contentor exterior (`flex-1 min-h-0 overflow-y-auto overscroll-contain`, sem `flex-col`/`overflow-hidden`) e o wrapper do conteúdo fica neutro → **um único scroll** que inclui o cabeçalho. Continua a ser tab full-bleed (`squad`) a gerir o próprio scroll, como o shell espera.
+- Harness: `teamsquad-resp-test` ainda clicava "Calendário" (a tab chama-se **Jogos** desde o redesenho) — corrigido, senão aquela tab não era medida; comentário do topo atualizado (já não há tab Equipamento).
+- Checks: `lint` só os 3 pré-existentes · `check:types` OK · `test:mobile` **PASS 165/165** · verificado por medição + print a 390 e 1440 (scroller a `scrollTop=300` → botão «Voltar» de `top:10` para `-250`, cabeçalho fora do ecrã).
+
 ## Rever tutorial no menu do utilizador (2026-09-27)
 - Pedido: migrar o botão «Rever tutorial» para o menu de opções do utilizador (canto superior direito).
 - `GameHeader.jsx` ganha o item «Rever tutorial» (ícone `school`) após «Opções»; `GameLayout.jsx` passa `replayTutorial` ao header; `ClubTab`/`GameRoutes` perdem o botão e o prop-drilling.
