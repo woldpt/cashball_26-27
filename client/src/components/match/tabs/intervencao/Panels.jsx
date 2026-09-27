@@ -235,7 +235,7 @@ function PositionColumn({ posStyle, players, label }) {
             key={p.id ?? p.name}
             player={p}
             posStyle={posStyle}
-            hideResForm
+            hideStats
           />
         ))}
         {players.length === 0 && (

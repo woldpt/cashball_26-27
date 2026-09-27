@@ -39,6 +39,7 @@ export function PlayerStatusBadges({
     !isSuspended && !isInjured && cooldown > 0 && cooldown > nowIdx;
 
   const contractStart = player.contract_start_epoch || 0;
+  // currentEpoch: semana absoluta do relógio (épocas × SEASON_WEEKS + semana atual, clampada).
   const currentEpoch = (Math.max(1, season) - 1) * SEASON_WEEKS + Math.min(SEASON_WEEKS, nowIdx + 1);
   const isLocked = contractStart > 0 && currentEpoch < contractStart + SEASON_WEEKS;
   const isUnderContract = contractStart > 0;

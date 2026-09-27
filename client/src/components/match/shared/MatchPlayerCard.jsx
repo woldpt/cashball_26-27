@@ -1,18 +1,18 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, getPosStyle } from "../matchConstants.js";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
-import { SkillBadge } from "../../shared/SkillBadge.jsx";
+import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
 
 /**
  * Match player card — always expanded (skill + fatigue).
  * Layout: [bar] [POS] Nome ★  [fatigue] [skill+glow] │ RES [cyan] │ <emoji form>
- * RES and form are hidden when `hideResForm` is set (opponent players).
+ * The skills badge is hidden when `hideStats` is set (opponent players).
  *
  * Visual signals (was previously overlapping):
  *  - Default state: position gradient background + position-colored bar.
  *  - Selected state: rose tinting only (gradient is suppressed to avoid
  *    two competing color systems on the same row).
- * Skills: badge único SkillBadge (SKILL dourado + RES + forma + moral).
+ * Skills: badge único BadgeSkills (SKILL dourado + RES + forma + moral).
  */
 export function MatchPlayerCard({
   player,
@@ -23,7 +23,7 @@ export function MatchPlayerCard({
   onPick,
   title,
   showFatigue = true,
-  hideResForm = false,
+  hideStats = false,
   showMatchStats = false,
   goals = 0,
   yellowCards = 0,
@@ -39,7 +39,7 @@ export function MatchPlayerCard({
 
   const hasStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
 
-  // Skill se mede em dourado (SkillBadge); o selecionado cai em branco —
+  // Skill se mede em dourado (BadgeSkills); o selecionado cai em branco —
   // o rosa confundia-se com o acento de ATA (avançado).
   const matchStatsLabel = [
     goals > 0 ? `${goals} golo${goals > 1 ? "s" : ""}` : null,
@@ -123,8 +123,8 @@ export function MatchPlayerCard({
 
       {/* ── Skills: badge único (skill + RES + forma quando visível) ── */}
       <div className="shrink-0 flex items-center mr-2">
-        {!hideResForm && (
-          <SkillBadge
+        {!hideStats && (
+          <BadgeSkills
             skill={player.skill}
             resistance={player.resistance}
             form={player.form}

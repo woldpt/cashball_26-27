@@ -1,7 +1,7 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, getPosStyle } from "../matchConstants.js";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
-import { SkillBadge } from "../../shared/SkillBadge.jsx";
+import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
 
 /**
  * Compact player card — versão de uma linha do `MatchPlayerCard`, pensada para
@@ -9,7 +9,7 @@ import { SkillBadge } from "../../shared/SkillBadge.jsx";
  * apertada e corta o nome.
  *
  * Preserva TODOS os dados relevantes, mas compridos na mesma linha:
- *   [POS] Nome ★  ⚽n 🟨n  [fadiga] | SkillBadge
+ *   [POS] Nome ★  ⚽n 🟨n  [fadiga] | BadgeSkills
  *
  * Diferenças vs. o card expandido:
  *  - Tudo numa só linha (sem empilhamento nome/estatística/fadiga) → ~60% menos altura.
@@ -23,7 +23,7 @@ import { SkillBadge } from "../../shared/SkillBadge.jsx";
  * @param {boolean} [props.selectable] - Permite pick.
  * @param {Function} [props.onPick] - Callback de seleção.
  * @param {boolean} [props.showFatigue] - Mostrar indicador de fadiga inline.
- * @param {boolean} [props.hideResForm] - Ocultar RES e forma (jogadores adversários).
+ * @param {boolean} [props.hideStats] - Ocultar o badge de skills (jogadores adversários).
  * @param {boolean} [props.forcedOut] - Substitução obrigatória (destaque vermelho).
  * @param {boolean} [props.draggable] - Arrastável (DnD desktop).
  */
@@ -35,7 +35,7 @@ export function CompactPlayerCard({
   selectable = true,
   onPick,
   showFatigue = true,
-  hideResForm = false,
+  hideStats = false,
   goals = 0,
   yellowCards = 0,
   forcedOut = false,
@@ -131,8 +131,8 @@ export function CompactPlayerCard({
 
       {/* Métricas à direita: badge único de skills */}
       <div className="shrink-0 flex items-center gap-1.5 mr-2">
-        {!hideResForm && (
-          <SkillBadge
+        {!hideStats && (
+          <BadgeSkills
             skill={player.skill}
             resistance={player.resistance}
             form={player.form}

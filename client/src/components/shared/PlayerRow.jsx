@@ -9,7 +9,7 @@
  *  - `showProposalCol`: coluna de proposta para equipas NPC;
  *  - `showLastRating`: última classificação junto aos atributos (coluna Nota).
  */
-import { SkillBadge } from "./SkillBadge.jsx";
+import { BadgeSkills } from "./BadgeSkills.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import { PlayerLink } from "./PlayerLink.jsx";
 import { PlayerStatusBadges, StarMark } from "./PlayerStatusBadges.jsx";
@@ -150,7 +150,7 @@ export function PlayerRow({
             <Stars value={player.last_rating} className="text-amber-400 text-[11px] shrink-0 leading-none" />
           </span>
         )}
-        <SkillBadge
+        <BadgeSkills
           skill={player.skill}
           resistance={player.resistance}
           form={player.form}
@@ -280,7 +280,7 @@ export function PlayerRow({
         {/* Linha extra em mobile: atributos + golos + salário (escondidos ≥md) */}
         <div className="md:hidden flex items-center justify-between gap-2 px-2 py-1.5 border-t border-outline-variant/10">
           <div className="flex items-center gap-2 min-w-0">
-            <SkillBadge
+            <BadgeSkills
               skill={player.skill}
               resistance={player.resistance}
               form={player.form}

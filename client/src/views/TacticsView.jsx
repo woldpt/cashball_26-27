@@ -11,7 +11,7 @@ import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
 import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
-import { SkillBadge } from "../components/shared/SkillBadge.jsx";
+import { BadgeSkills } from "../components/shared/BadgeSkills.jsx";
 
 /** Cores por posição */
 const POS_COLORS = {
@@ -321,7 +321,7 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           />
         )}
       </span>
-      <SkillBadge
+      <BadgeSkills
         skill={player.skill}
         resistance={player.resistance}
         form={player.form}

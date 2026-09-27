@@ -9,7 +9,7 @@ const VARIANT_CLASSES = {
   neutral: "bg-surface-bright text-on-surface-variant/70 border-outline-variant/30",
   junior: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
   renovado:
-    "relative overflow-hidden bg-gradient-to-r from-amber-700/60 via-yellow-500/60 to-amber-700/60 text-amber-100 border-amber-500/40 shadow-sm shadow-amber-500/30",
+    "bg-gradient-to-r from-amber-700/60 via-yellow-500/60 to-amber-700/60 text-amber-100 border-amber-500/40 shadow-sm shadow-amber-500/30",
   sold: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   cooldown: "bg-sky-500/15 text-sky-300 border-sky-500/30",
   suspended: "bg-error-container/60 text-error border-error/30",

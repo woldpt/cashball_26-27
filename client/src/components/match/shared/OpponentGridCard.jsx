@@ -1,6 +1,6 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS } from "../matchConstants.js";
-import { SkillBadge } from "../../shared/SkillBadge.jsx";
+import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
 
 /**
  * Single opponent player row — passivo (sem hover, sem button).
@@ -9,9 +9,9 @@ import { SkillBadge } from "../../shared/SkillBadge.jsx";
  * @param {object} props - Props do jogador.
  * @param {object} props.player - Dados do jogador (id, name, position, skill, resistance, form, is_star).
  * @param {object} props.posStyle - Estilo da posição (getPosStyle).
- * @param {boolean} [props.hideResForm] - Ocultar RES e forma.
+ * @param {boolean} [props.hideStats] - Ocultar as células auxiliares do badge (RES/FORMA/MOR/AGR).
  */
-export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
+export function OpponentGridCard({ player, posStyle, hideStats = false }) {
   const s = posStyle;
 
   return (
@@ -38,13 +38,13 @@ export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
       </div>
 
       {/* Skills à direita — badge único */}
-      <SkillBadge
+      <BadgeSkills
         skill={player.skill}
         resistance={player.resistance}
         form={player.form}
         morale={player.morale}
         aggressiveness={player.aggressiveness}
-        hideResForm={hideResForm}
+        hideStats={hideStats}
         size="sm"
       />
     </div>

@@ -7,7 +7,7 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  * Retângulo de cantos arredondados com os valores sempre
  * pela mesma ordem: SKILL dourado (maior, negrito, glow só no número)
  * | RES azul | FORMA verde | MOR violeta | AGR vermelha (número na cor
- * do tier, etiqueta só no tooltip; escondida com hideResForm). Uma só
+ * do tier, etiqueta só no tooltip; escondida com hideStats). Uma só
  * receita para Plantel, Tática, intervenção/substituições e mercado.
  *
  * Sem label "Skill" — só o número dourado a negrito com glow.
@@ -21,7 +21,7 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  *   morale?: number,
  *   aggressiveness?: number|string,
  *   delta?: number,
- *   hideResForm?: boolean,
+ *   hideStats?: boolean,
  *   size?: "md"|"sm",
  *   className?: string,
  * }} props
@@ -33,13 +33,13 @@ export function BadgeSkills({
   morale,
   aggressiveness,
   delta = 0,
-  hideResForm = false,
+  hideStats = false,
   size = "md",
   className = "",
 }) {
   const sm = size === "sm";
   // AGR: número 10–50 pintado com a cor do tier; etiqueta só no tooltip.
-  // Visível em todas as larguras (inclusive mobile); escondida com hideResForm.
+  // Visível em todas as larguras (inclusive mobile); escondida com hideStats.
   const hasAgg = aggressiveness != null;
   const aggKey = hasAgg ? aggLabel(aggressiveness) : null;
   const aggColor = (aggKey && AGG_TIERS[aggKey]?.color) || "text-zinc-400";
@@ -67,7 +67,7 @@ export function BadgeSkills({
       className={`flex items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
     >
       <div
-        className={`flex items-center justify-center gap-1 bg-amber-400/12 min-w-[3ch] ${!hideResForm ? "border-r border-amber-400/20" : ""} ${cellCls}`}
+        className={`flex items-center justify-center gap-1 bg-amber-400/12 min-w-[3ch] ${!hideStats ? "border-r border-amber-400/20" : ""} ${cellCls}`}
       >
         {delta !== 0 && (
           <span
@@ -83,7 +83,7 @@ export function BadgeSkills({
           {skill ?? "—"}
         </span>
       </div>
-      {!hideResForm && (
+      {!hideStats && (
         <>
           <div className={`flex flex-col items-center justify-center gap-0.5 bg-sky-500/10 border-r border-sky-500/20 ${cellCls}`}>
             <span className="text-[7px] uppercase tracking-widest text-sky-200/70 font-bold leading-none">
@@ -122,6 +122,3 @@ export function BadgeSkills({
     </div>
   );
 }
-
-// Alias histórico — o badge nasceu como SkillBadge
-export const SkillBadge = BadgeSkills;
