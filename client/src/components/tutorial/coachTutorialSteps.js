@@ -10,7 +10,7 @@
  * @property {string} id
  * @property {string} tab - tab do GameLayout a navegar ao entrar no passo
  * @property {string|null} submenu - submenu mobile a abrir ("gestao" | "transferencias" | null)
- * @property {Array<string>} targets - seletores data-tour candidatos, por ordem de preferência
+ * @property {Array<string>} targets - seletores data-tour candidatos, por ordem de preferência (vazio = balão final centrado, sem spotlight)
  * @property {string} title
  * @property {string} text
  */
@@ -69,7 +69,7 @@ export const COACH_TUTORIAL_STEPS = [
     id: "tactic-lineup",
     tab: "tactic",
     submenu: null,
-    targets: ['[data-tour="tactic-lineup"]'],
+    targets: ['[data-tour="tactic-titulares"]', '[data-tour="tactic-lineup"]'],
     title: "Monta o teu 11",
     text: "Escolhe a formação, a mentalidade e arrasta os jogadores para Titulares. Sem 1 guarda-redes + 10 de campo, o botão de jogar fica bloqueado.",
   },
@@ -77,15 +77,15 @@ export const COACH_TUTORIAL_STEPS = [
     id: "tactic-play",
     tab: "tactic",
     submenu: null,
-    targets: ['[data-tour="tactic-play"]'],
+    targets: ['[data-tour="tactic-play"]', '[data-tour="tactic-titulares"]'],
     title: "Confirma a jornada",
-    text: "Quando o 11 estiver pronto, prime este botão. Em salas com amigos, a jornada só avança quando todos confirmarem.",
+    text: "Quando o 11 estiver completo, aparece o botão de jogar — prime-o para confirmar a jornada. Em salas com amigos, a jornada só avança quando todos confirmarem.",
   },
   {
     id: "simulation",
     tab: "tactic",
     submenu: null,
-    targets: ['[data-tour="nav-play"]', '[data-tour="nav-play-mobile"]'],
+    targets: [],
     title: "Rumo à simulação",
     text: "Confirmada a tática, a jornada é simulada ao vivo: golos, lesões e intervenções em direto. Boa sorte, mister — a tua época começa agora!",
   },

@@ -1082,6 +1082,7 @@ ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !ca
             <div className="flex-1 flex flex-col md:flex-row gap-2 short:gap-1.5 xl:gap-3 min-w-0 xl:items-start">
               {/* Titulares */}
               <div
+                data-tour="tactic-titulares"
                 className={`flex-1 min-w-0 bg-surface-container border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-outline-variant/25"}`}
                 onDragOver={(e) => {
                   e.preventDefault();

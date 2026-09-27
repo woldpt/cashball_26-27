@@ -2403,3 +2403,9 @@ Plano C1+C2 (quando fizer):
 - `BadgeSkills`: prop `skillLast` — célula SKILL extraída p/ `skillCell` (mesma peça, sem duplicar JSX), bordas trocadas, `title` pela mesma ordem. Default `false`: resto intocado.
 - `CompactPlayerCard`: repassa `skillLast`. `SubsPanel`: `portraitPhone = useIsMobile() && !useMobileLandscape()` (sem gancho direto de vertical; `compact` cobria landscape/ecrã baixo a mais) nos 2 cards. Adversário (PlayerLists) sem prop → ordem normal.
 - `STYLE.md` §10 atualizado. Checks: eslint + `check:types` + `test:mobile` (layout portrait).
+
+## Coach tutorial — reancorar passos finais (2026-09-26)
+- Passo 7 ("Monta o teu 11") apontava só à grelha de formações; passa a `[tactic-titulares, tactic-lineup]` — novo `data-tour="tactic-titulares"` no painel Titulares (todos os breakpoints; `findTarget` ignora escondidos).
+- Passo 8 ("Confirma a jornada"): desktop já estava bem (coluna Jogar); em mobile o FAB só existe com o 11 completo, por isso fallback `[tactic-play, tactic-titulares]` + texto novo ("quando o 11 estiver completo, aparece o botão de jogar").
+- Passo 9 ("Rumo à simulação"): apontava ao botão JOGAR da navegação estando já na tab tática; passa a `targets: []` = balão final centrado, sem spotlight. `CoachTutorial` salta o retry quando o passo não tem alvos.
+- Checks: eslint limpo nos ficheiros; `check:types` OK. Sem `test:mobile` (só atributos + lógica, sem mudança estrutural) nem audits.

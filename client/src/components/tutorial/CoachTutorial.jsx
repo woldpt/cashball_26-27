@@ -67,10 +67,14 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
       return false;
     };
     tryMeasure();
-    const t = setInterval(() => {
-      attempts += 1;
-      if (tryMeasure() || attempts >= 6) clearInterval(t);
-    }, 150);
+    // Passo final sem alvos (balão centrado) — não há nada para esperar.
+    const t =
+      (step.targets?.length ?? 0) > 0
+        ? setInterval(() => {
+            attempts += 1;
+            if (tryMeasure() || attempts >= 6) clearInterval(t);
+          }, 150)
+        : undefined;
     const onKey = (e) => {
       if (e.key === "Escape") onSkip();
     };
