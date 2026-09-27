@@ -208,22 +208,19 @@ export function SubsPanel({
     ],
   );
 
-  // No banco, sem escolha de quem sai: a dica remete para o chip 'Sai', que
-  // devolve aos titulares (a confirmHint genérica aponta para um cartão que
-  // o utilizador não vê).
-  const benchConfirmHint =
-    !effectiveOutId && !isForcedSwap
-      ? "Toca em 'Sai' para escolher quem sai."
-      : confirmHint;
-
-  // Mobile: confirmar/limpar devolve a folha de partida aos titulares.
-  const mobileOnResetSub = () => {
-    onResetSub();
-    setUserPage("pitch");
-  };
+  // Mobile: confirmar devolve a folha de partida aos titulares.
   const mobileOnConfirmSub = () => {
     onConfirmSub();
     setUserPage("pitch");
+  };
+  // Guarda anti-toque-duplo do botão flutuante (no intervalo, um toque
+  // duplo sem isto metia duas entradas na fila).
+  const [confirming, setConfirming] = useState(false);
+  const flashConfirming = (fn) => () => {
+    if (confirming) return;
+    setConfirming(true);
+    fn();
+    window.setTimeout(() => setConfirming(false), 900);
   };
 
   const sharedSwapProps = {
@@ -548,6 +545,16 @@ export function SubsPanel({
               ))}
             </div>
             <SubsCounter subsMade={subsMade} />
+            {isUserSubPause && (() => {
+              const start = pauseInitialIdx ?? confirmedSubs.length;
+              const queued = confirmedSubs.slice(start);
+              if (queued.length === 0) return null;
+              return (
+                <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-emerald-300/80 tabular-nums">
+                  Fila · {queued.length}
+                </span>
+              );
+            })()}
             {/* 'Anular todas' compacto (mobile) — dois toques para confirmar. */}
             {confirmedSubs.length > 0 && (
               <button
@@ -634,22 +641,79 @@ export function SubsPanel({
               <MatchIcon name="chevron-right" className="h-4 w-4 rotate-180" />
             </span>
           </button>
+
+          {/* ── Confirmação flutuante (substitui a barra inferior): um só
+           *  botão a meio do ecrã, visível quando ambos os intervenientes
+           *  estão escolhidos. O wrapper não interceta toques — só o botão —
+           *  para não roubar scroll à lista. */}
+          {canConfirmSwap && (
+            <div className="absolute left-1/2 top-[38%] z-[5] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 pointer-events-none">
+              {isForcedSwap && injuryCountdown !== null && (
+                <>
+                  <span role="status" className="sr-only">
+                    {isEmergencyGk
+                      ? "Escolha automática iminente — quem vai para a baliza?"
+                      : "Substituição automática iminente — escolhe o substituto."}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-auto rounded-full border border-amber-400/40 bg-zinc-950/90 px-3 py-1 text-xs font-black tabular-nums text-amber-300 shadow-lg animate-pulse motion-reduce:animate-none"
+                  >
+                    Auto em {injuryCountdown}s
+                  </span>
+                </>
+              )}
+              {isHalftime || isUserSubPause ? (
+                <button
+                  type="button"
+                  onClick={flashConfirming(mobileOnConfirmSub)}
+                  disabled={confirming}
+                  aria-label={`Substituir ${sourcePlayer?.name} por ${targetPlayer?.name}`}
+                  className="pointer-events-auto flex min-h-11 max-w-[calc(100%-2rem)] items-center gap-2 rounded-full bg-emerald-500 px-5 py-2 text-sm font-black text-zinc-950 shadow-2xl shadow-emerald-500/30 transition-transform active:scale-95 disabled:opacity-70"
+                >
+                  <MatchIcon name="confirm" className="h-4 w-4 shrink-0" />
+                  <span className="truncate min-w-0">
+                    Sai {sourcePlayer?.name} → Entra {targetPlayer?.name}
+                  </span>
+                </button>
+              ) : isEmergencyGk ? (
+                <button
+                  type="button"
+                  onClick={flashConfirming(() => onResolveAction(selectedInId))}
+                  disabled={confirming}
+                  aria-label={`${targetPlayer?.name} vai para a baliza`}
+                  className="pointer-events-auto flex min-h-11 max-w-[calc(100%-2rem)] items-center gap-2 rounded-full bg-indigo-500 px-5 py-2 text-sm font-black text-white shadow-2xl shadow-indigo-500/30 transition-transform active:scale-95 disabled:opacity-70"
+                >
+                  <span aria-hidden="true" className="text-sm leading-none">🧤</span>
+                  <span className="truncate min-w-0">
+                    {targetPlayer?.name} para a baliza
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={flashConfirming(() =>
+                    onResolveAction({
+                      playerOut: effectiveOutId,
+                      playerIn: noReplacement ? null : selectedInId,
+                    }),
+                  )}
+                  disabled={confirming}
+                  aria-label={noReplacement ? "Continuar sem substituição" : `Substituir ${sourcePlayer?.name} por ${targetPlayer?.name}`}
+                  className="pointer-events-auto flex min-h-11 max-w-[calc(100%-2rem)] items-center gap-2 rounded-full bg-indigo-500 px-5 py-2 text-sm font-black text-white shadow-2xl shadow-indigo-500/30 transition-transform active:scale-95 disabled:opacity-70"
+                >
+                  <MatchIcon name="confirm" className="h-4 w-4 shrink-0" />
+                  <span className="truncate min-w-0">
+                    {noReplacement
+                      ? "Continuar sem substituição"
+                      : `Sai ${sourcePlayer?.name} → Entra ${targetPlayer?.name}`}
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* ── Barra de ação contextual — zona do polegar; só existe na folha
-       *  do banco (a folha de titulares não precisa de rodapé). */}
-        {frontPage === "bench" && (
-          <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/95">
-            <SwapControls
-              {...sharedSwapProps}
-              compact
-              confirmHint={benchConfirmHint}
-              onResetSub={mobileOnResetSub}
-              onConfirmSub={mobileOnConfirmSub}
-              outSlotAction={() => setUserPage("pitch")}
-            />
-          </div>
-        )}
       </div>
       )}
     </div>

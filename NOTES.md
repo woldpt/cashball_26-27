@@ -2581,3 +2581,8 @@ Plano C1+C2 (quando fizer):
 ## Deploy v26.09.14 no rick (2026-09-27)
 - Inclui posição à direita no banco mobile + label FOR no badge.
 - Limpeza prévia (autorizada): `git rm --cached` dos shm/wal vivos de `game_SLMH6X` (só saiu do tracking, ficheiros intactos em disco); push master + tag v26.09.14; rebuild no rick com backend Healthy.
+
+## Intervenção vertical: barra fora, confirmação flutuante (2026-09-27)
+- Pedido (print inacessível — pasteboard exige JS): fora o retângulo da barra inferior do banco; um só botão flutuante a meio do ecrã confirma após os dois escolhidos. Âmbito só vertical; anular via reset vermelho existente + re-tocar (toggle); flutuante cobre todos os fluxos.
+- Fix (`SubsPanel.jsx` só; `SwapControls` intacto para desktop/landscape): barra do banco apagada; pill absoluto a 38% da stack (`z-[5]`, `min-h-11`, nomes truncados `Sai X → Entra Y`, guarda anti-toque-duplo 900ms). Variantes: `Substituir` (fila), `Vai para a baliza`, `Continuar sem substituição`. Countdown vira chip `Auto em Ns` sobre o pill; fila (`Fila · N`) muda para o topo junto ao Subs. Hints pré-seleção e `Limpar` morrem com a barra (assumido).
+- Checks: eslint limpo · `check:types` OK · `test:mobile` **PASS 165/165** (intervencao 5/5 sem overflow nem clipping; smallTargets 30/31, melhor que 31/34).
