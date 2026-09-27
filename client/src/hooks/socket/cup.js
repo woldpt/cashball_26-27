@@ -273,6 +273,8 @@ export function registerCupListeners(handlers, refs, ctx) {
 		socket.emit("requestCupBracket");
 
 		handlers.setCupRoundResults(data);
+		handlers.setWaitingForResults(false);
+		handlers.setResultsWaitTimedOut(false);
 		// Don't navigate away yet — if a penalty shootout popup is open, wait for it to close first.
 		handlers.setPendingCupRoundResults(data);
 		// matchweek doesn't increment after cup rounds, so the useEffect in App.jsx

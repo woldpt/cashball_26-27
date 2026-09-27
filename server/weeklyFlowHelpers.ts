@@ -174,6 +174,13 @@ import {
 const MAX_NPC_HALFTIME_SUBS = 2;
 const NPC_FRESHNESS_SKILL_BUFFER = 2;
 
+// Rede anti-cala da finalização: se o finalize (liga/taça/amigável) não
+// concluir — promise pendente, callback perdido — a sala nunca fica presa
+// em silêncio em match_finalizing. O normal conclui em segundos; o
+// temporizador dispara só no patológico: log alto + lobby + segmento livre.
+// unref para não prender a saída de scripts/testes que corram o segmento.
+const FINALIZE_WATCHDOG_MS = 5 * 60 * 1000;
+
 // NPCs use the fatigue accumulated by the actual cached XI, rather
 // than the permanent DB skill used by generateAITactic. They only
 // replace a tired outfield player when a same-position bench player
@@ -1054,12 +1061,27 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     game.gamePhase = "match_finalizing";
     saveGameState(game);
 
-    if (entry?.type === "cup") {
-      await finalizeCupRound(game);
-    } else if (entry?.type === "friendly") {
-      await finalizeFriendly(game);
-    } else {
-      await finalizeLeagueEvent(game);
+    const finalizeWatchdog = setTimeout(() => {
+      if (game.gamePhase !== "match_finalizing") return;
+      if ((game as any).purged) return;
+      console.error(
+        `[${game.roomCode}] ❌ finalize watchdog: fase presa em match_finalizing — a libertar para lobby`,
+      );
+      game.gamePhase = "lobby";
+      segmentRunning[game.roomCode] = false;
+      saveGameState(game);
+    }, FINALIZE_WATCHDOG_MS);
+    (finalizeWatchdog as any)?.unref?.();
+    try {
+      if (entry?.type === "cup") {
+        await finalizeCupRound(game);
+      } else if (entry?.type === "friendly") {
+        await finalizeFriendly(game);
+      } else {
+        await finalizeLeagueEvent(game);
+      }
+    } finally {
+      clearTimeout(finalizeWatchdog);
     }
   }
 
@@ -1313,6 +1335,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             matchweek: completedMatchweek,
             results: fullTimeFixtures,
           });
+          console.log(
+            `[${game.roomCode}] 📣 matchResults emitted | mw=${completedMatchweek} | n=${fullTimeFixtures.length}`,
+          );
 
           resetAllReady(game);
           clearSeatPositions(game);
@@ -1596,7 +1621,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               });
           });
         });
-      });
+      })();
     });
   }
 

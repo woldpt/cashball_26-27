@@ -57,6 +57,8 @@ export function registerMatchListeners(handlers, refs, ctx) {
 		// Ao chegar o primeiro matchMinuteUpdate, o relógio avança para startMin.
 		handlers.setLiveMinute(data.startMin - 1);
 		handlers.setIsPlayingMatch(true);
+		handlers.setWaitingForResults(false);
+		handlers.setResultsWaitTimedOut(false);
 		handlers.setActiveTab("live");
 		// Always sync cup state from the server payload (handles reconnect mid-match)
 		if (data.isCup) {
@@ -670,6 +672,8 @@ export function registerMatchListeners(handlers, refs, ctx) {
 		handlers.setIsMatchActionPending(false);
 		handlers.setMatchAction(null);
 		handlers.setMatchResults(data);
+		handlers.setWaitingForResults(false);
+		handlers.setResultsWaitTimedOut(false);
 		handlers.setMatchweekCount(data.matchweek);
 		// As classificações do cliente ficam desatualizadas até o servidor
 		// emitir os dados novos (teamsData/teamForms/topScorers) e

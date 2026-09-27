@@ -37,6 +37,9 @@ import { useSocketListeners } from "../hooks/useSocketListeners.js";
 
 const GameContext = createContext(null);
 
+// Espera máxima pelos resultados após o apito final antes de avisar.
+const RESULTS_WAIT_TIMEOUT_MS = 20000;
+
 /**
  * Provider that owns ALL game state except auth.
  * Receives auth bridge props from App.jsx so useSocketListeners
@@ -191,6 +194,12 @@ export function GameProvider({
 	const [allTacticFamiliarity, setAllTacticFamiliarity] = useState({});
 	const [liveMinute, setLiveMinute] = useState(90);
 	const [isPlayingMatch, setIsPlayingMatch] = useState(false);
+	// Espera pelos resultados após os 90'/120': o relógio local para sozinho e
+	// os menus libertam-se — sem isto, um servidor preso deixava o jogo parado
+	// em silêncio. Ao fim de RESULTS_WAIT_TIMEOUT_MS sem resultados, o
+	// MatchPage mostra aviso + botão de nova tentativa.
+	const [waitingForResults, setWaitingForResults] = useState(false);
+	const [resultsWaitTimedOut, setResultsWaitTimedOut] = useState(false);
 	const [isLiveSimulation, setIsLiveSimulation] = useState(false);
 	const [showHalftimePanel, setShowHalftimePanel] = useState(false);
 	const [matchAction, setMatchAction] = useState(null);
@@ -469,6 +478,8 @@ export function GameProvider({
 						setIsPlayingMatch(false);
 						setIsLiveSimulation(false);
 						setIsCupExtraTime(false);
+						setWaitingForResults(true);
+						setResultsWaitTimedOut(false);
 						socket.emit("cupExtraTimeDone");
 					}, 2000);
 					return () => clearTimeout(timer);
@@ -477,6 +488,8 @@ export function GameProvider({
 					const timer = setTimeout(() => {
 						setIsPlayingMatch(false);
 						setIsLiveSimulation(false);
+						setWaitingForResults(true);
+						setResultsWaitTimedOut(false);
 						drainPendingCupDraw();
 						if (isCupMatch) {
 							socket.emit("cupSecondHalfDone");
@@ -506,12 +519,16 @@ export function GameProvider({
 				const timer = setTimeout(() => {
 					setIsPlayingMatch(false);
 					setIsCupExtraTime(false);
+					setWaitingForResults(true);
+					setResultsWaitTimedOut(false);
 					socket.emit("cupExtraTimeDone");
 				}, 2000);
 				return () => clearTimeout(timer);
 			} else if (liveMinute >= 90 && !isCupExtraTime && !showHalftimePanel) {
 				const timer = setTimeout(() => {
 					setIsPlayingMatch(false);
+					setWaitingForResults(true);
+					setResultsWaitTimedOut(false);
 					drainPendingCupDraw();
 					if (isCupMatch) {
 						socket.emit("cupSecondHalfDone");
@@ -535,6 +552,18 @@ export function GameProvider({
 		isLiveSimulation,
 		drainPendingCupDraw,
 	]);
+
+	// ── Results wait safety net ─────────────────────────────────────────
+	// O relógio pára sozinho aos 90'/120' e liberta os menus; se os resultados
+	// tardarem, assinalar para o MatchPage mostrar aviso em vez de silêncio.
+	useEffect(() => {
+		if (!waitingForResults) return;
+		const t = setTimeout(
+			() => setResultsWaitTimedOut(true),
+			RESULTS_WAIT_TIMEOUT_MS,
+		);
+		return () => clearTimeout(t);
+	}, [waitingForResults]);
 
 	// ── Standings staleness safety net ─────────────────────────────────────
 	// Se o servidor nunca emitir standingsUpdated (erro/rede lenta), não
@@ -994,6 +1023,8 @@ year: seasonYear,
 			setActiveTab,
 			setIsPlayingMatch,
 			setIsLiveSimulation,
+			setWaitingForResults,
+			setResultsWaitTimedOut,
 			setShowHalftimePanel,
 			setIsCupExtraTime,
 			setTactic,
@@ -1813,6 +1844,8 @@ year: seasonYear,
 		setAllTacticFamiliarity,
 		liveMinute,
 		isPlayingMatch,
+		waitingForResults,
+		resultsWaitTimedOut,
 		isLiveSimulation,
 		showHalftimePanel,
 		matchAction,

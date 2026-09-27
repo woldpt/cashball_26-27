@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { takeover } from "../../motion.js";
 import { MatchView, IntervencaoView } from "./MatchTabs.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
+import { socket } from "../../socket.js";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
 import { DIVISION_NAMES } from "../../constants/index.js";
@@ -62,6 +63,8 @@ export function MatchPage({
 		handleResetSub,
 		handleResetAllSubs,
 	} = useTactics();
+
+	const { waitingForResults, resultsWaitTimedOut } = useGame();
 
 	// Telemóvel em horizontal: largura de desktop, altura de telemóvel → layout compacto.
 	const compact = useCompactViewport();
@@ -298,6 +301,28 @@ export function MatchPage({
 					</span>
 				)}
 			</div>
+
+			{/* ── Aviso de espera pelo servidor ──────────────────────────────
+				Aos 90'/120' o relógio local pára e liberta os menus; se os
+				resultados tardarem, mostrar em vez de silêncio. */}
+			{waitingForResults && resultsWaitTimedOut && !isIntervencao && (
+				<div className="shrink-0 mx-4 mt-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 flex items-center gap-3">
+					<div className="flex-1 min-w-0">
+						<p className="text-xs font-black uppercase tracking-widest text-amber-300">
+							⏳ À espera do servidor…
+						</p>
+						<p className="text-[11px] text-on-surface-variant">
+							Se persistir, recarrega a página.
+						</p>
+					</div>
+					<button
+						onClick={() => socket.emit("requestResync")}
+						className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40"
+					>
+						↻ Tentar de novo
+					</button>
+				</div>
+			)}
 
 			{/* ── Halftime score banner ──────────────────────────────────── */}
 			{mode === "halftime" && fixture && (
