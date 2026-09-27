@@ -2418,3 +2418,8 @@ Plano C1+C2 (quando fizer):
 - Novo passo 2 na skill: determinar a próxima tag, atualizar `APP_VERSION` em `client/src/constants/index.js` (fonte da versão no rodapé da landing) e commit só desse ficheiro antes do push. Regra da tag extraída para secção própria.
 - Nota: a versão não vive na `LandingPage.jsx` — o rodapé (`LandingFooter`) lê `APP_VERSION`/`SEASON_LABEL` das constants.
 - Sincronizado `APP_VERSION` v26.09.8 → v26.09.10 (commit fix separado, fica local até ao próximo deploy).
+
+## BadgeSkills skillLast: só FORMA·MOR·SKILL (2026-09-27)
+- Pedido: no portrait da Intervenção, só Skill + Forma + Moral, Skill à direita.
+- Só `BadgeSkills.jsx`: RES e AGR com guarda `!skillLast`; `title` em modo skillLast sem RES/AGR; revertida a `border-r` condicional da AGR. SubsPanel/Compact inalterados.
+- Checks: eslint + `check:types` + `test:mobile`.

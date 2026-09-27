@@ -9,7 +9,8 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  * | FORMA verde | MOR violeta | RES azul | AGR vermelha (número na cor
  * do tier, etiqueta só no tooltip; escondida com hideStats). Uma só
  * receita para Plantel, Tática, intervenção/substituições e mercado.
- * Exceção: `skillLast` (Intervenção em vertical) põe o SKILL em último.
+ * Exceção: `skillLast` (Intervenção em vertical) mostra só
+ * FORMA · MOR · SKILL, com o SKILL em último.
  *
  * Sem label "Skill" — só o número dourado a negrito com glow.
  * Na semana em que a skill muda (`prevSkill` do backend, só preenchido
@@ -76,9 +77,9 @@ export function BadgeSkills({
   const glowStyle = {
     textShadow: `0 0 10px rgba(${glowRgb},0.9), 0 0 22px rgba(${glowRgb},0.45), 0 0 36px rgba(${glowRgb},0.20)`,
   };
-  // Intervenção em vertical: SKILL em último (skillLast) para o número
-  // principal ficar encostado à direita. A célula é a mesma peça nos dois
-  // casos — só muda o sítio e o lado da borda.
+  // Intervenção em vertical: só FORMA · MOR · SKILL (skillLast), com o
+  // número principal encostado à direita. A célula SKILL é a mesma peça
+  // nos dois casos — só muda o sítio e o lado da borda.
   const skillCell = (
     <div
       className={`flex items-center justify-center bg-amber-400/12 min-w-[3ch] ${!hideStats ? (skillLast ? "border-l border-amber-400/20" : "border-r border-amber-400/20") : ""} ${cellCls}`}
@@ -92,7 +93,9 @@ export function BadgeSkills({
     </div>
   );
   const trendSuffix = trend !== 0 ? ` (desde ${prevSkill})` : "";
-  const statsTitle = `Forma ${form ?? "—"} · Moral ${morale ?? "—"} · RES ${resistance ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`;
+  const statsTitle = skillLast
+    ? `Forma ${form ?? "—"} · Moral ${morale ?? "—"}`
+    : `Forma ${form ?? "—"} · Moral ${morale ?? "—"} · RES ${resistance ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`;
   const skillTitle = `Skill ${skill ?? "—"}${trendSuffix}`;
   const title = skillLast ? `${statsTitle} · ${skillTitle}` : `${skillTitle} · ${statsTitle}`;
   return (
@@ -119,6 +122,7 @@ export function BadgeSkills({
               {morale ?? "–"}
             </span>
           </div>
+          {!skillLast && (
           <div className={`flex flex-col items-center justify-center gap-0.5 bg-sky-500/10 border-r border-sky-500/20 ${cellCls}`}>
             <span className="text-[7px] uppercase tracking-widest text-sky-200/70 font-bold leading-none">
               Res
@@ -127,7 +131,9 @@ export function BadgeSkills({
               {resistance ?? "–"}
             </span>
           </div>
-          <div className={`flex flex-col items-center justify-center gap-0.5 bg-red-500/10 ${skillLast ? "border-r border-red-500/20" : ""} ${cellCls}`}>
+          )}
+          {!skillLast && (
+          <div className={`flex flex-col items-center justify-center gap-0.5 bg-red-500/10 ${cellCls}`}>
             <span className="text-[7px] uppercase tracking-widest text-red-200/70 font-bold leading-none">
               Agr
             </span>
@@ -135,6 +141,7 @@ export function BadgeSkills({
               {hasAgg ? aggNum : "–"}
             </span>
           </div>
+          )}
         </>
       )}
       {skillLast && skillCell}
