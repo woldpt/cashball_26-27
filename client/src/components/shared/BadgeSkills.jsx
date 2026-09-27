@@ -6,7 +6,7 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  *
  * Retângulo de cantos arredondados com os valores sempre
  * pela mesma ordem: SKILL dourado (maior, negrito, glow só no número)
- * | RES azul | FORMA verde | MOR violeta | AGR vermelha (número na cor
+ * | FORMA verde | MOR violeta | RES azul | AGR vermelha (número na cor
  * do tier, etiqueta só no tooltip; escondida com hideStats). Uma só
  * receita para Plantel, Tática, intervenção/substituições e mercado.
  *
@@ -52,7 +52,7 @@ export function BadgeSkills({
       : "–";
   const skillCls = sm ? "text-[15px]" : "text-[18px] sm:text-[19px]";
   const numCls = sm ? "text-[11px]" : "text-[12px] sm:text-[13px]";
-  // Abaixo de 360px o padding encolhe (4.ª célula MOR): a 320px o badge
+  // Abaixo de 360px o padding encolhe (4.ª célula RES): a 320px o badge
   // de 4 células excedia a linha em 25px (topwidgets harness); 360+ passa
   // com px-2, por isso o breakpoint é 360 e não sm. O sm segue a mesma
   // receita (px-1 <360px) desde a 5.ª célula AGR, que tirava 10px às
@@ -75,7 +75,7 @@ export function BadgeSkills({
   };
   return (
     <div
-      title={`Skill ${skill ?? "—"}${trend !== 0 ? ` (desde ${prevSkill})` : ""} · RES ${resistance ?? "—"} · Forma ${form ?? "—"} · Moral ${morale ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`}
+      title={`Skill ${skill ?? "—"}${trend !== 0 ? ` (desde ${prevSkill})` : ""} · Forma ${form ?? "—"} · Moral ${morale ?? "—"} · RES ${resistance ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`}
       className={`flex items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
     >
       <div
@@ -90,14 +90,6 @@ export function BadgeSkills({
       </div>
       {!hideStats && (
         <>
-          <div className={`flex flex-col items-center justify-center gap-0.5 bg-sky-500/10 border-r border-sky-500/20 ${cellCls}`}>
-            <span className="text-[7px] uppercase tracking-widest text-sky-200/70 font-bold leading-none">
-              Res
-            </span>
-            <span className={`font-black tabular-nums leading-none text-sky-400 ${numCls}`}>
-              {resistance ?? "–"}
-            </span>
-          </div>
           <div className={`flex flex-col items-center justify-center gap-0.5 bg-emerald-500/10 border-r border-emerald-500/20 ${cellCls}`}>
             <span className="text-[7px] uppercase tracking-widest text-emerald-200/70 font-bold leading-none">
               Forma
@@ -112,6 +104,14 @@ export function BadgeSkills({
             </span>
             <span className={`font-black tabular-nums leading-none text-violet-400 ${numCls}`}>
               {morale ?? "–"}
+            </span>
+          </div>
+          <div className={`flex flex-col items-center justify-center gap-0.5 bg-sky-500/10 border-r border-sky-500/20 ${cellCls}`}>
+            <span className="text-[7px] uppercase tracking-widest text-sky-200/70 font-bold leading-none">
+              Res
+            </span>
+            <span className={`font-black tabular-nums leading-none text-sky-400 ${numCls}`}>
+              {resistance ?? "–"}
             </span>
           </div>
           <div className={`flex flex-col items-center justify-center gap-0.5 bg-red-500/10 ${cellCls}`}>

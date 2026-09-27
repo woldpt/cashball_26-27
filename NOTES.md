@@ -2392,3 +2392,8 @@ Plano C1+C2 (quando fizer):
 - `shared/BadgeSkills.jsx`: prop `delta` → `prevSkill`; tendência calculada dentro (elimina `skillDelta` duplicado em `PlayerRow`/`HistoryModal`); glow acompanha a cor; célula mantém fundo/borda âmbar.
 - 8 usos em 7 ficheiros passam `prevSkill={player.prev_skill}`: `PlayerRow` ×2, `PlayerHistoryModal`, `TacticsView`, `MatchPlayerCard`, `CompactPlayerCard`, `OpponentGridCard`, `BenchPlayers`. `STYLE.md` §10 atualizado.
 - Checks: eslint nos ficheiros tocados · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check.
+
+## BadgeSkills: ordem por importância SKILL·FORMA·MOR·RES·AGR (2026-09-27)
+- Pedido: reordenar por importância. Grill (2 perguntas): SKILL·FORMA·MOR·RES·AGR, SKILL fixo em 1º.
+- Só `shared/BadgeSkills.jsx` (bloco RES movido para depois de MOR; `title`, cabeçalho e comentário 360px atualizados) + 1 linha `STYLE.md` §10. Mesmas células/cores/larguras → sem impacto de layout, sem mobile-resp-check.
+- Checks: eslint no ficheiro · `check:types` OK.
