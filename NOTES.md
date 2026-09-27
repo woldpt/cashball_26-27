@@ -2502,3 +2502,7 @@ Plano C1+C2 (quando fizer):
 ## Deploy v26.09.11 no rick (2026-09-27)
 - Limpeza prévia (autorizada): `git rm` dos shm/wal efémeros de `server/saves/Fabio/game_U7ZARI.*` que sujavam a árvore.
 - Bump `APP_VERSION` para v26.09.11, push master + tag; `docker compose up --build -d` com `backend Healthy`.
+
+## Coach tutorial — passo BadgeSkills (2026-09-27)
+- Novo passo "Lê as skills" (tutorial passa a 10 passos): `data-tour="player-skills"` incondicional na raiz do `BadgeSkills` (cobre desktop+mobile; `findTarget` escolhe o primeiro visível) + step após o plantel com a explicação (dourado, FORMA/MOR/RES/AGR, verde/vermelho na semana de mudança).
+- Checks: eslint limpo nos ficheiros; `check:types` OK.
