@@ -529,17 +529,21 @@ export function SubsPanel({
                 { key: "pitch", label: "Em campo", n: onPitchPlayers.length },
                 { key: "bench", label: "Banco", n: benchPlayers.length },
               ].map((pg) => (
-                <span
+                <button
                   key={pg.key}
-                  className={`flex items-center rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                  type="button"
+                  onClick={() => setUserPage(pg.key)}
+                  aria-pressed={frontPage === pg.key}
+                  aria-label={pg.key === "pitch" ? "Ver titulares em campo" : "Ver banco de suplentes"}
+                  className={`flex items-center rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-widest transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 ${
                     frontPage === pg.key
                       ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
-                      : "text-on-surface-variant/50"
+                      : "text-on-surface-variant/50 hover:text-on-surface-variant"
                   }`}
                 >
                   <span className="truncate">{pg.label}</span>
                   <span className="ml-1 tabular-nums opacity-70">({pg.n})</span>
-                </span>
+                </button>
               ))}
             </div>
             <SubsCounter subsMade={subsMade} />
@@ -571,6 +575,7 @@ export function SubsPanel({
           <StackSheet isFront={frontPage === "pitch"} reducedMotion={reducedMotion}>
             <TitularesColumn
               flat
+              skillLast={portraitPhone}
               players={onPitchPlayers}
               isHalftime={isHalftime}
               isEmergencyGk={isEmergencyGk}
@@ -591,6 +596,7 @@ export function SubsPanel({
           <StackSheet isFront={frontPage === "bench"} reducedMotion={reducedMotion}>
             <SuplentesColumn
               flat
+              skillLast={portraitPhone}
               players={benchPlayers}
               isEmergencyGk={isEmergencyGk}
               cardCtx={cardCtx}

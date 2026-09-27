@@ -52,6 +52,7 @@ export function TitularesColumn({
   handleDropOnPitch,
   handleDragEnd,
   flat = false,
+  skillLast = false,
 }) {
   // `flat` (mobile): lista em altura natural dentro do scroll único da página —
   // sem cabeçalho de coluna e sem scroll interno; cartão compacto de uma
@@ -100,6 +101,7 @@ export function TitularesColumn({
               selectable={!disabled}
               onPick={() => (isEmergencyGk ? handlePickIn(p) : pickOut(p))}
               showFatigue={false}
+              skillLast={skillLast}
               showMatchStats
               goals={stats?.goals ?? 0}
               yellowCards={stats?.yellowCards ?? 0}
@@ -139,6 +141,7 @@ export function SuplentesColumn({
   handleDragEnd,
   summary,
   flat = false,
+  skillLast = false,
 }) {
   // `flat` (mobile): lista em altura natural dentro do scroll único da página.
   const Card = flat ? CompactPlayerCard : MatchPlayerCard;
@@ -177,6 +180,7 @@ export function SuplentesColumn({
               selectable={!disabled}
               onPick={() => handlePickIn(p)}
               showFatigue={false}
+              skillLast={skillLast}
               showMatchStats
               goals={stats?.goals ?? 0}
               yellowCards={stats?.yellowCards ?? 0}

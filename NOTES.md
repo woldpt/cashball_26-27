@@ -2554,3 +2554,8 @@ Plano C1+C2 (quando fizer):
 - Pelo caminho: a sessão paralela comitou em `9bf83162` o mesmo fix que eu tinha aprovado (`w-fit max-w-full` na raiz partilhada) + `data-tour`. Provei por harness que esse fix partilhado **regride o scout** (320–414: badge limitado a `max-w-full` corta as próprias células, 10 clipped rows; sem ele: scout 5/5 PASS).
 - Fix final (2 linhas): revertido o `w-fit max-w-full` na raiz partilhada (fica o `data-tour` deles) + `className="self-start max-w-full"` só no uso do modal. Modal encosta ao conteúdo (borda termina após AGR, confirmado em screenshot 390), resto intacto.
 - Checks: `lint` limpo nos 2 ficheiros · `check:types` OK · `scout + playerhistory` **PASS 10/10** · screenshot playerhistory-390 revisto (antes: vazio; depois: sem vazio). Suite completa falha em `cup/topwidgets/training` com `waitForSelector` timeout (`pageErr=0`) — harnesses importam views a meio de renames/eliminações das sessões paralelas (`CupTab` apagado no HEAD, `OtherSquadsTab` sem ficheiro); flaps entre corridas; fora do meu âmbito.
+
+## Intervenção vertical: badge FORMA/MOR/SKILL + pills clicáveis (2026-09-27)
+- Pedido (print): no mobile vertical o badge mostrava 5 células e os pills EM CAMPO/BANCO eram `span` não clicáveis.
+- Fix: `PlayerLists` aceita `skillLast` nas colunas `flat` e passa ao `CompactPlayerCard`; `SubsPanel` passa `skillLast={portraitPhone}` só na stack vertical e converte os pills em `button` com `setUserPage` + `aria-pressed`. Swipe/peek e salto auto para o banco mantêm-se.
+- Checks: eslint limpo nos ficheiros · `check:types` OK · `test:mobile` **PASS 165/165** (intervencao 5/5 sem overflow nem clipping).
