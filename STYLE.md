@@ -134,6 +134,7 @@ Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grup
 | `TabBar` | Filtros/tabs (`size="sm"|"md"`) |
 | `Button` | Variantes: `primary`, `success`, `secondary`, `danger`, `dangerSoft`, `ghost`, `accent`; sizes `sm`/`md`/`lg`; `full`, `uppercase` |
 | `ModalShell` | Moldura de modais (backdrop + z-index + animação). Variants: `card`, `md`, `lg`, `wide`, `xl`, `fullscreen`, `transparent` |
+| `TrophyCabinet` | Sala de troféus agrupada por conquista (`×N` + anos + treinador). Props: `trophies`, `onOpenPlayer?(playerId)` |
 | `GameDialog` | Confirm/prompt (`ModalShell` + `Button`) |
 
 **Paleta de posição** — toda a variação vive em `constants/index.js`: `POSITION_TEXT_CLASS`, `POSITION_BORDER_CLASS`, `POSITION_BAR_CLASS`, `POSITION_GLOW_CLASS`, `POSITION_BG_GRADIENT_CLASS`, `POSITION_RING_CLASS`, `POSITION_BADGE_*_CLASS`, `POSITION_ACCENT_HEX`, `POSITION_LABEL_MAP`. `matchConstants.POS_STYLES` e `colorHelpers.posRingClass` derivam daqui — nunca maps locais.

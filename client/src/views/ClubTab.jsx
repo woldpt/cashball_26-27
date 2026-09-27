@@ -5,6 +5,7 @@ import { formatCurrency } from "../utils/formatters.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { TeamKit } from "../components/shared/TeamKit.jsx";
+import { TrophyCabinet } from "../components/shared/TrophyCabinet.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 
@@ -427,39 +428,7 @@ export function ClubTab({
           </div>
 
           {palmaresTeamId === me?.teamId && palmares.trophies?.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {palmares.trophies.map((trophy, idx) => {
-                const isTopScorer = trophy.achievement.includes("Melhor Marcador");
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 px-3 py-2 rounded border border-amber-500/20 bg-amber-500/5"
-                  >
-                    <span
-                      className="material-symbols-outlined text-amber-400 text-base"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      {isTopScorer ? "sports_soccer" : "emoji_events"}
-                    </span>
-                    <div>
-                      <p className="text-amber-400 font-black text-xs">
-                        {trophy.achievement}
-                      </p>
-                      {trophy.season ? (
-                        <p className="text-on-surface-variant text-[10px] font-bold">
-                          {trophy.season}
-                        </p>
-                      ) : null}
-                      {trophy.coach_name && trophy.is_human_coach && (
-                        <p className="text-on-surface-variant/60 text-[9px] mt-0.5">
-                          Treinador: {trophy.coach_name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <TrophyCabinet trophies={palmares.trophies} />
           ) : (
             <EmptyState
               emoji="🏆"
