@@ -362,14 +362,17 @@ async function checkDrawDate() {
 /** Abrir uma notícia no JournalTab tem de baixar o badge no outro consumidor. */
 async function checkSharedReads() {
   const before = badgeText();
-  // A notícia mais antiga começa seleccionada mas continua por ler
-  // (só o clique marca como lida). Selecionada = aria-current na linha.
+  // A notícia mais antiga começa seleccionada E já lida: a auto-seleção
+  // materializa via select() (markRead no montar — ver useInbox).
+  // Selecionada = aria-current na linha.
   const initialRow = [...document.querySelectorAll("ol button")].find(
     (b) => b.getAttribute("aria-current") === "true",
   );
-  const initialIsUnread = initialRow
-    ?.querySelector("span.min-w-0")
-    ?.className.includes("font-black");
+  const initialIsRead =
+    !!initialRow &&
+    !initialRow
+      .querySelector("span.min-w-0")
+      .className.includes("font-black");
   // Uma linha seguinte sem bandeira vermelha — clicar nela deve baixar o
   // badge partilhado entre o Jornal e o GameLayout.
   const row = [...document.querySelectorAll("ol button")].find((b) =>
@@ -381,9 +384,9 @@ async function checkSharedReads() {
   return {
     before,
     after,
-    initialIsUnread,
+    initialIsRead,
     clicked: !!row,
-    ok: initialIsUnread && !!row && before > 0 && after === before - 1,
+    ok: initialIsRead && !!row && before > 0 && after === before - 1,
   };
 }
 
