@@ -1,3 +1,10 @@
+## Navegação lenta: medição servidor (2026-09-27)
+- Âmbito aprovado: só medir, sem tocar código de produto. Script temporário em `/tmp` (apagado após), contra cópias de 2 salas reais; repo limpo (`git status` sem alterações minhas — os `D` nos `.db-shm/-wal` e untracked em `saves/` são de outras sessões).
+- Abertura de plantel dispara 4 handlers; queries rápidas em servidor idle: `requestTeamSquad` ~0,5ms (16–20 KB), `requestPalmares` ~0,1ms, `requestClubHistory` ~1ms (6 queries), `teamFixtures` (useMemo do `TeamSquadView`) ~0,03–0,05ms — **ilibados**.
+- Achado: `requestCalendar` devolve **todo o histórico jogado com `narrative`+`lineups`** — 845 KB (época curta, 64 jogos) → **~5 MB** (176 jogos) e cresce com a época; é pedido em **cada** abertura de plantel (`handleOpenTeamSquad`) e em cada visita ao Calendário. Medido só query+parse (~3–21ms localhost); o custo real está no `JSON.stringify`/transmissão/parse de MBs + re-render em cascata no cliente.
+- Custos cliente (por leitura, sem medição runtime): `AnimatePresence mode="wait"` atrasa **toda** a navegação ~220ms; `GameContext value` sem `useMemo` re-renderiza todos os consumidores a cada estado (ex. `liveMinute`); headers mobile+desktop do `TeamSquadView` montam 2× `StadiumIllustration`; sem cache de plantel (reabre = 4 refetchs).
+- Conclusão: queries ilibadas em idle → o "por vezes" aponta a contenção no servidor (transações longas a serializar o `db.all`) + payload de MBs do calendário + re-renders em cascata. Fixes propostos (pendentes de OK): não pedir `requestCalendar` ao abrir plantel, cache de plantel por `teamId`, `mode="wait"`→sem espera, `useMemo` no `value`, `teamFixtures` só na tab Calendário, 1 header.
+
 ## Deploy v26.09.9 no rick (2026-09-27)
 - `v26.09.9` → origin (master 12 commits à frente; push direto, sem rebase).
 - Rick: `git pull` + `docker compose up --build -d` → `cashball-backend-1 Healthy`.
