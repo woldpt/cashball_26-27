@@ -1,14 +1,15 @@
 ---
 name: mobile-resp-check
-description: "Verify mobile responsiveness after STRUCTURAL layout changes to the client (new view/tab/modal, GameLayout.jsx, App.jsx, index.css, new shared component, grid/flex/container-width changes). NOT for small tweaks (padding, colors, text size, point className). Two mandatory passes: portrait (npm run test:mobile) + landscape (npm run test:mobile:landscape). Use after the change passes checks (lint/typecheck) and before reporting the task as finished or committing."
+description: "Verify mobile portrait responsiveness after STRUCTURAL layout changes to the client (new view/tab/modal, GameLayout.jsx, App.jsx, index.css, new shared component, grid/flex/container-width changes). NOT for small tweaks (padding, colors, text size, point className). Single portrait pass (npm run test:mobile) — mobile landscape is blocked by RotateOverlay, so there is no landscape pass. Use after the change passes checks (lint/typecheck) and before reporting the task as finished or committing."
 ---
 
 # Mobile Responsiveness Check
 
 After a **structural layout change to the client** (see "When to run"), verify
-that the app still navigates well on mobile screens — portrait **and**
-landscape (no horizontal overflow, no clipped content, no JS errors) — before
-reporting the task as finished.
+that the app still navigates well on mobile portrait screens (no horizontal
+overflow, no clipped content, no JS errors) — before reporting the task as
+finished. (Mobile landscape is blocked by `RotateOverlay` — "Roda o
+telemóvel" — so there is no landscape pass.)
 
 ## When to run
 
@@ -51,20 +52,6 @@ Max) in headless Chromium, and reports:
 **Exit code 0 = PASS, 1 = FAIL.** On FAIL the output lists the exact elements
 and pixel excess — fix the CSS, re-run, repeat until PASS.
 
-## Landscape pass (mandatory)
-
-The app is played in landscape (mobile-landscape branch of `GameLayout`).
-After the portrait pass, run the landscape pass over all harnesses:
-
-```bash
-cd client && npm run test:mobile:landscape
-# = node scripts/mobileRespCheck.mjs --widths 568,667,736,844,926,1023 --height 375
-# affected harness only: npm run test:mobile:landscape -- mobile-resp-test
-```
-
-The check is only complete when **both passes PASS** (exit code 0 each —
-`165/165` portrait, `198/198` landscape).
-
 ## Run only the affected harness
 
 ```bash
@@ -79,9 +66,7 @@ Generate screenshots and **look at them** (the `read` tool renders PNGs):
 
 ```bash
 cd client && npm run test:mobile -- --screenshots /tmp/resp-shots
-cd client && npm run test:mobile:landscape -- --screenshots /tmp/resp-shots-land
 # then read /tmp/resp-shots/<harness>-360.png and <harness>-390.png
-# and one landscape shot, e.g. /tmp/resp-shots-land/<harness>-667.png
 ```
 
 Check: content fits, no element is cut off, tap targets are usable, the bottom
@@ -98,7 +83,6 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 | `cup-resp-test.html` | `views/CupTab.jsx` |
 | `cupfinal-resp-test.html` | `components/live/CupFinalStage.jsx` |
 | `finances-resp-test.html` | `views/FinancesTab.jsx` |
-| `game-landscape-test.html` | `GameLayout.jsx` — skeleton do ramo mobile-landscape (banda vazia à esquerda + pill "AO VIVO" a cobrir o fim do conteúdo). Já corre na landscape pass (`npm run test:mobile:landscape`). |
 | `intervencao-test.html` | `components/match/tabs/IntervencaoView.jsx` |
 | `journal-resp-test.html` | `views/JournalTab.jsx` |
 | `landing-resp-test.html` | `components/auth/LandingPage.jsx` |
@@ -110,6 +94,7 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 | `roompause-resp-test.html` | `components/shared/RoomPauseBanner.jsx` |
 | `roomselect-resp-test.html` | `components/auth/RoomSelectScreen.jsx` |
 | `room-settings-resp-test.html` | `components/room/RoomSettings.jsx` |
+| `rotateoverlay-resp-test.html` | `components/shared/RotateOverlay.jsx` (só rende em landscape; em retrato passa com o placeholder) |
 | `scout-resp-test.html` | `views/PlayerSearchView.jsx` |
 | `settings-resp-test.html` | `pages/UserSettingsPage.jsx` |
 | `stadium-resp-test.html` | `components/shared/StadiumIllustration.jsx` |
@@ -168,10 +153,10 @@ The JSON must include `viewport`, `pageOverflowPx`, `clippedRows` (or
 
 ## Rules
 
-1. **Never report the task as finished (and never commit) while either pass
-   (portrait or landscape) FAILs.** Fix and re-run until both PASS.
+1. **Never report the task as finished (and never commit) while the portrait
+   pass FAILs.** Fix and re-run until PASS.
 2. Run the numeric check **and** look at at least one portrait screenshot
-   (360 or 390) and one landscape screenshot (e.g. 667).
+   (360 or 390).
 3. If you created a new harness, keep it in the commit (it is a regression
    asset, like the other `*-test.html` files).
 4. Commit per the `auto-commit` skill (stage only the files you changed).

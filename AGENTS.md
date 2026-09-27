@@ -17,7 +17,7 @@
 | Backend dev · typecheck · build+start | `cd server && npm run dev` · `npm run typecheck` · `npm run build && npm run start` |
 | Seed | `cd server && npm run seed` |
 | Frontend dev · lint · JSDoc check | `cd client && npm run dev` · `npm run lint` · `npm run check:types` |
-| Mobile portrait + landscape (mudança estrutural de layout, ambas obrigatórias) | `cd client && npm run test:mobile` · `npm run test:mobile:landscape` |
+| Mobile portrait (mudança estrutural de layout, obrigatório) | `cd client && npm run test:mobile` |
 | Audit socket.io · audit de sala · audit de sessão | `cd server && npm run audit:socketio` · `npm run audit:gamestate <ROOM_CODE>` · `npm run audit:session <ROOM_CODE>` |
 | Congelamento/presença (assentos) | `cd server && npm run test:session-freeze` |
 | Smoke de ligação (handlers registados) | `cd server && npm run test:connect-smoke` |

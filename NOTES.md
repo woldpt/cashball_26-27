@@ -13,6 +13,10 @@
 - Árbore de trabalho: durante a execução o utilizador cometeu `df6c9e59` (rotate overlay + `App.jsx`) e deixou WIP por comitar — next-match + `MoraleCard` no `TacticsView` e `tactics-resp-test` — que ficou fora do meu commit (partial staging do `TacticsView`: só os 2 hunks do rename).
 - Checks: `lint` só os 3 problemas pré-existentes (ficheiros que não toquei) · `check:types` OK · `test:mobile` PASS 170/170 · `test:mobile:landscape` PASS 204/204 (o runner é flaky sob carga — chromium órfão + vite deitável —; corridas limpas verdes).
 
+## Fim da passagem landscape (2026-09-27)
+- Com o overlay "Roda o telemóvel", as larguras landscape 568–1023 mostram sempre o bloqueio na app real — os harnesses testavam layouts que o telemóvel já não vê. Removida a passagem: sai o script `test:mobile:landscape` do `client/package.json`, apagados `client/game-landscape-test.html/.jsx` (testavam o ramo landscape do `GameLayout`, agora tapado), skill `mobile-resp-check` reescrita para passagem única portrait (+ linha do `rotateoverlay-resp-test` no mapa) e tabela do `AGENTS.md` só com `test:mobile`. `docs/plans/journaltab-cleanup.md` fica (documento histórico). CI nunca correu estes testes (só verificação local), nada parte.
+- Checks: `test:mobile` PASS 165/165 (eram 170, saem os 5 do harness apagado) · `package.json` validado como JSON.
+
 ## Bloqueio de landscape mobile — overlay "Roda o telemóvel" (2026-09-27)
 - Pedido: proibir a vista mobile em landscape. Opção escolhida: overlay suave (bloqueio real só existe em app nativa/PWA instalada; no browser não há API). Âmbito: app toda. Código landscape existente (rail vertical, variantes compactas) mantido como fallback.
 - Novo `client/src/components/shared/RotateOverlay.jsx`: `fixed inset-0 z-[99990]` com `useMobileLandscape()` (só dispara abaixo de `lg`, desktop intacto), `AnimatePresence`+`fade` (padrão do `SystemOverlays`), `role="alert"`, tokens STYLE.md. Montado na raiz da `App.jsx` (não no `SystemOverlays`: esse só cobre o shell do jogo, o overlay também tapa landing/auth) — desvio ao plano inicial, mesmo objetivo.
