@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { CelebrationBurst } from "../../shared/CelebrationBurst.jsx";
@@ -13,6 +13,10 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  *   - marcas TU → explosão de confete + "GOLO!" com glow verde;
  *   - golo ADVERSÁRIO → wash vermelho + shake + uma interjeição ("GAITA!"),
  *     SEM confete: a festa é só nossa.
+ *
+ * O confete e a palavra rebentam no **marcador da partida** (centro da caixa
+ * `data-goal-anchor` do herói/card/final); sem marcador à vista (noutro tab,
+ * card fora do ecrã) caem no centro do ecrã.
  *
  * É alimentado pelo `goalFlashRef` do GameContext ({ ts, n } por fixture+lado).
  * O `freshGoalFlashes` só aceita flashes com menos de ~2s, por isso não há
@@ -56,6 +60,25 @@ const INTERJECTIONS = [
   "QUE AZAR!",
   "EH PÁ!",
 ];
+
+/** Caixa do marcador da partida (`data-goal-anchor="casa_fora"`), em px do
+ * viewport — ou `null` se não estiver montado/visível. */
+function measureAnchor(homeId, awayId) {
+  const el = document.querySelector(`[data-goal-anchor="${homeId}_${awayId}"]`);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (!r.width || !r.height) return null; // escondido ou colapsado
+  // Fora do ecrã (card rolado para fora): festejar no meio do ecrã é melhor
+  // do que rebentar fora de vista.
+  if (
+    r.bottom < 0 ||
+    r.top > window.innerHeight ||
+    r.right < 0 ||
+    r.left > window.innerWidth
+  )
+    return null;
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2, bottom: r.bottom };
+}
 
 export function GoalFlashOverlay({
   goalFlashRef,
@@ -111,6 +134,20 @@ export function GoalFlashOverlay({
   }, [moments]);
 
   const moment = moments[0] || null;
+
+  // Âncora do festejo: a caixa do marcador da partida (`data-goal-anchor` no
+  // botão do resultado do herói/final e no marcador do card). Medida no
+  // render — `getBoundingClientRect` é leitura pura — e 1× por golo: o
+  // momento é imutável e a subárvore remonta por `key`. Sem âncora à vista
+  // (noutro tab, card fora do ecrã) o festejo sai do centro do ecrã.
+  const anchor = useMemo(
+    () => (moment ? measureAnchor(homeId, awayId) : null),
+    [moment, homeId, awayId],
+  );
+  const origin = anchor
+    ? { x: anchor.x, y: anchor.y }
+    : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
   if (!moment) return null;
 
   const mine = moment.mine;
@@ -124,7 +161,11 @@ export function GoalFlashOverlay({
       mine &&
       createPortal(
         <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
-          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} showChampagne={false} />
+          <CelebrationBurst
+            seed={`${moment.side}-${moment.ts}-${moment.seq}`}
+            showChampagne={false}
+            origin={origin}
+          />
         </div>,
         document.body,
       );
@@ -208,12 +249,31 @@ export function GoalFlashOverlay({
           animate={{ opacity: [0, 1, 1, 0] }}
           transition={{ duration: 1.95, times: [0, 0.15, 0.82, 1] }}
         >
-          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} />
+          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} origin={origin} />
         </motion.div>
       )}
 
-      {/* Palavra do momento: "GOLO!" no nosso, interjeição no do adversário. */}
-      <div className="absolute inset-0 flex items-center justify-center px-4">
+      {/* Palavra do momento: "GOLO!" no nosso, interjeição no do adversário.
+          Sai logo abaixo do marcador quando ele está à vista; sem marcador,
+          centrada no ecrã (mesmo critério do confete). */}
+      <div
+        className="absolute flex justify-center px-4"
+        style={
+          anchor
+            ? {
+                left: anchor.x,
+                top: anchor.bottom + 8,
+                transform: "translateX(-50%)",
+                maxWidth: "92vw",
+              }
+            : {
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                maxWidth: "92vw",
+              }
+        }
+      >
         <motion.span
           className="font-headline font-black uppercase tracking-tight leading-none text-center"
           style={{

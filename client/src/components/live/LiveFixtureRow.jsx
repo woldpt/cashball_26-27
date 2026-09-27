@@ -155,6 +155,7 @@ function LiveFixtureRowInner({
 
         <span
           role="status"
+          data-goal-anchor={`${homeTeamId}_${awayTeamId}`}
           className="font-headline font-black text-xs sm:text-sm tabular-nums shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface/60"
         >
           <span

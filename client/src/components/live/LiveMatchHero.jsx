@@ -321,6 +321,7 @@ export function LiveMatchHero({
             {/* Center score — clique para substituição/detalhe (só-visualização na final neutra) */}
             <button
               onClick={readOnly ? undefined : onScoreClick}
+              data-goal-anchor={`${myMatch.homeTeamId}_${myMatch.awayTeamId}`}
               title={
                 readOnly
                   ? "Final da Taça"

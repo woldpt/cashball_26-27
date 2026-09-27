@@ -149,6 +149,7 @@ export function CupFinalStage({
           <div className="shrink-0 flex flex-col items-center justify-center gap-1 px-1">
             <button
               onClick={readOnly ? undefined : onScoreClick}
+              data-goal-anchor={`${finalFixture.homeTeamId}_${finalFixture.awayTeamId}`}
               title={
                 readOnly
                   ? "Final da Taça"

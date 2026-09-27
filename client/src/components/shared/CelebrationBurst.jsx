@@ -33,7 +33,10 @@ const DISMOUNT_MS = 2300;
  * @param {{
  *   seed: string|number,
  *   showChampagne?: boolean,
+ *   origin?: {x: number, y: number},
  * }} props
+ *   `origin` em px do viewport desloca o leque (ex.: o marcador da partida
+ *   no `GoalFlashOverlay`); sem ela o leque sai do habitual 50% × 38%.
  */
 
 /**
@@ -47,7 +50,7 @@ function hashSeed(seed) {
   return Math.abs(h % 100) / 100;
 }
 
-export function CelebrationBurst({ seed, showChampagne = true }) {
+export function CelebrationBurst({ seed, showChampagne = true, origin = null }) {
   // Auto-desmonta após a festa (~2,3s): os modais que o usam ficam abertos
   // e acumulariam nós invisíveis (opacity 0) no DOM. O reset vive no render
   // (padrão documentado do React), não no efeito — lint proíbe setState
@@ -101,7 +104,11 @@ export function CelebrationBurst({ seed, showChampagne = true }) {
           key={`${seed}-${p.id}`}
           aria-hidden="true"
           className="absolute pointer-events-none select-none"
-          style={{ left: "50%", top: "38%", fontSize: p.size }}
+          style={{
+            left: origin ? origin.x : "50%",
+            top: origin ? origin.y : "38%",
+            fontSize: p.size,
+          }}
           initial={{ x: 0, y: 0, opacity: 0, scale: 0.4 }}
           animate={{
             x: Math.cos(p.angle) * p.dist,
