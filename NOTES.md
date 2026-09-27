@@ -2485,3 +2485,7 @@ Plano C1+C2 (quando fizer):
 - Causa: `min-w-[3ch]` mede `ch` na fonte do corpo, dígitos rendem em `font-headline` black (mais larga) — 2 dígitos excediam o mínimo.
 - Fix (1 linha): `span` passa a `inline-block w-[2ch] text-center` — `ch` medido na fonte dos dígitos + `tabular-nums`: 1 dígito centra, 2 preenchem. FORMA/MOR ficam (11px, não pedido).
 - Checks: eslint + `check:types`. Sem test:mobile (só constância de largura, sem mudança de layout).
+
+## Deploy v26.09.11 no rick (2026-09-27)
+- Limpeza prévia (autorizada): `git rm` dos shm/wal efémeros de `server/saves/Fabio/game_U7ZARI.*` que sujavam a árvore.
+- Bump `APP_VERSION` para v26.09.11, push master + tag; `docker compose up --build -d` com `backend Healthy`.
