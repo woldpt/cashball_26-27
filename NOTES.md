@@ -2326,3 +2326,8 @@ Plano C1+C2 (quando fizer):
 - Pedido: plano de melhoria após avaliação das skills (7/10, desatualizada). OK dado.
 - Só `.pi/skills/mobile-resp-check/SKILL.md`: "26 harnesses / 130/130" → 33 harnesses, `165/165` portrait + `198/198` landscape; mapa harness→componente expandido de 4 para 33 (levantado dos imports reais dos `*-test.jsx`; os 6 com `GameContext` confirmados pelo componente renderizado). Estrutura, contrato, templates e regras intactos.
 - Checks: N/A (só docs; contagem verificada por grep: 33 linhas no mapa, sem ocorrências de 26/130).
+
+## verify-before-done: matriz removida, AGENTS.md fonte única (2026-09-27)
+- Pedido: plano de melhoria após avaliação das skills (8/10, matriz duplicava o AGENTS.md). OK dado.
+- Só `.pi/skills/verify-before-done/SKILL.md`: matriz de 7 linhas trocada por apontador para o `AGENTS.md` + mapeamento grosseiro (servidor/cliente, audits, mobile-resp-check, regressões); regra 3 estendida a harnesses mobile (`journal-resp-test` como exemplo). Resta 1 menção a `audit:gamestate` na regra 2, como exemplo de salto legítimo — não é especificação de comando.
+- Checks: N/A (só docs; verificado por leitura + grep).

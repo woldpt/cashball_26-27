@@ -5,20 +5,20 @@ description: "Decide which checks must pass before reporting a task as done or c
 
 # Verificação Pré-Feito
 
-Corre **antes** de declarar "feito" ou de commitar. Escolhe na matriz só as
-linhas da mudança em causa — o resto salta.
+Corre **antes** de declarar "feito" ou de commitar. Escolhe só os checks
+da mudança em causa — o resto salta.
 
-## Matriz
+## Que checks correr
 
-| Mudança | Checks obrigatórios |
-|---|---|
-| Backend `.ts` | `cd server && npm run typecheck` |
-| `server/index.ts` (tem `// @ts-nocheck`) | `typecheck` + `cd server && npm run test:connect-smoke` |
-| Lógica de jogo ou comunicações socket | `audit:gamestate <SALA>` + `audit:socketio` |
-| Presença/congelamento | `test:session-freeze` (+ `audit:session <SALA>` se houver sala viva) |
-| Cliente `.jsx`/`.js`/`.css` | `cd client && npm run lint` + `npm run check:types` |
-| Layout estrutural (nova view/tab/modal, `GameLayout.jsx`, `App.jsx`, `index.css`, componente partilhado, grid/flex/larguras) | skill `mobile-resp-check` (portrait + landscape) |
-| Regressão nova ou alterada (`scripts/*Regression*`, harnesses) | correr o script/harness tocado |
+A lista de checks vive no `AGENTS.md` (§"Antes de feito" / commit) — única
+fonte de verdade, não duplicada aqui:
+
+- Servidor e/ou cliente → os checks verdes aplicáveis (incl. o caso especial
+  `server/index.ts`, assinalado no `AGENTS.md`).
+- Lógica de jogo, comunicações ou presença → os audits indicados.
+- Layout estrutural → skill `mobile-resp-check` (portrait + landscape).
+- Regressão nova ou alterada (`scripts/*Regression*`, harnesses) → correr o
+  script/harness tocado.
 
 ## Regras
 
@@ -29,7 +29,9 @@ linhas da mudança em causa — o resto salta.
    silêncio. Tweaks pontuais (padding, cores, texto) saltam o mobile sem
    registo.
 3. **Falha pré-existente não é carta-branca:** confirma com `git stash` que
-   a falha já existia antes da mudança; regista o resultado.
+   a falha já existia antes da mudança; regista o resultado. Vale para
+   testes e para harnesses mobile (ex. `journal-resp-test`, falha conhecida
+   e fora do âmbito de muitas tarefas).
 4. **Memória antes do commit:** atualiza o `NOTES.md` com a tarefa e os
    checks corridos; regra permanente sai do `NOTES.md` para os docs
    (`AGENTS.md`, `CLAUDE.md`, `STYLE.md`).
