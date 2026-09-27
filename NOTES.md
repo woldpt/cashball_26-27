@@ -146,6 +146,9 @@
 - Peripécias: import `../ui/Button.jsx` inexistente no modal (lint/types passaram, o harness acusou 500) → `./Button.jsx`; journal-resp-test FAIL nas duas passagens é pré-existente (confirmado via stash: mesma `label sr-only` no HEAD limpo).
 - Checks: server `typecheck` OK · `audit:socketio` 0 erros (100 avisos, +3 benignos da mesma classe "invisível ao analisador") · `test:sponsor` 19/19 · `test:crash-recovery` PASS · client `lint` só os 2 erros pré-existentes · `check:types` OK · `test:mobile` 160/165 + landscape 192/198 (só journal pré-existente). Sem sala viva → `audit:gamestate` fica para a próxima.
 
+## Nome completo do patrocinador na camisola (2026-09-27)
+- Causa: `SHORT_NAMES` do servidor encurta ("Vidraria Transparente"→"Vidraria") e o `TeamKit` usava `brand.short`. Fix de 1 linha: `brand.name || brand.short` (só na camisola; curtos seguem noutros ecrãs). Prova no `club-resp-test`: "SERRALHARIA / IRMÃOS UNIDOS".
+
 ## Patrocinador sem quadrado + sem legenda + maior (2026-09-27)
 - `TeamKit.jsx`: fora o `rect` branco; emblema 12→22un e nome maior (mín. 5un) direto no tecido, texto escuro com halo claro (`paintOrder stroke`) para ler em claras e escuras.
 - Legendárias fora: «Principal» no `ClubTab`, «Equipamento principal · Época…» no `TeamSquadView`. Camisolas maiores (Clube h-40/44, outros h-64/80). Prova no `club-resp-test` PASS.

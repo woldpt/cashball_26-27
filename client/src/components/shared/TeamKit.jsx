@@ -47,7 +47,7 @@ export function TeamKit({ team, className = "h-28 object-contain" }) {
       : null;
   if (!kit || failedKit === kit) return null;
   const brand = team?.sponsorBrand;
-  const lines = brand ? wrap2(brand.short || brand.name).map((l) => l.toUpperCase()) : [];
+  const lines = brand ? wrap2(brand.name || brand.short).map((l) => l.toUpperCase()) : [];
   // O texto encolhe para caber na largura do peito (~0,74 unidades por
   // carácter em 900); abaixo do mínimo, `textLength` aperta o que sobra.
   const inner = 38;
