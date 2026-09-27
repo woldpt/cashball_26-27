@@ -1,3 +1,8 @@
+## Deploy v26.09.12 no rick (2026-09-27)
+- Tag `v26.09.12` (CalVer rolling): bump `APP_VERSION`, push master, rebuild `docker compose` no rick.
+- `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).
+- Inclui rename das tabs (2cb50ae2) + fix do comentário `TeamCrest` (40562b2e).
+
 ## Audit 2cb50ae2 + comentário stale TeamCrest (2026-09-27)
 - Audit ao rename (só leitura): renomes/moves íntegros, imports do `TrainingTab` corretos, remoção `CupTab` limpa (`CupBracketPage`/`BracketTab` intactos, `cupDraw`/`cupRoundResults` vivos no contexto). `lint` só pré-existentes · `check:types` OK.
 - Resto único: comentário stale em `TeamCrest.jsx` (`CupTab` → `CupBracketPage`; consumidores atuais são `CupBracketPage` + `CupDrawPopup`). Fix 1 linha, checks repetidos sem novos erros.
