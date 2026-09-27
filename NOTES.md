@@ -1,3 +1,11 @@
+## Hang no finalize da liga — IIFE sem `()` (2026-09-27)
+- Queixa (produção, sala 034IM2 do Fabio): após a simulação, jogo parado nos 90' com menus livres, sem ida ao Jornal; depois nem o Pronto avançava ("A aguardar...").
+- Causa: o refactor e4b5df20 trocou a pirâmide de callbacks por `return new Promise(...); void (async () => {...})` no `finalizeLeagueEvent` mas perdeu os parêntesis de invocação — `});` em vez de `})();`. A IIFE nunca corre, a promise nunca resolve, zero logs/erros/crash: sala presa em `match_finalizing` para sempre. Confirmado por eliminação total (conexão saudável por sonda, loop vivo, transação crua OK) + prova de fluxo (`executor` corre, corpo da IIFE nunca arranca) + in-process com a sala real.
+- Fix (1 par de parêntesis): `})();` em `server/weeklyFlowHelpers.ts`. Redes aprovadas no mesmo âmbito: watchdog de 5min no bloco FULL TIME (log alto + lobby + segmento livre, com `unref` e guarda `purged`) e log `📣 matchResults emitted`; cliente com `waitingForResults`/`resultsWaitTimedOut` (20s após 90'/120' sem resultados → aviso "À espera do servidor…" + botão `requestResync` no `MatchPage`). Latch do landing (`mom`) e `snapshotBalanceHistory` ilibados.
+- Repro E2E novo `server/scripts/finalizeRepro.mts` (`npm run test:finalize`): regista treinador, sala nova, 11 montado, joga amigável + jornada 1 até ao fim; PASS exige `matchResults` COM avanço do calendário (a 1.ª versão matava o servidor à receção e deixava a sala a meio da finalização). Reproduziu o hang 3× antes do fix, PASS depois.
+- Recuperação da 034IM2: restart/load descarta o jogo parado → lobby → Pronto rejoga do 0 (finanças da semana já marcadas, sem duplicar). Sem avanço administrativo forçado — até ao deploy a sala não anda.
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros/100 avisos (baseline) · `audit:gamestate` exit 0 na sala do E2E · client `lint` limpo nos ficheiros tocados (erro react-refresh no GameContext é pré-existente, confirmado via stash) · `check:types` OK. Sem mudança estrutural de layout → sem mobile-resp-check (banner condicional transitório, sem grid/flex alterados).
+
 ## Logo do patrocinador nas Finanças (2026-09-26)
 - Pedido: componente com o logo (sem camisola) na linha dos Patrocinadores. `sponsorId` no `financeData` + `SponsorLogo` na linha; sem marca fica como antes.
 - Checks: `typecheck` OK · `lint`/`check:types` limpos · `finances-resp-test` 5/5 + 6/6.
@@ -80,6 +88,14 @@
 - `queueBusy` duplicava exatamente `isPostMatchQueueActive` — agora chama-o (primitivo único da tabela de verdade da fila). JSDoc do input triplicado → `@typedef PostMatchInputs` partilhado pelas 2 funções.
 - Teste de regressão no padrão do projeto (7 invariantes: fila vazia, penáltis exclusivo, despedimento aguarda, fim de época sempre o último, espera suprimida/drenada, `isPostMatchQueueActive` ≡ `!showWaiting`). Consumidores (`GameOverlays`, `TacticsView`) intactos.
 - Checks: `test:postmatchflow` 7/7 · lint limpo nos ficheiros tocados (2 erros pré-existentes globais) · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check; client-only → sem audits.
+
+## E2E: celebração da 2.ª parte inocente (2026-09-26)
+- Queixa (prod): 1.ª parte com festa, 2.ª sem (som sim, herói visível, relógio normal). Só diagnóstico aprovado + E2E por mim. Zero defeito encontrado — sem edições de lógica.
+- Servidor falso + GameProvider/LiveMatchHero reais: golos 20' e 60' + penálti com suspense → 3/3 celebrações. Pipeline half-agnóstico confirmado.
+- Servidor real (sala S1R4Q2, Leça, skill 99 na BD de teste): golo nosso 35' com GOLO! verde em pixel; golos 85' e 90' consumidos (`fresh=1`) na 2.ª parte. Sondas temporárias removidas após.
+- Produção corre os mesmos fixes (`db904b4c` no git, contentores com 9h) — versão ilibada.
+- Restos: com som+herói+relógio normais, falhar é impossível em estado estável (produtor emite som+flash no mesmo bloco; overlay consome no mesmo commit) → foi transitório (rejoin ao intervalo: "Não sei") ou janela de 2s não vista. Sem fix.
+- Colateral: finalize da liga encrava SEMPRE nesta sala (3×, `BEGIN` nunca corre) — outra sessão já investiga (034IM2, `finalizeRepro.mts`); não interferi. Sala/conta/test-rooms de teste apagados; meus servidores parados por PID.
 
 ## Diagnóstico: sem celebração na segunda parte (2026-09-26)
 - Queixa: golo próprio na 2.ª parte com som mas sem confete/GOLO!, a ver no tab Jogo. Só diagnóstico (pedido), zero edições.
