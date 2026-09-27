@@ -1,3 +1,7 @@
+## Marca também no TeamSquadView (2026-09-26)
+- Queixa: em salas novas o ícone só aparecia na ClubTab. Causa: o `handleOpenTeamSquad` guardava o objeto vindo da classificação/briefing (sem `sponsorBrand`); agora funde com o `teamsData` à abertura. `BadgeSkills.jsx`/`PlayerRow.jsx` na árvore são WIP alheio.
+- Checks: `lint`/`check:types` no baseline. Lógica de apresentação → sem audits/mobile.
+
 ## Logos fixos dos 60 patrocinadores (2026-09-26)
 - Pedido: monogramas todos iguais e feios → 60 SVG fixos, ícone + nome (texto em todo o lado, incluindo o patch). OK dado.
 - `client/public/sponsors/<id>.svg` ×60: placa branca arredondada, ícone geométrico nas cores da marca + nome (branco→preto sobre a placa; `textLength` nos compridos). Validados: XML válido, sem `clipPath`. Folha de contacto revista em captura (ícones distintos, nomes dentro da placa, remendo legível na camisola).

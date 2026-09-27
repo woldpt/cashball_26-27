@@ -1100,6 +1100,9 @@ year: seasonYear,
 
 	const handleOpenTeamSquad = useCallback((team) => {
 		if (!team) return;
+		// A equipa pode vir da classificação/briefing (sem sponsorBrand):
+		// fundir com o teamsData, que traz a marca.
+		const full = (teamsRef.current || []).find((t) => t.id === team.id);
 		if (activeTabRef.current !== "squad") {
 			teamSquadReturnTabRef.current = activeTabRef.current;
 		}
@@ -1121,7 +1124,7 @@ year: seasonYear,
 			window.history.pushState(historyAction.state, "");
 		}
 		setActiveTab("squad");
-		setSelectedTeam(team);
+		setSelectedTeam(full?.sponsorBrand && !team?.sponsorBrand ? { ...team, sponsorBrand: full.sponsorBrand } : team);
 		setSelectedTeamSquad([]);
 		setSelectedTeamLoading(true);
 		socket.emit("requestTeamSquad", team.id);
