@@ -11,6 +11,7 @@ import { checkCacheVersion } from "./utils/cacheVersion.js";
 import { initPushNotifications } from "./services/pushNotifications.js";
 import { AnimatePresence, motion } from "framer-motion";
 import { fade } from "./motion.js";
+import { RotateOverlay } from "./components/shared/RotateOverlay.jsx";
 
 if (window.location.search) {
 	window.history.replaceState({}, "", window.location.pathname);
@@ -146,7 +147,8 @@ function App() {
 	// O GameProvider vive dentro do ramo "game": nunca remonta entre
 	// "joining" e o jogo, pelo que o estado do contexto sobrevive.
 	return (
-		<AnimatePresence mode="wait">
+		<>
+			<AnimatePresence mode="wait">
 			{!me ? (
 				<motion.div
 					key="landing"
@@ -223,7 +225,9 @@ function App() {
 					</GameProvider>
 				</motion.div>
 			)}
-		</AnimatePresence>
+			</AnimatePresence>
+			<RotateOverlay />
+		</>
 	);
 }
 
