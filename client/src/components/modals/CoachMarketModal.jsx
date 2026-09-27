@@ -15,7 +15,7 @@ import { pairCoachMarketEvents } from "../../utils/coachMarketPairs.js";
  *  - Nova era: "X despedido do A → Assinou para o B";
  *  - Standalone: despedimento sem sequência (ex. despromoção) ou contratação.
  *
- * @param {{ report: { matchweek: number, events: Array<object> }|null, onClose: function, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
+ * @param {{ report: { matchweek: number, events: Array<object> }|null, onClose: function, meName?: string|null, coachAvatars?: object, coachAvatarSeeds?: object, backendUrl?: string }} props
  */
 
 const OUT_COLOR = "#f87171";
@@ -35,7 +35,7 @@ function dismissalReason(event) {
  * Linha de um cartão: treinador sai (vermelho) ou entra (verde); o nome do
  * clube só aparece quando o cartão não tem cabeçalho de clube.
  *
- * @param {{ name: string, teamName?: string|null, division?: number|null, photo?: string|null, clubColor: string, tone: "out"|"in", label: string, reason?: string|null, isHuman?: boolean, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
+ * @param {{ name: string, teamName?: string|null, division?: number|null, photo?: string|null, clubColor: string, tone: "out"|"in", label: string, reason?: string|null, isHuman?: boolean, meName?: string|null, coachAvatars?: object, coachAvatarSeeds?: object, backendUrl?: string }} props
  */
 function MarketRow({
 	name,
@@ -49,6 +49,7 @@ function MarketRow({
 	isHuman,
 	meName,
 	coachAvatars,
+	coachAvatarSeeds,
 	backendUrl,
 }) {
 	const accent = tone === "out" ? OUT_COLOR : IN_COLOR;
@@ -58,7 +59,7 @@ function MarketRow({
 			{/* Foto do treinador (enviada > real > procedural) */}
 			<CoachAvatar
 				name={name}
-				seed={coachAvatarSeed(name, meName)}
+				seed={coachAvatarSeed(name, meName, "", coachAvatarSeeds)}
 				teamColor={clubColor}
 				size="sm"
 				coachAvatars={coachAvatars}
@@ -134,11 +135,11 @@ function Connector({ children }) {
  * Cartão do feed: transição no clube (header do clube + sai/entra), nova era
  * (assinou noutro clube) ou movimentação standalone.
  *
- * @param {{ card: { dismissal?: object, replacement?: object, nextClub?: object, hiring?: object }, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
+ * @param {{ card: { dismissal?: object, replacement?: object, nextClub?: object, hiring?: object }, meName?: string|null, coachAvatars?: object, coachAvatarSeeds?: object, backendUrl?: string }} props
  */
-function MarketCard({ card, meName, coachAvatars, backendUrl }) {
+function MarketCard({ card, meName, coachAvatars, coachAvatarSeeds, backendUrl }) {
 	const { dismissal, replacement, nextClub, hiring } = card;
-	const pass = { meName, coachAvatars, backendUrl };
+	const pass = { meName, coachAvatars, coachAvatarSeeds, backendUrl };
 
 	// Contratação standalone (sem despedimento associado no reporte).
 	if (!dismissal) {
@@ -262,7 +263,7 @@ function MarketCard({ card, meName, coachAvatars, backendUrl }) {
 	);
 }
 
-export function CoachMarketModal({ report, onClose, meName, coachAvatars, backendUrl }) {
+export function CoachMarketModal({ report, onClose, meName, coachAvatars, coachAvatarSeeds, backendUrl }) {
 	const cards = pairCoachMarketEvents(report?.events);
 
 	return (
@@ -311,6 +312,7 @@ export function CoachMarketModal({ report, onClose, meName, coachAvatars, backen
 										card={card}
 										meName={meName}
 										coachAvatars={coachAvatars}
+										coachAvatarSeeds={coachAvatarSeeds}
 										backendUrl={backendUrl}
 									/>
 								))}

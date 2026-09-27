@@ -54,6 +54,13 @@ export function registerSessionListeners(handlers, refs, ctx) {
 				...data.coachAvatars,
 			}));
 		}
+		// Seeds procedurais partilhados (mesma cara para todos — ver coachAvatar.js)
+		if (data.coachAvatarSeeds && typeof data.coachAvatarSeeds === "object") {
+			handlers.setCoachAvatarSeeds((prev) => ({
+				...prev,
+				...data.coachAvatarSeeds,
+			}));
+		}
 		const pendingDismissal = refs.pendingDismissalRef.current;
 		if (pendingDismissal) {
 			refs.pendingDismissalRef.current = null;
@@ -241,6 +248,30 @@ export function registerSessionListeners(handlers, refs, ctx) {
 	});
 	// adminUsersUpdated is handled directly by AdminPanel.jsx via its own socket.on.
 	// No listener needed here — registering a no-op was wasting a listener slot.
+	// Foto/seed de avatar alterados por outro coach: merge sem refresh.
+	socket.on("coachAvatarUpdated", (data) => {
+		if (!data || typeof data.name !== "string" || !data.name) return;
+		if (data.version != null) {
+			const version = data.version;
+			handlers.setCoachAvatars((prev) => ({ ...prev, [data.name]: version }));
+		} else {
+			handlers.setCoachAvatars((prev) => {
+				const next = { ...prev };
+				delete next[data.name];
+				return next;
+			});
+		}
+		if (data.seed) {
+			const seed = data.seed;
+			handlers.setCoachAvatarSeeds((prev) => ({ ...prev, [data.name]: seed }));
+		} else {
+			handlers.setCoachAvatarSeeds((prev) => {
+				const next = { ...prev };
+				delete next[data.name];
+				return next;
+			});
+		}
+	});
 	return () => {
 		socket.off("teamAssigned");
 		socket.off("roomLocked");
@@ -253,5 +284,6 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		socket.off("disconnect", onDisconnect);
 		unsubDisplaced();
 		socket.off("kicked");
+		socket.off("coachAvatarUpdated");
 	};
 }

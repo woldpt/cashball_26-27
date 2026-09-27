@@ -1123,6 +1123,7 @@ io.on("connection", (socket) => {
 		recordRoomAccess,
 		getRoomCoaches,
 		getCoachAvatars,
+		getAvatarSeed,
 		getGameBySocket,
 		getPlayerBySocket,
 		bindSocket,

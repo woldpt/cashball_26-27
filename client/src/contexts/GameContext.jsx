@@ -236,6 +236,9 @@ export function GameProvider({
 	// Versões das imagens de avatar carregadas pelos coaches: {nome: timestamp}
 	// (atualizado por teamAssigned + fetch inicial do próprio coach)
 	const [coachAvatars, setCoachAvatars] = useState({});
+	// Seeds procedurais partilhados: {nome: seed} — todos renderizam `nome|seed`
+	// (teamAssigned + broadcast coachAvatarUpdated; fallback em coachAvatar.js)
+	const [coachAvatarSeeds, setCoachAvatarSeeds] = useState({});
 
 	// ── Refs ────────────────────────────────────────────────────────────────
 	const injuryCountdownRef = useRef(null);
@@ -1072,6 +1075,7 @@ year: seasonYear,
 			nextPlayerSearchId,
 			setMe,
 			setCoachAvatars,
+			setCoachAvatarSeeds,
 			setRoomCode,
 			setJoinError,
 			setJoining,
@@ -1925,6 +1929,8 @@ year: seasonYear,
 		setAvatarSeed,
 		coachAvatars,
 		setCoachAvatars,
+		coachAvatarSeeds,
+		setCoachAvatarSeeds,
 		// Refs
 		injuryCountdownRef,
 		chatMessagesRef,
@@ -2010,7 +2016,7 @@ transferProposalModal, setTransferProposalModal, signingCelebration, setSigningC
 		roomHubOpen, setRoomHubOpen, roomSettingsOpen, setRoomSettingsOpen, roomMessages, setRoomMessages,
 		globalMessages, setGlobalMessages, globalPlayers, setGlobalPlayers, unreadRoom, unreadGlobal,
 		setUnreadRoom, setUnreadGlobal, chatInput, setChatInput, mobileSubMenu, setMobileSubMenu, sidebarCollapsed,
-		setSidebarCollapsed, avatarSeed, setAvatarSeed, coachAvatars, setCoachAvatars, injuryCountdownRef,
+		setSidebarCollapsed, avatarSeed, setAvatarSeed, coachAvatars, setCoachAvatars, coachAvatarSeeds, setCoachAvatarSeeds, injuryCountdownRef,
 		chatMessagesRef, roomHubRef, chatOpenRef, activeChatTabRef, me, setMe,
 		meRef, roomCodeRef, joinTimerRef, backendUrl, addToast, dismissToast,
 		handleHalftimeReady, handleOpenTeamSquad, handleCloseTeamSquad, refreshCalendar, closeRefereePopup, handleResolveMatchAction,

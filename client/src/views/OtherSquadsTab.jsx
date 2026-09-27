@@ -185,6 +185,7 @@ function HighlightRow({ player, onOpenPlayerHistory }) {
  *   me: object|null,
  *   avatarSeed: string,
  *   coachAvatars: object, {nome do coach: versão da imagem carregada}
+ *   coachAvatarSeeds: object, {nome do coach: seed procedural partilhado}
  *   backendUrl: string,
  *   players: Array,
  *   clubHistory: object|null,
@@ -208,6 +209,7 @@ export function OtherSquadsTab({
   me,
   avatarSeed = "",
   coachAvatars = {},
+  coachAvatarSeeds = {},
   backendUrl = "",
   players,
   clubHistory,
@@ -243,9 +245,16 @@ export function OtherSquadsTab({
   const coachName = isOwnTeam
     ? me?.name || "—"
     : selectedTeam?.coach_name || "—";
-  const coachAvatarSeed = isOwnTeam
-    ? `${me?.name ?? "?"}|${avatarSeed}`
-    : `coach|${selectedTeam?.coach_name ?? selectedTeam?.id ?? "?"}`;
+  // Seed partilhado (mesma cara para todos); fallback à convenção antiga.
+  const sharedCoachSeed =
+    !isOwnTeam && selectedTeam?.coach_name
+      ? coachAvatarSeeds?.[selectedTeam.coach_name]
+      : null;
+  const coachAvatarSeed = sharedCoachSeed
+    ? `${selectedTeam.coach_name}|${sharedCoachSeed}`
+    : isOwnTeam
+      ? `${me?.name ?? "?"}|${avatarSeed}`
+      : `coach|${selectedTeam?.coach_name ?? selectedTeam?.id ?? "?"}`;
 
   const selectedTeamDivision = selectedTeam?.division;
   const seasonYear = calendarData?.year ?? new Date().getFullYear();

@@ -58,6 +58,7 @@ export function RoomHub() {
     setChatInput,
     avatarSeed,
     coachAvatars,
+    coachAvatarSeeds,
     backendUrl,
     chatMessagesRef,
     awaitingCoaches,
@@ -447,6 +448,7 @@ export function RoomHub() {
                             coach.name,
                             myName,
                             avatarSeed,
+                            coachAvatarSeeds,
                           )}
                           teamColor={coachTeam?.color_primary}
                           size="w-8 h-8"
@@ -654,6 +656,7 @@ export function RoomHub() {
                                   msg.coachName,
                                   myName,
                                   avatarSeed,
+                                  coachAvatarSeeds,
                                 )}
                                 size="w-6 h-6"
                                 coachAvatars={coachAvatars}

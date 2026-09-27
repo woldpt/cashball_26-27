@@ -35,6 +35,7 @@ export function GameOverlays() {
     backendUrl,
     buyPlayer,
     coachAvatars,
+    coachAvatarSeeds,
     coachMarketReport,
     cupDraw,
     cupDrawRevealIdx,
@@ -320,6 +321,7 @@ export function GameOverlays() {
         onClose={() => setCoachMarketReport(null)}
         meName={me?.name ?? null}
         coachAvatars={coachAvatars}
+        coachAvatarSeeds={coachAvatarSeeds}
         backendUrl={backendUrl}
       />
 

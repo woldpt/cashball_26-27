@@ -39,6 +39,7 @@ export function WaitingCoachesModal({
     setChatInput,
     avatarSeed,
     coachAvatars,
+    coachAvatarSeeds,
     backendUrl,
   } = useGame();
   const chatScrollRef = useRef(null);
@@ -200,6 +201,7 @@ export function WaitingCoachesModal({
                           coach.name,
                           me?.name,
                           avatarSeed,
+                          coachAvatarSeeds,
                         )}
                         teamColor={coach.teamColor}
                         size="w-9 h-9"
@@ -284,6 +286,7 @@ export function WaitingCoachesModal({
                                     msg.coachName,
                                     me?.name,
                                     avatarSeed,
+                                    coachAvatarSeeds,
                                   )}
                                   size="w-6 h-6"
                                   coachAvatars={coachAvatars}

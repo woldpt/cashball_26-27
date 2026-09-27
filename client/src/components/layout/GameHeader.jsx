@@ -25,6 +25,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     teamInfo,
     avatarSeed,
     coachAvatars,
+    coachAvatarSeeds,
     backendUrl,
     navigateTab,
     resetGameState,
@@ -180,6 +181,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                       chatPeek.coachName,
                       me.name,
                       avatarSeed,
+                      coachAvatarSeeds,
                     )}
                     size="w-6 h-6"
                     coachAvatars={coachAvatars}

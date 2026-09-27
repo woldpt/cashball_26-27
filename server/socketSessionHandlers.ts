@@ -79,6 +79,7 @@ interface SessionHandlerDeps {
 	recordRoomAccess: (name: string, roomCode: string) => void;
 	getRoomCoaches: (roomCode: string, excludeName?: string) => Promise<string[]>;
 	getCoachAvatars: (names: string[]) => Promise<Record<string, number>>;
+	getAvatarSeed: (name: string) => Promise<string>;
 	getGameBySocket: (socketId: string) => ActiveGame | null;
 	getPlayerBySocket: (
 		game: ActiveGame,
@@ -230,6 +231,7 @@ export function registerSessionSocketHandlers(
 		recordRoomAccess,
 		getRoomCoaches,
 		getCoachAvatars,
+		getAvatarSeed,
 		getGameBySocket,
 		getPlayerBySocket,
 		bindSocket,
@@ -448,6 +450,14 @@ export function registerSessionSocketHandlers(
 						const coachAvatars = await getCoachAvatars(coaches).catch(
 							() => ({}),
 						);
+						// Seeds partilhados: todos renderizam `nome|seed` (ver coachAvatarSeed).
+						const coachAvatarSeeds: Record<string, string> = {};
+						await Promise.all(
+							coaches.map(async (c: string) => {
+								const s = await getAvatarSeed(c).catch(() => "");
+								if (s) coachAvatarSeeds[c] = s;
+							}),
+						).catch(() => {});
 						socket.emit("teamAssigned", {
 							teamName: d.name,
 							teamId: d.id,
@@ -466,6 +476,7 @@ export function registerSessionSocketHandlers(
 							stadiumName: d.stadium_name ?? "",
 							coaches,
 							coachAvatars,
+							coachAvatarSeeds,
 							isNew,
 						});
 					});
@@ -841,6 +852,30 @@ export function registerSessionSocketHandlers(
 		} catch (error) {
 			console.error(`[${game.roomCode}] nextMatchSummary error:`, error);
 			socket.emit("nextMatchSummary", null);
+		}
+	});
+
+	// Foto de avatar carregada/removida no UserSettingsPage (via REST): difundir a
+	// versão atual (lida da BD, sem confiar no cliente) para todos verem sem refresh.
+	socket.on("notifyAvatarChanged", async () => {
+		const game = getGameBySocket(socket.id);
+		if (!game) return;
+		const playerState = getPlayerBySocket(game, socket.id);
+		const coachName = playerState?.name ?? game.socketToName?.[socket.id];
+		if (!coachName) return;
+		try {
+			const [versions, seed] = await Promise.all([
+				getCoachAvatars([coachName]).catch(() => ({})),
+				getAvatarSeed(coachName).catch(() => ""),
+			]);
+			io.emit("coachAvatarUpdated", {
+				name: coachName,
+				// Object.values (não lookup direto): a chave vem com a caixa da BD.
+				version: Object.values(versions)[0] ?? null,
+				seed: seed || null,
+			});
+		} catch (error) {
+			console.error(`[${game.roomCode}] notifyAvatarChanged error:`, error);
 		}
 	});
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { socket } from "../socket.js";
 import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
 import { ModalShell } from "../components/shared/ModalShell.jsx";
 import { processAvatarFile } from "../utils/avatarUpload.js";
@@ -71,6 +72,8 @@ export function UserSettingsPage({
 			});
 			if (!res.ok) throw new Error(data?.error || "Erro ao carregar a foto.");
 			setCoachAvatars((prev) => ({ ...prev, [me.name]: data.version }));
+			// Avisar a sala: os outros coaches ficam a saber sem refresh.
+			socket.emit("notifyAvatarChanged");
 			setAvatarImgMsg({ type: "success", text: "Foto carregada." });
 		} catch (err) {
 			setAvatarImgMsg({
@@ -95,6 +98,7 @@ export function UserSettingsPage({
 				delete next[me.name];
 				return next;
 			});
+			socket.emit("notifyAvatarChanged");
 			setAvatarImgMsg({ type: "success", text: "Foto removida." });
 		} catch (err) {
 			setAvatarImgMsg({
@@ -119,6 +123,8 @@ export function UserSettingsPage({
 				seed: newSeed,
 			});
 			if (!res.ok) throw new Error("Erro ao guardar o avatar.");
+			// Novo seed vale para todos: difundir para a sala.
+			socket.emit("notifyAvatarChanged");
 		} catch {
 			setAvatarImgMsg({
 				type: "error",

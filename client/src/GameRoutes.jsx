@@ -128,6 +128,7 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     avatarSeed,
     setAvatarSeed,
     coachAvatars,
+    coachAvatarSeeds,
     setCoachAvatars,
     backendUrl,
     // dialog
@@ -527,6 +528,7 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         me={me}
                         avatarSeed={avatarSeed}
                         coachAvatars={coachAvatars}
+                        coachAvatarSeeds={coachAvatarSeeds}
                         backendUrl={backendUrl}
                         players={players}
                         palmares={palmares}
