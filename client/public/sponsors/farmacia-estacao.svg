@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 124" role="img" aria-label="Farmácia da Estação">
+<rect x="8" y="4" width="84" height="116" rx="10" fill="#ffffff" stroke="#000000" stroke-opacity="0.15"/>
+<rect x="30" y="30" width="40" height="40" rx="8" fill="#fff" stroke="#15803d" stroke-width="6"/><rect x="45" y="37" width="10" height="26" fill="#15803d"/><rect x="37" y="45" width="26" height="10" fill="#15803d"/>
+<text x="50" y="110" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="800" fill="#1c1917" textLength="80" lengthAdjust="spacingAndGlyphs">Farmácia da Estação</text>
+</svg>

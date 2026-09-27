@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 124" role="img" aria-label="Oficina Auto Pronta">
+<rect x="8" y="4" width="84" height="116" rx="10" fill="#ffffff" stroke="#000000" stroke-opacity="0.15"/>
+<circle cx="50" cy="52" r="20" fill="none" stroke="#334155" stroke-width="10" stroke-dasharray="10 7"/><circle cx="50" cy="52" r="8" fill="#fbbf24"/>
+<text x="50" y="110" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="800" fill="#1c1917" textLength="80" lengthAdjust="spacingAndGlyphs">Oficina Auto Pronta</text>
+</svg>

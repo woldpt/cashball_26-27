@@ -276,7 +276,7 @@ function withSponsorBrand(t: AnyRow): AnyRow {
   if (!s) return t;
   return {
     ...t,
-    sponsorBrand: { name: s.name, bg: s.bg, fg: s.fg, glyph: s.glyph, shape: s.shape },
+    sponsorBrand: { sponsorId: s.id, name: s.name, bg: s.bg, fg: s.fg, glyph: s.glyph, shape: s.shape },
   };
 }
 

@@ -1,3 +1,9 @@
+## Logos fixos dos 60 patrocinadores (2026-09-26)
+- Pedido: monogramas todos iguais e feios → 60 SVG fixos, ícone + nome (texto em todo o lado, incluindo o patch). OK dado.
+- `client/public/sponsors/<id>.svg` ×60: placa branca arredondada, ícone geométrico nas cores da marca + nome (branco→preto sobre a placa; `textLength` nos compridos). Validados: XML válido, sem `clipPath`. Folha de contacto revista em captura (ícones distintos, nomes dentro da placa, remendo legível na camisola).
+- `SponsorLogo.jsx` passa a `<img>` com fallback geométrico; `sponsorBrand` ganha o `id`; `test:sponsor` verifica os 60 ficheiros (25/25).
+- Checks: `typecheck` OK · `test:sponsor` 25/25 · client `lint`/`check:types` no baseline · `test:mobile` 160/165 + landscape 192/198 (só journal pré-existente).
+
 ## Patrocinador cosido na camisola (2026-09-26)
 - Pedido: camisolas feitas noutra sessão (`TeamKit.jsx` + `public/kits/`, WIP alheio não tocado); faltava coser a marca. Grill em 4 perguntas, OK dado (2 sítios, patch no peito, via payload, camisola limpa sem marca).
 - Servidor: `getTeamsWithCoachNames` junta `sponsorBrand` (nome, cores, monograma, forma) — todas as emissões `teamsData` passam por lá. Cliente: `TeamKit.jsx` envolve em `relative` e cose o `SponsorLogo` no peito (centro 50%/52%, ¼ da largura, sombra). `ClubTab`/`TeamSquadView` herdam sem mexer.

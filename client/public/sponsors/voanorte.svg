@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 124" role="img" aria-label="VoaNorte">
+<rect x="8" y="4" width="84" height="116" rx="10" fill="#ffffff" stroke="#000000" stroke-opacity="0.15"/>
+<path d="M50,22 L58,52 L86,62 L58,62 L54,74 L46,74 L42,62 L14,62 L42,52 Z" fill="#0ea5e9"/>
+<text x="50" y="110" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800" fill="#1c1917">VoaNorte</text>
+</svg>

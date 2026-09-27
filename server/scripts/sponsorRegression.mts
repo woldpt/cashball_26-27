@@ -11,6 +11,8 @@
  * Run: cd server && npm run test:sponsor
  */
 import { createRequire } from "node:module";
+import fs from "node:fs";
+import path from "node:path";
 
 const require = createRequire(import.meta.url);
 const sponsors = require("../game/sponsors.ts") as typeof import("../game/sponsors.js");
@@ -101,4 +103,15 @@ for (const division of [1, 2, 3, 4, 5]) {
 	assert(mine.every((d) => sponsorById(d.sponsorId)?.tier === division), `display D${division} no escalão certo`);
 }
 
-console.log("\nPASS test:sponsor");
+// Ficheiros fixos: 1 SVG por marca, válido e com o nome
+const logoDir = path.join(import.meta.dirname, "..", "..", "client", "public", "sponsors");
+let logoOk = 0;
+for (const s of SPONSORS) {
+	const p = path.join(logoDir, `${s.id}.svg`);
+	const body = fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : "";
+	const esc = s.name.replace(/&/g, "&amp;").replace(/'/g, "&#x27;");
+	if (body.includes("<svg") && (body.includes(s.name) || body.includes(esc)) && !body.includes("clipPath")) logoOk++;
+	else console.error(`FAIL: logo em falta/ inválido: ${s.id}`);
+}
+assertEq(logoOk, 60, "60 logos fixos válidos");
+console.log("\nPASS test:sponsor-logos");

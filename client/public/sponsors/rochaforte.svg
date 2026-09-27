@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 124" role="img" aria-label="RochaForte">
+<rect x="8" y="4" width="84" height="116" rx="10" fill="#ffffff" stroke="#000000" stroke-opacity="0.15"/>
+<path d="M18,72 L40,32 L54,56 L62,44 L82,72 Z" fill="#57534e"/><circle cx="68" cy="30" r="7" fill="#f59e0b"/>
+<text x="50" y="110" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800" fill="#1c1917">RochaForte</text>
+</svg>
