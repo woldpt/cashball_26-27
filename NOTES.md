@@ -2577,3 +2577,7 @@ Plano C1+C2 (quando fizer):
 - Pedido (print inacessível — pasteboard exige JS; seguido pela descrição): no banco, chip de posição (G/D/M/A) à extrema direita para ler posição + skill sem virar a lista (o peek de 96px mostra Skill + Posição); label FORMA passa a FOR no badge.
 - Fix: `CompactPlayerCard` ganha `posRight` (chip sai da esquerda, rende-se após o `BadgeSkills`); `SuplentesColumn` encaminha; `SubsPanel` passa `posRight` no banco vertical e landscape (titulares e desktop intactos). `BadgeSkills`: célula `Forma` → `For` em todos os tamanhos; tooltip e legenda desktop mantêm `Forma`.
 - Checks: eslint limpo nos 4 ficheiros · `check:types` OK · `test:mobile` **PASS 165/165** (intervencao 5/5 sem overflow nem clipping; smallTargets 31/34 igual à corrida anterior).
+
+## Deploy v26.09.14 no rick (2026-09-27)
+- Inclui posição à direita no banco mobile + label FOR no badge.
+- Limpeza prévia (autorizada): `git rm --cached` dos shm/wal vivos de `game_SLMH6X` (só saiu do tracking, ficheiros intactos em disco); push master + tag v26.09.14; rebuild no rick com backend Healthy.
