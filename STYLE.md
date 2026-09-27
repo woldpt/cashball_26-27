@@ -127,7 +127,7 @@ Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grup
 | `PlayerStatusBadges` | Badges de um jogador derivadas do objeto `player` |
 | `StarMark` | Estrela "Craque" junto ao nome |
 | `PlayerRow` | Card de jogador. Props: `onOpenPlayerHistory`, `dim`, `showContractBadges`, `showProposalCol`/`myBudget`/`onProposal` |
-| `BadgeSkills` (alias `SkillBadge`) | Badge único de skills: SKILL dourado (verde/vermelho na semana em que muda, via `prevSkill`) \| FORMA verde \| MOR violeta \| RES azul. Props: `skill`, `resistance`, `form`, `morale`, `prevSkill`, `hideResForm`, `size` |
+| `BadgeSkills` (alias `SkillBadge`) | Badge único de skills: SKILL dourado (verde/vermelho na semana em que muda, via `prevSkill`) \| FORMA verde \| MOR violeta \| RES azul. Props: `skill`, `resistance`, `form`, `morale`, `prevSkill`, `skillLast` (Intervenção em vertical: SKILL em último), `hideResForm`, `size` |
 | `SummaryWidget` | §3. `flat` (sem accent) · `accentClass`/`accentStyle` |
 | `Panel` | §3. `icon`, `meta`, `padded={false}`, `headerClassName`/`titleClassName` |
 | `EmptyState` | Estado vazio token-based |

@@ -2397,3 +2397,9 @@ Plano C1+C2 (quando fizer):
 - Pedido: reordenar por importância. Grill (2 perguntas): SKILL·FORMA·MOR·RES·AGR, SKILL fixo em 1º.
 - Só `shared/BadgeSkills.jsx` (bloco RES movido para depois de MOR; `title`, cabeçalho e comentário 360px atualizados) + 1 linha `STYLE.md` §10. Mesmas células/cores/larguras → sem impacto de layout, sem mobile-resp-check.
 - Checks: eslint no ficheiro · `check:types` OK.
+
+## BadgeSkills: skillLast p/ Intervenção em vertical (2026-09-27)
+- Pedido: skill principal à direita no mobile da Intervenção. Grill (3 perguntas): badge completo com SKILL em último (FORMA·MOR·RES·AGR·SKILL), só Titulares+Banco, só vertical.
+- `BadgeSkills`: prop `skillLast` — célula SKILL extraída p/ `skillCell` (mesma peça, sem duplicar JSX), bordas trocadas, `title` pela mesma ordem. Default `false`: resto intocado.
+- `CompactPlayerCard`: repassa `skillLast`. `SubsPanel`: `portraitPhone = useIsMobile() && !useMobileLandscape()` (sem gancho direto de vertical; `compact` cobria landscape/ecrã baixo a mais) nos 2 cards. Adversário (PlayerLists) sem prop → ordem normal.
+- `STYLE.md` §10 atualizado. Checks: eslint + `check:types` + `test:mobile` (layout portrait).

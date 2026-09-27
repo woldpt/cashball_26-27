@@ -24,6 +24,7 @@ import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
  * @param {Function} [props.onPick] - Callback de seleção.
  * @param {boolean} [props.showFatigue] - Mostrar indicador de fadiga inline.
  * @param {boolean} [props.hideStats] - Ocultar o badge de skills (jogadores adversários).
+ * @param {boolean} [props.skillLast] - SKILL em último (Intervenção em vertical).
  * @param {boolean} [props.forcedOut] - Substitução obrigatória (destaque vermelho).
  * @param {boolean} [props.draggable] - Arrastável (DnD desktop).
  */
@@ -36,6 +37,7 @@ export function CompactPlayerCard({
   onPick,
   showFatigue = true,
   hideStats = false,
+  skillLast = false,
   goals = 0,
   yellowCards = 0,
   forcedOut = false,
@@ -139,6 +141,7 @@ export function CompactPlayerCard({
             morale={player.morale}
             aggressiveness={player.aggressiveness}
             prevSkill={player.prev_skill}
+            skillLast={skillLast}
             size="sm"
           />
         )}

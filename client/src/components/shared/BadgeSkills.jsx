@@ -9,6 +9,7 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  * | FORMA verde | MOR violeta | RES azul | AGR vermelha (número na cor
  * do tier, etiqueta só no tooltip; escondida com hideStats). Uma só
  * receita para Plantel, Tática, intervenção/substituições e mercado.
+ * Exceção: `skillLast` (Intervenção em vertical) põe o SKILL em último.
  *
  * Sem label "Skill" — só o número dourado a negrito com glow.
  * Na semana em que a skill muda (`prevSkill` do backend, só preenchido
@@ -24,6 +25,7 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  *   morale?: number,
  *   aggressiveness?: number|string,
  *   prevSkill?: number|null,
+ *   skillLast?: boolean,
  *   hideStats?: boolean,
  *   size?: "md"|"sm",
  *   className?: string,
@@ -36,6 +38,7 @@ export function BadgeSkills({
   morale,
   aggressiveness,
   prevSkill = null,
+  skillLast = false,
   hideStats = false,
   size = "md",
   className = "",
@@ -73,21 +76,31 @@ export function BadgeSkills({
   const glowStyle = {
     textShadow: `0 0 10px rgba(${glowRgb},0.9), 0 0 22px rgba(${glowRgb},0.45), 0 0 36px rgba(${glowRgb},0.20)`,
   };
+  // Intervenção em vertical: SKILL em último (skillLast) para o número
+  // principal ficar encostado à direita. A célula é a mesma peça nos dois
+  // casos — só muda o sítio e o lado da borda.
+  const skillCell = (
+    <div
+      className={`flex items-center justify-center bg-amber-400/12 min-w-[3ch] ${!hideStats ? (skillLast ? "border-l border-amber-400/20" : "border-r border-amber-400/20") : ""} ${cellCls}`}
+    >
+      <span
+        className={`font-black font-headline tabular-nums leading-none ${skillColor} ${skillCls}`}
+        style={glowStyle}
+      >
+        {skill ?? "—"}
+      </span>
+    </div>
+  );
+  const trendSuffix = trend !== 0 ? ` (desde ${prevSkill})` : "";
+  const statsTitle = `Forma ${form ?? "—"} · Moral ${morale ?? "—"} · RES ${resistance ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`;
+  const skillTitle = `Skill ${skill ?? "—"}${trendSuffix}`;
+  const title = skillLast ? `${statsTitle} · ${skillTitle}` : `${skillTitle} · ${statsTitle}`;
   return (
     <div
-      title={`Skill ${skill ?? "—"}${trend !== 0 ? ` (desde ${prevSkill})` : ""} · Forma ${form ?? "—"} · Moral ${morale ?? "—"} · RES ${resistance ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`}
+      title={title}
       className={`flex items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
     >
-      <div
-        className={`flex items-center justify-center bg-amber-400/12 min-w-[3ch] ${!hideStats ? "border-r border-amber-400/20" : ""} ${cellCls}`}
-      >
-        <span
-          className={`font-black font-headline tabular-nums leading-none ${skillColor} ${skillCls}`}
-          style={glowStyle}
-        >
-          {skill ?? "—"}
-        </span>
-      </div>
+      {!skillLast && skillCell}
       {!hideStats && (
         <>
           <div className={`flex flex-col items-center justify-center gap-0.5 bg-emerald-500/10 border-r border-emerald-500/20 ${cellCls}`}>
@@ -114,7 +127,7 @@ export function BadgeSkills({
               {resistance ?? "–"}
             </span>
           </div>
-          <div className={`flex flex-col items-center justify-center gap-0.5 bg-red-500/10 ${cellCls}`}>
+          <div className={`flex flex-col items-center justify-center gap-0.5 bg-red-500/10 ${skillLast ? "border-r border-red-500/20" : ""} ${cellCls}`}>
             <span className="text-[7px] uppercase tracking-widest text-red-200/70 font-bold leading-none">
               Agr
             </span>
@@ -124,6 +137,7 @@ export function BadgeSkills({
           </div>
         </>
       )}
+      {skillLast && skillCell}
     </div>
   );
 }

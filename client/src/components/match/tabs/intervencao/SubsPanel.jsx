@@ -8,7 +8,9 @@ import {
 } from "../../shared/index.js";
 import {
   useCompactViewport,
+  useIsMobile,
   useLandscapePhone,
+  useMobileLandscape,
 } from "../../../../hooks/useIsMobile.js";
 import {
   getBenchCardState,
@@ -137,6 +139,11 @@ export function SubsPanel({
   const compact = useCompactViewport();
   // Compressão extra só na banda landscape phone.
   const shortLandscape = useLandscapePhone();
+  // Intervenção em vertical: SKILL principal à direita (só telemóvel em
+  // vertical — landscape phone e ecrã baixo mantêm a ordem normal).
+  const isMobileWidth = useIsMobile();
+  const isLandscape = useMobileLandscape();
+  const portraitPhone = isMobileWidth && !isLandscape;
 
   // Arrastar-largar entre colunas (só rato; em toque é por seleção).
   // Estado e regras vivem em `useSubsDrag` para as três vistas partilharem.
@@ -398,6 +405,7 @@ export function SubsPanel({
                       selectable={!disabled}
                       onPick={() => (isEmergencyGk ? handlePickIn(p) : pickOut(p))}
                       showFatigue={false}
+                      skillLast={portraitPhone}
                       showMatchStats
                       goals={stats?.goals ?? 0}
                       yellowCards={stats?.yellowCards ?? 0}
@@ -440,6 +448,7 @@ export function SubsPanel({
                       selectable={!disabled}
                       onPick={() => handlePickIn(p)}
                       showFatigue={false}
+                      skillLast={portraitPhone}
                       showMatchStats
                       goals={stats?.goals ?? 0}
                       yellowCards={stats?.yellowCards ?? 0}
