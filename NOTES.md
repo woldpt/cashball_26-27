@@ -1,3 +1,8 @@
+## Patrocinador cosido na camisola (2026-09-26)
+- Pedido: camisolas feitas noutra sessão (`TeamKit.jsx` + `public/kits/`, WIP alheio não tocado); faltava coser a marca. Grill em 4 perguntas, OK dado (2 sítios, patch no peito, via payload, camisola limpa sem marca).
+- Servidor: `getTeamsWithCoachNames` junta `sponsorBrand` (nome, cores, monograma, forma) — todas as emissões `teamsData` passam por lá. Cliente: `TeamKit.jsx` envolve em `relative` e cose o `SponsorLogo` no peito (centro 50%/52%, ¼ da largura, sombra). `ClubTab`/`TeamSquadView` herdam sem mexer.
+- Checks: server `typecheck` OK · client `lint` só os 2 erros pré-existentes · `check:types` OK · `test:mobile` 160/165 + landscape 192/198 (só journal pré-existente). Sem sala viva → `audit:gamestate` fica para a próxima.
+
 ## Patrocinador de exibição na época 1 (2026-09-26)
 - Pedido: sala nova fica igual no dinheiro mas cada clube já mostra uma marca (só Finanças, única por sala, cosmética). Grill em 3 perguntas, OK dado.
 - `dealDisplaySponsors` em `sponsors.ts` (1:1 por escalão, roda o pote se faltar) + hook na criação da sala (`gameManager.ts`, bloco `tmp`: cria as 9 colunas com try/catch para não depender da idade do `base.db`, distribui antes do COMMIT). Só `sponsor_id` + `sponsor_season=0` → o fixo antigo paga na mesma no fim da época 1 e o mercado da época 2 limpa tudo.

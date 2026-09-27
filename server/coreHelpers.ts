@@ -8,6 +8,7 @@ import {
   fairWeeklyWage,
 } from "./gameConstants";
 import { getWeatherForFixture } from "./game/matchCalculations";
+import { sponsorById } from "./game/sponsors";
 import type { RatingRow } from "./game/ratings";
 
 type Db = any;
@@ -265,7 +266,18 @@ export function getTeamsWithCoachNames(db: Db): Promise<AnyRow[]> {
             m.photo AS coach_photo, m.zerozero_id AS coach_zerozero_id
      FROM teams t
      LEFT JOIN managers m ON t.manager_id = m.id`,
-  );
+  ).then((rows) => (rows || []).map(withSponsorBrand));
+}
+
+/** Junta os parâmetros do logo (`sponsorBrand`) à equipa com marca. */
+function withSponsorBrand(t: AnyRow): AnyRow {
+  if (!t?.sponsor_id) return t;
+  const s = sponsorById(String(t.sponsor_id));
+  if (!s) return t;
+  return {
+    ...t,
+    sponsorBrand: { name: s.name, bg: s.bg, fg: s.fg, glyph: s.glyph, shape: s.shape },
+  };
 }
 
 export function getStandingsRows(teams: AnyRow[] = []) {
