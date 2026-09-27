@@ -1,3 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Seguros Confiança">
-<g transform="translate(-16.07,-16.07) scale(1.3214)"><g data-halo="1" fill="#fff"><path d="M50,22 L74,30 L74,52 C74,66 62,74 50,78 C38,74 26,52 26,52 L26,30 Z" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/><path d="M40,52 L47,59 L61,43" fill="none" stroke="#fff" stroke-width="9.783783783783784" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M50,22 L74,30 L74,52 C74,66 62,74 50,78 C38,74 26,52 26,52 L26,30 Z" fill="#1e3a8a"/><path d="M40,52 L47,59 L61,43" fill="none" stroke="#93c5fd" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+<g transform="translate(-1.39,-1.79) scale(1.0278)"><g data-halo="1" fill="#fff"><path d="M50,20 C27,20 16,38 14,49 L86,49 C84,38 73,20 50,20 Z" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M50,20 C45,29 43,39 43,49 L57,49 C57,39 55,29 50,20 Z" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="47" y="49" width="6" height="24" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M50,73 C50,82 40,83 37,77" fill="none" stroke="#fff" stroke-width="10.864864864864865" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M50,20 C27,20 16,38 14,49 L86,49 C84,38 73,20 50,20 Z" fill="#1e3a8a"/>
+<path d="M50,20 C45,29 43,39 43,49 L57,49 C57,39 55,29 50,20 Z" fill="#93c5fd"/>
+<rect x="47" y="49" width="6" height="24" fill="#1e3a8a"/>
+<path d="M50,73 C50,82 40,83 37,77" fill="none" stroke="#1e3a8a" stroke-width="6" stroke-linecap="round"/></g></g>
 </svg>

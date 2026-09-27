@@ -1,3 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Tasca do Zé Manel">
-<g transform="translate(-30.43,-25.61) scale(1.6087)"><g data-halo="1" fill="#fff"><path d="M40,28 L60,28 L57,52 L43,52 Z" fill="#fff" stroke="#fff" stroke-width="3.108108108108108" stroke-linejoin="round" stroke-linecap="round"/><rect x="37" y="52" width="26" height="18" rx="4" fill="#fff" stroke="#fff" stroke-width="3.108108108108108" stroke-linejoin="round" stroke-linecap="round"/><rect x="40" y="56" width="20" height="8" fill="#fff" stroke="#fff" stroke-width="3.108108108108108" stroke-linejoin="round" stroke-linecap="round"/><rect x="44" y="24" width="12" height="5" fill="#fff" stroke="#fff" stroke-width="3.108108108108108" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M40,28 L60,28 L57,52 L43,52 Z" fill="#7c2d12"/><rect x="37" y="52" width="26" height="18" rx="4" fill="#7c2d12"/><rect x="40" y="56" width="20" height="8" fill="#ffedd5" opacity="0.6"/><rect x="44" y="24" width="12" height="5" fill="#7c2d12"/></g></g>
+<g transform="translate(-9.68,-13.26) scale(1.1935)"><g data-halo="1" fill="#fff"><path d="M31,22 L69,22 L65,50 C63,59 57,63 50,63 C43,63 37,59 35,50 Z" fill="#fff" stroke="#fff" stroke-width="4.189189189189189" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M34,32 L66,32 L63,48 C61,55 56,58 50,58 C44,58 39,55 37,48 Z" fill="#fff" stroke="#fff" stroke-width="4.189189189189189" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="47" y="63" width="6" height="15" fill="#fff" stroke="#fff" stroke-width="4.189189189189189" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="33" y="78" width="34" height="6" rx="3" fill="#fff" stroke="#fff" stroke-width="4.189189189189189" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M31,22 L69,22 L65,50 C63,59 57,63 50,63 C43,63 37,59 35,50 Z" fill="#7c2d12"/>
+<path d="M34,32 L66,32 L63,48 C61,55 56,58 50,58 C44,58 39,55 37,48 Z" fill="#ffedd5"/>
+<rect x="47" y="63" width="6" height="15" fill="#7c2d12"/>
+<rect x="33" y="78" width="34" height="6" rx="3" fill="#7c2d12"/></g></g>
 </svg>

@@ -1,3 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Alfaiate Remendo Certo">
-<g transform="translate(-53.60,-38.80) scale(1.8500)"><g data-halo="1" fill="#fff"><ellipse cx="50" cy="56" rx="14" ry="10" fill="none" stroke="#fff" stroke-width="8.702702702702702" stroke-linejoin="round" stroke-linecap="round"/><path d="M50,46 L50,66 M36,56 L64,56" fill="#fff" stroke="#fff" stroke-width="4.702702702702703" stroke-linejoin="round" stroke-linecap="round"/><path d="M62,30 L74,44" fill="#fff" stroke="#fff" stroke-width="6.702702702702703" stroke-linejoin="round" stroke-linecap="round"/><circle cx="74" cy="44" r="2" fill="#fff" stroke="#fff" stroke-width="2.7027027027027026" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><ellipse cx="50" cy="56" rx="14" ry="10" fill="none" stroke="#44403c" stroke-width="6"/><path d="M50,46 L50,66 M36,56 L64,56" stroke="#fef3c7" stroke-width="2"/><path d="M62,30 L74,44" stroke="#78716c" stroke-width="4" stroke-linecap="round"/><circle cx="74" cy="44" r="2" fill="#78716c"/></g></g>
+<g transform="translate(-16.07,-18.71) scale(1.3214)"><g data-halo="1" fill="#fff"><rect x="28" y="24" width="44" height="9" rx="4" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="28" y="71" width="44" height="9" rx="4" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="37" y="33" width="26" height="38" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="37" y="41" width="26" height="3" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="37" y="50" width="26" height="3" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="37" y="59" width="26" height="3" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><rect x="28" y="24" width="44" height="9" rx="4" fill="#44403c"/>
+<rect x="28" y="71" width="44" height="9" rx="4" fill="#44403c"/>
+<rect x="37" y="33" width="26" height="38" fill="#fef3c7"/>
+<rect x="37" y="41" width="26" height="3" fill="#44403c" opacity="0.5"/>
+<rect x="37" y="50" width="26" height="3" fill="#44403c" opacity="0.5"/>
+<rect x="37" y="59" width="26" height="3" fill="#44403c" opacity="0.5"/></g></g>
 </svg>

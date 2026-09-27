@@ -1,3 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Oficina Auto Pronta">
-<g transform="translate(-42.50,-46.20) scale(1.8500)"><g data-halo="1" fill="#fff"><circle cx="50" cy="52" r="20" fill="none" stroke="#fff" stroke-width="12.702702702702702" stroke-linejoin="round" stroke-linecap="round"/><circle cx="50" cy="52" r="8" fill="#fff" stroke="#fff" stroke-width="2.7027027027027026" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><circle cx="50" cy="52" r="20" fill="none" stroke="#334155" stroke-width="10" stroke-dasharray="10 7"/><circle cx="50" cy="52" r="8" fill="#fbbf24"/></g></g>
+<g transform="translate(-1.39,-10.64) scale(1.0278)"><g data-halo="1" fill="#fff"><path d="M28,54 L36,38 L64,38 L76,54 Z" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="14" y="52" width="72" height="16" rx="5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M35,51 L41,41 L59,41 L67,51 Z" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="32" cy="70" r="10" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="68" cy="70" r="10" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="32" cy="70" r="3.5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="68" cy="70" r="3.5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M28,54 L36,38 L64,38 L76,54 Z" fill="#334155"/>
+<rect x="14" y="52" width="72" height="16" rx="5" fill="#334155"/>
+<path d="M35,51 L41,41 L59,41 L67,51 Z" fill="#fbbf24"/>
+<circle cx="32" cy="70" r="10" fill="#334155"/>
+<circle cx="68" cy="70" r="10" fill="#334155"/>
+<circle cx="32" cy="70" r="3.5" fill="#fbbf24"/>
+<circle cx="68" cy="70" r="3.5" fill="#fbbf24"/></g></g>
 </svg>

@@ -1,3 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Frango d&#x27;Ouro">
-<g transform="translate(-28.27,-27.56) scale(1.4231)"><g data-halo="1" fill="#fff"><ellipse cx="45" cy="55" rx="16" ry="12" fill="#fff" stroke="#fff" stroke-width="3.5135135135135136" stroke-linejoin="round" stroke-linecap="round"/><rect x="56" y="50" width="18" height="6" rx="3" fill="#fff" stroke="#fff" stroke-width="3.5135135135135136" stroke-linejoin="round" stroke-linecap="round"/><circle cx="76" cy="47" r="5" fill="#fff" stroke="#fff" stroke-width="3.5135135135135136" stroke-linejoin="round" stroke-linecap="round"/><path d="M36,46 C40,42 46,42 48,46" fill="none" stroke="#fff" stroke-width="6.513513513513514" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><ellipse cx="45" cy="55" rx="16" ry="12" fill="#ef4444"/><rect x="56" y="50" width="18" height="6" rx="3" fill="#450a0a"/><circle cx="76" cy="47" r="5" fill="#fff"/><path d="M36,46 C40,42 46,42 48,46" stroke="#450a0a" stroke-width="3" fill="none"/></g></g>
+<g transform="translate(-1.39,-4.47) scale(1.0278)"><g data-halo="1" fill="#fff"><path d="M50,86 C34,78 28,64 37,52 C44,43 46,34 46,20 C60,32 72,46 72,64 C72,78 60,84 50,86 Z" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="14" y="44" width="72" height="7" rx="3.5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="14" y="60" width="72" height="7" rx="3.5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="14" y="76" width="72" height="7" rx="3.5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M50,86 C34,78 28,64 37,52 C44,43 46,34 46,20 C60,32 72,46 72,64 C72,78 60,84 50,86 Z" fill="#ef4444"/>
+<rect x="14" y="44" width="72" height="7" rx="3.5" fill="#450a0a"/>
+<rect x="14" y="60" width="72" height="7" rx="3.5" fill="#450a0a"/>
+<rect x="14" y="76" width="72" height="7" rx="3.5" fill="#450a0a"/></g></g>
 </svg>
