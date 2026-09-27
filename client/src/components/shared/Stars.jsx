@@ -1,5 +1,5 @@
 /**
- * Stars — só as estrelas reais da classificação 0–10, com meias (★★★★★★★⯪).
+ * Stars — só as estrelas reais da classificação 0–10, com meias (★★★★★★★ + meia).
  * Sem enchimento apagado nem valor numérico ao lado; o valor exato
  * (com meias, vírgula pt-PT) vive no `title`/`aria-label`.
  * `0`/ausente mostra "—". `hideValue` mantido por compatibilidade.
@@ -34,7 +34,12 @@ export function Stars({ value, max = 10, hideValue = false, className = "" }) {
       aria-label={`Classificação: ${label} de ${max} estrelas`}
     >
       {"★".repeat(full)}
-      {half ? "⯪" : ""}
+      {half ? (
+        <span className="relative inline-block" aria-hidden="true">
+          <span className="opacity-40">★</span>
+          <span className="absolute inset-0 overflow-hidden w-1/2">★</span>
+        </span>
+      ) : ""}
     </span>
   );
 }

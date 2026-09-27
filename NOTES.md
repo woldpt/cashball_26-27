@@ -2376,3 +2376,8 @@ Plano C1+C2 (quando fizer):
 - Ideia do utilizador: verificações só sobre os ficheiros afetados. Medições: typecheck 0,5s · lint 9,5s · check:types 0,15s · mobile ~43s.
 - Nova secção "Âmbito": lint só nos ficheiros da tarefa (`npx eslint <paths>`, acaba com o stash de prova na maioria dos casos), mobile só no harness do mapa, typecheck/types sempre inteiros, audits saltam com registo se o diff não toca jogo/sockets/presença.
 - Checks: N/A (só docs; verificado por leitura).
+
+## Stars: meia-estrela em CSS, sem glifo exótico (2026-09-26)
+- Bug: `⯪` (U+2BEA) virava retângulo de caráter inválido no mobile (fonte de sistema não o traz). Grill (1 pergunta) → meia cortada em CSS.
+- Só `client/src/components/shared/Stars.jsx`: meia = `★` a `opacity-40` com `★` cheio por cima cortado a `w-1/2` (`overflow-hidden`, sem `clipPath`); `aria-hidden` no decorativo (valor exato continua no `aria-label` do contentor).
+- Checks: eslint limpo no ficheiro · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check.
