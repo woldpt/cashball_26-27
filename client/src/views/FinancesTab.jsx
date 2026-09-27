@@ -5,6 +5,7 @@ import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Button } from "../components/shared/Button.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { BalanceLineChart } from "../components/shared/BalanceLineChart.jsx";
+import { SponsorLogo } from "../components/shared/SponsorLogo.jsx";
 import {
   LOAN_MAX,
   LOAN_STEP,
@@ -442,8 +443,14 @@ export function FinancesTab({
                 );
               })}
             </ExpandableRow>
-            <li className="flex justify-between items-center">
-              <div>
+            <li className="flex justify-between items-center gap-2">
+              {financeData?.sponsorId && (
+                <SponsorLogo
+                  brand={{ sponsorId: financeData.sponsorId, name: financeData?.sponsorName }}
+                  className="h-11 w-11 shrink-0 rounded-md"
+                />
+              )}
+              <div className="min-w-0 flex-1">
                 <p className="text-sm text-on-surface-variant">
                   Patrocinadores
                 </p>

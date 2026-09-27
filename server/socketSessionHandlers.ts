@@ -1878,6 +1878,7 @@ export function registerSessionSocketHandlers(
 					totalStadiumExpenses,
 					sponsorRevenue,
 					sponsorName: sponsorChosen?.name || null,
+					sponsorId: team?.sponsor_id || null,
 					sponsorProfile: team?.sponsor_profile || null,
 					homeMatchesPlayed: homeMatches.length,
 					cupHomeMatchesPlayed: cupHomeMatches.length,

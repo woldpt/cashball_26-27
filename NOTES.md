@@ -1,3 +1,7 @@
+## Logo do patrocinador nas Finanças (2026-09-26)
+- Pedido: componente com o logo (sem camisola) na linha dos Patrocinadores. `sponsorId` no `financeData` + `SponsorLogo` na linha; sem marca fica como antes.
+- Checks: `typecheck` OK · `lint`/`check:types` limpos · `finances-resp-test` 5/5 + 6/6.
+
 ## Marca também no TeamSquadView (2026-09-26)
 - Queixa: em salas novas o ícone só aparecia na ClubTab. Causa: o `handleOpenTeamSquad` guardava o objeto vindo da classificação/briefing (sem `sponsorBrand`); agora funde com o `teamsData` à abertura. `BadgeSkills.jsx`/`PlayerRow.jsx` na árvore são WIP alheio.
 - Checks: `lint`/`check:types` no baseline. Lógica de apresentação → sem audits/mobile.
