@@ -2423,3 +2423,8 @@ Plano C1+C2 (quando fizer):
 - Pedido: no portrait da Intervenção, só Skill + Forma + Moral, Skill à direita.
 - Só `BadgeSkills.jsx`: RES e AGR com guarda `!skillLast`; `title` em modo skillLast sem RES/AGR; revertida a `border-r` condicional da AGR. SubsPanel/Compact inalterados.
 - Checks: eslint + `check:types` + `test:mobile`.
+
+## Coach tutorial — auto-avançar briefing (2026-09-27)
+- Screenshot (desktop) provou: passo 7 navegava para a tab tactic mas esta abre no briefing ("Avançar para a tática") — editor desmontado, sem alvos, sem spotlight.
+- Fix: `handleTutorialNavigate` no `GameLayout.jsx` chama `setPrepPhase("tactics")` quando `step.tab === "tactic"` (TacticsProvider envolve o GameLayout, sem ciclo). Cobre passos 7–9, todos os breakpoints.
+- Checks: eslint limpo no ficheiro; `check:types` OK.
