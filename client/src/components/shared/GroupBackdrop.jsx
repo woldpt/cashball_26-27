@@ -1,8 +1,11 @@
 import { getTabGroupId } from "../../constants/navigation.js";
 
-/* Uma foto livre (Unsplash) por tab, servida de /backgrounds em WebP leve.
+/* Uma foto livre por tab, servida de /backgrounds em WebP leve.
    Carregada só ao visitar a tab (o navegador guarda em cache); ver
-   `.group-backdrop` em index.css para o tratamento escuro + desfocado. */
+   `.group-backdrop` em index.css para o tratamento escuro + desfocado.
+   Origens: Unsplash, exceto `bracket` ("Vista geral", Tagido 2008,
+   domínio público via Wikimedia Commons) e `cup` ("Jamor Stadium",
+   Koshelyev 2006, CC BY-SA 3.0 via Wikimedia Commons). */
 const TAB_BG = {
   live: "/backgrounds/live.webp",
   standings: "/backgrounds/standings.webp",
