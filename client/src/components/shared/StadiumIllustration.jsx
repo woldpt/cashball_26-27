@@ -22,16 +22,23 @@ import { memo, useId } from "react";
  *   aos 120k), testeira mais grossa e telão maior
  * Entre 50k e 80k o desenho escala ligeiramente como antes.
  *
+ * Mood: <23 esvazia a bancada (mesmo com casa cheia) e põe tumbleweeds
+ * no relvado; 23–37 fica como antes (estático, custo zero); ≥38 agita os
+ * anéis, acende tochas na claque e hasteia bandeiras.
+ *
  * @param {{
  *   capacity?: number,
  *   primary?: string|null,
  *   secondary?: string|null,
  *   className?: string,
  *   occupancy?: number|null,
+ *   mood?: number|null,
  * }} props
  */
 
 // `occupancy`: 0..1 (fração da lotação ocupada). `null` = bancada cheia.
+// `mood`: escala real 1–50. <23 faroeste, 23–37 neutro, ≥38 festa.
+// `null` = neutro (comportamento anterior).
 
 // ── Helpers de cor (determinísticos, sem dependências) ──────────────
 const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
@@ -96,6 +103,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   secondary = null,
   className = "",
   occupancy = null,
+  mood = null,
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const gid = (n) => `s${uid}-${n}`;
@@ -143,6 +151,11 @@ export const StadiumIllustration = memo(function StadiumIllustration({
             : 0);
   // Ocupação 0..1 (`null` = bancada cheia, comportamento anterior).
   const occ = occupancy == null ? 1 : Math.max(0, Math.min(1, occupancy));
+  // Banda de mood: low esvazia mesmo com casa cheia (decisão do treinador),
+  // high enche ligeiramente; mid não mexe (custo zero, como antes).
+  const moodBand = mood == null ? "mid" : mood < 23 ? "low" : mood >= 38 ? "high" : "mid";
+  const moodOcc =
+    moodBand === "low" ? occ * 0.12 : moodBand === "high" ? Math.min(1, occ * 1.2 + 0.1) : occ;
   // Núcleo de claques ao centro (cor do clube, esvazia em último).
   const claqueHalf = ((standX1 - standX0) / 2) * 0.22;
   // O topo do relvado acompanha a largura da bancada (perspetiva).
@@ -191,7 +204,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       for (let x = standX0 + 4 + (r % 2) * 2.5; x < standX1 - 4; x += 5) {
         // Lugares vazios: thinning determinístico; a claque central esvazia em último.
         const inClaque = Math.abs(x - 400) < claqueHalf;
-        const keepP = inClaque ? Math.min(1, occ * 1.5 + 0.2) : occ;
+        const keepP = inClaque ? Math.min(1, moodOcc * 1.5 + 0.2) : moodOcc;
         if (hash01(seed + 999 + k * 4.31) > keepP) {
           k += 1;
           continue;
@@ -341,6 +354,24 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     (x) => 400 + (x - 400) * span,
   );
 
+  // ── Festa / faroeste (posições determinísticas, estáveis) ────────
+  const torches = Array.from({ length: 10 }, (_, t) => ({
+    x: Math.max(
+      standX0 + 6,
+      Math.min(standX1 - 6, 400 + (hash01(t * 3.3 + 5) - 0.5) * claqueHalf * 3.2),
+    ),
+    y: topY + 14 + hash01(t * 7.7 + 2) * 6,
+    dur: 0.28 + hash01(t * 9.4) * 0.3,
+    delay: -hash01(t * 4.2) * 0.5,
+  }));
+  const flags = Array.from({ length: 4 }, (_, f) => ({
+    fx: standX0 + ((f + 0.5) / 4) * (standX1 - standX0) + (hash01(f * 6.1 + 1) - 0.5) * 10,
+    fy: topY + 22 + hash01(f * 8.3 + 4) * 4,
+    fill: f % 2 === 0 ? home : away,
+    delay: -hash01(f * 5.5) * 0.9,
+  }));
+  const weedRows = [212, 234];
+
   return (
     <svg
       viewBox="0 0 800 272"
@@ -456,7 +487,11 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         const seatTop = boxTop + (boxes && i >= 1 ? BOX_H : 0);
         const seatBottom = i === 0 ? WALL_TOP : tierTop(i - 1);
         return (
-          <g key={`tier-${i}`}>
+          <g
+            key={`tier-${i}`}
+            className={moodBand === "high" ? "stadium-bounce" : undefined}
+            style={moodBand === "high" ? { animationDuration: `${[0.5, 0.63, 0.47][i % 3]}s` } : undefined}
+          >
             {/* Faces laterais (profundidade) */}
             <polygon
               points={`${standX0},${seatTop} ${standX0 - CAP_INSET},${seatTop - 6} ${standX0 - CAP_INSET},${seatBottom + 8} ${standX0},${seatBottom}`}
@@ -514,6 +549,36 @@ export const StadiumIllustration = memo(function StadiumIllustration({
           </g>
         );
       })}
+
+      {/* ── Festa: tochas na claque + bandeiras (só mood em alta) ── */}
+      {moodBand === "high" && (
+        <g>
+          {torches.map((t, i) => (
+            <g
+              key={`torch-${i}`}
+              className="stadium-flicker"
+              style={{ animationDuration: `${t.dur.toFixed(2)}s`, animationDelay: `${t.delay.toFixed(2)}s` }}
+            >
+              <line x1={t.x} y1={t.y} x2={t.x} y2={t.y + 7} stroke="#713f12" strokeWidth="1.6" />
+              <circle cx={t.x} cy={t.y} r={7} fill={home} opacity="0.25" />
+              <circle cx={t.x} cy={t.y} r={3} fill="#f97316" opacity="0.9" />
+              <circle cx={t.x} cy={t.y - 0.5} r={1.5} fill="#fde047" />
+            </g>
+          ))}
+          {flags.map((f, i) => (
+            <g key={`flag-${i}`}>
+              <line x1={f.fx} y1={f.fy} x2={f.fx} y2={f.fy - 30} stroke="#cbd5e1" strokeWidth="2" />
+              <g className="stadium-flag-wave" style={{ animationDelay: `${f.delay.toFixed(2)}s` }}>
+                <polygon
+                  points={`${f.fx},${f.fy - 30} ${f.fx + 24},${f.fy - 25} ${f.fx},${f.fy - 19}`}
+                  fill={f.fill}
+                  opacity="0.95"
+                />
+              </g>
+            </g>
+          ))}
+        </g>
+      )}
 
       {/* Corrimão do topo + bandeirolas (o pelado não tem) */}
       {!bare && (
@@ -581,6 +646,23 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         <line x1={400 + goalHalfBot} y1={GOAL_BOT} x2={400 + goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
         <line x1={400 - goalHalfTop} y1={GOAL_TOP} x2={400 + goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" />
       </g>
+      {/* ── Faroeste: rolos de palha no relvado (só mood em baixo) ── */}
+      {moodBand === "low" &&
+        weedRows.map((wy, w) => (
+          <g key={`weed-${w}`} className={`stadium-weed stadium-weed-${w}`}>
+            <g transform={`translate(0 ${wy})`}>
+              <circle cx={0} cy={0} r={11} fill="none" stroke="#cbb37e" strokeWidth="2.6" opacity="0.95" />
+              <circle cx={0} cy={0} r={7} fill="none" stroke="#e2d3a3" strokeWidth="2" opacity="0.9" />
+              <path
+                d="M -11 0 H 11 M 0 -11 V 11 M -8 -8 L 8 8 M -8 8 L 8 -8"
+                stroke="#a98f5f"
+                strokeWidth="1.8"
+                opacity="0.85"
+              />
+            </g>
+          </g>
+        ))}
+
       {/* Linha de meio-campo + círculo central */}
       <line x1={10} y1={212} x2={790} y2={212} stroke="#f8fafc" strokeWidth="1.8" opacity="0.7" />
       <ellipse cx={400} cy={212} rx={52} ry={11} fill="none" stroke="#f8fafc" strokeWidth="1.8" opacity="0.8" />

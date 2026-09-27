@@ -18,8 +18,8 @@ import { StadiumIllustration } from "./src/components/shared/StadiumIllustration
 const cases = [
   { capacity: 4000, primary: "#166534", secondary: "#f8fafc", label: "4k (pelado)" },
   { capacity: 8000, primary: "#111827", secondary: "#f8fafc", label: "8k (equipa escura)" },
-  { capacity: 20000, primary: "#f8fafc", secondary: "#111827", label: "20k (equipa clara)" },
-  { capacity: 40000, primary: "#e11d48", secondary: "#fbbf24", label: "40k" },
+  { capacity: 20000, primary: "#f8fafc", secondary: "#111827", label: "20k (mood baixo)", mood: 10 },
+  { capacity: 40000, primary: "#e11d48", secondary: "#fbbf24", label: "40k (mood alto)", mood: 44 },
   { capacity: 100000, primary: "#2563eb", secondary: "#0f172a", label: "100k (colossal)" },
 ];
 
@@ -38,6 +38,7 @@ root.render(
               capacity={c.capacity}
               primary={c.primary}
               secondary={c.secondary}
+              mood={c.mood ?? null}
               className="absolute inset-0 h-full w-full"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />

@@ -518,3 +518,90 @@ body {
   pointer-events: none;
   animation: familiarity-shimmer 2.4s ease-in-out infinite;
 }
+
+/* ── StadiumIllustration: animação por banda de mood ─────────────────────
+   Só grupos (<g>), nunca os ~1100 pontos da multidão: barato no mobile.
+   - low (<23): tumbleweeds a atravessar o relvado (translateX em user
+     units = atravessa o viewBox em qualquer tamanho de ecrã).
+   - high (≥38): anéis a pulsar ±1px, tochas a tremeluzir na claque,
+     bandeiras a ondular (skew com origem à esquerda).
+   `transform-box: fill-box` para a rotação/origem assentarem no próprio
+   grupo. Tudo parado com movimento reduzido. */
+@keyframes stadium-weed-roll {
+  0% {
+    transform: translate(-60px, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(180px, -7px) rotate(135deg);
+  }
+  50% {
+    transform: translate(420px, 0) rotate(270deg);
+  }
+  75% {
+    transform: translate(660px, -7px) rotate(405deg);
+  }
+  100% {
+    transform: translate(880px, 0) rotate(540deg);
+  }
+}
+.stadium-weed {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: stadium-weed-roll 9s linear infinite;
+}
+.stadium-weed-1 {
+  animation-duration: 14s;
+  animation-delay: -8s;
+  opacity: 0.75;
+}
+@keyframes stadium-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+.stadium-bounce {
+  animation: stadium-bounce 0.5s ease-in-out infinite;
+}
+@keyframes stadium-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.55;
+  }
+  55% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.65;
+  }
+}
+.stadium-flicker {
+  animation: stadium-flicker 0.4s linear infinite;
+}
+@keyframes stadium-flag-wave {
+  from {
+    transform: skewY(-7deg);
+  }
+  to {
+    transform: skewY(7deg);
+  }
+}
+.stadium-flag-wave {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: stadium-flag-wave 0.9s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stadium-weed,
+  .stadium-bounce,
+  .stadium-flicker,
+  .stadium-flag-wave {
+    animation: none;
+  }
+}

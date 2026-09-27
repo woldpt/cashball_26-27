@@ -280,6 +280,14 @@
 - **Lógica de contrato duplicada (e divergente)**: o client recalculava `contractLocked` com fórmula própria (branch `currentSlot > 0` com 14/20) que divergia do servidor (`coreHelpers.currentEpoch` usa `contractCutoverSeason` com 14 jornadas para épocas antigas). Fix: servidor calcula `contract_locked` (CAST 0/1) no SELECT da pesquisa, mesmo `currentEpoch` do filtro `onlyAvailable`; client apagou as ~12 linhas de matemática (imports `SEASON_*` e props `season`/`currentSlot` removidos do `PlayerSearchView`).
 - "Licitar" → navegação para tab leilões mantida (padrão consistente no repo: TransferHub e PlayerHistoryModal fazem igual); `tabular-nums`/filtros colapsáveis ficam para tarefa própria.
 - Checks: server `typecheck` OK; client `lint` (2 erros pré-existentes, confirmados via stash) + `check:types` OK; `audit:socketio` 0 erros (warning `playerSearchResults` pré-existente — listener dinâmico invisível ao analisador).
+## Ilustração: animação por mood (2026-09-27)
+
+- Ideia faraónica grelhada antes de fazer: escala do mood indefinida (label diz 1–50, Tab usava `?? 60`), ~1100 nós se animasse a multidão, tiras `slice` onde mal se vê, renda 60fps para estado semanal. Servidor confirmou escala real 1–50 (`MIN/MAX`, default 30). Decisões por perguntas: só hero StadiumTab · esvazia mesmo com casa cheia · bandas <23/23–37/≥38.
+- `StadiumIllustration.jsx` ganha prop `mood` (`null` = neutro; ClubTab/TeamSquadView não passam e ficam estáticos): low → `occ×0.12` + 2 tumbleweeds; high → `occ×1.2+0.1`, bounce ±1px nos 3 anéis, 10 tochas na claque, 4 bandeiras; mid = render de hoje, custo zero. Tudo em ~20 nós `<g>` com posições do `hash01`; `index.css` ganha 4 keyframes + `none` sob `prefers-reduced-motion`.
+- StadiumTab passa `mood={fans_mood ?? null}` (1 linha); harness stadium ganha casos 20k+mood 10 e 40k+mood 44.
+- Debug com playwright avulso (apagado): DOM prova 70 vs 310 pontos no low e weeds/tochas/bandeiras presentes; screenshot 390 enganou (pequeno demais). Tumbleweed final em palha clara (`#cbb37e`) — castanho camuflava no verde — e traço mais grosso.
+- Checks: lint só pré-existentes · check:types OK · portrait 165/165 + landscape 198/198 · harnesses afetados re-corridos no código final (10/10 + 12/12). Limite: 1 frame não prova movimento — keyframes revistos a olho.
+
 ## Ilustração: pelado ≤5k + colossal >80k (2026-09-27)
 
 - Pedido: ≤5000 mais pequeno/rudimentar, >80000 gigantesco. Decisões por perguntas: pelado total em baixo, só mais presença (sem 4.º anel) em cima.
