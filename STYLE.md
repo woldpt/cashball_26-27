@@ -151,3 +151,11 @@ tópicos à esquerda e detalhe à direita no desktop, uma só linha de filtros
 de imprensa clássica: manchete em tinta forte, entrada com capitular
 (só a partir de 140 caracteres) e filetes a separar corpo e ações.
 As cores por categoria vivem em `FILTER_TONES` no `JournalTab.jsx`.
+
+**Pendências (redFlag):** a urgência vive só no booleano `redFlag` —
+nunca emojis nos títulos. Linha da lista com faixa lateral `error`, `Badge`
+`error` «Ação necessária» e linha secundária com dado útil por tipo
+(`flagSummary`: salário exigido / clube + classificação / patrocínio /
+orçamento). Detalhe com faixa `error`, selo «Ação necessária» +
+«Bloqueia o Pronto» e painel de ação rico antes do corpo
+(`FlagActionPanel` + `InboxActions` partilhado, botões `md`).

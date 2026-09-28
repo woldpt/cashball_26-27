@@ -538,7 +538,7 @@ export function cupDrawListParts(pairs, viewerTeamId) {
  * @param {object} n linha `cup_draw`
  * @param {number|string|null} viewerTeamId equipa do treinador
  */
-/** Notícia persistida da escolha do patrocinador (pendência com 🚩). */
+/** Notícia persistida da escolha do patrocinador (pendência com redFlag). */
 function sponsorOfferArticle(n) {
   const facts = parseNewsFacts(n) || {};
   const offers = Array.isArray(facts.offers) ? facts.offers : [];

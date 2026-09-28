@@ -1,3 +1,11 @@
+## Avisos: coluna única sob o header + avisos persistentes + admin inline (2026-09-28)
+- **Bug encontrado ao montar F3:** as barras de aviso viviam em fluxo no topo do shell, debaixo do `GameHeader` — que é `fixed top-0 z-160` com fundo sólido — portanto a barra de pausa da sala estava **invisível atrás do header**. Agora há uma **coluna fixa** em `GameLayout` (`fixed top-[var(--header-h)] z-100`): pausa → aviso persistente → avisos transitórios, empilhados, sem se taparem (o transitório tinha o mesmo `top` e cobria-as).
+- **Avisos persistentes:** `subscribeRoomNotice` em `socket.js` a partir de `systemMessage` com `warning: true`; `RoomNoticeBanner.jsx` (novo) com barra âmbar, `role="status"` e ✕ alcançável. Os 3 ⚠ do servidor (finalização presa, erro a gerar jogos, falha a gravar a ronda da Taça) passam a `warning: true` — são acionáveis e não podem viver 6 s.
+- Harness `gamebar-resp-test` passa a reproduzir o shell real (header fixo + coluna) e a **testar que os botões de fechar são alcançáveis** (`elementFromPoint` sobre `pointer-events-none`) — o `verdict` falha se algum ficar coberto.
+- **Admin inline:** as 4 confirmações do painel (`UserTeamsSection`, `UserRoomsSection` ×2, `UserProfileSection`) deixam `addToast` e passam a linha `role="status"` na secção — o painel é modal z-300, o aviso global (z-100) ficava atrás dele. Rename e apagar user não levam linha: a própria mudança (novo nome na lista / utilizador fora da lista) é a confirmação.
+- **A maquinaria de avisos fica** (contrariamente ao previsto para "F4"): `addToast` continua a ser a rede de segurança dos ~40 erros de ação (`core.js` `systemMessage`) que ainda não têm destino inline. Apagá-la agora deixaria esses erros silenciosos.
+- Checks: `lint` só os 3 pré-existentes · `check:types` OK · `test:mobile` **170/170** + screenshots 360px vistos (barras empilhadas, sem overlap) · `typecheck` · `audit:socketio` 0 erros/101 avisos.
+
 ## Toasts restantes → barra de avisos mobile + feedback no sítio da ação (2026-09-28)
 - **F1:** o stack de toasts do canto (topo-direita, debaixo do notch, alvo de 16px, 6s fixos) vira `GameNoticeBar`: barra de largura total sob o header (`top-[var(--header-h)]`, `z-100`), fecha a tocar em qualquer ponto, ✕ com 44px de alvo. Export puro para o harness novo `client/gamebar-resp-test.{html,jsx}` (3 avisos empilhados + mensagem longa a 320px).
 - **Anúncios de sala** (`systemMessage` com `broadcast` — campeões, prémios, treinadores) deixam de gerar aviso: já vivem no RoomHub › Sala e passam a somar `unreadRoom` (guardado por `inRoom()` e pela vista aberta no hub) para não se perderem com o hub fechado.
@@ -6,6 +14,10 @@
 - **Mantidos por não serem duplicados** (contrariamente ao previsto no plano): `Foste despedido de …` (o `DismissalModal` só aparece se o `autoAssignDismissedCoach` encontrar clube; despedido sem clube, o aviso é a única notícia) e `O Admin atribuiu-te uma nova equipa` (o `adminSetCoachTeam` **não** emite `teamAssigned` — sem o aviso o cliente fica com a equipa antiga até recarregar).
 - Checks: `lint` só os 3 pré-existentes (harness landing, disable no App, fast-refresh no GameContext) · `check:types` OK · `test:mobile` **170/170** (5 do harness novo) + screenshot 360px visto · `typecheck` · `audit:socketio` 0 erros/101 avisos · `test:connect-smoke` PASS.
 - Pendente (fora do âmbito aprovado): 3 ⚠ de sala (finalização presa, erro a gerar jogos, falha a gravar ronda) → barra persistente; 4 toasts do admin → linha de estado; apagar `toasts`/`addToast`/`dismissToast`.
+
+## Jornal: red flags com painel de ação rico (2026-09-28)
+- Urgência vive só em `redFlag` (removido `withFlag()` e prefixos 🚩 em `useInbox`/`inboxItems`); lista com faixa `error`, `Badge` «Ação necessária» e `flagSummary()` por tipo; detalhe com selo + «Bloqueia o Pronto» e `FlagActionPanel` antes do corpo (reutiliza `InboxActions`, botões `md`, salário exigido visível na renovação). Genérico: qualquer `redFlag` futuro herda o formato.
+- Checks: `lint` sem erros novos · `check:types` OK · `test:mobile` PASS 170/170.
 
 ## Jornal: red flag com duas bandeiras (2026-09-28)
 - Lista mostrava 🚩 do emblema + 🚩 do texto (`useInbox` já prefixa o título via `withFlag`/transitórios). Fix só em `JournalTab.jsx`: a linha da lista despe o prefixo `🚩` do `it.title` e mantém o emblema com `aria-label`. Detalhe intacto (`titleParts` com uma só 🚩).

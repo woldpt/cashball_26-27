@@ -66,18 +66,6 @@ import {
  */
 
 /**
- * Prepara um título/parts com a bandeira 🚩, só se não a tiver já no início.
- * Evita duplicar a flag quando o título já nasce com 🚩 (ex. renovação/convite).
- * @param {string} title
- * @param {Array}|null titleParts
- * @returns {{title: string, parts: Array}}
- */
-function withFlag(title, parts) {
-  if (title.startsWith("🚩 ")) return { title, parts: parts ?? [] };
-  return { title: `🚩 ${title}`, parts: [partText("🚩 "), ...(parts ?? [])] };
-}
-
-/**
  * Seleção automática ao abrir (a mais antiga por ler, ou a mais recente):
  * partilhada entre o `selected` e o efeito que a materializa como lida.
  */
@@ -202,7 +190,7 @@ export function useInbox() {
         photo: p.photo ?? null,
         position: p.position || "ATA",
       };
-      const title = `🚩 Pedido de renovação — ${player.label}`;
+      const title = `Pedido de renovação — ${player.label}`;
       const body = `O agente de ${player.label} exige resposta antes do próximo jogo.`;
       list.push({
         id: `contract-${p.id}`,
@@ -232,9 +220,9 @@ export function useInbox() {
         id: `job-${to.id}`,
         cat: "club",
         date: currentDate,
-        title: `🚩 Convite: ${to.name}`,
+        title: `Convite: ${to.name}`,
         body,
-        titleParts: [partText("🚩 Convite: "), partTeam(team)],
+        titleParts: [partText("Convite: "), partTeam(team)],
         bodyParts: linkFirstMention(body, partTeam(team)),
         media: {
           player: null,
@@ -401,12 +389,12 @@ export function useInbox() {
       jobOfferModal?.toTeam?.id != null ? String(jobOfferModal.toTeam.id) : null;
     // Transitório: escolha de patrocinador pendente sem par gravado
     // visível (época antiga paginada ou linha ainda a chegar). Igual às
-    // renovações: 🚩 até o clique registar.
+    // renovações: redFlag até o clique registar.
     const hasPersistedSponsor = newsRows.some(
       (n) => String(n?.type || "") === "sponsor_offer" && Number(n?.team_id) === Number(myTeamId),
     );
     if (sponsorPending && myTeamId != null && !hasPersistedSponsor) {
-      const title = "🚩 Patrocinador da época";
+      const title = "Patrocinador da época";
       list.push({
         id: `sponsor-${myTeamId}`,
         cat: "club",
@@ -433,8 +421,6 @@ export function useInbox() {
         it.kind = pending ? "contract" : "info";
         it.ref = pid ?? null;
         if (pending) {
-          it.title = withFlag(it.title, it.titleParts).title;
-          it.titleParts = withFlag(it.title, it.titleParts).parts;
           it.extra = {
             requestedWage: it.facts?.requestedWage ?? null,
             answering: answering.has(Number(pid)),
@@ -444,10 +430,6 @@ export function useInbox() {
         const pending = sponsorPending && Number(it.facts?.teamId) === Number(myTeamId);
         it.redFlag = pending;
         it.kind = pending ? "sponsor" : "info";
-        if (pending) {
-          it.title = withFlag(it.title, it.titleParts).title;
-          it.titleParts = withFlag(it.title, it.titleParts).parts;
-        }
       } else if (it.newsType === "job_offer") {
         const toId = it.media?.teams?.[0]?.id;
         const pending =
@@ -459,10 +441,6 @@ export function useInbox() {
           points: it.facts.points ?? "?",
           record: it.facts.record ?? "",
         };
-        if (pending) {
-          it.title = withFlag(it.title, it.titleParts).title;
-          it.titleParts = withFlag(it.title, it.titleParts).parts;
-        }
       } else if (it.newsType === "board_warning") {
         const active =
           boardWarning != null &&

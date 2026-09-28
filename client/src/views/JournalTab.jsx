@@ -8,7 +8,7 @@
  * marcam como lida.
  *
  * Os pedidos de renovação e os convites de clubes entram como linhas com
- * bandeira vermelha 🚩 e bloqueiam o Pronto até serem respondidos. As
+ * redFlag («Ação necessária») e bloqueiam o Pronto até serem respondidos. As
  * respostas reutilizam os fluxos existentes (diálogo do agente, emits).
  *
  * O detalhe segue registo de imprensa clássica: manchete em tinta forte,
@@ -118,6 +118,32 @@ function teamFromRef(teams, ref) {
 function getSnippet(body) {
   if (!body) return "";
   return body.replace(/\n/g, " ");
+}
+
+/**
+ * Linha secundária das pendências: dado útil por tipo para a lista e o
+ * painel de ação. Genérico: qualquer item com redFlag tem resumo.
+ */
+function flagSummary(it) {
+  if (!it?.redFlag) return "";
+  if (it.kind === "contract") {
+    const wage = it.extra?.requestedWage != null
+      ? formatCurrency(it.extra.requestedWage)
+      : null;
+    return wage
+      ? `Exige ${wage}/sem · sem resposta vai a leilão`
+      : "Exige resposta · sem resposta vai a leilão";
+  }
+  if (it.kind === "job") {
+    const rec = it.extra?.record ? ` · ${it.extra.record}` : "";
+    return `${it.extra?.position ?? "?"}.º · ${it.extra?.points ?? "?"} pts${rec}`;
+  }
+  if (it.kind === "sponsor") return "Sem escolha não há Pronto · marca única";
+  if (it.kind === "board") {
+    const streak = it.extra?.streak ?? 1;
+    return `Orçamento ${formatCurrency(it.extra?.budget ?? 0)} · ${streak} semana${streak === 1 ? "" : "s"} no vermelho`;
+  }
+  return "Responde antes do próximo jogo.";
 }
 
 /**
@@ -586,6 +612,32 @@ function WeeklyFinanceTable({ facts }) {
  * Botões de ação por tipo de notícia.
  * @param {{ item: object, inbox: object, onOpenCupBracket?: Function, onOpenSponsor?: Function }} props
  */
+/**
+ * Painel de ação das pendências (qualquer redFlag): selo, valores e
+ * botões em destaque, antes do corpo do artigo. Os botões reutilizam
+ * o `InboxActions` existente.
+ */
+function FlagActionPanel({ item, inbox, onOpenSponsor }) {
+  if (!item?.redFlag) return null;
+  return (
+    <div className="mt-3 rounded-md border border-error/40 bg-error/10 px-3 py-2.5 short:py-2 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="error" size="sm">
+          Ação necessária
+        </Badge>
+        <span className="text-[10px] font-black uppercase tracking-widest text-error">
+          Bloqueia o Pronto
+        </span>
+      </div>
+      <InboxActions
+        item={item}
+        inbox={inbox}
+        onOpenSponsor={onOpenSponsor}
+      />
+    </div>
+  );
+}
+
 function InboxActions({ item, inbox, onOpenCupBracket, onOpenSponsor }) {
   if (item.kind === "sponsor") {
     return (
@@ -593,7 +645,7 @@ function InboxActions({ item, inbox, onOpenCupBracket, onOpenSponsor }) {
         <p className="w-full text-[11px] text-on-surface-variant">
           Sem escolha não há Pronto. A marca é única por sala e época.
         </p>
-        <Button variant="primary" size="sm" onClick={() => onOpenSponsor?.()}>
+        <Button variant="primary" size="md" onClick={() => onOpenSponsor?.()}>
           Escolher patrocinador
         </Button>
       </div>
@@ -601,16 +653,22 @@ function InboxActions({ item, inbox, onOpenCupBracket, onOpenSponsor }) {
   }
   if (item.kind === "contract") {
     const busy = !!item.extra?.answering;
+    const wage = item.extra?.requestedWage != null
+      ? formatCurrency(item.extra.requestedWage)
+      : null;
     return (
       <div className="flex flex-wrap items-center gap-2">
-        {busy && (
-          <p className="w-full text-[11px] font-bold text-on-surface-variant">
-            A falar com o agente…
+        {wage && (
+          <p className="w-full text-xs font-bold text-on-surface">
+            Exige {wage}/sem
           </p>
         )}
+        <p className="w-full text-[11px] text-on-surface-variant">
+          {busy ? "A falar com o agente…" : "Se recusares, o jogador vai a leilão."}
+        </p>
         <Button
           variant="success"
-          size="sm"
+          size="md"
           disabled={busy}
           onClick={() => inbox.answerContract(item.ref, true)}
         >
@@ -618,7 +676,7 @@ function InboxActions({ item, inbox, onOpenCupBracket, onOpenSponsor }) {
         </Button>
         <Button
           variant="secondary"
-          size="sm"
+          size="md"
           disabled={busy}
           title="Se recusares, o jogador vai a leilão"
           onClick={() => inbox.answerContract(item.ref, false)}
@@ -637,10 +695,10 @@ function InboxActions({ item, inbox, onOpenCupBracket, onOpenSponsor }) {
             {item.extra.record}
           </p>
         )}
-        <Button variant="success" size="sm" onClick={() => inbox.answerJobOffer(true)}>
+        <Button variant="success" size="md" onClick={() => inbox.answerJobOffer(true)}>
           Aceitar
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => inbox.answerJobOffer(false)}>
+        <Button variant="secondary" size="md" onClick={() => inbox.answerJobOffer(false)}>
           Recusar
         </Button>
       </div>
@@ -656,7 +714,7 @@ function InboxActions({ item, inbox, onOpenCupBracket, onOpenSponsor }) {
             {item.extra.streak === 1 ? "" : "s"} no vermelho
           </p>
         )}
-        <Button variant="primary" size="sm" onClick={inbox.ackBoard}>
+        <Button variant="primary" size="md" onClick={inbox.ackBoard}>
           Ok, lido
         </Button>
       </div>
@@ -675,11 +733,11 @@ function InboxActions({ item, inbox, onOpenCupBracket, onOpenSponsor }) {
 /**
  * Barra lateral de cor por categoria — acento visual no painel de detalhe.
  */
-function CategoryAccentBar({ category }) {
+function CategoryAccentBar({ category, urgent }) {
   const tone = FILTER_TONES[category] || FILTER_TONES.all;
   return (
     <div
-      className={`absolute left-0 top-0 bottom-0 w-1 ${tone.bar} rounded-l-sm`}
+      className={`absolute left-0 top-0 bottom-0 w-1 ${urgent ? "bg-error" : tone.bar} rounded-l-sm`}
       aria-hidden
     />
   );
@@ -698,6 +756,16 @@ function ArticleMeta({ item, catLabel }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-on-surface-variant">
       {badge}
+      {item?.redFlag && (
+        <Badge variant="error" size="sm">
+          Ação necessária
+        </Badge>
+      )}
+      {item?.redFlag && (
+        <span className="font-black uppercase tracking-widest text-error">
+          Bloqueia o Pronto
+        </span>
+      )}
       {item?.date && <span>{item.date}</span>}
     </div>
   );
@@ -867,6 +935,8 @@ export function JournalTab({
                   const unread = inbox.isUnread(it);
                   const tone = FILTER_TONES[it.cat] || FILTER_TONES.all;
                   const snippet = getSnippet(it.body);
+                  const flagLine = it.redFlag ? flagSummary(it) : "";
+                  const sub = flagLine || snippet;
 
                   return (
                     <li key={it.id}>
@@ -887,9 +957,9 @@ export function JournalTab({
                               : tone.row
                         }`}
                       >
-                        {/* Barra lateral de cor por categoria */}
+                        {/* Faixa lateral: categoria, ou error sempre visível nas pendências */}
                         <div
-                          className={`mt-0.5 h-4 w-1 shrink-0 rounded-full ${tone.bar} ${active ? "opacity-100" : "opacity-0"} transition-opacity`}
+                          className={`mt-0.5 h-4 w-1 shrink-0 rounded-full transition-opacity ${it.redFlag ? "bg-error opacity-100" : `${tone.bar} ${active ? "opacity-100" : "opacity-0"}`}`}
                           aria-hidden
                         />
                         <span className="w-20 short:w-16 shrink-0 truncate text-[10px] font-bold text-on-surface-variant tabular-nums">
@@ -898,9 +968,9 @@ export function JournalTab({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             {it.redFlag && (
-                              <span className="text-[10px]" aria-label="Prioridade">
-                                🚩
-                              </span>
+                              <Badge variant="error" size="sm" title="Ação necessária">
+                                Ação necessária
+                              </Badge>
                             )}
                             <span
                               className={`min-w-0 truncate text-xs ${
@@ -909,16 +979,18 @@ export function JournalTab({
                                   : "font-medium text-on-surface-variant"
                               }`}
                             >
-                              {query
-                                ? highlightText(it.title.replace(/^🚩\s*/, ""), query)
-                                : it.title.replace(/^🚩\s*/, "")}
+                              {query && !flagLine
+                                ? highlightText(it.title, query)
+                                : it.title}
                             </span>
                           </div>
-                          {snippet && (
-                            <p className="mt-0.5 truncate text-[10px] text-on-surface-variant/70">
-                              {query
-                                ? highlightText(snippet, query)
-                                : snippet}
+                          {sub && (
+                            <p
+                              className={`mt-0.5 truncate text-[10px] ${flagLine ? "font-bold text-error/90" : "text-on-surface-variant/70"}`}
+                            >
+                              {query && !flagLine
+                                ? highlightText(sub, query)
+                                : sub}
                             </p>
                           )}
                         </div>
@@ -979,8 +1051,8 @@ export function JournalTab({
                 transition={{ duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className="relative rounded-sm border border-outline-variant/20 bg-surface-container px-3 py-2.5 short:py-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col overflow-y-auto"
               >
-                {/* Acento lateral de cor por categoria */}
-                <CategoryAccentBar category={selected.cat} />
+                {/* Faixa lateral: categoria, ou error nas pendências */}
+                <CategoryAccentBar category={selected.cat} urgent={selected.redFlag} />
 
                 {/* Metadados: categoria e data */}
                 <ArticleMeta item={selected} catLabel={labelOf(selected.cat)} />
@@ -989,7 +1061,7 @@ export function JournalTab({
                 <h2 className="mt-2 font-headline text-xl short:text-lg font-black tracking-tight text-balance text-left text-on-surface">
                   <RichNewsText
                     parts={selected.titleParts}
-                    fallback={selected.title.replace(/^🚩\s*/, "")}
+                    fallback={selected.title}
                     teams={teams}
                     onOpenTeamSquad={onOpenTeamSquad}
                     onOpenPlayerHistory={onOpenPlayerHistory}
@@ -1003,6 +1075,15 @@ export function JournalTab({
                   onOpenTeamSquad={onOpenTeamSquad}
                   onOpenPlayerHistory={onOpenPlayerHistory}
                 />
+
+                {/* Painel de ação das pendências (antes do corpo) */}
+                {selected.redFlag && (
+                  <FlagActionPanel
+                    item={selected}
+                    inbox={inbox}
+                    onOpenSponsor={() => setSponsorOpen(true)}
+                  />
+                )}
 
                 {/* Corpo do artigo (entrada + parágrafos) — ou a tabela do
                     sorteio da Taça, em vez da lista seca */}
@@ -1051,10 +1132,11 @@ export function JournalTab({
                   <WeeklyFinanceTable facts={selected.facts} />
                 )}
 
-                {/* Botões de ação, sob filete */}
-                {["contract", "job", "board", "cupdraw", "sponsor"].includes(
-                  selected.kind,
-                ) && (
+                {/* Botões de ação das notícias sem pendência, sob filete */}
+                {!selected.redFlag &&
+                  ["contract", "job", "board", "cupdraw", "sponsor"].includes(
+                    selected.kind,
+                  ) && (
                   <div className="mt-4 border-t border-outline-variant/25 pt-3">
                     <InboxActions
                       item={selected}
