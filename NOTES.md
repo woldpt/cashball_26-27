@@ -2634,3 +2634,7 @@ Plano C1+C2 (quando fizer):
 - Fix A (cliente, `GameOverlays.jsx`): faixa global de espera — "Prolongamento — à espera de: nomes (+ ausentes)" derivada de presence+resultado, e "À espera do servidor…" fora do tab Jogo.
 - Fix B (servidor): `continueFromEtGate` emite `cupRoundResults` provisório (`persistError: true`) + `systemMessage` e devolve ao lobby do mesmo slot para repetir (sem marker/finanças em dobro); watchdog passa a avisar a sala.
 - Checks: `typecheck` limpo · `check:types` OK · eslint sem erros novos · `audit:socketio` 0 erros.
+
+## Deploy v26.09.19 no rick (2026-09-28)
+- Inclui sorteio antecipado em véspera de Taça, banner de espera no ET e resultados provisórios anti-bloqueio pós-Taça.
+- Push master + tag v26.09.19; rebuild no rick com backend Healthy.
