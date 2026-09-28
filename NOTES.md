@@ -1,3 +1,7 @@
+## Engine F7+F8: afinação medida sem churn + fecho (2026-09-28)
+- Calibração 20000 jogos antes/depois: 2,465 golos/jogo, 8,3% 0-0, 58,1% vitória casa com +5pts — dentro dos alvos (`MATCH_TUNING` 2,5–3,5); gap de 1,4% não justifica mexer em números. Sem alterações de tuning.
+- Fecho: engine 3935 → 3127 linhas (−808), `any` 96 → 57. `typecheck` PASS · `test:engine-unit` 20/20 · `test:finalize` E2E PASS (amigável + jornada, 16 resultados, avanço persistido; frase nova `noSubInjuryPhrase` vista ao vivo) · `audit:socketio` 0 erros/101 avisos · `audit:gamestate` sem sala viva. 5 commits, zero comportamento.
+
 ## Engine F5: tipagem do núcleo (2026-09-28)
 - `(p: any)` 25 → 12 (só ficam os legítimos: lineups `Record<string,unknown>`, `playersByName`, `io`); `maybeOpenPlayGoal(attackingSide: MatchSide)`; `findIndex` e Sets de ids sobre `PlayerRow[]`; `_dupMinuteWarned` declarado no `MatchFixture` (era o único `_campo` em falta, cast removido).
 - Checks: `typecheck` PASS · `test:engine-unit` 20/20 · `any` total 69 → 57.
