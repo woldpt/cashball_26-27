@@ -92,7 +92,6 @@ export function registerFinanceSocketHandlers(
       teamName: team.name || "",
       newCapacity: (team.stadium_capacity || 10000) + 5000,
     });
-    socket.emit("systemMessage", "+5000 Lugares Construídos!");
   });
 
   socket.on("setTicketPrice", async (price) => {
@@ -121,7 +120,6 @@ export function registerFinanceSocketHandlers(
     getTeamsWithCoachNames(game.db)
       .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
       .catch(() => {});
-    socket.emit("systemMessage", `Bilhetes a ${tier}€ — a procura ajusta-se ao preço!`);
   });
 
   socket.on("takeLoan", async () => {
@@ -150,7 +148,6 @@ export function registerFinanceSocketHandlers(
     getTeamsWithCoachNames(game.db)
       .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
       .catch(() => {});
-    socket.emit("systemMessage", "Empréstimo de 500.000€ aprovado (Juro 1,5%/Semana).");
   });
 
   socket.on("payLoan", async () => {
@@ -176,7 +173,6 @@ export function registerFinanceSocketHandlers(
     getTeamsWithCoachNames(game.db)
       .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
       .catch(() => {});
-    socket.emit("systemMessage", "Dívida paga (500.000€) ao Banco.");
   });
 
   socket.on("payAllLoan", async () => {
@@ -221,6 +217,5 @@ export function registerFinanceSocketHandlers(
     getTeamsWithCoachNames(game.db)
       .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
       .catch(() => {});
-    socket.emit("systemMessage", "Dívida liquidada por completo ao Banco.");
   });
 }

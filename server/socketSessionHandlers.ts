@@ -533,7 +533,7 @@ export function registerSessionSocketHandlers(
 
 				game.db.get(fallbackQuery, fallbackParams, (err2: any, team2: any) => {
 					if (err2 || !team2) {
-						socket.emit("systemMessage", "Nenhuma equipa disponível na Divisão 4.");
+						socket.emit("joinError", "Nenhuma equipa disponível na Divisão 4.");
 						return;
 					}
 					game.db.run(
@@ -556,7 +556,7 @@ export function registerSessionSocketHandlers(
 		const { name, token, roomCode: rawRoom, roomName, joinMode, deviceId } = data;
 
 		if (!name || typeof name !== "string" || name.trim().length === 0) {
-			return socket.emit("systemMessage", "Nome de treinador inválido.");
+			return socket.emit("joinError", "Nome de treinador inválido.");
 		}
 		if (!token || typeof token !== "string" || token.trim().length === 0) {
 			// Token em falta no payload: o servidor nada validou, por isso a
@@ -634,7 +634,7 @@ export function registerSessionSocketHandlers(
 		} else {
 			// Reconnect flow
 			if (!finalRoomCode) {
-				return socket.emit("systemMessage", "Código de sala inválido.");
+				return socket.emit("joinError", "Código de sala inválido.");
 			}
 			if (!doesGameExist(finalRoomCode)) {
 				return socket.emit("joinError", "A sala já não existe.");
@@ -804,7 +804,7 @@ export function registerSessionSocketHandlers(
 					(player) => player.socketId,
 				).length;
 				if (connectedCount >= 8 && !game.playersByName[trimmedName]) {
-					socket.emit("systemMessage", "Sala cheia (Máximo 8 Treinadores).");
+					socket.emit("joinError", "Sala cheia (Máximo 8 Treinadores).");
 					return;
 				}
 

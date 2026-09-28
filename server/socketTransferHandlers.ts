@@ -323,10 +323,6 @@ export function registerTransferSocketHandlers(
             }
             startAuction(game, player, finalPrice, () => {
               emitSquadForPlayer(game, playerState.teamId);
-              socket.emit(
-                "systemMessage",
-                `${player.name} colocado em leilão por €${finalPrice}.`,
-              );
             });
           } else {
             game.db.run(
@@ -340,10 +336,6 @@ export function registerTransferSocketHandlers(
                 }
                 refreshMarket(game);
                 emitSquadForPlayer(game, playerState.teamId);
-                socket.emit(
-                  "systemMessage",
-                  `${player.name} colocado na lista por €${finalPrice}.`,
-                );
               },
             );
           }
@@ -377,10 +369,6 @@ export function registerTransferSocketHandlers(
         if (this.changes > 0) {
           refreshMarket(game);
           emitSquadForPlayer(game, playerState.teamId);
-          socket.emit(
-            "systemMessage",
-            "Jogador retirado da lista de transferências.",
-          );
         }
       },
     );

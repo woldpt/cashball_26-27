@@ -264,8 +264,15 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		},
 	);
 	socket.on("transferProposalResult", ({ ok, message }) => {
-		if (!ok) handlers.addToast(message);
-		if (ok) handlers.setTransferProposalModal(null);
+		if (ok) {
+			handlers.setTransferProposalModal(null);
+			return;
+		}
+		// A recusa explica-se dentro do modal que a pediu (fica aberto à
+		// espera da resposta). Fechado entretanto → nada a fazer.
+		handlers.setTransferProposalModal((prev) =>
+			prev ? { ...prev, error: message } : prev,
+		);
 	});
 	socket.on("playerSigned", (data) => {
 		handlers.setSigningCelebration(data);

@@ -76,6 +76,14 @@ export function TransferProposalModal({
             mercado.
           </p>
         </div>
+        {transferProposalModal?.error && (
+          <p
+            role="alert"
+            className="rounded-md border border-error/40 bg-error-container/25 px-3 py-2 text-xs font-bold text-error"
+          >
+            {transferProposalModal.error}
+          </p>
+        )}
         <div className="flex gap-3">
           <Button
             variant="secondary"
@@ -88,6 +96,10 @@ export function TransferProposalModal({
             variant="success"
             className="flex-1"
             onClick={() => {
+              // Limpa a recusa anterior enquanto se espera pela nova.
+              setTransferProposalModal((prev) =>
+                prev ? { ...prev, error: null } : prev,
+              );
               queueEmit("makeTransferProposal", {
                 playerId: player.id,
               });
