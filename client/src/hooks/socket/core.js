@@ -81,7 +81,20 @@ export function registerCoreListeners(handlers, refs, ctx) {
 	});
 	socket.on("systemMessage", (msg) => {
 		const text = typeof msg === "string" ? msg : msg.text;
-		if (text) handlers.addToast(text);
+		if (!text) return;
+		// Anúncio de sala (campeões, prémios, treinadores): o RoomHub › Sala
+		// já o lista — em vez de aviso, acende o badge de não-lidas para não
+		// se perder com o hub fechado.
+		if (typeof msg === "object" && msg.broadcast) {
+			const viewing =
+				refs.chatOpenRef?.current &&
+				refs.activeChatTabRef?.current === "room";
+			if (ctx.inRoom() && !viewing) {
+				handlers.setUnreadRoom((prev) => prev + 1);
+			}
+			return;
+		}
+		handlers.addToast(text);
 	});
 	socket.on("seasonState", (data) => {
 		if (!ctx.inRoom()) return;

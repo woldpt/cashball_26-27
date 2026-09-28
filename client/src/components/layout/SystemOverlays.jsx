@@ -84,40 +84,56 @@ export function SystemOverlays() {
           </button>
         </div>
       )}
-      {/* Toast notifications — AnimatePresence para o exit; o container fica
-          sempre montado (pointer-events-none) para os toasts poderem sair. */}
-      <div className="fixed top-[calc(var(--header-h)+0.5rem)] right-4 z-100 flex flex-col gap-2 pointer-events-none">
+      <GameNoticeBar notices={toasts} onDismiss={dismissToast} />
+    </>
+  );
+}
+
+/**
+ * Barra de avisos do jogo — apresentação pura (testável sem socket, ver
+ * `gamebar-resp-test.jsx`). Substitui o toast de canto: no telemóvel encostava
+ * ao notch, com 16px de alvo de toque e longe do botão que o originou. Fecha a
+ * tocar em qualquer ponto; o container fica sempre montado
+ * (pointer-events-none) para os avisos poderem sair.
+ *
+ * @param {{
+ *   notices: Array<{ id: number, msg: string }>,
+ *   onDismiss: (id: number) => void,
+ * }} props
+ */
+export function GameNoticeBar({ notices, onDismiss }) {
+  return (
+      <div className="fixed top-[var(--header-h)] left-0 right-0 z-100 flex flex-col pointer-events-none">
         <AnimatePresence initial={false}>
-          {toasts.map((t) => (
+          {notices.map((t) => (
           <motion.div
             key={t.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => dismissToast(t.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") dismissToast(t.id);
-            }}
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 16 }}
+            role="status"
+            aria-live="polite"
+            onClick={() => onDismiss(t.id)}
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="bg-surface-container border border-outline-variant/60 text-on-surface text-sm font-bold px-5 py-3 rounded-md shadow-2xl pointer-events-auto cursor-pointer select-none flex items-center gap-3"
+            className="pointer-events-auto cursor-pointer select-none flex items-center gap-2 min-h-11 pl-4 pr-1 py-1.5 bg-surface-container-high border-b border-outline-variant/40 text-on-surface text-sm font-bold shadow-lg"
           >
-            <span className="flex-1">{t.msg}</span>
-            <span
-              className="material-symbols-outlined text-base opacity-50 hover:opacity-100 shrink-0"
+            <span className="flex-1 min-w-0 break-words">{t.msg}</span>
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                dismissToast(t.id);
+                onDismiss(t.id);
               }}
-              aria-label="Fechar notificação"
+              aria-label="Fechar aviso"
+              className="shrink-0 w-11 h-11 flex items-center justify-center rounded-md hover:bg-white/10"
             >
-              close
-            </span>
+              <span className="material-symbols-outlined text-base opacity-60">
+                close
+              </span>
+            </button>
           </motion.div>
           ))}
         </AnimatePresence>
       </div>
-    </>
   );
 }
