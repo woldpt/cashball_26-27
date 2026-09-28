@@ -79,6 +79,7 @@ import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
 import { recalcPlayerValue, MATCH_TUNING, MORALE_NEUTRAL } from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
+import { deriveBench } from "./bench";
 import { logMedicalNews } from "../coreHelpers";
 
 // Re-exportado de ./dbAsync (extração F1 — a engine mantém o contrato)
@@ -594,7 +595,7 @@ export async function generateFixturesForDivision(
     const a = allIds[i];
     const b = allIds[n - 1 - i];
 
-    // Padrão C/F alternado: cada equipa tem alternância perfeita
+    // Padrão C/F aproximado (não perfeito — como no futebol real, há quebras).
     let homeId: number;
     let awayId: number;
     // Encontrar posição da equipa no seeds original
@@ -619,12 +620,6 @@ export async function generateFixturesForDivision(
   }
 
   return fixtures;
-}
-
-function getCurrentPlayerState(game: ActiveGame, teamId: number) {
-  return Object.values(game.playersByName).find(
-    (p) => p.teamId === teamId && p.socketId,
-  );
 }
 
 /**
@@ -1378,23 +1373,16 @@ async function applyInjuryEvent({
   // Only show players who were explicitly chosen as "Suplente" in the pre-match tactic.
   // This prevents listing the full squad and showing players that weren't on the bench.
   const tactic = teamSide === "home" ? fixture._t1 : fixture._t2;
-  const tacticPositions: Record<number, string> = tactic?.positions || {};
-  const benchIds = new Set(
-    Object.entries(tacticPositions)
-      .filter(([, status]) => status === "Suplente")
-      .map(([id]) => Number(id)),
-  );
   const roster = fullRoster || squad;
-  const availableBench = roster.filter(
-    (p) =>
-      !lineupIds.has(p.id) &&
-      (benchIds.size === 0 || benchIds.has(p.id)) &&
-      !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
-  );
+  const { availableBench, grBench } = deriveBench({
+    roster,
+    tacticPositions: tactic?.positions,
+    lineupIds,
+    fixture,
+  });
 
   // If the injured player is a goalkeeper, prefer substituting with another goalkeeper
   let substituteCandidates = availableBench;
-  const grBench = availableBench.filter((p) => p.position === "GR");
   if (injuredPlayer.position === "GR") {
     substituteCandidates = grBench.length > 0 ? grBench : availableBench;
   }
@@ -1693,9 +1681,13 @@ function applyFatigueToPlayer(
 function fatigueSkipChance(p: PlayerRow): number {
   const resistance = p.resistance ?? RES_NEUTRAL;
   const skipChance = (resistance - 1) * MATCH_TUNING.fatigueSkipPerResPoint;
-  return p.position === "GR"
-    ? skipChance + MATCH_TUNING.fatigueGRSkipBonus
-    : skipChance;
+  // Teto 1: sem isto o GR com resistência alta dava 1,09 — imune à fadiga.
+  return Math.min(
+    1,
+    p.position === "GR"
+      ? skipChance + MATCH_TUNING.fatigueGRSkipBonus
+      : skipChance,
+  );
 }
 
 // Aplica um golpe de cansaço (-amount skill) aos jogadores no onze, com
@@ -2784,20 +2776,12 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
       // GK sent off — the team must play with 10: the reserve GK comes on and
       // an outfield player is sacrificed. The coach chooses which field player
       // leaves; on timeout/NPC the weakest on-pitch field player is sacrificed.
-      const tacticPositions: Record<number, string> = tactic?.positions || {};
-      const benchIds = new Set(
-        Object.entries(tacticPositions)
-          .filter(([, status]) => status === "Suplente")
-          .map(([id]) => Number(id)),
-      );
-      const availableBench = fullRoster.filter(
-        (p) =>
-          !lineupIds.has(p.id) &&
-          (benchIds.size === 0 || benchIds.has(p.id)) &&
-          !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
-      );
-
-      const grBench = availableBench.filter((p) => p.position === "GR");
+      const { availableBench, grBench } = deriveBench({
+        roster: fullRoster,
+        tacticPositions: tactic?.positions,
+        lineupIds,
+        fixture,
+      });
       const grCandidates = grBench.length > 0 ? grBench : availableBench;
       // On-pitch outfield players the coach may sacrifice (the sent-off GK is out)
       const fieldOnPitch = squad.filter(
@@ -3064,18 +3048,13 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
 
       const onPitch = squad.filter((p: any) => lineupIds.has(p.id));
 
-      const tacticPositions: Record<number, string> = tactic?.positions || {};
-      const benchIds = new Set(
-        Object.entries(tacticPositions)
-          .filter(([, status]) => status === "Suplente")
-          .map(([id]) => Number(id)),
-      );
-      const availableBench = fullRoster.filter(
-        (p: any) =>
-          !lineupIds.has(p.id) &&
-          benchIds.has(p.id) &&
-          !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
-      );
+      const { availableBench, benchIds } = deriveBench({
+        roster: fullRoster,
+        tacticPositions: tactic?.positions,
+        lineupIds,
+        fixture,
+        allowUnlisted: false,
+      });
 
       const shouldOpenPause = cappedForMentality ? onPitch.length > 0 : onPitch.length > 0 && availableBench.length > 0;
       if (shouldOpenPause) {

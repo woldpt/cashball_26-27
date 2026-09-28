@@ -1,3 +1,8 @@
+## Engine F2: deriveBench + morto + fadiga GR + fixtures (2026-09-28)
+- Novo `server/game/bench.ts`: `deriveBench()` único para os 3 blocos (lesão com `allowUnlisted`, GR expulso, pausa estrita); devolve também `benchIds` para a validação do lote. `any` na engine 96 → 69.
+- Morto removido: `getCurrentPlayerState`; `fatigueSkipChance` com teto `Math.min(1, …)` (GR com resistência alta dava 1,09, imune); comentário das fixtures honesto ("aproximado, como no futebol real").
+- Checks: `typecheck` PASS · `test:engine-unit` 20/20 · `test:substitutions` e `test:emergency-gk` com os mesmos 2 FAILs do HEAD (provado via stash, pré-existentes) · `audit:socketio` 0 erros/101 avisos.
+
 ## Engine F1: shootout + evolution + dbAsync extraídos (2026-09-28)
 - `server/game/engine.ts` 3935 → 3224 linhas (−711): `shootout.ts` (penáltis), `evolution.ts` (pós-jogo/moral/fans, +import `clampSkill`), `dbAsync.ts` (`Db` + 3 helpers, fim do ciclo engine↔evolution). Re-exports mantêm os 10 consumidores intactos.
 - Checks: `typecheck` PASS · `test:engine-unit` 20/20 · `audit:socketio` 0 erros/101 avisos · `audit:gamestate` sem sala viva (fica para a próxima).
