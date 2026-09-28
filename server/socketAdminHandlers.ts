@@ -7,6 +7,7 @@
  */
 
 import type { ActiveGame } from "./types";
+import type { EmptyRoomPurgeResult } from "./roomCleanupHelpers";
 import type { Server, Socket } from "socket.io";
 import {
   listTeamMatchActions,
@@ -24,6 +25,7 @@ interface AdminHandlerDeps {
   io: Server;
   getGameBySocket: (socketId: string) => ActiveGame | null;
   getGame: (roomCode: string) => ActiveGame | null;
+  unbindSocket: (game: ActiveGame, socketId: string) => void;
   activeGames: Record<string, ActiveGame>;
   adminListUsers: () => Promise<{ ok: boolean; users?: any[]; error?: string }>;
   adminChangePassword: (name: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
@@ -47,6 +49,7 @@ interface AdminHandlerDeps {
   saveGameState?: (game: ActiveGame) => void;
   emitPresence?: (game: ActiveGame) => void;
   emitPresencePause?: (game: ActiveGame, io: any) => void;
+  purgeEmptyRoom: (roomCode: string) => Promise<EmptyRoomPurgeResult>;
 }
 
 // ── Admin Guard ───────────────────────────────────────────────────────────────
@@ -69,6 +72,7 @@ export function registerAdminSocketHandlers(
     io,
     getGameBySocket,
     getGame,
+    unbindSocket,
     activeGames,
     adminListUsers,
     adminChangePassword,
@@ -80,6 +84,7 @@ export function registerAdminSocketHandlers(
     deleteManager,
     saveGameState,
     emitPresence,
+    purgeEmptyRoom,
   } = deps;
 
   // Helper to get the coach name from the socket
@@ -238,6 +243,8 @@ export function registerAdminSocketHandlers(
               io.to(targetSocketId).emit("kicked", {
                 reason: "Foste removido da sala pelo Admin.",
               });
+              unbindSocket(game, targetSocketId);
+              io.sockets.sockets.get(targetSocketId)?.leave(game.roomCode);
             }
 
             // Janelas de decisão pendentes deste coach (lesão/substituição a
@@ -283,9 +290,10 @@ export function registerAdminSocketHandlers(
             saveGameState?.(game);
             emitPresence?.(game);
             emitPresencePause?.(game, io);
+            const purgeResult = await purgeEmptyRoom(game.roomCode);
 
             console.log(
-              `[${game.roomCode}] 🚫 Admin removeu a sala de ${coachName} (online=${!!targetSocketId})`,
+              `[${game.roomCode}] 🚫 Admin removeu a sala de ${coachName} (online=${!!targetSocketId}, purge=${purgeResult})`,
             );
           }
         }

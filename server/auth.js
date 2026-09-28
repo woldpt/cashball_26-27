@@ -546,14 +546,14 @@ function changePassword(name, currentPassword, newPassword) {
  * @param {string} [excludeName] - Optional name to exclude from the list
  * @returns {Promise<string[]>}
  */
-function getRoomCoaches(roomCode, excludeName) {
-	return new Promise((resolve) => {
+function getRoomCoachesStrict(roomCode, excludeName) {
+	return new Promise((resolve, reject) => {
 		db.all(
 			"SELECT manager_name FROM room_managers WHERE room_code = ? COLLATE NOCASE ORDER BY manager_name",
 			[roomCode.toUpperCase()],
 			(err, rows) => {
-				if (err) return resolve([]);
-				const names = rows.map((r) => r.manager_name);
+				if (err) return reject(err);
+				const names = (rows || []).map((r) => r.manager_name);
 				if (excludeName) {
 					const excl = excludeName.toLowerCase();
 					resolve(names.filter((n) => n.toLowerCase() !== excl));
@@ -563,6 +563,10 @@ function getRoomCoaches(roomCode, excludeName) {
 			},
 		);
 	});
+}
+
+function getRoomCoaches(roomCode, excludeName) {
+	return getRoomCoachesStrict(roomCode, excludeName).catch(() => []);
 }
 
 function getManagerInfo(name) {
@@ -1570,6 +1574,7 @@ module.exports = {
 	deleteSingleRoomAccess,
 	getManagerRooms,
 	getRoomCoaches,
+	getRoomCoachesStrict,
 	changePassword,
 	getManagerInfo,
 	getAvatarSeed,

@@ -1,6 +1,13 @@
+## Purge automático de salas sem acessos válidos (2026-09-28)
+- Uma sala só é purgada quando não resta nenhum acesso de treinador não expulso e já não há sockets ligados. `leaveRoom`, desconexão, `adminReleaseRoom` e despedimento/reafectação preservam a sala; expulsões e remoções definitivas podem desencadear o purge, com reavaliação no disconnect final.
+- A consulta estrita de `room_managers` falha em segurança: erro de BD nunca é interpretado como sala vazia.
+- Rick: 8 saves, todos com pelo menos um assento `member`; nenhuma sala apagada. Removidos os 3 acessos órfãos sem base (`B9W0T9`/Fabio, `GIEME6`/Joao, `NVDRW6`/Fabio) após backup online 11/11; integridade de `accounts.db` OK, zero referências restantes. Snapshot: `server/saves/_manual_room_cleanup_backup/20260928_202929/`.
+- Checks: regressão `emptyRoomPurgeRegression` PASS · `typecheck` PASS · `test:connect-smoke` PASS · `audit:socketio` 0 erros/101 avisos · `audit:gamestate U7ZARI` 37 erros/22 avisos, mesmos na baseline HEAD.
+- Sem deploy no Rick.
+
 ## Lobby da Taça: esperar pelo avanço explícito (2026-09-28)
 - Causa confirmada na produção (U7ZARI): a verificação automática pós-jornada encontrava `waitingSeats` vazio quando todos os treinadores estavam eliminados da Taça e iniciava a ronda sem clique.
-- Fix em `weeklyFlowHelpers.ts`: no lobby da Taça, com zero equipas humanas em prova mas ainda com assentos de treinadores na sala, aguardar `intent.ready` de um espectador; salas sem treinadores mantêm o avanço automático.
+- Fix em `weeklyFlowHelpers.ts`: no lobby da Taça, com zero equipas humanas em prova mas ainda com assentos de treinadores na sala, aguardar `intent.ready` de um espectador; salas sem acessos válidos são eliminadas pelo ciclo de purge descrito na entrada seguinte.
 - Regressão `server/scripts/cupLobbyAdvanceRegression.mts`: PASS — sem ready aguarda; ready de espectador inicia; sem treinadores avança automaticamente.
 - Checks: `typecheck` PASS · `audit:socketio` 0 erros/101 avisos · `audit:gamestate U7ZARI` na cópia local: 37 erros/22 avisos de composição dos plantéis (mesmo resultado na baseline HEAD sem a correção) · `git diff --check` PASS.
 

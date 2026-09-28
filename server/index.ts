@@ -52,6 +52,7 @@ const {
 	recordRoomAccess,
 	getManagerRooms,
 	getRoomCoaches,
+	getRoomCoachesStrict,
 	getCoachAvatars,
 	deleteRoomAccess,
 	deleteSingleRoomAccess,
@@ -126,6 +127,8 @@ const { emitAwaitingCoaches: emitAwaitingCoachesHelper } =
 	require("./presenceHelpers") as typeof import("./presenceHelpers");
 const { createWeeklyFlowHelpers } =
 	require("./weeklyFlowHelpers") as typeof import("./weeklyFlowHelpers");
+const { createRoomCleanupHelpers } =
+	require("./roomCleanupHelpers") as typeof import("./roomCleanupHelpers");
 const { createCupFlowHelpers } =
 	require("./cupFlowHelpers") as typeof import("./cupFlowHelpers");
 const { createMatchSummaryHelpers } =
@@ -161,6 +164,14 @@ function roomDbPath(roomCode: string): string {
 		path.join(savesDir(), `game_${roomCode}.db`)
 	);
 }
+
+const { purgeEmptyRoom } = createRoomCleanupHelpers({
+	activeGames,
+	getRoomCoachesStrict,
+	deleteRoomAccess,
+	roomDbPath,
+	purgeGame,
+});
 
 function getRoomName(roomCode: string): Promise<string> {
 	return new Promise((resolve) => {
@@ -531,13 +542,22 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
 				}
 				emitPresence(liveGame);
 			}
+			const purgeResult = await purgeEmptyRoom(roomCode);
 			console.log(
-				`[/saves] Coach "${name}" left multiplayer room "${roomCode}" (creator: "${roomCreator || "—"}")`,
+				`[/saves] Coach "${name}" left multiplayer room "${roomCode}" (creator: "${roomCreator || "—"}", purge: ${purgeResult})`,
 			);
 			return res.json({
 				ok: true,
 				left: true,
-				message: "Saíste da sala. A sala continua disponível para os restantes treinadores.",
+				deleted: purgeResult === "deleted",
+				message:
+					purgeResult === "deleted"
+						? "Saíste da sala; sem treinadores com acesso, foi apagada."
+						: purgeResult === "waiting_for_disconnect"
+							? "Saíste da sala; será apagada quando a última ligação terminar."
+							: purgeResult === "failed"
+								? "Saíste da sala, mas a limpeza falhou. Contacta o Admin."
+								: "Saíste da sala. A sala continua disponível para os restantes treinadores.",
 			});
 		}
 
@@ -1202,6 +1222,7 @@ io.on("connection", (socket) => {
 		handleAcceptJobOffer,
 		handleDeclineJobOffer,
 		emitGlobalPlayerUpdate,
+		purgeEmptyRoom,
 	});
 
 	registerChatHandlers(socket, {
@@ -1225,6 +1246,7 @@ io.on("connection", (socket) => {
 		io,
 		getGameBySocket,
 		getGame,
+		unbindSocket,
 		activeGames: activeGames as Record<string, any>,
 		adminListUsers,
 		adminChangePassword,
@@ -1237,6 +1259,7 @@ io.on("connection", (socket) => {
 		saveGameState,
 		emitPresence,
 		emitPresencePause: roomState.emitPresencePause,
+		purgeEmptyRoom,
 	});
 
 	// Training handlers

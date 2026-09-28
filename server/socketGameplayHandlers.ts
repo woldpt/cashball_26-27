@@ -7,6 +7,7 @@ import {
 } from "./game/engine";
 import { MAX_BENCH_SIZE, SIM_SPEED_PRESETS } from "./gameConstants";
 import type { SimSpeedKey } from "./gameConstants";
+import type { EmptyRoomPurgeResult } from "./roomCleanupHelpers";
 import { getTacticFamiliarity, getAllTacticFamiliarity } from "./game/tacticFamiliarity";
 import {
   checkLineupReady,
@@ -37,6 +38,7 @@ interface GameplayHandlerDeps {
   handleAcceptJobOffer: (game: ActiveGame, coachName: string) => Promise<void>;
   handleDeclineJobOffer: (game: ActiveGame, coachName: string) => void;
   emitGlobalPlayerUpdate?: () => void;
+  purgeEmptyRoom: (roomCode: string) => Promise<EmptyRoomPurgeResult>;
 }
 
 export function registerGameplaySocketHandlers(
@@ -56,6 +58,7 @@ export function registerGameplaySocketHandlers(
     handleAcceptJobOffer,
     handleDeclineJobOffer,
     emitGlobalPlayerUpdate,
+    purgeEmptyRoom,
   } = deps;
 
   const VALID_FORMATIONS = new Set([
@@ -327,9 +330,13 @@ export function registerGameplaySocketHandlers(
         }
       }
     }
-    if (target) {
-      delete game.playersByName[targetName];
+    // Retirar também o socket da sala antes de um eventual purge. O cliente
+    // continua ligado ao servidor e recebe o aviso de expulsão acima.
+    if (targetSocketId) {
+      unbindSocket(game, targetSocketId);
+      io.sockets.sockets.get(targetSocketId)?.leave(game.roomCode);
     }
+    if (target) delete game.playersByName[targetName];
     game.lockedCoaches.delete(targetName);
 
     // Ban permanente: o coach expulso não pode reentrar na sala
@@ -357,12 +364,17 @@ export function registerGameplaySocketHandlers(
     emitGlobalPlayerUpdate?.();
     emitPresencePause(game, io);
 
-    // Se o expulso era o único bloqueio, a sala pode avançar sem ele — no
-    // lobby arranca a semana, no intervalo arranca a 2.ª parte / prolongamento.
-    const unblockedPhases = ["lobby", "match_halftime", "match_et_gate"];
-    if (unblockedPhases.includes(game.gamePhase)) {
-      checkAllReady(game);
-    }
+    // Se ainda houver treinadores válidos, retomar a fase bloqueada. Uma sala
+    // sem acessos válidos é apagada em vez de continuar a simular sem treinador.
+    void purgeEmptyRoom(game.roomCode)
+      .then((purgeResult) => {
+        if (purgeResult !== "has_members") return;
+        const unblockedPhases = ["lobby", "match_halftime", "match_et_gate"];
+        if (unblockedPhases.includes(game.gamePhase)) checkAllReady(game);
+      })
+      .catch((err) =>
+        console.error(`[${game.roomCode}] purge empty room after kick failed:`, err),
+      );
 
     console.log(
       `[${game.roomCode}] 🚫 Admin ${requesterName} expulsou ${targetName} (online=${!!targetSocketId})`,
@@ -396,6 +408,7 @@ export function registerGameplaySocketHandlers(
     if (!playerState) {
       unbindSocket(game, socket.id);
       emitPresence(game);
+      void purgeEmptyRoom(game.roomCode);
       return;
     }
 
@@ -449,17 +462,24 @@ export function registerGameplaySocketHandlers(
       game.phaseTimer = null;
     }
 
-    // Let remaining ready coaches proceed if all are now ready.
-    // Skip in lobby, match running, and match_finalizing: a disconnect must
-    // never auto-start the match or interfere with ongoing simulation.
-    const isMatchRunning =
-      game.gamePhase === "match_first_half" ||
-      game.gamePhase === "match_second_half" ||
-      game.gamePhase === "match_extra_time";
-    const isFinalizing = game.gamePhase === "match_finalizing";
-    if (!isMatchRunning && !isFinalizing && game.gamePhase !== "lobby") {
-      checkAllReady(game);
-    }
+    const resumeIfUnblocked = () => {
+      // A disconnect must never auto-start a match or interfere with simulation.
+      const isMatchRunning =
+        game.gamePhase === "match_first_half" ||
+        game.gamePhase === "match_second_half" ||
+        game.gamePhase === "match_extra_time";
+      const isFinalizing = game.gamePhase === "match_finalizing";
+      if (!isMatchRunning && !isFinalizing && game.gamePhase !== "lobby") {
+        checkAllReady(game);
+      }
+    };
+    void purgeEmptyRoom(game.roomCode)
+      .then((purgeResult) => {
+        if (purgeResult === "has_members") resumeIfUnblocked();
+      })
+      .catch((err) =>
+        console.error(`[${game.roomCode}] purge empty room after disconnect failed:`, err),
+      );
   });
 
   socket.on("acceptJobOffer", async () => {
