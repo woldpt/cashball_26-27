@@ -2095,6 +2095,19 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         requiredTeams.has(seat.teamId),
     );
     if (waitingSeats.length === 0) {
+      // Lobby da Taça com treinadores eliminados: esperar por um clique explícito
+      // em «Avançar para Taça». Sem membros na sala, mantém-se o avanço automático.
+      if (game.gamePhase === "lobby" && (game.currentEvent as any)?.type === "cup") {
+        const seatedMembers = Object.values(game.seats).filter(
+          (seat) => seat.status === "member" && seat.teamId != null,
+        );
+        if (seatedMembers.length > 0 && !seatedMembers.some((seat) => seat.intent.ready)) {
+          console.log(
+            `[${game.roomCode}] ⏸ checkAllReady: Taça à espera do avanço explícito de um treinador`,
+          );
+          return;
+        }
+      }
       // Ninguém humano nesta ronda (só NPCs) — não há nada a esperar.
       console.log(
         `[${game.roomCode}] ⏸ checkAllReady: sem treinadores humanos na ronda — a avançar`,

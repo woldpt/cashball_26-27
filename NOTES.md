@@ -1,3 +1,9 @@
+## Lobby da Taça: esperar pelo avanço explícito (2026-09-28)
+- Causa confirmada na produção (U7ZARI): a verificação automática pós-jornada encontrava `waitingSeats` vazio quando todos os treinadores estavam eliminados da Taça e iniciava a ronda sem clique.
+- Fix em `weeklyFlowHelpers.ts`: no lobby da Taça, com zero equipas humanas em prova mas ainda com assentos de treinadores na sala, aguardar `intent.ready` de um espectador; salas sem treinadores mantêm o avanço automático.
+- Regressão `server/scripts/cupLobbyAdvanceRegression.mts`: PASS — sem ready aguarda; ready de espectador inicia; sem treinadores avança automaticamente.
+- Checks: `typecheck` PASS · `audit:socketio` 0 erros/101 avisos · `audit:gamestate U7ZARI` na cópia local: 37 erros/22 avisos de composição dos plantéis (mesmo resultado na baseline HEAD sem a correção) · `git diff --check` PASS.
+
 ## Apito final: som + selo + narração no fim do meu jogo (2026-09-28)
 - Pedido: «inventa o apito final» → pacote completo (decidido por perguntas): só no meu jogo, apito igual para V/E/D.
 - 7 ficheiros: `audio.js` ganha `playWhistleSound()` (trilo curto-curto-longo a 2,3 kHz via `playSequence`, sem assets); `utils/finalWhistle.js` novo com `computeFinalWhistle()` puro (chaves e formatos espelhados do humor pós-jogo, guarda `mom` na liga; taça sem `winnerId` devolve null — o apito espera pelo prolongamento/penáltis); `GameContext.jsx` com efeito que apita uma vez por chave quando há marcador final E relógio parado nos 90'/120' + estado `finalWhistle` com auto-limpeza a 4,5 s; `FinalWhistleStamp.jsx` novo (selo «APITO FINAL · N–M» + frase por desfecho, escolha determinística pelo marcador); `LiveMatchHero`/`CupFinalStage` (via hero interior) mostram o selo; `GameRoutes` passa a prop; script `test:finalwhistle`.
