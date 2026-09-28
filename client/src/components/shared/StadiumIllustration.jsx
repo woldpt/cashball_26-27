@@ -4,8 +4,13 @@ import { memo, useId } from "react";
  * Ilustração paramétrica do estádio ("câmara de transmissão" baixa:
  * vista frontal com o relvado a recuar para as bancadas e a baliza
  * assente na linha frontal).
- * Formato baixo (800×272) para as faixas curtas apanharem
- * bancada E relvado; céu compacto em cima.
+ *
+ * O enquadramento é dinâmico: o `viewBox` começa em `frameTop` (o céu
+ * morto é cortado até `SKY_TRIM` unidades) e desce quando a cobertura
+ * do colossal precisa de mais ar. Com `preserveAspectRatio`
+ * `xMidYMin slice` o corte cai sempre no relvado, nunca no telão — é o
+ * que permite a mesma ilustração servir o hero do StadiumTab (aspeto 3.2),
+ * o card do ClubTab (3.4) e o `short:h-16` (6.3) sem perder nada.
  *
  * O número de anéis, a cobertura, os camarotes e o telão crescem
  * com a lotação; os acentos arquitectónicos e a multidão usam
@@ -18,13 +23,17 @@ import { memo, useId } from "react";
  * - 15–30k: 1 anel + cobertura + 4 postes de suporte
  * - 30–50k: 2 anéis + faixa de camarotes
  * - ≥ 50k: 3 anéis + cobertura maior + telão
- * - > 80k: presença colossal — o corpo cresce mais íngreme (até ~1.25
- *   aos 120k), testeira mais grossa e telão maior
- * Entre 50k e 80k o desenho escala ligeiramente como antes.
+ * - > 80k: presença colossal — o corpo cresce mais íngreme (até ~1.35
+ *   aos 120k), cobertura mais alta (o telão cabe dentro do arco),
+ *   testeira mais grossa, telão maior e 6 setores em vez de 4
+ * A largura (`span`) e o corpo (`bulk`) são contínuos em toda a gama:
+ * cada obra de +5 000 lugares muda a imagem.
  *
- * Mood: <23 esvazia a bancada (mesmo com casa cheia) e põe tumbleweeds
- * no relvado; 23–37 fica como antes (estático, custo zero); ≥38 agita os
- * anéis, acende tochas na claque e hasteia bandeiras.
+ * Mood: <23 faroeste — esvazia a bancada (mesmo com casa cheia), anoitece
+ * (lua, colinas em silhueta, foco quente na bancada e poças de luz no
+ * relvado) e põe tumbleweeds a atravessar o campo; 23–37 fica como antes
+ * (estático, custo zero); ≥38 agita os anéis, acende tochas na claque e
+ * hasteia bandeiras.
  *
  * @param {{
  *   capacity?: number,
@@ -77,9 +86,11 @@ const hash01 = (n) => {
   return s - Math.floor(s);
 };
 
-// ── Geometria (viewBox 800×272) ──────────────────────────────────────
+// ── Geometria (viewBox 800 × de `frameTop` a `H`) ───────────────────
 const W = 800;
 const H = 272;
+/** Céu morto que se corta quando a cobertura tem espaço (topo do frame). */
+const SKY_TRIM = 40;
 const TIER_H = 28;
 const BOX_H = 12;
 const WALL_TOP = 146;
@@ -96,6 +107,8 @@ const GOAL_TOP = 146;
 const GOAL_BOT = 166;
 const GOAL_HALF_BOT = 34;
 const GOAL_HALF_TOP = 30;
+/** Sol/lua: abaixo de `SKY_TRIM` para caber no frame mais apertado. */
+const SUN_CY = 68;
 
 export const StadiumIllustration = memo(function StadiumIllustration({
   capacity = 10000,
@@ -109,57 +122,68 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const gid = (n) => `s${uid}-${n}`;
   const url = (n) => `url(#${gid(n)})`;
 
+  // A lotação vem do BD: um valor não numérico tinha de partir a
+  // geometria toda (NaN no viewBox) em vez de cair no desenho base.
+  const cap = Number.isFinite(capacity) ? Math.max(0, capacity) : 10000;
+
   const home = parseColor(primary) ? primary : "#4ade80";
   const away = parseColor(secondary) ? secondary : "#f8fafc";
 
-  const tiers = capacity >= 50000 ? 3 : capacity >= 30000 ? 2 : 1;
-  const roofed = capacity >= 15000;
-  const grandRoof = capacity >= 50000;
-  const boxes = capacity >= 30000;
-  const screen = capacity >= 50000;
-  const bare = capacity <= 5000;
-  const colossal = capacity > 80000;
-  // Bancada plana nos pequenos: sem faces laterais e sem avanços —
-  // o avanço lateral do corpo (`capIn`) vai a 0 (o do relvado fica).
-  const noCaps = capacity < 15000;
+  const tiers = cap >= 50000 ? 3 : cap >= 30000 ? 2 : 1;
+  const roofed = cap >= 15000;
+  const grandRoof = cap >= 50000;
+  const boxes = cap >= 30000;
+  const screen = cap >= 50000;
+  const bare = cap <= 5000;
+  const colossal = cap > 80000;
+  // Bancada plana nos pequenos: sem faces laterais e sem avanço lateral
+  // do corpo (`capIn`); o do relvado (CAP_INSET) mantém-se para o
+  // relvado não encolher mais do que a bancada.
+  const noCaps = cap < 15000;
   const capIn = noCaps ? 0 : CAP_INSET;
+  // Placas LED na base do muro: a partir de 10k (um pelado de campo não).
+  const led = cap >= 10000;
 
   // ── Escala de largura: os estádios pequenos ocupam menos espaço ──
-  // 0.50× no pelado (≤5k), 0.70× entre 5k e 15k, crescendo linearmente
-  // até 1× aos 50k; ≥50k mantém o desenho atual (o `bulk` trata do
-  // crescimento acima).
+  // 0.50× no pelado (≤5k) e cresce sem degraus até 1× aos 50k; depois
+  // continua a alargar devagar (1.06× aos 120k) para que cada obra de
+  // +5 000 se note também no topo da escala.
   const span =
-    capacity <= 5000
+    cap <= 5000
       ? 0.5
-      : capacity < 15000
-        ? 0.7
-        : capacity < 50000
-          ? 0.78 + ((capacity - 15000) / 35000) * 0.22
-          : 1;
+      : cap < 15000
+        ? 0.5 + ((cap - 5000) / 10000) * 0.2
+        : cap < 50000
+          ? 0.7 + ((cap - 15000) / 35000) * 0.3
+          : 1 + ((Math.min(cap, 120000) - 50000) / 70000) * 0.06;
   const standX0 = 400 - ((STAND_X1 - STAND_X0) / 2) * span;
   const standX1 = 400 + ((STAND_X1 - STAND_X0) / 2) * span;
+  const wallX0 = standX0 - capIn;
+  const wallX1 = standX1 + capIn;
   const goalHalfBot = GOAL_HALF_BOT * span;
   const goalHalfTop = GOAL_HALF_TOP * span;
   const netHalf = GOAL_HALF_TOP * span;
   // Mastro de luz mais baixo, à escala do estádio (só <15k).
   const poleTop = PITCH_TOP - (PITCH_TOP - 66) * span;
-  // Crescimento do corpo acima dos 50k: subtil até aos 80k (igual ao
-  // anterior, +6.4%), íngreme depois (até ~1.25 aos 120k — colossal).
+  // Crescimento do corpo: contínuo em toda a gama, íngreme acima dos 80k
+  // (até ~1.35 aos 120k). Move a altura da cobertura, a testeira e o telão.
   const bulk =
-    capacity <= 50000
+    cap <= 50000
       ? 1
       : 1 +
-          ((Math.min(capacity, 80000) - 50000) / 30000) * 0.064 +
-          (capacity > 80000
-            ? ((Math.min(capacity, 120000) - 80000) / 40000) * 0.19
-            : 0);
+          ((Math.min(cap, 80000) - 50000) / 30000) * 0.09 +
+          (cap > 80000 ? ((Math.min(cap, 120000) - 80000) / 40000) * 0.26 : 0);
   // Ocupação 0..1 (`null` = bancada cheia, comportamento anterior).
   const occ = occupancy == null ? 1 : Math.max(0, Math.min(1, occupancy));
   // Banda de mood: low esvazia mesmo com casa cheia (decisão do treinador),
   // high enche ligeiramente; mid não mexe (custo zero, como antes).
-  const moodBand = mood == null ? "mid" : mood < 23 ? "low" : mood >= 38 ? "high" : "mid";
+  const moodBand =
+    mood == null ? "mid" : mood < 23 ? "low" : mood >= 38 ? "high" : "mid";
   const moodOcc =
     moodBand === "low" ? occ * 0.12 : moodBand === "high" ? Math.min(1, occ * 1.2 + 0.1) : occ;
+  // O faroeste anoitece: é a leitura de "o estádio vai esvaziar" e dá à
+  // cena um estado visual que o de dia não distingue.
+  const night = moodBand === "low";
   // Núcleo de claques ao centro (cor do clube, esvazia em último).
   const claqueHalf = ((standX1 - standX0) / 2) * 0.22;
   // O topo do relvado acompanha a largura da bancada (perspetiva).
@@ -172,14 +196,30 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const topY = tierTop(tiers - 1);
   const roofBaseY = topY - 12;
   const roofEdgeY = roofBaseY - 5; // aresta inferior da cobertura
-  const roofTopY = roofEdgeY - (16 + (bulk - 1) * 40); // pico do arco
+  // Cobertura: 16 de base, esticada com `bulk` (o colossal precisa de
+  // altura para o telão caber dentro do arco) e limitada para nunca sair
+  // mais de 8 unidades acima do zero do canvas.
+  const canopyH = Math.min(16 + (bulk - 1) * 62, roofEdgeY + 8);
+  const roofTopY = roofEdgeY - canopyH;
+  // Pala: avança para lá da bancada com o corpo (nos pequeños deixava de
+  // cobrir a bancada toda e ficava a flutuar sobre o nada).
+  const roofOver = 18 + 26 * (bulk - 1);
+  const roofX0 = standX0 - roofOver;
+  const roofX1 = standX1 + roofOver;
+  // Setores (vomitórios): 6 nos gigantes, 4 nos restantes.
+  const aisleCount = tiers >= 3 ? 6 : 4;
 
   /** Y do arco da cobertura na abcissa x (Bézier quadrática simétrica). */
   const roofY = (x) => {
-    const t = (x - 60) / (740 - 60);
+    const t = (x - roofX0) / (roofX1 - roofX0);
     const h = roofEdgeY - roofTopY;
     return roofEdgeY - 2 * t * (1 - t) * h;
   };
+
+  // O frame começa onde a cobertura deixa de precisar de céu: 40
+  // unidades mortas cortadas em condições normais, mais espaço no
+  // colossal. O céu é desenhado de 0 a H, por isso nunca há limbo.
+  const frameTop = Math.min(SKY_TRIM, roofTopY - 6);
 
   /** Meia-largura do relvado na profundidade y (perspectiva em fuga). */
   const pitchHalf = (y) =>
@@ -197,11 +237,33 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     goalHalfBot -
     ((GOAL_BOT - y) / (GOAL_BOT - GOAL_TOP)) * (goalHalfBot - goalHalfTop);
 
+  // ── Paleta por variante (dia / noite) ───────────────────────────
+  const SKY = night ? ["#0a1020", "#16233c", "#24334f"] : ["#38bdf8", "#bae6fd", "#e0f2fe"];
+  const HILL_FAR = night ? "#0d1424" : "#aebfd0";
+  const HILL_NEAR = night ? "#0f1a2c" : "#8fa8bf";
+  const HILL_GREEN_FAR = night ? "#111c30" : "#a8bda4";
+  const HILL_GREEN = night ? "#132032" : "#93a88f";
+  const CLOUD = night ? "#334155" : "#ffffff";
+  const CLOUD_OP = night ? 0.5 : 0.85;
+  const HILL_OP = night ? 0.75 : 0.38;
+  const HILL_OP_NEAR = night ? 0.9 : 0.55;
+  const CONCRETE_HI = night ? "#7f8fa6" : "#cbd5e1";
+  const CONCRETE_LO = night ? "#2b3648" : "#64748b";
+  const ROOF_HI = night ? "#5b6b80" : "#f1f5f9";
+  const ROOF_LO = night ? "#1b2434" : "#94a3b8";
+  const GRASS_A = night ? "#1f7a3d" : "#22c55e";
+  const GRASS_B = night ? "#186233" : "#16a34a";
+  const GRASS_BASE = night ? "#0b2a16" : "#14532d";
+  const HAZE_OP = night ? 0.12 : 0.4;
+
   // ── Multidão ─────────────────────────────────────────────────────
   /** Multidão de um anel: manchas de cor (equipa + neutros) com jitter. */
   const crowdDots = (yTop, yBot, seed) => {
     const dots = [];
-    const rows = Math.max(3, Math.floor((yBot - yTop - 6) / 7));
+    // Filas proporcionais à altura útil do anel (o anel de cima dos
+    // grandes é mais baixo por causa da faixa de camarotes: 3 filas
+    // espremidas ficavam uma banda ilegível).
+    const rows = Math.max(2, Math.min(7, Math.round((yBot - yTop - 6) / 8)));
     let k = 0;
     for (let r = 0; r < rows; r += 1) {
       const yBase = yTop + 3 + ((yBot - yTop - 6) * (r + 0.5)) / rows;
@@ -277,7 +339,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       <path
         key={`stripe-${s}`}
         d={`M ${400 - pitchHalf(y0)} ${y0} L ${400 + pitchHalf(y0)} ${y0} L ${400 + pitchHalf(y1)} ${y1} L ${400 - pitchHalf(y1)} ${y1} Z`}
-        fill={s % 2 === 0 ? "#22c55e" : "#16a34a"}
+        fill={s % 2 === 0 ? GRASS_A : GRASS_B}
       />
     );
   });
@@ -313,11 +375,13 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   });
 
   // ── Cobertura ────────────────────────────────────────────────────
-  const canopyD = `M 60 ${roofBaseY} L 60 ${roofEdgeY} Q 400 ${roofTopY} 740 ${roofEdgeY} L 740 ${roofBaseY} Z`;
-  const fasciaD = `M 60 ${roofEdgeY} Q 400 ${roofTopY} 740 ${roofEdgeY}`;
-  const ribs = [128, 196, 264, 332, 400, 468, 536, 604, 672].map((x) => (
+  const canopyD = `M ${roofX0} ${roofBaseY} L ${roofX0} ${roofEdgeY} Q 400 ${roofTopY} ${roofX1} ${roofEdgeY} L ${roofX1} ${roofBaseY} Z`;
+  const fasciaD = `M ${roofX0} ${roofEdgeY} Q 400 ${roofTopY} ${roofX1} ${roofEdgeY}`;
+  const ribs = Array.from({ length: 9 }, (_, i) =>
+    roofX0 + ((i + 0.5) * (roofX1 - roofX0)) / 9,
+  ).map((x) => (
     <line
-      key={`rib-${x}`}
+      key={`rib-${Math.round(x)}`}
       x1={x}
       y1={roofBaseY}
       x2={x}
@@ -327,36 +391,49 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       opacity="0.45"
     />
   ));
+  const posts = [0.08, 0.31, 0.69, 0.92].map((f) => standX0 + f * (standX1 - standX0));
 
   // ── Telão ────────────────────────────────────────────────────────
-  // Escala com o corpo (1 até aos 50k, maior no colossal); o topo fica
-  // preso ao canvas porque o pico do telhado sai dele nos gigantes.
-  const screenScale = bulk;
-  const screenW = 128 * screenScale;
-  const screenH = 26 * screenScale;
+  // Escala com o corpo e assente dentro do arco da cobertura (o topo
+  // acompanha o pico, por isso nos gigantes não o engole).
+  const screenW = 128 * bulk;
+  const screenH = 26 * bulk;
   const screenX = 400 - screenW / 2;
-  const screenTop = Math.max(2, roofTopY - 10);
-  const screenPadX = 7 * screenScale;
-  const screenPadTop = 5 * screenScale;
-  const screenInnerH = 16 * screenScale;
-  const screenLabel = `${Math.round(capacity / 1000)}K`;
+  const screenTop = roofTopY + 2;
+  const screenPadX = 7 * bulk;
+  const screenPadTop = 5 * bulk;
+  const screenInnerH = 16 * bulk;
+  const screenLabel = `${Math.round(cap / 1000)}K`;
 
-  // ── Bandeirolas no corrimão do topo ──────────────────────────────
+  // ── Corrimão e bandeirolas ──────────────────────────────────────
+  // As bandeirolas pendem para BAIXO do corrimão, sobre a fila de cima
+  // da multidão. Onde há faixa de camarotes (2–3 anéis) descem mais
+  // BOX_H: sem isso ficavam desenhadas por cima das janelas.
+  const buntY = topY + (boxes && tiers > 1 ? BOX_H : 0);
   const pennants = [];
-  for (let x = standX0 + 10; x < standX1 - 8; x += 34) {
-    pennants.push(
-      <polygon
-        key={`pen-${x}`}
-        points={`${x},${topY + 3} ${x + 14},${topY + 3} ${x + 7},${topY + 10}`}
-        fill={Math.round(x / 34) % 2 === 0 ? home : away}
-        opacity="0.9"
-      />,
-    );
+  if (!bare) {
+    for (let x = standX0 + 10; x < standX1 - 8; x += 34) {
+      pennants.push(
+        <polygon
+          key={`pen-${x}`}
+          points={`${x},${buntY + 1} ${x + 13},${buntY + 1} ${x + 6.5},${buntY + 8}`}
+          fill={Math.round(x / 34) % 2 === 0 ? home : away}
+          opacity="0.9"
+        />,
+      );
+    }
   }
 
   const sideGates = [96, 164, 232, 300, 476, 544, 612, 680].map(
     (x) => 400 + (x - 400) * span,
   );
+
+  // ── Placas LED na base do muro ───────────────────────────────────
+  const ledCount = led ? Math.max(8, Math.round((wallX1 - wallX0) / 46)) : 0;
+  const ledStep = led ? (wallX1 - wallX0) / ledCount : 0;
+
+  // ── Bandeiras de canto ───────────────────────────────────────────
+  const cornerFlags = [400 - farHalf, 400 + farHalf];
 
   // ── Festa / faroeste (posições determinísticas, estáveis) ────────
   const torches = Array.from({ length: 10 }, (_, t) => ({
@@ -368,32 +445,44 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     dur: 0.28 + hash01(t * 9.4) * 0.3,
     delay: -hash01(t * 4.2) * 0.5,
   }));
+  // As bandeiras hasteiam-se à frente da cobertura (o grupo é desenhado
+  // depois dela): nos estádios cobertos ficavam escondidas atrás da pala.
   const flags = Array.from({ length: 4 }, (_, f) => ({
     fx: standX0 + ((f + 0.5) / 4) * (standX1 - standX0) + (hash01(f * 6.1 + 1) - 0.5) * 10,
-    fy: topY + 22 + hash01(f * 8.3 + 4) * 4,
-    fill: f % 2 === 0 ? home : away,
+    fy: roofBaseY - 2,
     delay: -hash01(f * 5.5) * 0.9,
   }));
   const weedRows = [212, 234];
 
+  const occLabel =
+    moodBand === "low"
+      ? ", bancada esvaziada"
+      : occ >= 0.95
+        ? ", bancada cheia"
+        : `, ${Math.round(occ * 100)}% de ocupação`;
+  const ariaLabel =
+    `Estádio com ${cap.toLocaleString("pt-PT")} lugares, ` +
+    `${tiers} ${tiers === 1 ? "anel" : "anéis"}${occLabel}` +
+    (moodBand === "high" ? ", adeptos em festa" : night ? ", noite de faroeste" : "");
+
   return (
     <svg
-      viewBox="0 0 800 272"
-      preserveAspectRatio="xMidYMid slice"
+      viewBox={`0 ${frameTop.toFixed(1)} ${W} ${(H - frameTop).toFixed(1)}`}
+      preserveAspectRatio="xMidYMin slice"
       className={className}
       role="img"
-      aria-label={`Estádio com ${tiers} ${tiers === 1 ? "anel" : "anéis"}`}
+      aria-label={ariaLabel}
     >
       <defs>
         <linearGradient id={gid("sky")} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#38bdf8" />
-          <stop offset="70%" stopColor="#bae6fd" />
-          <stop offset="100%" stopColor="#e0f2fe" />
+          <stop offset="0%" stopColor={SKY[0]} />
+          <stop offset="70%" stopColor={SKY[1]} />
+          <stop offset="100%" stopColor={SKY[2]} />
         </linearGradient>
         <radialGradient id={gid("sun")}>
-          <stop offset="0%" stopColor="#fef9c3" stopOpacity="0.9" />
-          <stop offset="55%" stopColor="#fde047" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#fde047" stopOpacity="0" />
+          <stop offset="0%" stopColor={night ? "#cbd5e1" : "#fef9c3"} stopOpacity={night ? 0.5 : 0.9} />
+          <stop offset="55%" stopColor={night ? "#94a3b8" : "#fde047"} stopOpacity={night ? 0.18 : 0.3} />
+          <stop offset="100%" stopColor={night ? "#64748b" : "#fde047"} stopOpacity="0" />
         </radialGradient>
         <radialGradient id={gid("lamp")}>
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
@@ -401,23 +490,28 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         </radialGradient>
         <linearGradient id={gid("haze")} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity={HAZE_OP} />
         </linearGradient>
         <linearGradient id={gid("stand")} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={mix(home, "#1b2438", 0.66)} />
-          <stop offset="100%" stopColor={mix(home, "#0d1424", 0.9)} />
+          <stop offset="0%" stopColor={mix(home, night ? "#334155" : "#1b2438", night ? 0.45 : 0.66)} />
+          <stop offset="100%" stopColor={mix(home, "#0b1220", 0.9)} />
         </linearGradient>
         <linearGradient id={gid("endcap")} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={shade(home, -0.42)} />
           <stop offset="100%" stopColor={shade(home, -0.72)} />
         </linearGradient>
         <linearGradient id={gid("roof")} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f1f5f9" />
-          <stop offset="100%" stopColor="#94a3b8" />
+          <stop offset="0%" stopColor={ROOF_HI} />
+          <stop offset="100%" stopColor={ROOF_LO} />
         </linearGradient>
         <linearGradient id={gid("concrete")} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#cbd5e1" />
-          <stop offset="100%" stopColor="#64748b" />
+          <stop offset="0%" stopColor={CONCRETE_HI} />
+          <stop offset="100%" stopColor={CONCRETE_LO} />
+        </linearGradient>
+        <linearGradient id={gid("led")} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
+          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.18" />
         </linearGradient>
         <linearGradient id={gid("pitchDepth")} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#000000" stopOpacity="0.2" />
@@ -442,35 +536,36 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         </linearGradient>
         <radialGradient id={gid("vignette")} cx="50%" cy="42%" r="75%">
           <stop offset="55%" stopColor="#000000" stopOpacity="0" />
-          <stop offset="100%" stopColor="#000000" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#000000" stopOpacity={night ? 0.3 : 0.12} />
         </radialGradient>
         <filter id={gid("blur")}>
           <feGaussianBlur stdDeviation="2.5" />
         </filter>
       </defs>
 
-      {/* Céu diurno */}
+      {/* Céu diurno / nocturno */}
       <rect x="0" y="0" width={W} height={H} fill={url("sky")} />
-      {/* Sol com halo */}
-      <circle cx={688} cy={46} r={30} fill={url("sun")} />
-      <circle cx={688} cy={46} r={12} fill="#fde047" opacity="0.95" />
+      {/* Sol (ou lua) com halo */}
+      <circle cx={688} cy={SUN_CY} r={30} fill={url("sun")} />
+      <circle cx={688} cy={SUN_CY} r={12} fill={night ? "#e2e8f0" : "#fde047"} opacity="0.95" />
       {/* Nuvens (suaves) */}
-      <g fill="#ffffff" opacity="0.85" filter={url("blur")}>
-        <ellipse cx={140} cy={38} rx={36} ry={10} />
-        <ellipse cx={168} cy={32} rx={24} ry={8} />
-        <ellipse cx={430} cy={34} rx={30} ry={8} />
-        <ellipse cx={452} cy={29} rx={20} ry={7} />
-        <ellipse cx={620} cy={44} rx={26} ry={7} />
+      <g fill={CLOUD} opacity={CLOUD_OP} filter={url("blur")}>
+        <ellipse cx={140} cy={66} rx={36} ry={10} />
+        <ellipse cx={168} cy={60} rx={24} ry={8} />
+        <ellipse cx={430} cy={62} rx={30} ry={8} />
+        <ellipse cx={452} cy={57} rx={20} ry={7} />
+        <ellipse cx={620} cy={72} rx={26} ry={7} />
       </g>
       {/* Colinas ao longe (silhuetas com base escondida atrás do recinto) + haze */}
-      <path d="M -20 164 Q 130 76 280 164 Z" fill="#aebfd0" opacity="0.38" />
-      <path d="M 520 164 Q 690 74 820 164 Z" fill="#a8bda4" opacity="0.38" />
-      <path d="M -20 164 Q 130 88 280 164 Z" fill="#8fa8bf" opacity="0.55" />
-      <path d="M 520 164 Q 690 88 820 164 Z" fill="#93a88f" opacity="0.55" />
+      <path d="M -20 164 Q 130 76 280 164 Z" fill={HILL_FAR} opacity={HILL_OP} />
+      <path d="M 520 164 Q 690 74 820 164 Z" fill={HILL_GREEN_FAR} opacity={HILL_OP} />
+      <path d="M -20 164 Q 130 88 280 164 Z" fill={HILL_NEAR} opacity={HILL_OP_NEAR} />
+      <path d="M 520 164 Q 690 88 820 164 Z" fill={HILL_GREEN} opacity={HILL_OP_NEAR} />
       <rect x="0" y="64" width={W} height="32" fill={url("haze")} />
 
       {/* Torres de luz baixas (só nos pequenos com cobertura por fazer,
-          sem o pelado) — mais baixas e junto às bancadas, à escala */}
+          sem o pelado) — mais baixas e junto às bancadas, à escala.
+          À noite acendem (o brilho é o que se vê). */}
       {!roofed && !bare &&
         [standX0 - CAP_INSET - 4, standX1 + CAP_INSET + 4].map((x) => (
           <g key={`light-${Math.round(x)}`}>
@@ -478,90 +573,90 @@ export const StadiumIllustration = memo(function StadiumIllustration({
             <rect x={x - 28} y={poleTop - 22} width={56} height={22} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
             {[-18, -6, 6, 18].map((dx) => (
               <g key={`lamp-${dx}`}>
-                <circle cx={x + dx} cy={poleTop - 11} r={10} fill={url("lamp")} opacity="0.5" />
-                <circle cx={x + dx} cy={poleTop - 11} r={5} fill="#e2e8f0" stroke="#64748b" strokeWidth="1" />
+                <circle cx={x + dx} cy={poleTop - 11} r={10} fill={url("lamp")} opacity={night ? 0.9 : 0.5} />
+                <circle cx={x + dx} cy={poleTop - 11} r={5} fill={night ? "#fef9c3" : "#e2e8f0"} stroke="#64748b" strokeWidth="1" />
               </g>
             ))}
           </g>
         ))}
 
-      {/* Anéis das bancadas com perspectiva */}
-      {Array.from({ length: tiers }).map((_, i) => {
-        const boxTop = tierTop(i);
-        const seatTop = boxTop + (boxes && i >= 1 ? BOX_H : 0);
-        const seatBottom = i === 0 ? WALL_TOP : tierTop(i - 1);
-        return (
-          <g
-            key={`tier-${i}`}
-            className={moodBand === "high" ? "stadium-bounce" : undefined}
-            style={moodBand === "high" ? { animationDuration: `${[0.5, 0.63, 0.47][i % 3]}s` } : undefined}
-          >
-            {/* Faces laterais (profundidade; os pequenos são planos) */}
-            {!noCaps && (
-              <>
-                <polygon
-                  points={`${standX0},${seatTop} ${standX0 - CAP_INSET},${seatTop - 6} ${standX0 - CAP_INSET},${seatBottom + 8} ${standX0},${seatBottom}`}
-                  fill={url("endcap")}
-                />
-                <polygon
-                  points={`${standX1},${seatTop} ${standX1 + CAP_INSET},${seatTop - 6} ${standX1 + CAP_INSET},${seatBottom + 8} ${standX1},${seatBottom}`}
-                  fill={url("endcap")}
-                />
-              </>
-            )}
-            {/* Faixa de camarotes por baixo dos anéis superiores */}
-            {boxes && i >= 1 && (
-              <g>
-                <rect x={standX0} y={boxTop} width={standX1 - standX0} height={BOX_H} fill="#0f172a" stroke={away} strokeOpacity="0.45" />
-                {Array.from({ length: 24 }).map((__, w) => (
-                  <rect
-                    key={`box-${i}-${w}`}
-                    x={standX0 + 12 + w * ((standX1 - standX0 - 40) / 23)}
-                    y={boxTop + 2}
-                    width={16}
-                    height={BOX_H - 4}
-                    fill="#cfe4f7"
-                    stroke="#0f172a"
-                    strokeOpacity="0.5"
-                    opacity={0.6 + hash01(i * 91 + w * 7) * 0.35}
+      {/* Anéis (ondulam em conjunto no mood alto) + tochas da claque */}
+      <g
+        className={moodBand === "high" ? "stadium-sway" : undefined}
+        style={moodBand === "high" ? { animationDuration: "1.15s" } : undefined}
+      >
+        {Array.from({ length: tiers }).map((_, i) => {
+          const boxTop = tierTop(i);
+          const seatTop = boxTop + (boxes && i >= 1 ? BOX_H : 0);
+          const seatBottom = i === 0 ? WALL_TOP : tierTop(i - 1);
+          const boxCount = Math.max(10, Math.round((standX1 - standX0) / 28));
+          return (
+            <g key={`tier-${i}`}>
+              {/* Faces laterais (profundidade; os pequenos são planos) */}
+              {!noCaps && (
+                <>
+                  <polygon
+                    points={`${standX0},${seatTop} ${standX0 - CAP_INSET},${seatTop - 6} ${standX0 - CAP_INSET},${seatBottom + 8} ${standX0},${seatBottom}`}
+                    fill={url("endcap")}
                   />
-                ))}
-              </g>
-            )}
-            {/* Assentos */}
-            <rect
-              x={standX0}
-              y={seatTop}
-              width={standX1 - standX0}
-              height={seatBottom - seatTop}
-              fill={url("stand")}
-              stroke="#020617"
-              strokeOpacity="0.35"
-              strokeWidth="1.5"
-            />
-            {rowLines(seatTop, seatBottom)}
-            {crowdDots(seatTop, seatBottom, 100 + i * 1000)}
-            {/* Vomitórios: escadas que dividem a bancada em sectores */}
-            {[0.2, 0.4, 0.6, 0.8].map((f) => {
-              const ax = standX0 + f * (standX1 - standX0);
-              return (
-                <g key={`aisle-${i}-${f}`}>
-                  <rect x={ax - 3.5} y={seatTop} width={7} height={seatBottom - seatTop} fill="#0b1220" opacity="0.9" />
-                  <line x1={ax} y1={seatTop + 1} x2={ax} y2={seatBottom - 1} stroke="#475569" strokeWidth="1" strokeDasharray="2 2" opacity="0.8" />
+                  <polygon
+                    points={`${standX1},${seatTop} ${standX1 + CAP_INSET},${seatTop - 6} ${standX1 + CAP_INSET},${seatBottom + 8} ${standX1},${seatBottom}`}
+                    fill={url("endcap")}
+                  />
+                </>
+              )}
+              {/* Faixa de camarotes por baixo dos anéis superiores */}
+              {boxes && i >= 1 && (
+                <g>
+                  <rect x={standX0} y={boxTop} width={standX1 - standX0} height={BOX_H} fill="#0f172a" stroke={away} strokeOpacity="0.45" />
+                  {Array.from({ length: boxCount }).map((__, w) => (
+                    <rect
+                      key={`box-${i}-${w}`}
+                      x={standX0 + 12 + (w * (standX1 - standX0 - 40)) / (boxCount - 1)}
+                      y={boxTop + 2}
+                      width={16}
+                      height={BOX_H - 4}
+                      fill="#cfe4f7"
+                      stroke="#0f172a"
+                      strokeOpacity="0.5"
+                      opacity={0.6 + hash01(i * 91 + w * 7) * 0.35}
+                    />
+                  ))}
                 </g>
-              );
-            })}
-            {/* Passadeira de betão entre anéis + sombra ambiente */}
-            <rect x={standX0 - capIn} y={seatBottom - 3} width={standX1 - standX0 + capIn * 2} height={6} fill={url("concrete")} opacity="0.9" />
-            <rect x={standX0 - capIn} y={seatBottom + 1} width={standX1 - standX0 + capIn * 2} height={2.5} fill="#000000" opacity="0.2" />
-          </g>
-        );
-      })}
+              )}
+              {/* Assentos */}
+              <rect
+                x={standX0}
+                y={seatTop}
+                width={standX1 - standX0}
+                height={seatBottom - seatTop}
+                fill={url("stand")}
+                stroke="#020617"
+                strokeOpacity="0.35"
+                strokeWidth="1.5"
+              />
+              {rowLines(seatTop, seatBottom)}
+              {crowdDots(seatTop, seatBottom, 100 + i * 1000)}
+              {/* Vomitórios: escadas que dividem a bancada em setores */}
+              {Array.from({ length: aisleCount }, (_, a) => (a + 1) / (aisleCount + 1)).map((f) => {
+                const ax = standX0 + f * (standX1 - standX0);
+                return (
+                  <g key={`aisle-${i}-${f}`}>
+                    <rect x={ax - 3.5} y={seatTop} width={7} height={seatBottom - seatTop} fill="#0b1220" opacity="0.9" />
+                    <line x1={ax} y1={seatTop + 1} x2={ax} y2={seatBottom - 1} stroke="#475569" strokeWidth="1" strokeDasharray="2 2" opacity="0.8" />
+                  </g>
+                );
+              })}
+              {/* Passadeira de betão entre anéis + sombra ambiente */}
+              <rect x={standX0 - capIn} y={seatBottom - 3} width={standX1 - standX0 + capIn * 2} height={6} fill={url("concrete")} opacity="0.9" />
+              <rect x={standX0 - capIn} y={seatBottom + 1} width={standX1 - standX0 + capIn * 2} height={2.5} fill="#000000" opacity="0.2" />
+            </g>
+          );
+        })}
 
-      {/* ── Festa: tochas na claque + bandeiras (só mood em alta) ── */}
-      {moodBand === "high" && (
-        <g>
-          {torches.map((t, i) => (
+        {/* Tochas na claque (mood alto) */}
+        {moodBand === "high" &&
+          torches.map((t, i) => (
             <g
               key={`torch-${i}`}
               className="stadium-flicker"
@@ -573,44 +668,50 @@ export const StadiumIllustration = memo(function StadiumIllustration({
               <circle cx={t.x} cy={t.y - 0.5} r={1.5} fill="#fde047" />
             </g>
           ))}
-          {flags.map((f, i) => (
-            <g key={`flag-${i}`}>
-              <line x1={f.fx} y1={f.fy} x2={f.fx} y2={f.fy - 30} stroke="#cbd5e1" strokeWidth="2" />
-              <g className="stadium-flag-wave" style={{ animationDelay: `${f.delay.toFixed(2)}s` }}>
-                <polygon
-                  points={`${f.fx},${f.fy - 30} ${f.fx + 24},${f.fy - 25} ${f.fx},${f.fy - 19}`}
-                  fill={f.fill}
-                  opacity="0.95"
-                />
-              </g>
-            </g>
-          ))}
-        </g>
-      )}
+      </g>
 
       {/* Corrimão do topo + bandeirolas (o pelado não tem) */}
       {!bare && (
         <g>
-          <rect x={standX0 - capIn} y={topY - 2} width={standX1 - standX0 + capIn * 2} height={3} fill={away} opacity="0.9" />
+          <rect x={wallX0} y={topY - 2} width={wallX1 - wallX0} height={3} fill={away} opacity="0.9" />
           {pennants}
         </g>
       )}
 
       {/* Muro base com portões */}
-      <rect x={standX0 - capIn} y={WALL_TOP} width={standX1 - standX0 + capIn * 2} height={PITCH_TOP - WALL_TOP} fill={url("concrete")} />
-      <rect x={standX0 - capIn} y={WALL_TOP} width={standX1 - standX0 + capIn * 2} height={4} fill={home} opacity="0.95" />
+      <rect x={wallX0} y={WALL_TOP} width={wallX1 - wallX0} height={PITCH_TOP - WALL_TOP} fill={url("concrete")} />
+      <rect x={wallX0} y={WALL_TOP} width={wallX1 - wallX0} height={4} fill={home} opacity="0.95" />
       <path d={gatePath(372, 56, WALL_TOP + 4, PITCH_TOP)} fill="#0f172a" opacity="0.92" stroke="#e2e8f0" strokeOpacity="0.25" />
       {!bare &&
         sideGates.map((x) => (
-          <path key={`gate-${x}`} d={gatePath(x, 22, WALL_TOP + 7, PITCH_TOP)} fill="#0f172a" opacity="0.85" />
+          <path key={`gate-${Math.round(x)}`} d={gatePath(x, 22, WALL_TOP + 7, PITCH_TOP)} fill="#0f172a" opacity="0.85" />
         ))}
+
+      {/* Placas LED (publicidade de perimeter) na base do muro */}
+      {led && (
+        <g>
+          <rect x={wallX0} y={PITCH_TOP - 11} width={wallX1 - wallX0} height={9} fill="#0b1220" />
+          {Array.from({ length: ledCount }).map((_, b) => (
+            <rect
+              key={`led-${b}`}
+              x={wallX0 + b * ledStep + 1.5}
+              y={PITCH_TOP - 9.5}
+              width={ledStep - 3}
+              height={6}
+              fill={b % 2 === 0 ? home : away}
+              opacity="0.92"
+            />
+          ))}
+          <rect x={wallX0} y={PITCH_TOP - 11} width={wallX1 - wallX0} height={9} fill={url("led")} />
+        </g>
+      )}
 
       {/* Cobertura */}
       {roofed && (
         <g>
-          {/* postes de suporte */}
-          {[140, 260, 540, 660].map((x) => (
-            <rect key={`post-${x}`} x={x - 2.5} y={roofBaseY} width={5} height={topY - roofBaseY} fill="#64748b" />
+          {/* postes de suporte (à largura da bancada, não do canvas) */}
+          {posts.map((x) => (
+            <rect key={`post-${Math.round(x)}`} x={x - 2.5} y={roofBaseY} width={5} height={topY - roofBaseY} fill="#64748b" />
           ))}
           {/* Pala superior curvada */}
           <path d={canopyD} fill={url("roof")} stroke="#64748b" strokeOpacity="0.4" strokeWidth="1.5" />
@@ -624,24 +725,45 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       {/* Telão assente na cobertura (só nos grandes) */}
       {screen && (
         <g>
-          <ellipse cx={400} cy={screenTop + screenH / 2} rx={95 * screenScale} ry={30 * screenScale} fill={url("screenGlow")} />
+          <ellipse cx={400} cy={screenTop + screenH / 2} rx={95 * bulk} ry={30 * bulk} fill={url("screenGlow")} />
           <rect x={screenX} y={screenTop} width={screenW} height={screenH} rx={4} fill="#0f172a" stroke={away} strokeOpacity="0.7" strokeWidth="2" />
           <rect x={screenX + screenPadX} y={screenTop + screenPadTop} width={screenW - screenPadX * 2} height={screenInnerH} rx={2} fill={home} opacity="0.95" />
           <rect x={screenX + screenPadX} y={screenTop + screenPadTop} width={screenW - screenPadX * 2} height={screenInnerH} rx={2} fill={url("sheen")} />
-          <text x={400} y={screenTop + screenPadTop + screenInnerH - 4.5 * screenScale} textAnchor="middle" fontSize={11 * screenScale} fontWeight="900" fill="#020617">
+          <text x={400} y={screenTop + screenPadTop + screenInnerH - 4.5 * bulk} textAnchor="middle" fontSize={11 * bulk} fontWeight="900" fill="#020617">
             {screenLabel}
           </text>
         </g>
       )}
 
+      {/* ── Festa: bandeiras à frente da cobertura (só mood em alta) ── */}
+      {moodBand === "high" &&
+        flags.map((f, i) => (
+          <g key={`flag-${i}`}>
+            <line x1={f.fx} y1={f.fy} x2={f.fx} y2={f.fy - 30} stroke="#cbd5e1" strokeWidth="2" />
+            <g className="stadium-flag-wave" style={{ animationDelay: `${f.delay.toFixed(2)}s` }}>
+              <polygon
+                points={`${f.fx},${f.fy - 30} ${f.fx + 24},${f.fy - 25} ${f.fx},${f.fy - 19}`}
+                fill={f.fill}
+                opacity="0.95"
+              />
+            </g>
+          </g>
+        ))}
+
       {/* Relvado em primeiro plano, a recuar para a linha frontal */}
-      <rect x="0" y={PITCH_TOP} width={W} height={PITCH_H} fill="#14532d" />
+      <rect x="0" y={PITCH_TOP} width={W} height={PITCH_H} fill={GRASS_BASE} />
       {stripePolys}
       <rect x="0" y={PITCH_TOP} width={W} height={PITCH_H} fill={url("pitchDepth")} />
+      {/* Poças de luz dos focos (só à noite) */}
+      {night &&
+        [210, 400, 590].map((x) => (
+          <ellipse key={`pool-${x}`} cx={x} cy={202} rx={130} ry={40} fill={url("lamp")} opacity="0.45" />
+        ))}
       {/* Sombra das bancadas projetada no relvado */}
-      <rect x={standX0 - CAP_INSET} y={PITCH_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={18} fill={url("standShadow")} />
-      {/* Linha de fundo */}
-      <line x1={standX0 - CAP_INSET} y1={PITCH_TOP + 1.5} x2={standX1 + CAP_INSET} y2={PITCH_TOP + 1.5} stroke="#f8fafc" strokeWidth="1.8" opacity="0.85" />
+      <rect x={400 - farHalf} y={PITCH_TOP} width={farHalf * 2} height={18} fill={url("standShadow")} />
+      {/* Linha de fundo = bordo real do relvado (nos pequenos o muro é
+          mais estreito que o campo; a linha tem de acompanhar o campo) */}
+      <line x1={400 - farHalf} y1={PITCH_TOP + 1.5} x2={400 + farHalf} y2={PITCH_TOP + 1.5} stroke="#f8fafc" strokeWidth="1.8" opacity="0.85" />
       {/* Baliza na linha frontal (emolduramento + rede) */}
       <g>
         <polygon
@@ -654,11 +776,24 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         <line x1={400 + goalHalfBot} y1={GOAL_BOT} x2={400 + goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
         <line x1={400 - goalHalfTop} y1={GOAL_TOP} x2={400 + goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" />
       </g>
+      {/* Bandeiras de canto */}
+      {cornerFlags.map((x) => (
+        <g key={`corner-${x}`}>
+          <rect x={x - 0.75} y={PITCH_TOP - 15} width={1.5} height={15} fill="#e2e8f0" />
+          <polygon
+            points={`${x},${PITCH_TOP - 15} ${x + 9},${PITCH_TOP - 11.5} ${x},${PITCH_TOP - 8}`}
+            fill={x < 400 ? home : away}
+          />
+        </g>
+      ))}
       {/* ── Faroeste: rolos de palha no relvado (só mood em baixo) ── */}
       {moodBand === "low" &&
         weedRows.map((wy, w) => (
           <g key={`weed-${w}`} className={`stadium-weed stadium-weed-${w}`}>
-            <g transform={`translate(0 ${wy})`}>
+            {/* Posição de repouso no meio do relvado: com movimento
+                reduzido a animação não corre e o rolo tinha de ficar
+                cortado a meio na margem esquerda. */}
+            <g transform={`translate(${280 + w * 240} ${wy})`}>
               <circle cx={0} cy={0} r={11} fill="none" stroke="#cbb37e" strokeWidth="2.6" opacity="0.95" />
               <circle cx={0} cy={0} r={7} fill="none" stroke="#e2d3a3" strokeWidth="2" opacity="0.9" />
               <path
@@ -672,7 +807,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         ))}
 
       {/* Linha de meio-campo + círculo central */}
-      <line x1={10} y1={212} x2={790} y2={212} stroke="#f8fafc" strokeWidth="1.8" opacity="0.7" />
+      <line x1="10" y1="212" x2="790" y2="212" stroke="#f8fafc" strokeWidth="1.8" opacity="0.7" />
       <ellipse cx={400} cy={212} rx={52} ry={11} fill="none" stroke="#f8fafc" strokeWidth="1.8" opacity="0.8" />
       <circle cx={400} cy={212} r={2.5} fill="#f8fafc" opacity="0.9" />
 

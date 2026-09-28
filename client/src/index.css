@@ -523,8 +523,9 @@ body {
    Só grupos (<g>), nunca os ~1100 pontos da multidão: barato no mobile.
    - low (<23): tumbleweeds a atravessar o relvado (translateX em user
      units = atravessa o viewBox em qualquer tamanho de ecrã).
-   - high (≥38): anéis a pulsar ±1px, tochas a tremeluzir na claque,
-     bandeiras a ondular (skew com origem à esquerda).
+   - high (≥38): a bancada a ondular de um só golpe (±0.35° no eixo
+     inferior), tochas a tremeluzir na claque, bandeiras a ondular
+     (skew com origem à esquerda).
    `transform-box: fill-box` para a rotação/origem assentarem no próprio
    grupo. Tudo parado com movimento reduzido. */
 @keyframes stadium-weed-roll {
@@ -554,17 +555,19 @@ body {
   animation-delay: -8s;
   opacity: 0.75;
 }
-@keyframes stadium-bounce {
+@keyframes stadium-sway {
   0%,
   100% {
-    transform: translateY(0);
+    transform: rotate(0deg);
   }
   50% {
-    transform: translateY(-1.5px);
+    transform: rotate(-0.35deg);
   }
 }
-.stadium-bounce {
-  animation: stadium-bounce 0.5s ease-in-out infinite;
+.stadium-sway {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: stadium-sway 1.15s ease-in-out infinite;
 }
 @keyframes stadium-flicker {
   0%,
@@ -599,7 +602,7 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .stadium-weed,
-  .stadium-bounce,
+  .stadium-sway,
   .stadium-flicker,
   .stadium-flag-wave {
     animation: none;
