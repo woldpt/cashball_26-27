@@ -1,3 +1,7 @@
+## Briefing ao contrário: fundo-camisola, frente-brasão (2026-09-28)
+- Espelho do direto no `DuelHero.jsx` (único ficheiro): frente mantém `TeamCrest lg`, marcas de água passam de brasão para `TeamKit` esbatido (`opacity-10` mobile / `0.13` desktop, `brightness(0.6)`, mesma máscara lateral); sem kit válido cai para o `<img>` anterior; fundo passa a visível em mobile (`h-28`).
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · `test:mobile` **PASS 165/165**.
+
 ## Deploy v26.09.17 no rick (2026-09-28)
 - Tag `v26.09.17` (CalVer rolling): bump `APP_VERSION`, push master, rebuild `docker compose` no rick.
 - `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).

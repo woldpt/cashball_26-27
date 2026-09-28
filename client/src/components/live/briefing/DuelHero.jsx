@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { TeamCrest } from "../TeamCrest.jsx";
+import { TeamKit } from "../../shared/TeamKit.jsx";
 import { DifficultyGauge } from "./DifficultyGauge.jsx";
 
 /**
@@ -92,34 +93,50 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
       <div className="relative overflow-hidden px-4 short:px-3 py-3 short:py-2 lg:py-5 flex items-center gap-2 lg:gap-6">
         {/* marcas de água dos emblemas (laterais, escuras e desvanecidas) */}
         {home?.team?.crest && (
-          <img
-            src={home.team.crest}
-            alt=""
+          <div
             aria-hidden
-            loading="lazy"
-            onError={(e) => { e.currentTarget.style.display = "none"; }}
-            className="absolute -left-6 top-1/2 -translate-y-1/2 w-40 h-40 lg:w-56 lg:h-56 object-contain opacity-[0.13] pointer-events-none select-none hidden sm:block"
+            className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-10 sm:opacity-[0.13] pointer-events-none select-none"
             style={{
-              filter: "brightness(0.45) saturate(0.9)",
+              filter: "brightness(0.6) saturate(0.9)",
               maskImage: "linear-gradient(to right, black 55%, transparent 100%)",
               WebkitMaskImage: "linear-gradient(to right, black 55%, transparent 100%)",
             }}
-          />
+          >
+            {home.team.crest.includes("/logos/") ? (
+              <TeamKit team={home.team} className="h-28 sm:h-40 lg:h-56 object-contain" />
+            ) : (
+              <img
+                src={home.team.crest}
+                alt=""
+                loading="lazy"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                className="h-28 sm:h-40 lg:h-56 w-auto object-contain"
+              />
+            )}
+          </div>
         )}
         {away?.team?.crest && (
-          <img
-            src={away.team.crest}
-            alt=""
+          <div
             aria-hidden
-            loading="lazy"
-            onError={(e) => { e.currentTarget.style.display = "none"; }}
-            className="absolute -right-6 top-1/2 -translate-y-1/2 w-40 h-40 lg:w-56 lg:h-56 object-contain opacity-[0.13] pointer-events-none select-none hidden sm:block"
+            className="absolute -right-6 top-1/2 -translate-y-1/2 opacity-10 sm:opacity-[0.13] pointer-events-none select-none"
             style={{
-              filter: "brightness(0.45) saturate(0.9)",
+              filter: "brightness(0.6) saturate(0.9)",
               maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
               WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
             }}
-          />
+          >
+            {away.team.crest.includes("/logos/") ? (
+              <TeamKit team={away.team} className="h-28 sm:h-40 lg:h-56 object-contain" />
+            ) : (
+              <img
+                src={away.team.crest}
+                alt=""
+                loading="lazy"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                className="h-28 sm:h-40 lg:h-56 w-auto object-contain"
+              />
+            )}
+          </div>
         )}
         {home && <DuelSlot slot={home} side="home" onOpenTeamSquad={onOpenTeamSquad} />}
         <div className="relative z-10 shrink-0 flex flex-col items-center gap-1 px-1 lg:px-4">
