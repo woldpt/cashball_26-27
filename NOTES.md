@@ -2648,3 +2648,8 @@ Plano C1+C2 (quando fizer):
 ## Deploy v26.09.20 no rick (2026-09-28)
 - Inclui RoomHub com roster completo (registados sempre listados, mesmo offline, com equipa e estado).
 - Push master + tag v26.09.20; rebuild no rick com backend Healthy.
+
+## Intervenção: menos transparência (2026-09-28)
+- Pedido: menos transparência no `IntervencaoView.jsx`, com a foto do balneário ainda subtilmente visível.
+- Fix (só alphas, sem layout): faixa das tabs `/50`→`/80` e rebordo `/15`→`/30`; tab inativa sem alpha no texto e hover `/80`; tiras do marcador `20`→`35`; aviso do GR improvisado `/10`→`/20` e rebordo `/35`.
+- Checks: eslint limpo no ficheiro · `check:types` OK.

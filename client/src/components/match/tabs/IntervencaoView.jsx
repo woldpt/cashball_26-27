@@ -413,7 +413,7 @@ export function IntervencaoView({
             >
               <div
                 className="flex min-w-0 flex-1 items-center justify-end gap-1.5 px-3 text-[10px] font-black uppercase tracking-wide"
-                style={{ backgroundColor: `${hInfo.color_primary || "#6366f1"}20`, color: hInfo.color_primary || "#6366f1" }}
+                style={{ backgroundColor: `${hInfo.color_primary || "#6366f1"}35`, color: hInfo.color_primary || "#6366f1" }}
               >
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: hInfo.color_primary || "#6366f1", boxShadow: `0 0 6px ${hInfo.color_primary || "#6366f1"}60` }} />
                 <span className="truncate">{hInfo.name}</span>
@@ -425,7 +425,7 @@ export function IntervencaoView({
               </div>
               <div
                 className="flex min-w-0 flex-1 items-center justify-start gap-1.5 px-3 text-[10px] font-black uppercase tracking-wide"
-                style={{ backgroundColor: `${aInfo.color_primary || "#f43f5e"}20`, color: aInfo.color_primary || "#f43f5e" }}
+                style={{ backgroundColor: `${aInfo.color_primary || "#f43f5e"}35`, color: aInfo.color_primary || "#f43f5e" }}
               >
                 <span className="truncate">{aInfo.name}</span>
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: aInfo.color_primary || "#f43f5e", boxShadow: `0 0 6px ${aInfo.color_primary || "#f43f5e"}60` }} />
@@ -463,7 +463,7 @@ export function IntervencaoView({
       {/* Lesão do último GR com reposição sem GR no banco: o substituto que
        * entra calça as luvas — aviso em destaque antes de confirmar. */}
       {matchAction?.incomingBecomesGK && !isEmergencyGk && (
-        <p className="shrink-0 px-4 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">
+        <p className="shrink-0 px-4 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 bg-amber-500/20 border-b border-amber-500/35">
           <span aria-hidden="true">🧤</span>
           O substituto vai para a baliza — GR improvisado
         </p>
@@ -473,7 +473,7 @@ export function IntervencaoView({
       {/* Hidden during forced swaps — the other tabs are noise while the
        * auto-substitution countdown runs. */}
       {!isForcedSwap && (
-        <div className={`shrink-0 ${shortLandscape ? "px-4 py-1" : "px-4 py-2"} bg-surface-container-high/50 border-b border-outline-variant/15`}>
+        <div className={`shrink-0 ${shortLandscape ? "px-4 py-1" : "px-4 py-2"} bg-surface-container-high/80 border-b border-outline-variant/30`}>
           <div className="flex rounded-md bg-surface-container p-1.5 gap-2">
             {tabs.map((tab) => (
               <button
@@ -482,7 +482,7 @@ export function IntervencaoView({
                 className={`flex-1 min-w-0 ${shortLandscape ? "py-1.5" : "py-2.5"} text-xs font-bold uppercase tracking-widest rounded-md transition-all ${
                   activeCenterTab === tab.key
                     ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
-                    : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
+                    : "text-on-surface-variant hover:text-on-surface-variant hover:bg-surface-container-high/80"
                 }`}
               >
                 <span className="hidden min-[380px]:inline">{tab.label}</span>
