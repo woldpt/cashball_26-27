@@ -329,7 +329,7 @@ export function PlayerHistoryModal({
           )}
           {/* ── 2-COLUMN LAYOUT (md+) ── */}
           <div className="md:grid md:grid-cols-2 md:divide-x md:divide-outline-variant/10">
-            {/* LEFT COLUMN: Attributes + Financial */}
+            {/* LEFT COLUMN: Attributes + Skill evolution */}
             <div className="flex flex-col">
               {/* ── ATRIBUTOS ── */}
               <div className="px-6 py-5 border-b border-outline-variant/10">
@@ -360,7 +360,16 @@ export function PlayerHistoryModal({
                 </div>
               </div>
 
-              {/* Value / Wage */}
+              {/* Skill evolution chart */}
+              <SkillLineChart
+                skillHistory={playerHistoryModal.skillHistory || []}
+                skill={skill}
+                position={pos}
+              />
+            </div>
+
+            {/* RIGHT COLUMN: Financial + Performance */}
+            <div className="flex flex-col">
               <div className="px-6 py-5 border-b border-outline-variant/10">
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
                   Financeiro
@@ -447,10 +456,6 @@ export function PlayerHistoryModal({
                 </div>
               )}
 
-            </div>
-
-            {/* RIGHT COLUMN: Performance */}
-            <div className="flex flex-col">
               {/* ── DESEMPENHO (época vs carreira) ── */}
               <div className="px-6 py-5 border-b border-outline-variant/10">
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
@@ -489,12 +494,6 @@ export function PlayerHistoryModal({
                 </table>
               </div>
 
-              {/* Skill evolution chart */}
-              <SkillLineChart
-                skillHistory={playerHistoryModal.skillHistory || []}
-                skill={skill}
-                position={pos}
-              />
             </div>
           </div>
 

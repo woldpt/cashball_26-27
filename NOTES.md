@@ -336,6 +336,9 @@
 - Micro-bugs: Taça sem jogo sorteado mostra placeholder TBD em vez de esconder a ronda (o comentário dizia «show placeholder» mas fazia `return null`); botão do adversário `disabled` sem `opponent`; `round 0/5`→`FRIENDLY_ROUND`/`CUP_FINAL_ROUND`; JSDoc de props; derrota passa a `border-l-error`/`text-error` (o mapa único `OUTCOME_*` acaba com a mistura `error`+`red/emerald` hardcoded).
 - Ponto 5: stagger `motion` como `PlayersTab` + ordenação cronológica explícita por `calendarIndex`; sem virtualização (20 linhas, YAGNI), sem filtros novos (o `TabBar` all/liga/taça chega), helpers no próprio ficheiro (só usados aqui).
 - Checks: eslint limpo no ficheiro · `check:types` OK · portrait 165/165 + landscape 198/198 (calendario 5/5 e 6/6; a 320 os smallTargets informativos variam 18–19/19 entre corridas sem afetar o PASS — os botões de adversário têm ~20px de altura em ambas as versões, pré-existente). `fixtures.js` modificado na árvore é de outra sessão, não tocado.
+## PlayerHistoryModal: Financeiro/Evolução trocam de coluna (2026-09-26)
+- Esquerda = Atributos → Evolução da Skill; direita = Financeiro → Mercado → Desempenho. Só blocos movidos em `PlayerHistoryModal.jsx`, zero lógica. No móvel empilha: Atributos → Evolução → Financeiro → Mercado → Desempenho.
+- Checks: eslint limpo · `check:types` OK · `test:mobile` 165/165 + landscape 198/198 em `--port 5201`.
 ## BadgeSkills lg: faixa de atributos maior no modal (2026-09-26)
 - Pedido com screenshot: a faixa SKILL·FORMA·MOR·RES·AGR do `PlayerHistoryModal` (posta por outra sessão via `3f13238d`) podia ser maior e mais bonita. Decisões via perguntas: variante `lg` só no modal + herói dourado.
 - `BadgeSkills.jsx`: `size="lg"` — skill 24/26px (era 18/19), stats 15/16px, células `px-3 py-1.5`, etiquetas 8px por extenso (`Moral`), célula SKILL `bg-amber-400/20` + borda `/30`, glow estático mais largo (sem keyframes). `md`/`sm`/`skillLast` intactos; modal passa `size="lg"`.
