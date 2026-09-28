@@ -1,3 +1,7 @@
+## Engine F8: matchDeltas.ts extraído (2026-09-28)
+- `getMatchDeltas` + 5× `record*` + `queueMatchDeltaWrites` + 3 tipos (212 linhas) movidos verbatim (diff zero) para `server/game/matchDeltas.ts`; engine 3127 → 2926 com re-export do contrato.
+- Checks: `typecheck` PASS · `test:engine-unit` 20/20 (U8/U12 guardam o flush) · `audit:socketio` 0 erros/101 avisos.
+
 ## Engine F7+F8: afinação medida sem churn + fecho (2026-09-28)
 - Calibração 20000 jogos antes/depois: 2,465 golos/jogo, 8,3% 0-0, 58,1% vitória casa com +5pts — dentro dos alvos (`MATCH_TUNING` 2,5–3,5); gap de 1,4% não justifica mexer em números. Sem alterações de tuning.
 - Fecho: engine 3935 → 3127 linhas (−808), `any` 96 → 57. `typecheck` PASS · `test:engine-unit` 20/20 · `test:finalize` E2E PASS (amigável + jornada, 16 resultados, avanço persistido; frase nova `noSubInjuryPhrase` vista ao vivo) · `audit:socketio` 0 erros/101 avisos · `audit:gamestate` sem sala viva. 6 commits (5 refactor + 1 docs); único comportamento alterado: teto `Math.min(1, …)` no skip de fadiga do GR (imunidade acima de ~43 de resistência).
