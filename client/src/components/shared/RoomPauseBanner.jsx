@@ -40,7 +40,7 @@ export function RoomPauseBar({ pause }) {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[99997] bg-rose-600 text-white text-center text-[13px] font-extrabold uppercase tracking-widest py-2.5 px-3 shadow-lg flex items-center justify-center gap-2"
+      className="relative shrink-0 z-40 bg-rose-600 text-white text-center text-[13px] font-extrabold uppercase tracking-widest py-2.5 px-3 shadow-lg flex items-center justify-center gap-2"
     >
       <span aria-hidden className="material-symbols-outlined text-[18px] leading-none shrink-0">
         pause_circle

@@ -1,3 +1,8 @@
+## Faixa de pausa em fluxo: já não tapa a navegação (2026-09-28)
+- Queixa: a faixa vermelha (`fixed top-0 z-[99997]`) flutuava por cima do header/navegação.
+- `RoomPauseBanner.jsx` (único ficheiro): `fixed` → `relative shrink-0` — passa a empurrar o layout para baixo dentro da coluna flex do `GameLayout` e continua sempre visível (o scroll corre no wrapper interno).
+- Checks: `eslint` limpo · `test:mobile` **PASS 165/165**.
+
 ## Briefing ao contrário: fundo-camisola, frente-brasão (2026-09-28)
 - Espelho do direto no `DuelHero.jsx` (único ficheiro): frente mantém `TeamCrest lg`, marcas de água passam de brasão para `TeamKit` esbatido (`opacity-10` mobile / `0.13` desktop, `brightness(0.6)`, mesma máscara lateral); sem kit válido cai para o `<img>` anterior; fundo passa a visível em mobile (`h-28`).
 - Checks: `eslint` limpo no ficheiro · `check:types` OK · `test:mobile` **PASS 165/165**.
