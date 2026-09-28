@@ -1,3 +1,8 @@
+## Engine F3: restoreSideSquad + intros/clima únicos (2026-09-28)
+- `restoreSideSquad(db, fixture, side, tactic, matchweek)` privado: as vias casa/fora de ~50 linhas colapsam numa só (difere só em lado/lineup/caches); engine 3203 → 3131.
+- Clima e intros: `ensureWeatherEvent()` único (era 2 cópias) + `pushFirstHalfStartComment()`/`pushSecondHalfStartComment()` únicos (eram 3 sítios: intro, pré-geração e passo do minuto); guards idempotentes preservados.
+- Checks: `typecheck` PASS · `test:engine-unit` 20/20 · `test:finalize` E2E a correr em fundo (jogo completo sem erros até ao minuto 30 do 2.º jogo).
+
 ## Engine F2: deriveBench + morto + fadiga GR + fixtures (2026-09-28)
 - Novo `server/game/bench.ts`: `deriveBench()` único para os 3 blocos (lesão com `allowUnlisted`, GR expulso, pausa estrita); devolve também `benchIds` para a validação do lote. `any` na engine 96 → 69.
 - Morto removido: `getCurrentPlayerState`; `fatigueSkipChance` com teto `Math.min(1, …)` (GR com resistência alta dava 1,09, imune); comentário das fixtures honesto ("aproximado, como no futebol real").

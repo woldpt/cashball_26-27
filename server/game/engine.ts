@@ -1742,6 +1742,88 @@ function trackFatigue(
 }
 
 // Gera os eventos de introdução (weather + táctica) do minuto 1 antes da simulação.
+// Clima determinístico partilhado com a previsão do briefing — ÚNICA via
+// de emissão do evento `weather` (antes em 2 cópias: intro + arranque do
+// segmento). Idempotente por `fixture._weather`.
+function ensureWeatherEvent(fixture: MatchFixture): void {
+  if (fixture._weather) return;
+  const { condition: weatherCondition, emoji: weatherEmoji } =
+    getWeatherForFixture(
+      fixture.season ?? 1,
+      fixture.matchweek ?? 1,
+      fixture.homeTeamId ?? 0,
+      fixture.awayTeamId ?? 0,
+    );
+  fixture._weather = weatherCondition;
+  fixture.events.push({
+    minute: 1,
+    type: "weather",
+    team: null,
+    emoji: weatherEmoji,
+    text: `[1'] ${weatherEmoji} ${weatherPhrase(weatherCondition)}`,
+  });
+}
+
+// Comentário táctico do minuto 1 — ÚNICA implementação (antes em 2 cópias:
+// intro + passo do minuto). Idempotente por `_firstHalfStartComment`.
+function pushFirstHalfStartComment(
+  fixture: MatchFixture,
+  homeTactic: Tactic | null,
+  awayTactic: Tactic | null,
+  minute = 1,
+): void {
+  if (fixture._firstHalfStartComment) return;
+  const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+  const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
+  const homeFormation = homeTactic?.formation || "4-4-2";
+  const awayFormation = awayTactic?.formation || "4-4-2";
+  const homeStyle = normaliseStyle(homeTactic?.style);
+  const awayStyle = normaliseStyle(awayTactic?.style);
+  if (isCupFinalRound(fixture.round)) {
+    fixture.events.push({
+      minute,
+      type: "phase_start",
+      team: null,
+      emoji: "🏟️",
+      text: `[${minute}'] 🏟️ ${finalStartPhrase()}`,
+    });
+  } else {
+    fixture.events.push({
+      minute,
+      type: "phase_start",
+      team: null,
+      emoji: "📋",
+      text: `[${minute}'] 📋 ${tacticStartPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
+    });
+  }
+  fixture._firstHalfStartComment = true;
+}
+
+// Comentário táctico do minuto 46 — ÚNICA implementação (antes em 2 cópias:
+// pré-geração + passo do minuto). Idempotente por `_secondHalfStartComment`.
+function pushSecondHalfStartComment(
+  fixture: MatchFixture,
+  homeTactic: Tactic | null,
+  awayTactic: Tactic | null,
+  minute = 46,
+): void {
+  if (fixture._secondHalfStartComment) return;
+  const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+  const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
+  const homeFormation = homeTactic?.formation || "4-4-2";
+  const awayFormation = awayTactic?.formation || "4-4-2";
+  const homeStyle = normaliseStyle(homeTactic?.style);
+  const awayStyle = normaliseStyle(awayTactic?.style);
+  fixture.events.push({
+    minute,
+    type: "phase_start",
+    team: null,
+    emoji: "🔔",
+    text: `[${minute}'] 🔔 ${secondHalfTacticPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
+  });
+  fixture._secondHalfStartComment = true;
+}
+
 // Chamada em weeklyFlowHelpers.ts antes de emitir matchSegmentStart, para que os
 // comentários já estejam no payload durante a pausa de 5s.
 // As guards na engine (!fixture._weather / !fixture._firstHalfStartComment) evitam duplicação.
@@ -1751,23 +1833,7 @@ export function generateIntroEvents(
   awayTactic: Tactic | null,
 ): void {
   // Weather — clima determinístico partilhado com a previsão do briefing.
-  if (!fixture._weather) {
-    const { condition: weatherCondition, emoji: weatherEmoji } =
-      getWeatherForFixture(
-        fixture.season ?? 1,
-        fixture.matchweek ?? 1,
-        fixture.homeTeamId ?? 0,
-        fixture.awayTeamId ?? 0,
-      );
-    fixture._weather = weatherCondition;
-    fixture.events.push({
-      minute: 1,
-      type: "weather",
-      team: null,
-      emoji: weatherEmoji,
-      text: `[1'] ${weatherEmoji} ${weatherPhrase(weatherCondition)}`,
-    });
-  }
+  ensureWeatherEvent(fixture);
 
   // Previsão de apostas (intro) — mesma função usada no nextMatchSummary,
   // para que o card do TacticsView e o evento do minuto 1 tenham odds iguais.
@@ -1797,33 +1863,7 @@ export function generateIntroEvents(
   }
 
   // Comentário táctico de início
-  if (!fixture._firstHalfStartComment) {
-    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
-    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
-    const homeFormation = homeTactic?.formation || "4-4-2";
-    const awayFormation = awayTactic?.formation || "4-4-2";
-    const homeStyle = normaliseStyle(homeTactic?.style);
-    const awayStyle = normaliseStyle(awayTactic?.style);
-
-    if (isCupFinalRound(fixture.round)) {
-      fixture.events.push({
-        minute: 1,
-        type: "phase_start",
-        team: null,
-        emoji: "🏟️",
-        text: `[1'] 🏟️ ${finalStartPhrase()}`,
-      });
-    } else {
-      fixture.events.push({
-        minute: 1,
-        type: "phase_start",
-        team: null,
-        emoji: "📋",
-        text: `[1'] 📋 ${tacticStartPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
-      });
-    }
-    fixture._firstHalfStartComment = true;
-  }
+  pushFirstHalfStartComment(fixture, homeTactic, awayTactic);
 }
 
 // Pré-gera o comentário táctico do minuto 46 antes da simulação da segunda parte.
@@ -1835,22 +1875,7 @@ export function generateSecondHalfIntroEvents(
   homeTactic: Tactic | null,
   awayTactic: Tactic | null,
 ): void {
-  if (!fixture._secondHalfStartComment) {
-    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
-    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
-    const homeFormation = homeTactic?.formation || "4-4-2";
-    const awayFormation = awayTactic?.formation || "4-4-2";
-    const homeStyle = normaliseStyle(homeTactic?.style);
-    const awayStyle = normaliseStyle(awayTactic?.style);
-    fixture.events.push({
-      minute: 46,
-      type: "phase_start",
-      team: null,
-      emoji: "🔔",
-      text: `[46'] 🔔 ${secondHalfTacticPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
-    });
-    fixture._secondHalfStartComment = true;
-  }
+  pushSecondHalfStartComment(fixture, homeTactic, awayTactic);
 }
 
 /**
@@ -1902,6 +1927,64 @@ export function createMinuteBarrier(
   };
 }
 
+/**
+ * Restauro único de plantel por lado (F2): as vias casa/fora eram o mesmo
+ * bloco de ~25 linhas 2× (lineup + eventos → DB → juniores em cache →
+ * ensureStartingXI em build fresco). Difere só em lado/lineup/caches.
+ */
+async function restoreSideSquad(
+  db: Db,
+  fixture: MatchFixture,
+  side: MatchSide,
+  tactic: Tactic | null,
+  currentMatchweek: number,
+): Promise<PlayerRow[]> {
+  const squadKey = side === "home" ? "_homeSquad" : "_awaySquad";
+  const rosterKey = side === "home" ? "_homeFullRoster" : "_awayFullRoster";
+  const lineup = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+  const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+  const cached = (fixture as any)[squadKey];
+  const isFreshBuild = !cached;
+  let squad;
+  if (cached) {
+    squad = cached;
+  } else if (lineup && lineup.length > 0) {
+    const ids = new Set(lineup.map((p: any) => p.id));
+    for (const e of fixture.events || []) {
+      if (e.team === side) {
+        if ((e.type === "red" || e.type === "injury") && e.playerId)
+          ids.delete(e.playerId);
+        if (e.type === "substitution" && e.playerId) ids.add(e.playerId);
+      }
+    }
+    // Junior GRs have negative IDs — fetch real players from DB, then re-add any juniors.
+    // Em erro de DB, segue com [] (o ensureStartingXI repõe juniores).
+    const allIds = Array.from(ids);
+    const realIds = allIds.filter((id: number) => id > 0);
+    const juniorIds = new Set(allIds.filter((id: number) => id < 0));
+    const ph = realIds.length > 0 ? realIds.map(() => "?").join(",") : "0";
+    const dbPlayers = await dbAllAsync(
+      db,
+      `SELECT * FROM players WHERE id IN (${ph})`,
+      realIds.length > 0 ? realIds : [],
+    ).catch(() => []);
+    // Re-add cached junior GRs whose IDs are still in the active lineup.
+    const cachedJuniors = ((fixture as any)[rosterKey] || []).filter((p: any) =>
+      juniorIds.has(p.id),
+    );
+    squad = [...dbPlayers, ...cachedJuniors];
+    (fixture as any)[squadKey] = squad;
+  } else {
+    squad = await getTeamSquad(db, teamId, tactic, currentMatchweek);
+    (fixture as any)[squadKey] = squad;
+  }
+  if (isFreshBuild) {
+    squad = ensureStartingXI(squad, teamId, currentMatchweek, tactic?.formation);
+    (fixture as any)[squadKey] = squad;
+  }
+  return squad;
+}
+
 export async function simulateMatchSegment(
   db: Db,
   fixture: MatchFixture,
@@ -1924,106 +2007,9 @@ export async function simulateMatchSegment(
   // produção usa Math.random — comportamento inalterado.
   const rng: Rng = context.rng ?? Math.random;
 
-  let homeSquad;
-  const isFreshHomeBuild = !fixture._homeSquad;
-  if (fixture._homeSquad) {
-    homeSquad = fixture._homeSquad;
-  } else if (fixture.homeLineup && fixture.homeLineup.length > 0) {
-    const homeIds = new Set(fixture.homeLineup.map((p: any) => p.id));
-    for (const e of fixture.events || []) {
-      if (e.team === "home") {
-        if ((e.type === "red" || e.type === "injury") && e.playerId)
-          homeIds.delete(e.playerId);
-        if (e.type === "substitution" && e.playerId) homeIds.add(e.playerId);
-      }
-    }
-    // Junior GRs have negative IDs — fetch real players from DB, then re-add any juniors.
-    // Em erro de DB, segue com [] (o ensureStartingXI repõe juniores).
-    const homeAllIds = Array.from(homeIds);
-    const homeRealIds = homeAllIds.filter((id: number) => id > 0);
-    const homeJuniorIds = new Set(homeAllIds.filter((id: number) => id < 0));
-    const homePh =
-      homeRealIds.length > 0 ? homeRealIds.map(() => "?").join(",") : "0";
-    const homeDbPlayers = await dbAllAsync(
-      db,
-      `SELECT * FROM players WHERE id IN (${homePh})`,
-      homeRealIds.length > 0 ? homeRealIds : [],
-    ).catch(() => []);
-    // Re-add cached junior GRs whose IDs are still in the active lineup.
-    const homeCachedJuniors = (fixture._homeFullRoster || []).filter((p: any) =>
-      homeJuniorIds.has(p.id),
-    );
-    homeSquad = [...homeDbPlayers, ...homeCachedJuniors];
-    fixture._homeSquad = homeSquad;
-  } else {
-    homeSquad = await getTeamSquad(
-      db,
-      fixture.homeTeamId,
-      homeTactic,
-      currentMatchweek,
-    );
-    fixture._homeSquad = homeSquad;
-  }
+  const homeSquad = await restoreSideSquad(db, fixture, "home", homeTactic, currentMatchweek);
 
-  if (isFreshHomeBuild) {
-    homeSquad = ensureStartingXI(
-      homeSquad,
-      fixture.homeTeamId,
-      currentMatchweek,
-      homeTactic?.formation,
-    );
-    fixture._homeSquad = homeSquad;
-  }
-
-  let awaySquad;
-  const isFreshAwayBuild = !fixture._awaySquad;
-  if (fixture._awaySquad) {
-    awaySquad = fixture._awaySquad;
-  } else if (fixture.awayLineup && fixture.awayLineup.length > 0) {
-    const awayIds = new Set(fixture.awayLineup.map((p: any) => p.id));
-    for (const e of fixture.events || []) {
-      if (e.team === "away") {
-        if ((e.type === "red" || e.type === "injury") && e.playerId)
-          awayIds.delete(e.playerId);
-        if (e.type === "substitution" && e.playerId) awayIds.add(e.playerId);
-      }
-    }
-    // Junior GRs have negative IDs — fetch real players from DB, then re-add any juniors.
-    // Em erro de DB, segue com [] (o ensureStartingXI repõe juniores).
-    const awayAllIds = Array.from(awayIds);
-    const awayRealIds = awayAllIds.filter((id: number) => id > 0);
-    const awayJuniorIds = new Set(awayAllIds.filter((id: number) => id < 0));
-    const awayPh =
-      awayRealIds.length > 0 ? awayRealIds.map(() => "?").join(",") : "0";
-    const awayDbPlayers = await dbAllAsync(
-      db,
-      `SELECT * FROM players WHERE id IN (${awayPh})`,
-      awayRealIds.length > 0 ? awayRealIds : [],
-    ).catch(() => []);
-    const awayCachedJuniors = (fixture._awayFullRoster || []).filter((p: any) =>
-      awayJuniorIds.has(p.id),
-    );
-    awaySquad = [...awayDbPlayers, ...awayCachedJuniors];
-    fixture._awaySquad = awaySquad;
-  } else {
-    awaySquad = await getTeamSquad(
-      db,
-      fixture.awayTeamId,
-      awayTactic,
-      currentMatchweek,
-    );
-    fixture._awaySquad = awaySquad;
-  }
-
-  if (isFreshAwayBuild) {
-    awaySquad = ensureStartingXI(
-      awaySquad,
-      fixture.awayTeamId,
-      currentMatchweek,
-      awayTactic?.formation,
-    );
-    fixture._awaySquad = awaySquad;
-  }
+  const awaySquad = await restoreSideSquad(db, fixture, "away", awayTactic, currentMatchweek);
 
   if (!fixture._yellowCards) {
     fixture._yellowCards = {};
@@ -2043,23 +2029,7 @@ export async function simulateMatchSegment(
 
     // Weather event — emitted once at the start of each match (mesma fonte
     // da previsão do briefing: getWeatherForFixture).
-    if (!fixture._weather) {
-      const { condition: weatherCondition, emoji: weatherEmoji } =
-        getWeatherForFixture(
-          fixture.season ?? 1,
-          fixture.matchweek ?? 1,
-          fixture.homeTeamId ?? 0,
-          fixture.awayTeamId ?? 0,
-        );
-      fixture._weather = weatherCondition;
-      fixture.events.push({
-        minute: 1,
-        type: "weather",
-        team: null,
-        emoji: weatherEmoji,
-        text: `[1'] ${weatherEmoji} ${weatherPhrase(weatherCondition)}`,
-      });
-    }
+    ensureWeatherEvent(fixture);
   }
 
   // Load team morale values (cached on fixture for minute-by-minute mode)
@@ -2381,50 +2351,8 @@ function applyLiveTacticAdoption(tick: MinuteTickContext): void {
 function pushPhaseStartComments(tick: MinuteTickContext): void {
   const { fixture, minute, homeTactic, awayTactic } = tick;
 
-  if (minute === 1 && !fixture._firstHalfStartComment) {
-    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
-    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
-    const homeFormation = homeTactic?.formation || "4-4-2";
-    const awayFormation = awayTactic?.formation || "4-4-2";
-    const homeStyle = normaliseStyle(homeTactic?.style);
-    const awayStyle = normaliseStyle(awayTactic?.style);
-
-    if (isCupFinalRound(fixture.round)) {
-      fixture.events.push({
-        minute,
-        type: "phase_start",
-        team: null,
-        emoji: "🏟️",
-        text: `[1'] 🏟️ ${finalStartPhrase()}`,
-      });
-    } else {
-      fixture.events.push({
-        minute,
-        type: "phase_start",
-        team: null,
-        emoji: "📋",
-        text: `[1'] 📋 ${tacticStartPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
-      });
-    }
-    fixture._firstHalfStartComment = true;
-  }
-
-  if (minute === 46 && !fixture._secondHalfStartComment) {
-    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
-    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
-    const homeFormation = homeTactic?.formation || "4-4-2";
-    const awayFormation = awayTactic?.formation || "4-4-2";
-    const homeStyle = normaliseStyle(homeTactic?.style);
-    const awayStyle = normaliseStyle(awayTactic?.style);
-    fixture.events.push({
-      minute,
-      type: "phase_start",
-      team: null,
-      emoji: "🔔",
-      text: `[46'] 🔔 ${secondHalfTacticPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
-    });
-    fixture._secondHalfStartComment = true;
-  }
+  if (minute === 1) pushFirstHalfStartComment(fixture, homeTactic, awayTactic, minute);
+  if (minute === 46) pushSecondHalfStartComment(fixture, homeTactic, awayTactic, minute);
 
   if (minute === 91 && !fixture._extraTimeStartComment) {
     fixture.events.push({
