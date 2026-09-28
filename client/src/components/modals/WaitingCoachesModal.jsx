@@ -146,7 +146,7 @@ export function WaitingCoachesModal({
       />
 
       <motion.div
-        className="relative flex flex-col min-h-0 max-h-[90dvh] w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
+        className="relative flex flex-col min-h-0 min-[560px]:min-h-[420px] max-h-[90dvh] w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
         initial={{ scale: 0.93, y: 24 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.93, y: 24 }}
