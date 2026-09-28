@@ -1,3 +1,8 @@
+## Intervenção desktop: relvado clicável na 3.ª coluna (2026-09-28)
+- Pedido: botão de confirmação do mobile vertical migrado para o desktop, limpando a terceira coluna; depois: pitch da nossa equipa nessa coluna.
+- 5 ficheiros: `PitchFormation.jsx`/`MatchPitch.jsx` ganham marcadores clicáveis (`onPlayerClick`, anel rosa no escolhido/esmeralda no preview, `aria-pressed`); `SubsPanel.jsx` — 3.ª coluna passa a `PitchColumn` (11 projetado pós-troca, compacto sem scroll, contador + anular todas + fila/hint no rodapé), Mentalidade desce para o fundo da coluna Suplentes (`mentalidadeFooter` em `PlayerLists.jsx`), confirmação vira `FloatingConfirmButton` partilhado mobile+desktop (3 ramos: fila, GR improvisado, forçada com countdown); `IntervencaoView.jsx` passa `teamColor`. Sai a `MentalidadeColumn` morta. Desselecionar = re-toque (toggle já existia no contexto); botão `Limpar` explícito cai no desktop.
+- Checks: `lint` só pré-existentes noutros ficheiros · `check:types` OK · `test:mobile` **PASS 165/165**.
+
 ## Faixa de pausa em fluxo: já não tapa a navegação (2026-09-28)
 - Queixa: a faixa vermelha (`fixed top-0 z-[99997]`) flutuava por cima do header/navegação.
 - `RoomPauseBanner.jsx` (único ficheiro): `fixed` → `relative shrink-0` — passa a empurrar o layout para baixo dentro da coluna flex do `GameLayout` e continua sempre visível (o scroll corre no wrapper interno).

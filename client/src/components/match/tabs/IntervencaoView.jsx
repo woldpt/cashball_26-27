@@ -126,6 +126,7 @@ export function IntervencaoView({
       Number(fixture?.awayTeamId) === Number(myTeamId));
   const hInfo = teams?.find((t) => t.id === fixture?.homeTeamId);
   const aInfo = teams?.find((t) => t.id === fixture?.awayTeamId);
+  const ownColor = (isHome ? hInfo : aInfo)?.color_primary;
 
   // O plantel base vem da BD e mantém a skill permanente. Durante o jogo,
   // sobrepõe-se a fadiga transitória do fixture para a decisão do intervalo
@@ -569,6 +570,7 @@ export function IntervencaoView({
               onResolveAction={onResolveAction}
               confirmResetAll={confirmResetAll}
               onArmResetAll={handleArmResetAll}
+              teamColor={ownColor}
               summary={{ fixture, hInfo, aInfo, liveMinute }}
             />
           </motion.div>

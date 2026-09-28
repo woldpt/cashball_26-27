@@ -10,7 +10,7 @@ import { PitchFormation } from "./PitchFormation.jsx";
  *   - O SVG usa preserveAspectRatio="none", por isso linhas e jogadores
  *     mantêm-se alinhados mesmo quando a caixa é clampada por max-w-full.
  */
-export function MatchPitch({ rows, posColors, starColor, events, liveMinute, teamColor, emptyLabel, className = "", showFatigue = true }) {
+export function MatchPitch({ rows, posColors, starColor, events, liveMinute, teamColor, emptyLabel, className = "", showFatigue = true, onPlayerClick = null, selectedId = null, previewId = null }) {
   const isEmpty =
     !rows || Object.values(rows).every((arr) => !arr || arr.length === 0);
 
@@ -26,7 +26,7 @@ export function MatchPitch({ rows, posColors, starColor, events, liveMinute, tea
           </p>
         </div>
       ) : (
-        <PitchFormation rows={rows} posColors={posColors} starColor={starColor} events={events} liveMinute={liveMinute} teamColor={teamColor} showFatigue={showFatigue} />
+        <PitchFormation rows={rows} posColors={posColors} starColor={starColor} events={events} liveMinute={liveMinute} teamColor={teamColor} showFatigue={showFatigue} onPlayerClick={onPlayerClick} selectedId={selectedId} previewId={previewId} />
       )}
     </div>
   );

@@ -143,6 +143,7 @@ export function SuplentesColumn({
   flat = false,
   skillLast = false,
   posRight = false,
+  mentalidadeFooter = null,
 }) {
   // `flat` (mobile): lista em altura natural dentro do scroll único da página.
   const Card = flat ? CompactPlayerCard : MatchPlayerCard;
@@ -201,6 +202,9 @@ export function SuplentesColumn({
           </p>
         )}
       </div>
+      {/* Mentalidade — só desktop (a 3.ª coluna é o relvado); no mobile
+       * vive recolhível no topo da stack. */}
+      {!flat && mentalidadeFooter}
       {/* Posse de Bola — só desktop; no mobile mudou para a linha de 2px do
        * banner intermitente no topo do ecrã. */}
       {!flat &&

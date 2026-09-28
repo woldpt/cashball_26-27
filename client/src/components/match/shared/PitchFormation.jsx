@@ -61,16 +61,36 @@ function usePlayerBadges(events, liveMinute) {
 /* ── Marcador de jogador (em campo) ──────────────────────────────────────
  * Cara do jogador (PlayerAvatar) com anel na cor da posição, placard com
  * nome + skill e badges de eventos da Live (golos, cartões). */
-/** player, teamColor, badges {goals,yellow,red}|undefined, starColor, count, showFatigue. */
-export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badges, starColor = "amber-400", count = 1, showFatigue = true }) {
+/** player, teamColor, badges {goals,yellow,red}|undefined, starColor, count, showFatigue, selected, isPreview, onClick. */
+export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badges, starColor = "amber-400", count = 1, showFatigue = true, selected = false, isPreview = false, onClick = null }) {
   const accent = POSITION_ACCENT_HEX?.[player.position] || "#94a3b8";
   const compact = count >= 4;
   const avatarCls = compact ? "w-8 h-8" : "w-10 h-10";
   const nameCls = compact ? "text-[9px]" : "text-[10px]";
   const skillCls = compact ? "text-[9px]" : "text-[10px]";
   const isJunior = player.isJunior === true;
+  const Tag = onClick ? "button" : "div";
+  const tagProps = onClick
+    ? {
+        type: "button",
+        onClick,
+        "aria-pressed": selected || isPreview,
+        "aria-label": selected
+          ? `${player.name} escolhido para sair — tocar para desselecionar`
+          : `${player.name} — escolher para sair`,
+      }
+    : {};
+  const ringCls = selected
+    ? "outline outline-2 outline-rose-400 outline-offset-2 rounded-lg"
+    : isPreview
+      ? "outline outline-2 outline-emerald-400 outline-offset-2 rounded-lg"
+      : "";
   return (
-    <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0" style={{ maxWidth: "104px" }}>
+    <Tag
+      {...tagProps}
+      className={`flex flex-col items-center gap-0.5 flex-1 min-w-0 ${ringCls} ${onClick ? "cursor-pointer bg-transparent border-0 p-0" : ""}`}
+      style={{ maxWidth: "104px" }}
+    >
       <div className="relative shrink-0">
         <div
           className="rounded-full overflow-hidden"
@@ -135,12 +155,12 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
       {showFatigue && (
         <FatigueIndicator player={player} compact className="max-w-full truncate text-[7px]" />
       )}
-    </div>
+    </Tag>
   );
 });
 
 /* ── Linha de jogadores ────────────────────────────────────────────────── */
-export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, showFatigue = true }) {
+export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, showFatigue = true, onPlayerClick = null, selectedId = null, previewId = null }) {
   if (!players || players.length === 0) return null;
   return (
     <div
@@ -156,6 +176,9 @@ export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, s
           starColor={starColor}
           count={players.length}
           showFatigue={showFatigue}
+          selected={selectedId != null && player?.id != null && Number(player.id) === Number(selectedId)}
+          isPreview={previewId != null && player?.id != null && Number(player.id) === Number(previewId)}
+          onClick={onPlayerClick ? () => onPlayerClick(player) : null}
         />
       ))}
     </div>
@@ -163,7 +186,7 @@ export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, s
 }
 
 /* ── PitchFormation — relvado broadcast com os 11 ──────────────────────── */
-/** rows {GR,DEF,MED,ATA}, events+liveMinute (badges live), teamColor (camisola), posColors (legado), starColor, withOverlay, showFatigue. */
+/** rows {GR,DEF,MED,ATA}, events+liveMinute (badges live), teamColor (camisola), posColors (legado), starColor, withOverlay, showFatigue, onPlayerClick, selectedId, previewId. */
 export function PitchFormation({
   rows,
   events,
@@ -173,6 +196,9 @@ export function PitchFormation({
   starColor,
   withOverlay = true,
   showFatigue = true,
+  onPlayerClick = null,
+  selectedId = null,
+  previewId = null,
 }) {
   void posColors;
   const badgesById = usePlayerBadges(events, liveMinute);
@@ -188,6 +214,9 @@ export function PitchFormation({
           badgesById={badgesById}
           starColor={starColor}
           showFatigue={showFatigue}
+          onPlayerClick={onPlayerClick}
+          selectedId={selectedId}
+          previewId={previewId}
         />
       ))}
       {withOverlay && (
