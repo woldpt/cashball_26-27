@@ -1,3 +1,7 @@
+## Jornal: red flag com duas bandeiras (2026-09-28)
+- Lista mostrava 🚩 do emblema + 🚩 do texto (`useInbox` já prefixa o título via `withFlag`/transitórios). Fix só em `JournalTab.jsx`: a linha da lista despe o prefixo `🚩` do `it.title` e mantém o emblema com `aria-label`. Detalhe intacto (`titleParts` com uma só 🚩).
+- Checks: `lint` sem erros novos (2 pré-existentes noutros ficheiros) · `check:types` OK. Tweak pontual, sem `test:mobile`.
+
 ## Engine F9: minuto partido em 6 passos (2026-09-28)
 - `processMatchMinute` vira orquestrador; `resolvePenaltyKick`/`resolveOpenPlayGoal`/`resolveNearMiss`/`resolveCards`/`resolveInjuries`/`resolveUserSubs` exportados na engine (sem módulo novo — os passos usam 6 helpers privados, ciclo `minute.ts`↔engine evitado por decisão). `MinuteShared` leva forças, flag e gates; ordem dos `rng()` intacta.
 - Prova: 90 minutos com seed fixa contra worktree HEAD — mesmos golos e mesmos 27 eventos (minuto/tipo/equipa/jogador); só o fraseado varia (`Math.random` não-seeded, por desenho).

@@ -910,8 +910,8 @@ export function JournalTab({
                               }`}
                             >
                               {query
-                                ? highlightText(it.title, query)
-                                : it.title}
+                                ? highlightText(it.title.replace(/^🚩\s*/, ""), query)
+                                : it.title.replace(/^🚩\s*/, "")}
                             </span>
                           </div>
                           {snippet && (
