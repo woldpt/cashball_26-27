@@ -164,15 +164,73 @@ const players = [
   },
 ];
 
-const teams = [
+const me = { teamId: 10 };
+
+// Mini-brasão inline (data-URI) para cobrir o ramo <img> do TeamMark.
+const CREST =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#166534"/><circle cx="16" cy="16" r="9" fill="none" stroke="#fff" stroke-width="2"/></svg>',
+  );
+
+const HIST_NAMES = [
+  ["Pedro Virgínia", "GR"],
+  ["Gonçalo Cardoso", "DEF"],
+  ["Gleison Borges", "DEF"],
+  ["Beni Settat", "MED"],
+  ["Alonso Tedeschi", "GR"],
+  ["David Monteiro", "DEF"],
+  ["André Rodrigues", "ATA"],
+  ["Juan Muñoz", "ATA"],
+  ["Arturo Badic", "MED"],
+  ["Anatoly Trubin", "GR"],
+  ["Davy Qui", "MED"],
+  ["Gerry Catalino", "ATA"],
+];
+const HIST_SELLERS = [
+  "São João de Ver",
+  "Aljustrelense",
+  "Fabril Barreiro",
+  "U. Leiria",
+  "Amora",
+  "Paredes",
+];
+// 38 registos como em produção (a lista faz scroll em max-h-80) + brasões
+// reais nas equipas (ramo <img> do TeamMark, não as iniciais).
+const transferHistory = Array.from({ length: 38 }, (_, i) => {
+  const [baseName, position] = HIST_NAMES[i % HIST_NAMES.length];
+  const sources = ["fixed", "npc", "proposal"];
+  return {
+    id: 101 + i,
+    player_id: 1000 + i,
+    player_name: i < HIST_NAMES.length ? baseName : `${baseName} ${i}`,
+    position,
+    is_star: i % 4 === 2,
+    seller_team_id: 20 + (i % 6),
+    seller_team_name: HIST_SELLERS[i % HIST_SELLERS.length],
+    buyer_team_id: 10,
+    buyer_team_name: "Louletano",
+    amount: 52500 + ((i * 7919) % 800000),
+    source: sources[i % sources.length],
+  };
+});
+
+const historyTeams = Array.from({ length: 6 }, (_, i) => ({
+  id: 20 + i,
+  name: HIST_SELLERS[i],
+  crest: CREST,
+  color_primary: "#166534",
+  color_secondary: "#ffffff",
+}));
+const allTeams = [
   { id: 1, color_primary: "#c0392b" },
   { id: 2, color_primary: "#2980b9" },
   { id: 3, color_primary: "#16a085" },
   { id: 4, color_primary: "#2c3e50" },
   { id: 5, color_primary: "#8e44ad" },
+  { id: 10, name: "Louletano", crest: CREST, color_primary: "#b91c1c", color_secondary: "#ffffff" },
+  ...historyTeams,
 ];
-
-const me = { teamId: 10 };
 
 const root = createRoot(document.getElementById("root"));
 root.render(
@@ -190,7 +248,8 @@ function Harness() {
   return (
     <TransferHub
       players={players}
-      teams={teams}
+      teams={allTeams}
+      transferHistory={transferHistory}
       budget={1000000}
       me={me}
       marketPositionFilter={marketPositionFilter}
@@ -212,7 +271,8 @@ function measure() {
   const doc = document.documentElement;
   const pageOverflow = doc.scrollWidth - vw;
 
-  // Rows/cards with overflow-hidden (content clipping risk)
+  // Rows/cards with overflow-hidden (content clipping risk) — horizontal
+  // (classic) AND vertical (history rows were cut top/bottom in prod).
   const rows = [...document.querySelectorAll("div.flex.overflow-hidden")];
   const clippedRows = rows
     .filter((el) => el.scrollWidth > el.clientWidth + 1)
@@ -241,12 +301,31 @@ function measure() {
     .sort((a, b) => b.excess - a.excess)
     .slice(0, 10);
 
+  // Vertical clipping: history rows cut at top/bottom (prod bug 2026-09-28).
+  // scrollHeight sums in-flow children; a flex row shorter than its content
+  // means the middle column collapsed or overflows (both fail).
+  const vClipped = rows
+    .filter((el) => el.scrollHeight > el.clientHeight + 1)
+    .map((el) => ({
+      name:
+        el.querySelector("button")?.textContent?.slice(0, 30) ||
+        el.className.toString().slice(0, 60),
+      scrollH: el.scrollHeight,
+      clientH: el.clientHeight,
+    }));
+
   return {
     viewport: vw,
     pageOverflowPx: pageOverflow,
     clippedRows,
+    verticallyClippedRows: vClipped,
     clippingElements,
-    verdict: pageOverflow <= 0 && clippedRows.length === 0 ? "PASS" : "FAIL",
+    verdict:
+      pageOverflow <= 0 &&
+      clippedRows.length === 0 &&
+      vClipped.length === 0
+        ? "PASS"
+        : "FAIL",
   };
 }
 

@@ -19,6 +19,13 @@
 - `RoomPauseBanner.jsx` (único ficheiro): `fixed` → `relative shrink-0` — passa a empurrar o layout para baixo dentro da coluna flex do `GameLayout` e continua sempre visível (o scroll corre no wrapper interno).
 - Checks: `eslint` limpo · `test:mobile` **PASS 165/165**.
 
+## Histórico do Mercado esmagado com lista cheia — `shrink-0` no TransferRow (2026-09-28)
+- Queixa (print do Fabio, produção): linhas do Histórico de Transferências com ~20px, nomes cortados no topo e linha origem→destino esmagada.
+- Causa isolada por reprodução: a lista (`flex flex-col max-h-80 overflow-y-auto`) com 12 linhas (~640px de conteúdo) distribui o espaço negativo a encolher as linhas para ~19px em vez de fazer scroll — as linhas têm `flex-shrink: 1` por defeito e o `overflow-hidden` anula o mínimo automático (fica 0). Com ≤6 linhas (conteúdo < 320px) não há espaço negativo e está tudo bem — por isso o harness antigo (4 linhas, sem `transferHistory`) nunca apanhou.
+- Fix (1 classe + comentário anti-regressão): `shrink-0` na raiz do `TransferRow` em `TransferHub.jsx`; a lista passa a fazer scroll como desenhado.
+- Harness `transfer-resp-test`: gera 38 registos (a lista enche e faz scroll) + brasões data-URI (ramo `<img>` do TeamMark) + deteção de corte vertical (`scrollHeight > clientHeight`) no `measure()` — sem isto o FAIL (12 linhas 19/35) não era detetado.
+- Checks: linhas 52/52 a 1280 e 390 (lista 320/708 com scroll) · `lint` só pré-existentes · `check:types` OK · `test:mobile` **PASS 165/165**.
+
 ## Briefing ao contrário: fundo-camisola, frente-brasão (2026-09-28)
 - Espelho do direto no `DuelHero.jsx` (único ficheiro): frente mantém `TeamCrest lg`, marcas de água passam de brasão para `TeamKit` esbatido (`opacity-10` mobile / `0.13` desktop, `brightness(0.6)`, mesma máscara lateral); sem kit válido cai para o `<img>` anterior; fundo passa a visível em mobile (`h-28`).
 - Checks: `eslint` limpo no ficheiro · `check:types` OK · `test:mobile` **PASS 165/165**.

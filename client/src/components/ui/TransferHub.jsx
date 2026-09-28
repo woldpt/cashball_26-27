@@ -100,7 +100,10 @@ function TransferRow({ rec, teams = [], onOpenPlayer }) {
     );
 
   return (
-    <div className="relative flex items-center gap-2.5 short:gap-1.5 rounded-lg overflow-hidden border border-outline-variant/15 bg-surface-container/60 pl-3 short:pl-2 pr-3 short:pr-2 py-2 short:py-1.5">
+    // shrink-0: sem isto, com a lista cheia (max-h-80) o flex esmaga as
+    // linhas para caber em vez de fazer scroll (overflow-hidden anula o
+    // mínimo automático) e os nomes saem cortados em cima/baixo.
+    <div className="relative flex items-center gap-2.5 short:gap-1.5 rounded-lg overflow-hidden border border-outline-variant/15 bg-surface-container/60 pl-3 short:pl-2 pr-3 short:pr-2 py-2 short:py-1.5 shrink-0">
       <div
         className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${POSITION_BAR_CLASS[rec.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`}
       />
