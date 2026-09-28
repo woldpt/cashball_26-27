@@ -1402,6 +1402,22 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           });
           saveGameState(game);
 
+          // Véspera de Taça: preparar o sorteio ANTES do processamento
+          // pesado (evolução, contratos, economia NPC, eventos) para o
+          // popup chegar ao cliente sem esperar por essa cadeia. Só precisa
+          // do currentEvent, já avançado acima.
+          if (game.currentEvent?.type === "cup") {
+            try {
+              await startCupRound(game, (game.currentEvent as any).round);
+              saveGameState(game);
+            } catch (cupErr) {
+              console.error(
+                `[${game.roomCode}] Cup draw preparation error:`,
+                cupErr,
+              );
+            }
+          }
+
           // Check season end: calendarIndex past end of calendar
           const seasonDone = game.calendarIndex >= SEASON_CALENDAR.length;
 
@@ -1535,19 +1551,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   game.coachMarketEvents = [];
                 }
 
-                // If the next calendar event is a cup round, prepare the draw NOW
-                // so coaches see their opponent and can set tactics in the lobby.
-                if (game.currentEvent?.type === "cup") {
-                  try {
-                    await startCupRound(game, (game.currentEvent as any).round);
-                    saveGameState(game);
-                  } catch (cupErr) {
-                    console.error(
-                      `[${game.roomCode}] Cup draw preparation error:`,
-                      cupErr,
-                    );
-                  }
-                }
+                // Sorteio já preparado na entrada do lobby (ver acima).
 
                 // Standings (teamsData/teamForms/topScorers) were already
                 // broadcast right after persistMatchResults — only squad info

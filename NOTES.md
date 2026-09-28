@@ -2620,3 +2620,10 @@ Plano C1+C2 (quando fizer):
 ## Deploy v26.09.18 no rick (2026-09-28)
 - Inclui altura mínima 420px do WaitingCoachesModal em desktop.
 - Push master + tag v26.09.18; rebuild no rick com backend Healthy.
+
+## Sorteio da Taça lento em véspera + navegação instável (2026-09-28)
+- Sintoma: ao sair de jogo da liga em véspera de Taça, o popup do sorteio demorava muito; "À espera do servidor…" + resync vazio.
+- Causa: `cupDrawStart` emitido na cauda do `finalizeLeagueEvent` (após contratos/economia NPC/eventos) e espelho no Jornal com 2 emits por equipa (~80), cada `globalNewsUpdated` a pôr todos os clientes a refazer fetch.
+- Fix (`cupFlowHelpers.ts` `startCupRound`): emit do sorteio logo após gerar; Jornal com writes aguardadas (mesma chave de desduplicação) + `clubNewsUpdated` por equipa e um único `globalNewsUpdated` no fim. (`weeklyFlowHelpers.ts`): `startCupRound` passa para a entrada do lobby, antes da cadeia pesada.
+- Checks: `typecheck` limpo · `audit:socketio` 0 erros · `audit:gamestate FGPQH6` 82 erros/15 warnings, idênticos com e sem a mudança (dados pré-existentes da sala de dev).
+- Nota: ler saves .db com o CLI do sqlite faz checkpoint do WAL e suja ficheiros tracked — usar `mode=ro`/`immutable=1` ou restaurar com `git checkout -- saves/`.

@@ -24,7 +24,7 @@ import { clearPhaseTimer } from "./matchFlowHelpers";
 import { drawNpcChoice, drawOffers, drawOffersAny } from "./game/sponsors";
 import { generateAITactic } from "./game/matchCalculations";
 import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
-import { getTeamsWithCoachNames, logClubNews, logClubNewsOnce, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory } from "./coreHelpers";
+import { getTeamsWithCoachNames, logClubNews, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory, currentSlot } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
@@ -1176,8 +1176,21 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				year: game.year,
 		};
 
+		// Emitir o sorteio ANTES do espelho no Jornal: o popup chega ao
+		// cliente sem esperar pelas ~40 escritas do Jornal.
+		io.to(game.roomCode).emit("cupDrawStart", drawPayload);
+
+		// Mark all currently connected coaches as having seen the draw
+		for (const player of connectedPlayers) {
+			game.cupDrawSeenBy.add(player.name);
+		}
+
 		// Espelho no Jornal com data fixa (a semana do sorteio): uma linha
 		// por equipa da Taça, com os pares em JSON para o «Ver sorteio».
+		// Escritas aguardadas (mesma chave de desduplicação do
+		// logClubNewsOnce) e emits únicos no fim: antes eram 2 emits por
+		// equipa (~80), cada globalNewsUpdated a pôr todos os clientes a
+		// refazer fetch do Jornal a meio da transição pós-jogo.
 		try {
 			const drawRoundName = CUP_ROUND_NAMES[round] || ("Ronda " + round);
 			const facts = JSON.stringify({
@@ -1196,20 +1209,31 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				year: game.year,
 			});
 			for (const tid of game.cupTeamIds || []) {
-				logClubNewsOnce(game, "cup_draw", ("Sorteio: " + drawRoundName), tid, {
-					description: facts,
-				}, io);
+				const exists = await runGet(
+					game.db,
+					"SELECT id FROM club_news WHERE team_id = ? AND type = 'cup_draw' AND year = ? AND (slot = ? OR (slot IS NULL AND matchweek = ?)) LIMIT 1",
+					[tid, game.year || 0, currentSlot(game), game.matchweek],
+				);
+				if (!exists) {
+					await new Promise<void>((resolve) => {
+						game.db.run(
+							"INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, slot, year) VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, ?, ?, ?)",
+							[tid, "cup_draw", ("Sorteio: " + drawRoundName), facts, game.matchweek, currentSlot(game), game.year || 0],
+							() => resolve(),
+						);
+					});
+				}
 			}
+			for (const tid of game.cupTeamIds || []) {
+				io.to(game.roomCode).emit("clubNewsUpdated", {
+					teamId: tid,
+					type: "cup_draw",
+					title: ("Sorteio: " + drawRoundName),
+				});
+			}
+			io.to(game.roomCode).emit("globalNewsUpdated");
 		} catch (drawNewsErr) {
 			console.error(`[${game.roomCode}] cup draw journal mirror failed (round ${round}):`, (drawNewsErr as any)?.message || drawNewsErr);
-		}
-
-		// Emit draw so clients can show the animation in the lobby
-		io.to(game.roomCode).emit("cupDrawStart", drawPayload);
-
-		// Mark all currently connected coaches as having seen the draw
-		for (const player of connectedPlayers) {
-			game.cupDrawSeenBy.add(player.name);
 		}
 	}
 
