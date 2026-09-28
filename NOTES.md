@@ -1,3 +1,7 @@
+## Engine F5: tipagem do núcleo (2026-09-28)
+- `(p: any)` 25 → 12 (só ficam os legítimos: lineups `Record<string,unknown>`, `playersByName`, `io`); `maybeOpenPlayGoal(attackingSide: MatchSide)`; `findIndex` e Sets de ids sobre `PlayerRow[]`; `_dupMinuteWarned` declarado no `MatchFixture` (era o único `_campo` em falta, cast removido).
+- Checks: `typecheck` PASS · `test:engine-unit` 20/20 · `any` total 69 → 57.
+
 ## Engine F4: narração de volta ao commentary.ts (2026-09-28)
 - `styleDisplayLabel` + novos `tacticChangePhrase()`/`noSubInjuryPhrase()` vivem no `commentary.ts`; a engine só chama. Restavam 3 violações reais (não 28 — o resto já delegava em `*Phrase`). Saída byte-igual (`🔄` = `\ud83d\udd04`).
 - Checks: `typecheck` PASS · `test:engine-unit` 20/20.

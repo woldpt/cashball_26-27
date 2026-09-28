@@ -155,6 +155,7 @@ export interface MatchFixture {
   // Deltas já enfileirados para a DB (flush em curso) — impede duplo
   // enqueue; os `_deltas` só são libertados quando os writes confirmam.
   _deltasQueued?: boolean;
+  _dupMinuteWarned?: Set<number>;
   _homePowerV?: number;
   _awayPowerV?: number;
   _firstHalfStartComment?: boolean;

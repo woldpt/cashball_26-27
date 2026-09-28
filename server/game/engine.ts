@@ -348,7 +348,7 @@ export function buildLineupSnapshot(
   fullRoster: PlayerRow[] | undefined,
   side: MatchSide,
 ) {
-  const starterIds = new Set(squad.map((p: any) => p.id));
+  const starterIds = new Set(squad.map((p: PlayerRow) => p.id));
   const starters = squad.map((p) => ({
     id: p.id,
     name: p.name,
@@ -362,11 +362,11 @@ export function buildLineupSnapshot(
   }));
   const bench = (fullRoster || [])
     .filter(
-      (p: any) =>
+      (p: PlayerRow) =>
         !starterIds.has(p.id) &&
         (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
     )
-    .map((p: any) => ({
+    .map((p: PlayerRow) => ({
       id: p.id,
       name: p.name,
       position: p.position,
@@ -1037,14 +1037,14 @@ function removeFromPitch({
   lineupIds: Set<number>;
   outId: number;
 }) {
-  const idx = squad.findIndex((p: any) => p.id === outId);
+  const idx = squad.findIndex((p: PlayerRow) => p.id === outId);
   if (idx > -1) squad.splice(idx, 1);
   lineupIds.delete(outId);
   (fixture._subbedOut ??= new Set<number>()).add(outId);
 
   const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
   if (lineupRef) {
-    const li = lineupRef.findIndex((p: any) => p.id === outId);
+    const li = lineupRef.findIndex((p: PlayerRow) => p.id === outId);
     if (li > -1) lineupRef.splice(li, 1);
   }
 
@@ -1079,7 +1079,7 @@ function swapOnPitch({
   countSub?: boolean;
 }) {
   const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
-  const idx = squad.findIndex((p: any) => p.id === outId);
+  const idx = squad.findIndex((p: PlayerRow) => p.id === outId);
   if (idx > -1) squad.splice(idx, 1, incoming);
   lineupIds.delete(outId);
   lineupIds.add(incoming.id);
@@ -1088,7 +1088,7 @@ function swapOnPitch({
 
   const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
   if (lineupRef) {
-    const li = lineupRef.findIndex((p: any) => p.id === outId);
+    const li = lineupRef.findIndex((p: PlayerRow) => p.id === outId);
     if (li > -1) {
       // is_starter é o que o cliente usa para separar XI/banco (MatchView) e o
       // briefing para derivar a formação — sem ele o jogador que entrava
@@ -1191,7 +1191,7 @@ async function openEmergencyGKAction({
 
   // Converte o escolhido na squad (clone — a referência original fica intacta;
   // o jogador mantém o mesmo id em campo, por isso lineupIds não muda).
-  const ci = squad.findIndex((p: any) => p.id === chosen.id);
+  const ci = squad.findIndex((p: PlayerRow) => p.id === chosen.id);
   const converted = convertToEmergencyGK(chosen);
   if (ci > -1) squad[ci] = converted;
   bumpPowerVersion(fixture, side);
@@ -1199,7 +1199,7 @@ async function openEmergencyGKAction({
   // Snapshot de lineup: o escolhido passa a constar como GR (skill piso).
   const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
   if (lineupRef) {
-    const li = lineupRef.findIndex((p: any) => p.id === chosen.id);
+    const li = lineupRef.findIndex((p: PlayerRow) => p.id === chosen.id);
     if (li > -1) {
       lineupRef[li] = {
         ...lineupRef[li],
@@ -2016,8 +2016,8 @@ export async function simulateMatchSegment(
   // final aplica o incremento com o guard anti-replay por calendarIndex.
   if (startMin === 1) {
     const participantIds = ([
-      ...Array.from(new Set((homeSquad || []).map((p: any) => p.id))),
-      ...Array.from(new Set((awaySquad || []).map((p: any) => p.id))),
+      ...Array.from(new Set((homeSquad || []).map((p: PlayerRow) => p.id))),
+      ...Array.from(new Set((awaySquad || []).map((p: PlayerRow) => p.id))),
     ].filter((id) => typeof id === "number" && id > 0) as number[]);
     if (participantIds.length > 0) {
       recordMatchAppearances(fixture, participantIds, currentCalendarIndex);
@@ -2119,8 +2119,8 @@ export async function simulateMatchSegment(
   }
 
   // Persistent lineup tracking across all minutes in this segment
-  const homeLineupIds = new Set<number>(homeSquad.map((p: any) => p.id));
-  const awayLineupIds = new Set<number>(awaySquad.map((p: any) => p.id));
+  const homeLineupIds = new Set<number>(homeSquad.map((p: PlayerRow) => p.id));
+  const awayLineupIds = new Set<number>(awaySquad.map((p: PlayerRow) => p.id));
 
 
   // Familiaridade (memória táctica) — síncrono, em memória no game object.
@@ -2201,7 +2201,7 @@ export async function simulateMatchSegment(
       // Aviso uma vez por minuto/fixture (um segmento inteiro já simulado são
       // 45 linhas por jogo × N jogos e enchia o log). Inclui o segmento para
       // identificar de imediato quem re-simulou.
-      const warned: Set<number> = (fixture._dupMinuteWarned ??= new Set<number>()) as Set<number>;
+      const warned: Set<number> = (fixture._dupMinuteWarned ??= new Set<number>());
       if (!warned.has(minute)) {
         warned.add(minute);
         console.warn(
@@ -2415,7 +2415,7 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
 
   let goalScoredThisMinute = false;
 
-  const maybeOpenPlayGoal = (attackingSide) => {
+  const maybeOpenPlayGoal = (attackingSide: MatchSide) => {
     if (goalScoredThisMinute) return;
     const attacking = attackingSide === "home" ? currentHome : currentAway;
     const defending = attackingSide === "home" ? currentAway : currentHome;
