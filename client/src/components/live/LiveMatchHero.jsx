@@ -3,6 +3,7 @@ import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
 import { PreMatchIntro, KickoffBadge } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
+import { TeamKit } from "../shared/TeamKit.jsx";
 import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
 
 /* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
@@ -202,9 +203,9 @@ export function LiveMatchHero({
           aria-hidden
           loading="lazy"
           onError={(e) => { e.currentTarget.style.display = "none"; }}
-          className="absolute -left-8 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72 object-contain opacity-[0.13] pointer-events-none select-none hidden sm:block"
+          className="absolute -left-8 top-1/2 -translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
           style={{
-            filter: "brightness(0.45) saturate(0.9)",
+            filter: "brightness(0.75) saturate(1)",
             maskImage: "linear-gradient(to right, black 55%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, black 55%, transparent 100%)",
           }}
@@ -217,9 +218,9 @@ export function LiveMatchHero({
           aria-hidden
           loading="lazy"
           onError={(e) => { e.currentTarget.style.display = "none"; }}
-          className="absolute -right-8 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72 object-contain opacity-[0.13] pointer-events-none select-none hidden sm:block"
+          className="absolute -right-8 top-1/2 -translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
           style={{
-            filter: "brightness(0.45) saturate(0.9)",
+            filter: "brightness(0.75) saturate(1)",
             maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
           }}
@@ -310,7 +311,7 @@ export function LiveMatchHero({
                 background: `linear-gradient(100deg, ${hInfo?.color_primary || "#333"}2e 0%, transparent 90%)`,
               }}
             >
-              <TeamCrest team={hInfo} isMine={homeIsMine} coach={homeCoach} size="sm" rotate={10} />
+              <ScoreKit team={hInfo} isMine={homeIsMine} coach={homeCoach} />
               <div className="flex flex-col min-w-0 w-full sm:w-auto">
                 <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-center sm:text-left">
                   {hInfo?.name}
@@ -356,7 +357,7 @@ export function LiveMatchHero({
                   {aInfo?.name}
                 </span>
               </div>
-              <TeamCrest team={aInfo} isMine={awayIsMine} coach={awayCoach} size="sm" rotate={-10} />
+              <ScoreKit team={aInfo} isMine={awayIsMine} coach={awayCoach} />
             </div>
             </div>
           </div>
@@ -518,6 +519,31 @@ export function LiveMatchHero({
 }
 
 /* ── Sub-components ─────────────────────────────────────────────────────── */
+
+/* ── ScoreKit — camisola no placar + badge do treinador ───────────────────
+ * Troca o brasão pela camisola (`TeamKit`); sem kit válido cai para o
+ * `TeamCrest` quadrado. Badge âmbar/primary igual ao anterior. */
+function ScoreKit({ team, isMine, coach }) {
+  const hasKit = team?.crest?.includes("/logos/");
+  return (
+    <div className="relative shrink-0">
+      {hasKit ? (
+        <TeamKit team={team} className="h-10 sm:h-14" />
+      ) : (
+        <TeamCrest team={team} isMine={isMine} size="sm" />
+      )}
+      {coach && (
+        <span
+          className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm font-black text-[8px] tracking-widest uppercase whitespace-nowrap shadow-lg ${
+            isMine ? "bg-primary text-on-primary" : "bg-amber-500 text-zinc-950"
+          }`}
+        >
+          {coach.name}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function TeamEvents({ events, align }) {
   // Nota: nunca devolver `null` aqui — o pai é uma `grid grid-cols-2` e um child

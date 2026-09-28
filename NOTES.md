@@ -1,3 +1,8 @@
+## Direto: camisolas no placar + fundo com brasões a 0.30 (2026-09-28)
+- Pedido: marcas de água quase invisíveis (0.13) e trocar os brasões pequenos do placar por camisolas.
+- `LiveMatchHero.jsx` (único ficheiro): marcas de água `opacity-[0.13]` → `opacity-20 sm:opacity-30`, `brightness(0.45)` → `brightness(0.75)`, sai o `hidden sm:block` (mobile com `w-36` para não tapar texto); novo `ScoreKit` local — `TeamKit` (`h-10 sm:h-14`) com fallback para o `TeamCrest` quadrado quando não há kit, badge do treinador preservado; sai o `rotate` inclinado (camisola torta lia-se mal).
+- Checks: `eslint` limpo no ficheiro (2 erros globais pré-existentes noutros ficheiros) · `check:types` OK · `test:mobile` **PASS 165/165**.
+
 ## Deploy v26.09.13 no rick (2026-09-27)
 - Tag `v26.09.13` (CalVer rolling): bump `APP_VERSION`, push master, rebuild `docker compose` no rick.
 - `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).
