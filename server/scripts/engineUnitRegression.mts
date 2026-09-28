@@ -32,6 +32,10 @@
  *   U14 — queueMatchDeltaWrites (amarelos FIFA): acumula sem castigo, o 3º
  *        acumulado castiga 1 jogo e zera a contagem, o vermelho corre
  *        depois e limpa-a; MAX/CASE preservam o castigo mais longo
+ *   U15 — resolveOpenPlayGoal: mesma seed → mesmos eventos lógicos + flag
+ *   U16 — resolveNearMiss com golo no minuto → zero eventos
+ *   U17 — amigável: gates bloqueiam cartões/lesões em 90 min × 3 seeds
+ *   U18 — processMatchMinute determinístico (ordem RNG estável)
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -41,6 +45,11 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const {
+  resolveOpenPlayGoal,
+  resolveNearMiss,
+  resolveCards,
+  resolveInjuries,
+  processMatchMinute,
   normalizeMatchChoice,
   generateFixturesForDivision,
   simulatePenaltyShootout,
@@ -503,4 +512,98 @@ test("U14 — amarelos FIFA: 3º acumulado castiga 1 jogo; vermelho limpa a cont
   for (const cb of cbs) cb(null);
   await new Promise((r) => setImmediate(r));
   assert.equal(fixture._deltas, undefined);
+});
+
+// ── U15–U18: passos do minuto (partição F9) ────────────────────────────────
+// Tick mínimo NPC-only (sem humanos → fallbacks imediatos, sem janelas).
+function minuteTick(seed, over = {}) {
+  const mk = (id, pos, skill) => ({
+    id, name: "J" + id, position: pos, skill, form: 32, morale: 25,
+    aggressiveness: 30, resistance: 26, is_star: 0,
+  });
+  const squadOf = (base) => [
+    mk(base + 1, "GR", 30), mk(base + 2, "DEF", 28), mk(base + 3, "DEF", 27),
+    mk(base + 4, "MED", 30), mk(base + 5, "MED", 29), mk(base + 6, "ATA", 32),
+    mk(base + 7, "ATA", 28), mk(base + 8, "DEF", 26), mk(base + 9, "MED", 27),
+    mk(base + 10, "ATA", 29), mk(base + 11, "DEF", 25),
+  ];
+  const homeSquad = squadOf(0);
+  const awaySquad = squadOf(100);
+  const tactic = { formation: "4-4-2", style: "EQUILIBRADO", positions: {} };
+  const powers = {
+    home: computeSidePower(homeSquad, tactic, 25, 0, 1),
+    away: computeSidePower(awaySquad, tactic, 25, 0, 1),
+  };
+  const ids = (s) => new Set(s.map((p) => p.id));
+  const fixture = {
+    homeTeamId: 1, awayTeamId: 2,
+    homeTeam: { name: "Casa" }, awayTeam: { name: "Fora" },
+    finalHomeGoals: 0, finalAwayGoals: 0, events: [],
+    season: 1, matchweek: 1, round: 1,
+    _homeChances: 15, _awayChances: 15, _yellowCards: {},
+    ...(over.fixture || {}),
+  };
+  const game = {
+    roomCode: "U", playersByName: {}, pendingSubstitutions: new Map(),
+    currentEvent: { type: "league", ...((over.event) || {}) },
+  };
+  const io = { to: () => ({ emit: () => {} }) };
+  const tick = {
+    fixture, game, io, minute: over.minute ?? 10,
+    homeTactic: tactic, awayTactic: tactic, homeSquad, awaySquad,
+    homeFullRoster: [...homeSquad], awayFullRoster: [...awaySquad],
+    homeLineupIds: ids(homeSquad), awayLineupIds: ids(awaySquad),
+    currentMatchweek: 1, rng: createSeededRng(seed),
+    fam: { home: 0, away: 0 }, powers,
+    refreshPower: (s) => powers[s],
+  };
+  const shared = {
+    currentHome: powers.home, currentAway: powers.away, goalScored: false,
+    isCupExtraTime: false, isFriendly: false, isLastLeagueMinute: false,
+    ...(over.shared || {}),
+  };
+  return { tick, shared, fixture };
+}
+// Lógica do evento (o texto varia com Math.random não-seeded, por desenho).
+const logicOf = (events) => events.map((e) => [e.minute, e.type, e.team, e.playerName]);
+
+test("U15 — resolveOpenPlayGoal determinístico com seed", () => {
+  const run = () => {
+    const { tick, shared, fixture } = minuteTick(7);
+    resolveOpenPlayGoal(tick, shared, "home");
+    resolveOpenPlayGoal(tick, shared, "away");
+    return { events: logicOf(fixture.events), scored: shared.goalScored };
+  };
+  assert.deepEqual(run(), run());
+});
+
+test("U16 — resolveNearMiss nunca com golo no minuto", () => {
+  const { tick, shared, fixture } = minuteTick(21);
+  shared.goalScored = true;
+  resolveNearMiss(tick, shared);
+  assert.equal(fixture.events.length, 0);
+});
+
+test("U17 — amigável: zero cartões e zero lesões em 90 minutos", async () => {
+  for (const seed of [1, 2, 3]) {
+    const { tick, shared, fixture } = minuteTick(seed, { shared: { isFriendly: true } });
+    for (let m = 1; m <= 90; m++) {
+      tick.minute = m;
+      await resolveCards(tick, shared);
+      await resolveInjuries(tick, shared);
+    }
+    const bad = fixture.events.filter((e) =>
+      ["red", "yellow", "injury"].includes(e.type),
+    );
+    assert.equal(bad.length, 0, `seed ${seed}: ${JSON.stringify(logicOf(bad))}`);
+  }
+});
+
+test("U18 — processMatchMinute determinístico (ordem RNG estável)", async () => {
+  const run = async () => {
+    const { tick, fixture } = minuteTick(99, { minute: 30 });
+    await processMatchMinute(tick);
+    return { events: logicOf(fixture.events), goals: [fixture.finalHomeGoals, fixture.finalAwayGoals] };
+  };
+  assert.deepEqual(await run(), await run());
 });
