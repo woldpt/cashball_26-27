@@ -1074,6 +1074,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       io.to(game.roomCode).emit("systemMessage", {
         text: "⚠ A finalização da jornada prendeu-se — sala libertada para o lobby. Se algo parecer em falta, prime Pronto para continuar.",
         broadcast: true,
+        warning: true,
       });
     }, FINALIZE_WATCHDOG_MS);
     (finalizeWatchdog as any)?.unref?.();
@@ -1914,6 +1915,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       io.to(game.roomCode).emit("systemMessage", {
         text: "⚠ Erro ao gerar jogos. Tenta novamente.",
         broadcast: true,
+        warning: true,
       });
       return;
     }

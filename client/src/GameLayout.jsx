@@ -6,7 +6,10 @@ import { useTactics } from "./contexts/TacticsContext.jsx";
 import { GameHeader } from "./components/layout/GameHeader.jsx";
 import { Sidebar } from "./components/layout/Sidebar.jsx";
 import { MobileNav } from "./components/layout/MobileNav.jsx";
-import { SystemOverlays } from "./components/layout/SystemOverlays.jsx";
+import {
+  SystemOverlays,
+  GameNoticeBar,
+} from "./components/layout/SystemOverlays.jsx";
 import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
 import { useMobileLandscape } from "./hooks/useIsMobile.js";
 import { useCoachTutorial } from "./hooks/useCoachTutorial.js";
@@ -14,6 +17,7 @@ import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
 import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 import { RoomPauseBanner } from "./components/shared/RoomPauseBanner.jsx";
+import { RoomNoticeBanner } from "./components/shared/RoomNoticeBanner.jsx";
 import { GameRoutes } from "./GameRoutes.jsx";
 import { GameOverlays } from "./GameOverlays.jsx";
 import { GroupBackdrop } from "./components/shared/GroupBackdrop.jsx";
@@ -38,6 +42,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     // Derived
     isMatchInProgress,
     panelMode,
+    toasts,
+    dismissToast,
   } = useGame();
 
 
@@ -91,9 +97,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       {/* Atmosfera de fundo do interior (ver .ambient em index.css). Fica atrás
           de todo o conteúdo (isolate + -z-10) e não intercepta cliques. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 ambient" />
-      <RoomPauseBanner />
       <OfflineBanner />
       <SystemOverlays />
+      {/* Avisos persistentes numa coluna fixa sob o header: em fluxo ficavam
+          por baixo dele (é `fixed top-0 z-160` com fundo sólido) e os
+          transitórios tapavam-nos por terem o mesmo `top`. */}
+      <div className="fixed top-[var(--header-h)] left-0 right-0 z-100 flex flex-col pointer-events-none">
+        <RoomPauseBanner />
+        <RoomNoticeBanner />
+        <GameNoticeBar notices={toasts} onDismiss={dismissToast} />
+      </div>
       <GameHeader
         handleLogout={handleLogout}
         setAuthPhase={setAuthPhase}

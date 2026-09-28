@@ -2275,6 +2275,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			io.to(game.roomCode).emit("systemMessage", {
 				text: "⚠ Falha ao gravar a ronda da Taça — resultados provisórios. Prime Pronto para repetir a ronda.",
 				broadcast: true,
+				warning: true,
 			});
 			game.gamePhase = "lobby";
 			game.currentFixtures = [];

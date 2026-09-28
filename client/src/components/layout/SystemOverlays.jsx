@@ -2,12 +2,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "../../contexts/GameContext.jsx";
 
 /**
- * Camada de sistema: toasts, flash de reconnect, erro fatal de render e
- * sessão deslocada. Não recebe props — lê tudo do `useGame()`.
+ * Camada de sistema: flash de reconnect, erro fatal de render e sessão
+ * deslocada. Não recebe props — lê tudo do `useGame()`.
  */
 export function SystemOverlays() {
-  const { toasts, dismissToast, reconnectFlash, renderError, sessionDisplaced } =
-    useGame();
+  const { reconnectFlash, renderError, sessionDisplaced } = useGame();
 
   return (
     <>
@@ -84,7 +83,6 @@ export function SystemOverlays() {
           </button>
         </div>
       )}
-      <GameNoticeBar notices={toasts} onDismiss={dismissToast} />
     </>
   );
 }
@@ -92,9 +90,9 @@ export function SystemOverlays() {
 /**
  * Barra de avisos do jogo — apresentação pura (testável sem socket, ver
  * `gamebar-resp-test.jsx`). Substitui o toast de canto: no telemóvel encostava
- * ao notch, com 16px de alvo de toque e longe do botão que o originou. Fecha a
- * tocar em qualquer ponto; o container fica sempre montado
- * (pointer-events-none) para os avisos poderem sair.
+ * ao notch, com 16px de alvo de toque e longe do botão que o originou. Vive na
+ * coluna fixa de avisos do `GameLayout`; fecha a tocar em qualquer ponto. O
+ * container fica sempre montado (pointer-events-none) para os avisos saírem.
  *
  * @param {{
  *   notices: Array<{ id: number, msg: string }>,
@@ -103,7 +101,7 @@ export function SystemOverlays() {
  */
 export function GameNoticeBar({ notices, onDismiss }) {
   return (
-      <div className="fixed top-[var(--header-h)] left-0 right-0 z-100 flex flex-col pointer-events-none">
+      <div className="flex flex-col pointer-events-none">
         <AnimatePresence initial={false}>
           {notices.map((t) => (
           <motion.div

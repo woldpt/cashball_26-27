@@ -1,7 +1,8 @@
-// GameNoticeBar mobile responsiveness harness — renderiza a barra de avisos
-// real com o pior caso (3 avisos empilhados, mensagem longa com nome de
-// jogador e agente) sobre um header fixo, e auto-reporta overflow/clipping em
-// #report. NOT part of the app; usado apenas para verificação.
+// GameNoticeBar / RoomNoticeBar mobile responsiveness harness — reproduz o
+// shell do GameLayout (header FIXO com fundo sólido + coluna de avisos + main
+// com pt-[var(--header-h)]) com o pior caso: aviso persistente de sala, pausa
+// da sala e 2 avisos transitórios empilhados, um deles com mensagem longa.
+// Self-reporta overflow/clipping em #report. NOT part of the app.
 //
 // Contract (read by client/scripts/mobileRespCheck.mjs):
 //   - render into #root
@@ -10,30 +11,47 @@
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { GameNoticeBar } from "./src/components/layout/SystemOverlays.jsx";
+import { RoomNoticeBar } from "./src/components/shared/RoomNoticeBanner.jsx";
+import { RoomPauseBar } from "./src/components/shared/RoomPauseBanner.jsx";
 
 // Pior caso: mensagem comprida sem espaços (nome de clube colado), emoji,
-// vários avisos ao mesmo tempo — a barra tem de quebrar linha em 320px.
+// vários avisos ao mesmo tempo — as barras têm de quebrar linha em 320px.
 const notices = [
-  {
-    id: 1,
-    msg: "🔒 Zé do Boné riu-se: Alexandros Konstantinopoulos tem contrato até 2029, época 2028/2029. Ninguém mexe no menino dele.",
-  },
+  { id: 1, msg: "⚠ Erro ao gerar jogos. Tenta novamente." },
   {
     id: 2,
-    msg: "⛔ Tens o patrocinador da época por escolher no Jornal.",
+    msg: "🔒 Zé do Boné riu-se: Alexandros Konstantinopoulos tem contrato até 2029, época 2028/2029. Ninguém mexe no menino dele.",
   },
-  {
-    id: 3,
-    msg: "Não tens fundo de maneio suficiente!",
-  },
+  { id: 3, msg: "Não tens fundo de maneio suficiente!" },
 ];
+
+const pause = {
+  paused: true,
+  reason: "coach_absent",
+  coaches: ["Bernardo Figueiredo Almeida", "Rui"],
+  since: Date.now() - 20 * 60 * 1000,
+  phase: "match_halftime",
+  minute: 45,
+};
 
 const root = createRoot(document.getElementById("root"));
 root.render(
-  // Mimics the GameLayout container: header fixo + barra logo abaixo.
-  <div className="h-dvh overflow-hidden bg-surface text-on-surface">
-    <div className="fixed top-0 left-0 right-0 z-160 h-[var(--header-h)] bg-surface-container-high border-b border-outline-variant/20" />
-    <GameNoticeBar notices={notices} onDismiss={() => {}} />
+  // Mimics the GameLayout shell: coluna flex + header fixo + conteúdo.
+  <div className="h-dvh overflow-hidden bg-surface text-on-surface flex flex-col relative isolate">
+    <div className="fixed top-[var(--header-h)] left-0 right-0 z-100 flex flex-col pointer-events-none">
+      <RoomPauseBar pause={pause} />
+      <RoomNoticeBar
+        notice={{ id: 1, text: "⚠ Falha ao gravar a ronda da Taça — resultados provisórios. Prime Pronto para repetir a ronda." }}
+        onDismiss={() => {}}
+      />
+      <GameNoticeBar notices={notices} onDismiss={() => {}} />
+    </div>
+    {/* Header fixo (fundo sólido, como o GameHeader real) */}
+    <div className="fixed top-0 left-0 right-0 z-160 h-[var(--header-h)] pt-[env(safe-area-inset-top,0px)] bg-surface-container-low border-b border-outline-variant/20 shadow-md flex items-center px-4">
+      <span className="font-headline font-black text-base uppercase tracking-tighter">
+        CashBall 26/27
+      </span>
+    </div>
     <div className="pt-[var(--header-h)] p-4 lg:p-6">
       <div className="h-40 rounded-xl bg-surface-container" />
     </div>
@@ -61,12 +79,23 @@ function measure() {
     .sort((a, b) => b.excess - a.excess)
     .slice(0, 10);
 
+  // A coluna de avisos é pointer-events-none: cada botão de fechar tem de
+  // continuar alcançável (senão o aviso fica sem saída).
+  const dismissButtons = [...document.querySelectorAll("button[aria-label='Fechar aviso']")];
+  const unreachableDismiss = dismissButtons.filter((btn) => {
+    const r = btn.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return !(hit === btn || btn.contains(hit));
+  }).length;
+
   return {
     viewport: vw,
     pageOverflowPx: pageOverflow,
     clippedRows: [],
     clippingElements,
-    verdict: pageOverflow <= 0 ? "PASS" : "FAIL",
+    dismissButtons: dismissButtons.length,
+    unreachableDismiss,
+    verdict: pageOverflow <= 0 && unreachableDismiss === 0 ? "PASS" : "FAIL",
   };
 }
 

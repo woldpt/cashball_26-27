@@ -78,6 +78,27 @@ function notifyPause(state) {
 socket.on("roomPaused", (info) => notifyPause({ paused: true, ...(info || {}) }));
 socket.on("roomResumed", () => notifyPause({ paused: false }));
 
+// ── Avisos de sala persistentes (falhas que exigem ação) ─────────────────────
+// O servidor marca-os com `warning: true` no `systemMessage` (finalização presa,
+// erro a gerar jogos, ronda da Taça por gravar). Não são transitórios como a
+// GameNoticeBar: ficam até serem fechados — quem os vê tem de fazer algo.
+const noticeListeners = new Set();
+export function subscribeRoomNotice(cb) {
+  noticeListeners.add(cb);
+  return () => noticeListeners.delete(cb);
+}
+socket.on("systemMessage", (msg) => {
+  if (!msg || typeof msg !== "object" || !msg.warning || !msg.text) return;
+  const notice = { id: Date.now() + Math.random(), text: msg.text };
+  for (const cb of noticeListeners) {
+    try {
+      cb(notice);
+    } catch {
+      /* ignore */
+    }
+  }
+});
+
 // ── Sequência da sala: deteta eventos perdidos e pede resync ─────────────────
 // O servidor numera tudo o que muda estado (`roomEvent`, e o `seq` do
 // `gameState`). Se a sequência saltar, perdeu-se um evento a meio de um flape e
