@@ -1,3 +1,8 @@
+## Apito final: som + selo + narração no fim do meu jogo (2026-09-28)
+- Pedido: «inventa o apito final» → pacote completo (decidido por perguntas): só no meu jogo, apito igual para V/E/D.
+- 7 ficheiros: `audio.js` ganha `playWhistleSound()` (trilo curto-curto-longo a 2,3 kHz via `playSequence`, sem assets); `utils/finalWhistle.js` novo com `computeFinalWhistle()` puro (chaves e formatos espelhados do humor pós-jogo, guarda `mom` na liga; taça sem `winnerId` devolve null — o apito espera pelo prolongamento/penáltis); `GameContext.jsx` com efeito que apita uma vez por chave quando há marcador final E relógio parado nos 90'/120' + estado `finalWhistle` com auto-limpeza a 4,5 s; `FinalWhistleStamp.jsx` novo (selo «APITO FINAL · N–M» + frase por desfecho, escolha determinística pelo marcador); `LiveMatchHero`/`CupFinalStage` (via hero interior) mostram o selo; `GameRoutes` passa a prop; script `test:finalwhistle`.
+- Checks: `test:finalwhistle` 8/8 OK · `lint` só o react-refresh pré-existente do GameContext (confirmado no baseline via stash) · `check:types` OK. Sem `test:mobile` (selo condicional, sem layout).
+
 ## Skill real nas pausas de 30'/70' (2026-09-28)
 - Queixa: na pausa de substituição a Skill mostrava a base da BD, sem a fadiga do minuto.
 - Causa: o `panelSquad` do `IntervencaoView.jsx` só fazia overlay da skill viva no intervalo; na pausa (`isUserSubPause`) caía em `annotatedSquad` puro. Estender o overlay do `fixture` não funcionava — o `panelFixture` na pausa é o `fixtureData`, que não traz lineups.

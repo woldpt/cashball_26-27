@@ -52,6 +52,7 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     isLiveSimulation,
     standingsStale,
     goalFlashRef,
+    finalWhistle,
     // equipas / plantel
     teams,
     teamInfo,
@@ -205,6 +206,7 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                               goalFlashRef={goalFlashRef}
                               isCupExtraTime={isCupExtraTime}
                               matchResults={matchResults}
+                              finalWhistle={finalWhistle}
                               readOnly={!myMatch}
                               onScoreClick={
                                 myMatch
@@ -247,6 +249,7 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                                 goalFlashRef={goalFlashRef}
                                 isCupExtraTime={isCupExtraTime}
                                 matchResults={matchResults}
+                                finalWhistle={finalWhistle}
                                 onScoreClick={() => {
                                   if (isPlayingMatch && !isMatchActionPending) {
                                     socket.emit("request_substitution");

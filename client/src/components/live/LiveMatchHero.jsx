@@ -1,7 +1,7 @@
 import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
-import { PreMatchIntro, KickoffBadge } from "../match/shared/index.js";
+import { PreMatchIntro, KickoffBadge, FinalWhistleStamp } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
@@ -61,6 +61,7 @@ const COMMENTARY_EFFECTS = {
  * @param {Object} props.goalFlashRef
  * @param {boolean} props.isCupExtraTime
  * @param {Object|null} props.matchResults
+ * @param {Object|null} [props.finalWhistle] - selo do apito final ({outcome, myGoals, oppGoals}).
  * @param {Function} props.onScoreClick
  * @param {boolean} [props.readOnly] - modo só-visualização (final sem o
  *   utilizador): o marcador não é clicável nem pede substituições.
@@ -84,6 +85,7 @@ export function LiveMatchHero({
   isCupExtraTime,
   matchResults,
   onScoreClick,
+  finalWhistle = null,
   readOnly = false,
   hideScoreboard = false,
 }) {
@@ -509,6 +511,14 @@ export function LiveMatchHero({
         {isPlayingMatch && (liveMinute === 45 || liveMinute === 90) && (
           <KickoffBadge
             label={liveMinute === 45 ? "2ª PARTE" : "PROLONGAMENTO"}
+            hColor={hInfo?.color_primary || "#6366f1"}
+            aColor={aInfo?.color_primary || "#f43f5e"}
+          />
+        )}
+        {/* ── Apito final: selo transitório do GameContext (só no meu jogo) ── */}
+        {finalWhistle && (
+          <FinalWhistleStamp
+            whistle={finalWhistle}
             hColor={hInfo?.color_primary || "#6366f1"}
             aColor={aInfo?.color_primary || "#f43f5e"}
           />

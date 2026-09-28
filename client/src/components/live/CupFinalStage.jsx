@@ -39,6 +39,7 @@ import { FLASH_COLOR, isFlashing, isGoalType } from "./liveHelpers.js";
  * @param {Object|null} props.matchResults
  * @param {boolean} props.readOnly - só-visualização (não participas)
  * @param {Function} [props.onScoreClick] - intervenção (só quando participas)
+ * @param {Object|null} [props.finalWhistle] - selo do apito final.
  */
 export function CupFinalStage({
   finalFixture,
@@ -56,6 +57,7 @@ export function CupFinalStage({
   matchResults,
   readOnly,
   onScoreClick,
+  finalWhistle = null,
 }) {
   if (!finalFixture) return null;
 
@@ -210,6 +212,7 @@ export function CupFinalStage({
           matchResults={matchResults}
           readOnly={readOnly}
           onScoreClick={onScoreClick}
+          finalWhistle={finalWhistle}
           hideScoreboard
         />
       </div>

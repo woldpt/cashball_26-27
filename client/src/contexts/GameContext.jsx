@@ -28,7 +28,9 @@ import {
 	playNotification,
 	playGoalSound,
 	playVarSound,
+	playWhistleSound,
 } from "../utils/audio.js";
+import { computeFinalWhistle } from "../utils/finalWhistle.js";
 import { computeMoodVariant } from "../utils/moodVariant.js";
 import { rankStandings } from "../utils/standingsRank.js";
 import { readGoalFlashEntry } from "../components/live/liveHelpers.js";
@@ -179,6 +181,8 @@ export function GameProvider({
 	const [transferProposalModal, setTransferProposalModal] = useState(null);
 	const [signingCelebration, setSigningCelebration] = useState(null);
 	const [postMatchMood, setPostMatchMood] = useState(null);
+	// Selo transitório do apito final (som + carimbo no hero do meu jogo).
+	const [finalWhistle, setFinalWhistle] = useState(null);
 	const [playerSearchData, setPlayerSearchData] = useState({
 		results: [],
 		total: 0,
@@ -276,6 +280,8 @@ export function GameProvider({
 	// por cima do da Liga (e vice-versa), porque `matchResults`/`cupRoundResults`
 	// mantêm os dados da prova anterior enquanto se joga a outra.
 	const ackedPostMatchKeysRef = useRef({ league: null, cup: null });
+	// Chaves já apitadas, UMA POR COMPETIÇÃO (mesmo formato das do humor).
+	const whistledKeysRef = useRef({ league: null, cup: null });
 	const activeTabRef = useRef("club");
 	const teamSquadReturnTabRef = useRef("club");
 	const marketPairsRef = useRef([]);
@@ -793,6 +799,28 @@ year: seasonYear,
 			}
 		}
 	}, [matchResults, cupRoundResults, me?.teamId, teams, season, calendarIndex, seasonYear]);
+
+	// ── Apito final (som + carimbo no hero) ────────────────────────────────
+	// Dispara uma vez por jogo no fim do MEU jogo (liga, taça e amigável):
+	// marcador final presente E relógio parado nos 90'/120'. As chaves e os
+	// formatos espelham o humor pós-jogo (incluindo a guarda `mom` na liga);
+	// na taça sem `winnerId` ainda há prolongamento/penáltis — o apito espera.
+	// Apito igual para V/E/D; o selo limpa-se sozinho ao fim de 4,5 s.
+	useEffect(() => {
+		if (isPlayingMatch || liveMinute < 90) return;
+		const w = computeFinalWhistle({
+			matchResults,
+			cupRoundResults,
+			myTeamId: me?.teamId,
+			season,
+		});
+		if (!w || whistledKeysRef.current[w.competition] === w.key) return;
+		whistledKeysRef.current[w.competition] = w.key;
+		playWhistleSound();
+		setFinalWhistle({ key: w.key, outcome: w.outcome, myGoals: w.myGoals, oppGoals: w.oppGoals });
+		const t = setTimeout(() => setFinalWhistle(null), 4500);
+		return () => clearTimeout(t);
+	}, [matchResults, cupRoundResults, isPlayingMatch, liveMinute, me?.teamId, season]);
 
 	// ── Cup draw reveal animation ───────────────────────────────────────────
 	useEffect(() => {
@@ -1715,6 +1743,7 @@ year: seasonYear,
 		setTransferProposalModal(null);
 		setSigningCelebration(null);
 		setPostMatchMood(null);
+		setFinalWhistle(null);
 		setShowTransferSales(false);
 		setShowTransferPurchases(false);
 		setShowTicketBreakdown(false);
@@ -1868,6 +1897,7 @@ year: seasonYear,
 		setSigningCelebration,
 		postMatchMood,
 		setPostMatchMood,
+		finalWhistle,
 		playerSearchData,
 		setPlayerSearchData,
 		playerSearchLoading,
@@ -2010,7 +2040,7 @@ pendingRoomInvite, setPendingRoomInvite, onAcceptRoomInvite, cupDraw, setCupDraw
 		setPlayerHistoryModal, financeData, sponsorState, setSponsorState, showTransferSales, setShowTransferSales,
 		showTransferPurchases, setShowTransferPurchases, showTicketBreakdown, setShowTicketBreakdown, selectedTeam, selectedTeamSquad,
 		selectedTeamLoading,
-transferProposalModal, setTransferProposalModal, signingCelebration, setSigningCelebration, postMatchMood, setPostMatchMood,
+transferProposalModal, setTransferProposalModal, signingCelebration, setSigningCelebration, postMatchMood, setPostMatchMood, finalWhistle,
 		playerSearchData, setPlayerSearchData, playerSearchLoading, setPlayerSearchLoading, nextPlayerSearchId, cupBracketData,
 		calendarData, calFilter, setCalFilter, tactic, setTactic, tacticFamiliarity,
 		setTacticFamiliarity, allTacticFamiliarity, setAllTacticFamiliarity, liveMinute, isPlayingMatch, waitingForResults,

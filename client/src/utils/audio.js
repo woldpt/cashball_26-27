@@ -82,3 +82,15 @@ export const playVarSound = () =>
     ],
     "sine",
   );
+
+// Apito final do árbitro — trilo clássico curto-curto-longo, igual para
+// todos os resultados (a festa ou a desilusão ficam no overlay e no humor).
+export const playWhistleSound = () =>
+  playSequence(
+    [
+      { freq: 2350, time: 0, dur: 0.18, vol: 0.12 },
+      { freq: 2350, time: 0.25, dur: 0.18, vol: 0.12 },
+      { freq: 2350, time: 0.5, dur: 0.65, vol: 0.14 },
+    ],
+    "square",
+  );
