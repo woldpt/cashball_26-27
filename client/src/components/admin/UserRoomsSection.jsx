@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useGame } from "../../contexts/GameContext.jsx";
 import { Button } from "../shared/Button.jsx";
 import { GameDialog } from "../shared/GameDialog.jsx";
 import { MODAL_Z } from "../../constants/index.js";
@@ -14,10 +13,10 @@ import { adminSetRoomAccess } from "./adminApi.js";
  * @param {{ user: any, rooms: string[], onChanged?: () => void }} props
  */
 export function UserRoomsSection({ user, rooms, onChanged }) {
-  const { addToast } = useGame();
   const [newRoomCode, setNewRoomCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [pendingRemoval, setPendingRemoval] = useState(null);
 
   if (!user) return null;
@@ -27,10 +26,11 @@ export function UserRoomsSection({ user, rooms, onChanged }) {
     if (!code || busy) return;
     setBusy(true);
     setError("");
+    setNotice("");
     adminSetRoomAccess(user.name, code, "add").then((result) => {
       setBusy(false);
       if (result?.ok) {
-        addToast(`Sala "${code}" adicionada a ${user.name}.`);
+        setNotice(`Sala "${code}" adicionada a ${user.name}.`);
         setNewRoomCode("");
         onChanged?.();
       } else {
@@ -41,10 +41,11 @@ export function UserRoomsSection({ user, rooms, onChanged }) {
 
   function handleRemove() {
     const code = pendingRemoval;
+    setNotice("");
     adminSetRoomAccess(user.name, code, "remove").then((result) => {
       setPendingRemoval(null);
       if (result?.ok) {
-        addToast(`Sala "${code}" removida de ${user.name}.`);
+        setNotice(`Sala "${code}" removida de ${user.name}.`);
         onChanged?.();
       } else {
         setError(result?.error ?? "Erro ao remover sala.");
@@ -68,6 +69,11 @@ export function UserRoomsSection({ user, rooms, onChanged }) {
       <h3 className="text-xs uppercase tracking-widest text-on-surface-variant font-black mb-1">
         Salas ({rooms.length})
       </h3>
+      {notice && (
+        <p role="status" className="text-xs text-emerald-400 font-bold mb-2">
+          {notice}
+        </p>
+      )}
       {error && <p className="text-xs text-error font-bold mb-2">{error}</p>}
 
       {rooms.length === 0 ? (

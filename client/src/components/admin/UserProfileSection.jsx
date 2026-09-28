@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useGame } from "../../contexts/GameContext.jsx";
 import { Button } from "../shared/Button.jsx";
 import { GameDialog } from "../shared/GameDialog.jsx";
 import { MODAL_Z } from "../../constants/index.js";
@@ -18,12 +17,12 @@ import { adminDeleteUser, adminSaveProfile, generatePassword } from "./adminApi.
  * }} props
  */
 export function UserProfileSection({ user, onRenamed, onDeleted }) {
-  const { addToast } = useGame();
   const [editName, setEditName] = useState(user?.name ?? "");
   const [editPassword, setEditPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Nota: sem effect de re-sincronização — o painel passa `key={selectedUser.name}`
@@ -39,13 +38,18 @@ export function UserProfileSection({ user, onRenamed, onDeleted }) {
     if (!dirty || saving) return;
     setSaving(true);
     setError("");
+    setNotice("");
     const result = await adminSaveProfile({ oldName: user.name, newName: editName, newPassword: editPassword });
     setSaving(false);
     if (!result?.ok) {
       setError(result?.error ?? "Erro ao guardar.");
       return;
     }
-    addToast(`Perfil guardado: ${(result.changes || []).join("; ")}.`);
+    // Com rename o painel remonta com o novo nome (key no AdminPanel): a
+    // própria mudança é a confirmação. Sem rename, fica a linha de estado.
+    if (!nameChanged) {
+      setNotice(`Perfil guardado: ${(result.changes || []).join("; ")}.`);
+    }
     setEditPassword("");
     setShowPassword(false);
     onRenamed?.(nameChanged ? trimmedName : user.name);
@@ -55,7 +59,7 @@ export function UserProfileSection({ user, onRenamed, onDeleted }) {
     adminDeleteUser(user.name).then((result) => {
       setConfirmDelete(false);
       if (result?.ok) {
-        addToast(`Utilizador "${user.name}" apagado.`);
+        // O utilizador sai da lista — a remoção é a confirmação.
         onDeleted?.();
       } else {
         setError(result?.error ?? "Erro ao apagar utilizador.");
@@ -77,6 +81,11 @@ export function UserProfileSection({ user, onRenamed, onDeleted }) {
   return (
     <section>
       <h3 className="text-xs uppercase tracking-widest text-on-surface-variant font-black mb-1">Perfil</h3>
+      {notice && (
+        <p role="status" className="text-xs text-emerald-400 font-bold mb-2">
+          {notice}
+        </p>
+      )}
       {error && <p className="text-xs text-error font-bold mb-2">{error}</p>}
 
       <form

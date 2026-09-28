@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useGame } from "../../contexts/GameContext.jsx";
 import { Button } from "../shared/Button.jsx";
 import { GameDialog } from "../shared/GameDialog.jsx";
 import { MODAL_Z } from "../../constants/index.js";
@@ -14,12 +13,12 @@ import { useRoomRoster } from "./useRoomRoster.js";
  * @param {{ rooms: string[] }} props
  */
 export function UserTeamsSection({ rooms }) {
-  const { addToast } = useGame();
   const [selectedRoom, setSelectedRoom] = useState("");
   const [targetCoach, setTargetCoach] = useState("");
   const [targetTeamId, setTargetTeamId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [confirmMove, setConfirmMove] = useState(false);
 
   const { data, loading, error: rosterError, load } = useRoomRoster();
@@ -40,11 +39,12 @@ export function UserTeamsSection({ rooms }) {
     if (!targetTeam || !targetCoach) return;
     setBusy(true);
     setError("");
+    setNotice("");
     adminSetCoachTeam(selectedRoom, targetCoach, Number(targetTeamId)).then((result) => {
       setBusy(false);
       setConfirmMove(false);
       if (result?.ok) {
-        addToast(`${targetCoach} agora gere a equipa "${result.teamName || targetTeam.name}".`);
+        setNotice(`${targetCoach} agora gere a equipa "${result.teamName || targetTeam.name}".`);
         setTargetCoach("");
         setTargetTeamId("");
         load(selectedRoom);
@@ -72,6 +72,11 @@ export function UserTeamsSection({ rooms }) {
         Podes mover qualquer coach de uma das salas deste utilizador para outra equipa livre.
       </p>
 
+      {notice && (
+        <p role="status" className="text-xs text-emerald-400 font-bold mb-2">
+          {notice}
+        </p>
+      )}
       {error && <p className="text-xs text-error font-bold mb-2">{error}</p>}
 
       <select
