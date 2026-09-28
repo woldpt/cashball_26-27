@@ -368,6 +368,15 @@
 - **Lógica de contrato duplicada (e divergente)**: o client recalculava `contractLocked` com fórmula própria (branch `currentSlot > 0` com 14/20) que divergia do servidor (`coreHelpers.currentEpoch` usa `contractCutoverSeason` com 14 jornadas para épocas antigas). Fix: servidor calcula `contract_locked` (CAST 0/1) no SELECT da pesquisa, mesmo `currentEpoch` do filtro `onlyAvailable`; client apagou as ~12 linhas de matemática (imports `SEASON_*` e props `season`/`currentSlot` removidos do `PlayerSearchView`).
 - "Licitar" → navegação para tab leilões mantida (padrão consistente no repo: TransferHub e PlayerHistoryModal fazem igual); `tabular-nums`/filtros colapsáveis ficam para tarefa própria.
 - Checks: server `typecheck` OK; client `lint` (2 erros pré-existentes, confirmados via stash) + `check:types` OK; `audit:socketio` 0 erros (warning `playerSearchResults` pré-existente — listener dinâmico invisível ao analisador).
+## Ilustração: mood em todas as imagens (2026-09-27)
+
+- Pedido: animação do mood em todas as imagens. Decisão: mood real também nos rivais.
+- Achado no rasto: zero servidor preciso — todos os `teamsData` vêm de `getTeamsWithCoachNames` (`SELECT t.*`, já traz `fans_mood`); os 3 chamadores (classificação, calendário, briefing) passam o objeto cru; `?? null` degrada gracioso onde faltar.
+- Só 2 linhas client: `ClubTab` (`teamInfo?.fans_mood`) e `OtherSquadsTab` (`selectedTeam?.fans_mood`), sem `occupancy` (sem assistência ali; base cheia, low esvazia na mesma).
+- Cobertura permanente: `fans_mood: 45` no `club-resp-test` (alta) e `fans_mood: 12` no `teamsquad-resp-test` (baixa).
+- Prova DOM (playwright avulso, apagado): club 10 tochas + 4 bandeiras + bounce; rival 64 vs 324 pontos + 2 weeds. Header do rival é `hidden` no mobile — prova é DOM, não screenshot.
+- Checks: lint só pré-existentes · check:types OK · portrait 165/165 · afetadas 12/12 landscape. Full landscape com flake do `briefing` (1 clipped row a saltar 1023→844/926; isolado passa; em stash limpo passa; briefing não importa nenhum ficheiro tocado) — registado, não é regressão.
+
 ## Ilustração: pequenos planos e mais pequenos (2026-09-27)
 
 - Pedido: fora muros laterais nos pequenos + encolher mais. Decisões: laterais somem em todos <15k; spans pelado 0.62→0.50 e 5–15k 0.78→0.70.

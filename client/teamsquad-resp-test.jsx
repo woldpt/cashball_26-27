@@ -53,6 +53,7 @@ const selectedTeam = {
   color_secondary: "#ffffff",
   stadium_capacity: 15000,
   stadium_name: "Estádio do Dragão Norte",
+  fans_mood: 12, // banda baixa: exercita faroeste na imagem do rival
   coach_name: "Treinador Adversário da Silva",
   coach_is_human: 1,
   coach_photo: null,

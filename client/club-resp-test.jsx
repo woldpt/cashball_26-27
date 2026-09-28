@@ -16,6 +16,7 @@ const teamInfo = {
   color_secondary: "#ffffff",
   division: 1,
   morale: 32,
+  fans_mood: 45, // banda alta: exercita tochas + bandeiras na imagem
   stadium_name: "Estádio do Dragão Norte",
   stadium_capacity: 15000,
   // Camisola clara + nome de patrocinador no pior caso (25 caracteres) para

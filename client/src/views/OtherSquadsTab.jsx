@@ -457,6 +457,7 @@ export function OtherSquadsTab({
             capacity={selectedTeam?.stadium_capacity || 10000}
             primary={selectedTeam?.color_primary}
             secondary={selectedTeam?.color_secondary}
+            mood={selectedTeam?.fans_mood ?? null}
             className="h-full w-full"
           />
         </div>
