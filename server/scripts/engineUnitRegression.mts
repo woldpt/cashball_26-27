@@ -578,7 +578,8 @@ test("U15 — resolveOpenPlayGoal determinístico com seed", () => {
 });
 
 test("U16 — resolveNearMiss nunca com golo no minuto", () => {
-  const { tick, shared, fixture } = minuteTick(21);
+  // Seed 7 dispara o roll à primeira (sem flag dá ≥1 evento) — o gate é exercido.
+  const { tick, shared, fixture } = minuteTick(7);
   shared.goalScored = true;
   resolveNearMiss(tick, shared);
   assert.equal(fixture.events.length, 0);
