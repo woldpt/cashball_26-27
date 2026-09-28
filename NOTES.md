@@ -2616,3 +2616,7 @@ Plano C1+C2 (quando fizer):
 - Pedido: modal achatado em desktop; dar um pouco mais de altura mínima.
 - Fix (`WaitingCoachesModal.jsx` só): contentor interno ganha `min-[560px]:min-h-[420px]` — mobile vertical intacto, coluna lista+chat estica via `flex-1`.
 - Checks: `check:types` OK · eslint sem erros no ficheiro (2 erros pré-existentes noutros ficheiros: GameContext fast-refresh, landing-resp-test).
+
+## Deploy v26.09.18 no rick (2026-09-28)
+- Inclui altura mínima 420px do WaitingCoachesModal em desktop.
+- Push master + tag v26.09.18; rebuild no rick com backend Healthy.
