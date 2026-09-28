@@ -1994,7 +1994,7 @@ export async function simulateMatchSegment(
     // vezes. Sem isto, dois arranques sobrepostos da mesma semana (dois
     // "Pronto" quase simultâneos, antes do single-flight do lobby) ou um
     // segmento repetido produziam dois golos no mesmo minuto da mesma equipa
-    // — `goalScoredThisMinute` só protege dentro de uma passagem.
+    // — `shared.goalScored` só protege dentro de uma passagem.
     const alreadySimulated = fixture._simulatedMinutes?.has(minute);
     if (alreadySimulated) {
       // Aviso uma vez por minuto/fixture (um segmento inteiro já simulado são
@@ -2212,12 +2212,51 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
   const currentHome = refreshPower("home");
   const currentAway = refreshPower("away");
 
-  let goalScoredThisMinute = false;
+  const isCupExtraTime =
+    minute >= 91 && game?.currentEvent?.type === "cup";
+  // Amigável de pré-época: só para testar — sem cartões nem lesões.
+  const isFriendly = game?.currentEvent?.type === "friendly";
+  // No último minuto regulamentar da liga (min 90+), não disparar eventos bloqueantes
+  // para evitar que a janela de acção apareça após o apito final
+  const isLastLeagueMinute =
+    minute >= 90 && game?.currentEvent?.type !== "cup";
+  const shared: MinuteShared = {
+    currentHome,
+    currentAway,
+    goalScored: false,
+    isCupExtraTime,
+    isFriendly,
+    isLastLeagueMinute,
+  };
 
-  const maybeOpenPlayGoal = (attackingSide: MatchSide) => {
-    if (goalScoredThisMinute) return;
-    const attacking = attackingSide === "home" ? currentHome : currentAway;
-    const defending = attackingSide === "home" ? currentAway : currentHome;
+  await resolvePenaltyKick(tick, shared);
+  resolveOpenPlayGoal(tick, shared, "home");
+  resolveOpenPlayGoal(tick, shared, "away");
+  resolveNearMiss(tick, shared);
+  await resolveCards(tick, shared);
+  await resolveInjuries(tick, shared);
+  await resolveUserSubs(tick, shared);
+}
+
+/**
+ * Estado partilhado de um minuto simulado (partição F9): as forças
+ * refrescadas uma vez no topo, a flag de golo e os gates do minuto.
+ * Viaja por referência — os passos leem/escrevem aqui em vez de closures.
+ */
+export type MinuteShared = {
+  currentHome: SidePower;
+  currentAway: SidePower;
+  goalScored: boolean;
+  isCupExtraTime: boolean;
+  isFriendly: boolean;
+  isLastLeagueMinute: boolean;
+};
+
+export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShared, attackingSide: MatchSide): void {
+  const { fixture, minute, powers, rng } = tick;
+    if (shared.goalScored) return;
+    const attacking = attackingSide === "home" ? shared.currentHome : shared.currentAway;
+    const defending = attackingSide === "home" ? shared.currentAway : shared.currentHome;
     const isHome = attackingSide === "home";
 
     // Hatrick-style: posse (médios, fixa no apito) → nº de chances → cada
@@ -2317,7 +2356,7 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
 
       if (isHome) fixture.finalHomeGoals++;
       else fixture.finalAwayGoals++;
-      goalScoredThisMinute = true;
+      shared.goalScored = true;
 
       fixture.events.push({
         minute,
@@ -2352,7 +2391,7 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
     const awayBefore = fixture.finalAwayGoals;
     if (isHome) fixture.finalHomeGoals++;
     else fixture.finalAwayGoals++;
-    goalScoredThisMinute = true;
+    shared.goalScored = true;
 
     const scoredSideGoals = isHome
       ? fixture.finalHomeGoals
@@ -2397,18 +2436,11 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
       // Acumulado em memória — flush transacional no apito final.
       recordMatchGoal(fixture, scorer.id);
     }
-  };
-
-  const isCupExtraTime =
-    minute >= 91 && game?.currentEvent?.type === "cup";
-  // Amigável de pré-época: só para testar — sem cartões nem lesões.
-  const isFriendly = game?.currentEvent?.type === "friendly";
-  // No último minuto regulamentar da liga (min 90+), não disparar eventos bloqueantes
-  // para evitar que a janela de acção apareça após o apito final
-  const isLastLeagueMinute =
-    minute >= 90 && game?.currentEvent?.type !== "cup";
+}
+export async function resolvePenaltyKick(tick: MinuteTickContext, shared: MinuteShared): Promise<void> {
+  const { fixture, game, io, minute, powers, currentMatchweek, rng } = tick;
   const penaltyChance =
-    minute < 90 || isCupExtraTime ? MATCH_TUNING.penaltyPerMinute : 0;
+    minute < 90 || shared.isCupExtraTime ? MATCH_TUNING.penaltyPerMinute : 0;
   if (rng() < penaltyChance) {
     const attackingSide = rng() < 0.5 ? "home" : "away";
     const attackingSquad = attackingSide === "home" ? powers.home.squad : powers.away.squad;
@@ -2423,17 +2455,16 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
       rng,
     });
     if (fixture.finalHomeGoals + fixture.finalAwayGoals > totalGoalsBefore) {
-      goalScoredThisMinute = true;
+      shared.goalScored = true;
     }
   }
-
-  maybeOpenPlayGoal("home");
-  maybeOpenPlayGoal("away");
-
+}
+export function resolveNearMiss(tick: MinuteTickContext, shared: MinuteShared): void {
+  const { fixture, minute, powers, rng } = tick;
   // Near-miss / big save events — roughly 1–2 per match, commentary-only
-  if (!goalScoredThisMinute && rng() < MATCH_TUNING.nearMissPerMinute) {
+  if (!shared.goalScored && rng() < MATCH_TUNING.nearMissPerMinute) {
     const nearMissSide =
-      currentHome.attack > currentAway.attack
+      shared.currentHome.attack > shared.currentAway.attack
         ? rng() < 0.55
           ? "home"
           : "away"
@@ -2463,7 +2494,9 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
       });
     }
   }
-
+}
+export async function resolveCards(tick: MinuteTickContext, shared: MinuteShared): Promise<void> {
+  const { fixture, game, io, minute, homeTactic, awayTactic, powers, homeFullRoster, awayFullRoster, homeLineupIds, awayLineupIds, currentMatchweek, rng } = tick;
   const homeAggAvg = average(
     powers.home.squad.map((p) => getAggressivenessValue(p)),
   );
@@ -2693,9 +2726,11 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
     (1 + (awayAggAvg - 30) * MATCH_TUNING.cardAggPerPoint);
   // No último minuto regulamentar da liga não disparar cartões — um vermelho
   // ao GR abriria a janela obrigatória de substituição após o apito final
-  if (!isLastLeagueMinute && !isFriendly && rng() < homeCardProb) await emitCard(true);
-  if (!isLastLeagueMinute && !isFriendly && rng() < awayCardProb) await emitCard(false);
-
+  if (!shared.isLastLeagueMinute && !shared.isFriendly && rng() < homeCardProb) await emitCard(true);
+  if (!shared.isLastLeagueMinute && !shared.isFriendly && rng() < awayCardProb) await emitCard(false);
+}
+export async function resolveInjuries(tick: MinuteTickContext, shared: MinuteShared): Promise<void> {
+  const { fixture, game, io, powers, homeFullRoster, awayFullRoster, homeLineupIds, awayLineupIds, currentMatchweek, rng } = tick;
   // Lesões: rolls independentes por lado (antes dos multiplicadores de clima
   // e de carga de lesões). A taxa total equivale ao roll global anterior
   // (0,3%/min para as duas equipas), mas agora permite multiplicador
@@ -2732,14 +2767,16 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
     if (injuryResult.replaced && side === "home") powers.home.squad = squad;
     if (injuryResult.replaced && side === "away") powers.away.squad = squad;
   };
-  if (!isLastLeagueMinute && !isFriendly) {
+  if (!shared.isLastLeagueMinute && !shared.isFriendly) {
     if (rng() < injuryBasePerSide * homeInjuryMult) {
       await rollInjuryForSide("home");
     } else if (rng() < injuryBasePerSide * awayInjuryMult) {
       await rollInjuryForSide("away");
     }
   }
-
+}
+export async function resolveUserSubs(tick: MinuteTickContext, shared: MinuteShared): Promise<void> {
+  const { fixture, game, io, powers, homeTactic, awayTactic, homeFullRoster, awayFullRoster, homeLineupIds, awayLineupIds } = tick;
   // User substitutions (nunca abrir a janela no último minuto regulamentar da liga;
   // consumir sempre os pedidos pendentes para não vazarem para o jogo seguinte)
   if (game.pendingSubstitutions && game.pendingSubstitutions.size > 0) {
@@ -2748,7 +2785,7 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
     );
     for (const teamId of teamsToSub) {
       game.pendingSubstitutions.delete(teamId);
-      if (isLastLeagueMinute) {
+      if (shared.isLastLeagueMinute) {
         // Pedido consumido sem janela: termina o banner de pausa dos outros
         // treinadores (senão ficava à mostra até à próxima substituição).
         io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });

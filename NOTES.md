@@ -1,3 +1,8 @@
+## Engine F9: minuto partido em 6 passos (2026-09-28)
+- `processMatchMinute` vira orquestrador; `resolvePenaltyKick`/`resolveOpenPlayGoal`/`resolveNearMiss`/`resolveCards`/`resolveInjuries`/`resolveUserSubs` exportados na engine (sem módulo novo — os passos usam 6 helpers privados, ciclo `minute.ts`↔engine evitado por decisão). `MinuteShared` leva forças, flag e gates; ordem dos `rng()` intacta.
+- Prova: 90 minutos com seed fixa contra worktree HEAD — mesmos golos e mesmos 27 eventos (minuto/tipo/equipa/jogador); só o fraseado varia (`Math.random` não-seeded, por desenho).
+- Checks: `typecheck` PASS · `test:engine-unit` 20/20.
+
 ## Engine F8: matchDeltas.ts extraído (2026-09-28)
 - `getMatchDeltas` + 5× `record*` + `queueMatchDeltaWrites` + 3 tipos (212 linhas) movidos verbatim (diff zero) para `server/game/matchDeltas.ts`; engine 3127 → 2926 com re-export do contrato.
 - Checks: `typecheck` PASS · `test:engine-unit` 20/20 (U8/U12 guardam o flush) · `audit:socketio` 0 erros/101 avisos.
