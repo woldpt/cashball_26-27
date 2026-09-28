@@ -1,3 +1,7 @@
+## Engine F4: narração de volta ao commentary.ts (2026-09-28)
+- `styleDisplayLabel` + novos `tacticChangePhrase()`/`noSubInjuryPhrase()` vivem no `commentary.ts`; a engine só chama. Restavam 3 violações reais (não 28 — o resto já delegava em `*Phrase`). Saída byte-igual (`🔄` = `\ud83d\udd04`).
+- Checks: `typecheck` PASS · `test:engine-unit` 20/20.
+
 ## Engine F3: restoreSideSquad + intros/clima únicos (2026-09-28)
 - `restoreSideSquad(db, fixture, side, tactic, matchweek)` privado: as vias casa/fora de ~50 linhas colapsam numa só (difere só em lado/lineup/caches); engine 3203 → 3131.
 - Clima e intros: `ensureWeatherEvent()` único (era 2 cópias) + `pushFirstHalfStartComment()`/`pushSecondHalfStartComment()` únicos (eram 3 sítios: intro, pré-geração e passo do minuto); guards idempotentes preservados.

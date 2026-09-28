@@ -1207,8 +1207,28 @@ export function bettingPhrase(
   ]);
 }
 
+/** Rótulo pt-PT da mentalidade normalizada para o direto. */
+function styleDisplayLabel(style: string): string {
+  if (style === "OFENSIVO") return "Ofensivo";
+  if (style === "DEFENSIVO") return "Defensivo";
+  return "Equilibrado";
+}
+
+/** Mudança tática live a meio do jogo (determinística, sem pool). */
+function tacticChangePhrase(teamName: string, formation: string, style: string): string {
+  return `🔄 ${teamName} muda para ${formation} (${styleDisplayLabel(style)})`;
+}
+
+/** Lesão sem reposição (subs esgotadas) — aviso explícito ao treinador. */
+function noSubInjuryPhrase(name: string, teamName: string): string {
+  return `🚑 ${name} (${teamName}) sai sem reposição — substituições esgotadas. A equipa joga com menos um.`;
+}
+
 export {
   pickPhrase,
+  styleDisplayLabel,
+  tacticChangePhrase,
+  noSubInjuryPhrase,
   goalPhrase,
   ownGoalPhrase,
   penaltyGoalPhrase,

@@ -56,6 +56,9 @@ import {
   finalEndPhrase,
   tacticStartPhrase,
   secondHalfTacticPhrase,
+  styleDisplayLabel,
+  tacticChangePhrase,
+  noSubInjuryPhrase,
   computeMatchOdds,
   bettingPhrase,
 } from "./commentary";
@@ -882,13 +885,6 @@ export function normalizeMatchChoices(
  * conversão em GR improvisado) faz bumpPowerVersion; o loop de minutos
  * recalcula a força só quando a versão muda.
  */
-/** Rótulo pt-PT da mentalidade normalizada para o direto. */
-function styleDisplayLabel(style: string): string {
-  if (style === "OFENSIVO") return "Ofensivo";
-  if (style === "DEFENSIVO") return "Defensivo";
-  return "Equilibrado";
-}
-
 /**
  * Adota tática/mentalidade live do treinador a meio do segmento (efeito
  * prático no minuto seguinte, sem re-simular o passado).
@@ -1328,7 +1324,7 @@ async function applyInjuryEvent({
         ? fixture.homeTeam?.name || String(teamId)
         : fixture.awayTeam?.name || String(teamId);
     io.to(game.roomCode).emit("systemMessage", {
-      text: `🚑 ${injuredPlayer.name} (${capTeamName}) sai sem reposição — substituições esgotadas. A equipa joga com menos um.`,
+      text: noSubInjuryPhrase(injuredPlayer.name, capTeamName),
       broadcast: true,
     });
     removeFromPitch({
@@ -2321,7 +2317,7 @@ function applyLiveTacticAdoption(tick: MinuteTickContext): void {
       type: "tactic_change",
       team: "home",
       emoji: "\ud83d\udd04",
-      text: `[${minute}'] \ud83d\udd04 ${homeName} muda para ${homeTacticChange.formation} (${styleDisplayLabel(homeTacticChange.style)})`,
+      text: `[${minute}'] ${tacticChangePhrase(homeName, homeTacticChange.formation, homeTacticChange.style)}`,
     });
   }
   const awayTacticChange = adoptLiveTactic(
@@ -2340,7 +2336,7 @@ function applyLiveTacticAdoption(tick: MinuteTickContext): void {
       type: "tactic_change",
       team: "away",
       emoji: "\ud83d\udd04",
-      text: `[${minute}'] \ud83d\udd04 ${awayName} muda para ${awayTacticChange.formation} (${styleDisplayLabel(awayTacticChange.style)})`,
+      text: `[${minute}'] ${tacticChangePhrase(awayName, awayTacticChange.formation, awayTacticChange.style)}`,
     });
   }
 }
