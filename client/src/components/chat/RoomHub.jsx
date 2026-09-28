@@ -62,6 +62,7 @@ export function RoomHub() {
     backendUrl,
     chatMessagesRef,
     awaitingCoaches,
+    roomRoster,
     chatOpenRef,
     activeChatTabRef,
   } = useGame();
@@ -225,27 +226,30 @@ export function RoomHub() {
     return set;
   }, [players, awaitingCoaches]);
 
-  // Lista única de coaches: presentes primeiro, depois os à espera offline.
-  const coaches = useMemo(
-    () =>
-      [
-        ...(players || []).map((p) => ({
-          name: p.name,
-          teamId: p.teamId,
-          online: true,
-          submitted: p.ready,
+  // Lista única de coaches: o roster do servidor (todos os registados,
+  // online + offline, com equipa e estado). Fallback para a fusão local
+  // players+awaitingCoaches enquanto o servidor ainda não enviou o roster.
+  const coaches = useMemo(() => {
+    if (roomRoster && roomRoster.length > 0) {
+      return roomRoster.filter((c) => c.name);
+    }
+    return [
+      ...(players || []).map((p) => ({
+        name: p.name,
+        teamId: p.teamId,
+        online: true,
+        submitted: p.ready,
+      })),
+      ...(awaitingCoaches || [])
+        .filter((n) => n && !(players || []).some((p) => p.name === n))
+        .map((n) => ({
+          name: n,
+          teamId: null,
+          online: false,
+          submitted: false,
         })),
-        ...(awaitingCoaches || [])
-          .filter((n) => n && !(players || []).some((p) => p.name === n))
-          .map((n) => ({
-            name: n,
-            teamId: null,
-            online: false,
-            submitted: false,
-          })),
-      ].filter((c) => c.name),
-    [players, awaitingCoaches],
-  );
+    ].filter((c) => c.name);
+  }, [roomRoster, players, awaitingCoaches]);
 
   const teamById = useMemo(() => {
     const map = new Map();

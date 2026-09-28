@@ -73,6 +73,8 @@ export function GameProvider({
 	// transientes com auto-limpeza, como os toasts.
 	const [lockedCoaches, setLockedCoaches] = useState([]);
 	const [awaitingCoaches, setAwaitingCoaches] = useState([]);
+	// Roster completo da sala (registados, online + offline, com equipa e estado).
+	const [roomRoster, setRoomRoster] = useState([]);
 	const [roomCreator, setRoomCreator] = useState("");
 	const [simSpeed, setSimSpeed] = useState(DEFAULT_SIM_SPEED);
 	const [matchResults, setMatchResults] = useState(null);
@@ -1056,6 +1058,7 @@ year: seasonYear,
 			setSponsorState,
 			setLockedCoaches,
 			setAwaitingCoaches,
+			setRoomRoster,
 			setRoomCreator,
 			setSimSpeed,
 			setRefereePopup,
@@ -1649,6 +1652,7 @@ year: seasonYear,
 		setTactic(DEFAULT_TACTIC);
 		setLockedCoaches([]);
 		setAwaitingCoaches([]);
+		setRoomRoster([]);
 		setRoomCreator("");
 		setSimSpeed(DEFAULT_SIM_SPEED);
 		setNextMatchSummary(null);
@@ -1752,6 +1756,7 @@ year: seasonYear,
 		reconnectFlash,
 		lockedCoaches,
 		awaitingCoaches,
+		roomRoster,
 		roomCreator,
 		simSpeed,
 		matchResults,
@@ -1987,7 +1992,7 @@ year: seasonYear,
 		teams, setTeams, prevStandings, setPrevStandings, teamForms, setTeamForms,
 		players, setPlayers, mySquad, setMySquad, disconnected, setDisconnected,
 		sessionDisplaced, setSessionDisplaced, toasts, chatPeek, reconnectFlash, lockedCoaches,
-		awaitingCoaches, roomCreator, simSpeed, matchResults, allMatchResults, matchweekCount,
+		awaitingCoaches, roomRoster, roomCreator, simSpeed, matchResults, allMatchResults, matchweekCount,
 		season, seasonYear, activeTab, setActiveTab, navigateTab, topScorers,
 		standingsStale, marketPairs, marketPositionFilter, setMarketPositionFilter, marketSort, setMarketSort,
 		showOwnMarketPlayers, setShowOwnMarketPlayers, auctionBid, selectedAuctionPlayer, isAuctionExpanded, setIsAuctionExpanded,

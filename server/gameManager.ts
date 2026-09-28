@@ -6,7 +6,7 @@ import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_B
 import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec, slimMatchResult } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { dealDisplaySponsors } from "./game/sponsors";
-import { getOfflineCoaches } from "./presenceHelpers";
+import { getOfflineCoaches, getRoomRoster } from "./presenceHelpers";
 import {
   backfillSeats,
   clearSeatPositions,
@@ -2163,9 +2163,11 @@ function getPlayerList(game: ActiveGame): PlayerSession[] {
 }
 
 /**
- * Emite playerListUpdate + awaitingCoaches de forma atómica.
- * Usar em vez de emitir os dois eventos separadamente para garantir
- * que o cliente recebe sempre os dois estados sincronizados.
+ * Emite playerListUpdate + awaitingCoaches + roomRoster de forma atómica.
+ * Usar em vez de emitir os eventos separadamente para garantir
+ * que o cliente recebe sempre os estados sincronizados. O roomRoster é a
+ * lista completa de registados (online + offline, com equipa e estado) —
+ * é ele que o RoomHub renderiza.
  */
 function emitPresence(game: ActiveGame, io: any): void {
   io.to(game.roomCode).emit("playerListUpdate", {
@@ -2173,6 +2175,7 @@ function emitPresence(game: ActiveGame, io: any): void {
     roomCreator: game.roomCreator || "",
   });
   io.to(game.roomCode).emit("awaitingCoaches", getOfflineCoaches(game));
+  io.to(game.roomCode).emit("roomRoster", getRoomRoster(game));
 }
 
 // Persiste o estado in-flight de todas as salas ativas (jogo, fase,

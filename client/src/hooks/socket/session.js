@@ -186,6 +186,11 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		handlers.setAwaitingCoaches(offline || []);
 	});
 
+	socket.on("roomRoster", (roster) => {
+		if (!ctx.inRoom()) return;
+		handlers.setRoomRoster(Array.isArray(roster) ? roster : []);
+	});
+
 	socket.on("coachDisconnected", () => {
 		if (!ctx.inRoom()) return;
 	});
@@ -276,6 +281,7 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		socket.off("teamAssigned");
 		socket.off("roomLocked");
 		socket.off("awaitingCoaches");
+		socket.off("roomRoster");
 		socket.off("gameState");
 		socket.off("coachDisconnected");
 		socket.off("globalPlayersUpdate");

@@ -521,6 +521,16 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
 
 		if (isMultiplayer && !admin) {
 			await deleteSingleRoomAccess(name, roomCode);
+			// Espelho in-memory (fonte do roster): sem isto o treinador que
+			// saiu continuava listado como offline até ao próximo join.
+			const liveGame = (activeGames as Record<string, any>)[roomCode];
+			if (liveGame?.roomMembers) {
+				for (const member of [...liveGame.roomMembers]) {
+					if (member.toLowerCase() === name.toLowerCase())
+						liveGame.roomMembers.delete(member);
+				}
+				emitPresence(liveGame);
+			}
 			console.log(
 				`[/saves] Coach "${name}" left multiplayer room "${roomCode}" (creator: "${roomCreator || "—"}")`,
 			);

@@ -2638,3 +2638,9 @@ Plano C1+C2 (quando fizer):
 ## Deploy v26.09.19 no rick (2026-09-28)
 - Inclui sorteio antecipado em véspera de Taça, banner de espera no ET e resultados provisórios anti-bloqueio pós-Taça.
 - Push master + tag v26.09.19; rebuild no rick com backend Healthy.
+
+## RoomHub lista sempre os registados, mesmo offline (2026-09-28)
+- Pedido: RoomHub tem de listar sempre os users registados na sala, mesmo offline.
+- Causas: `getPlayerList` só incluía `socketId != null` mas `getOfflineCoaches` excluía quem estava na grace de presença → quem caía por segundos desaparecia das duas listas; offline chegava só como string (sem equipa/ready); saída via HTTP (`/saves`, não-Admin) não limpava o espelho `roomMembers`.
+- Fix: `presenceHelpers.ts` ganha `getRoomRoster(game)` (registados c/ equipa + estado, online = `isSeatPresent`, expulsos fora); `getOfflineCoaches` deriva do roster; `emitPresence` (`gameManager.ts`) emite `roomRoster` atomicamente; `index.ts` limpa `roomMembers` na saída HTTP; cliente (`GameContext`, `session.js`, `RoomHub.jsx`) renderiza do roster com fallback legado.
+- Checks: `typecheck` limpo · `check:types` OK · eslint sem erros novos (2 pré-existentes) · `connect-smoke` OK · `audit:socketio` 0 erros · roster validado por execução (grace→online, offline c/ equipa+ready, expulso fora).
