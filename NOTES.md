@@ -1,3 +1,7 @@
+## Engine F1: shootout + evolution + dbAsync extraídos (2026-09-28)
+- `server/game/engine.ts` 3935 → 3224 linhas (−711): `shootout.ts` (penáltis), `evolution.ts` (pós-jogo/moral/fans, +import `clampSkill`), `dbAsync.ts` (`Db` + 3 helpers, fim do ciclo engine↔evolution). Re-exports mantêm os 10 consumidores intactos.
+- Checks: `typecheck` PASS · `test:engine-unit` 20/20 · `audit:socketio` 0 erros/101 avisos · `audit:gamestate` sem sala viva (fica para a próxima).
+
 ## Castigo de 1 jogo por 3 amarelos acumulados — regra FIFA (2026-09-28)
 - 3º amarelo em jogos oficiais (o amigável não gera cartões) → castigo de 1 jogo (`suspension_until_matchweek = matchweek + 1`), contagem **zera ao castigar** (FIFA); vermelho **limpa a contagem** (regra de casa — na FIFA oficial não limpa) e o CASE/MAX absorve o overlap: amarelo-que-castiga + vermelho no mesmo jogo fica com o castigo mais longo (o do vermelho).
 - Decisão do castigo em memória no momento do cartão (rows do squad trazem `yellow_cards` da BD — determinístico em replay); o flush atómico do apito final aplica-a via deltas retidos (`yellows` antes de `reds` na ordem do flush, para a limpeza do vermelho ganhar). Notícia própria `🟨 … castigado (3 amarelos)` sai no 3º cartão (`logMedicalNews(..., source "yellow")`), idempotente por (jogador, until) — replay e scan genérico pós-finalização não duplicam. Badges 🟥 XJ, bloqueio de 11/transferências e NPCs: já cobertos pela maquinaria de suspensão existente, zero código no cliente.
