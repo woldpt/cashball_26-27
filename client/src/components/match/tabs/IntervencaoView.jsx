@@ -128,10 +128,10 @@ export function IntervencaoView({
   const aInfo = teams?.find((t) => t.id === fixture?.awayTeamId);
   const ownColor = (isHome ? hInfo : aInfo)?.color_primary;
 
-  // O plantel base vem da BD e mantém a skill permanente. Durante o jogo,
-  // sobrepõe-se a fadiga transitória do fixture para a decisão do intervalo
-  // comparar titulares cansados com suplentes frescos sem persistir estado
-  // de jogo no plantel.
+  // O plantel base vem da BD e mantém a skill permanente. No intervalo
+  // sobrepõe-se a fadiga transitória do fixture; nas pausas de 30'/70'
+  // (user_substitution) o fixture não traz lineups (fixtureData) — a skill
+  // efetiva vem do matchAction (onPitch + benchPlayers, já com fadiga).
   const liveOwnLineup = isHome ? fixture?.homeLineup : fixture?.awayLineup;
   const liveOwnById = useMemo(
     () =>
@@ -140,22 +140,43 @@ export function IntervencaoView({
       ),
     [liveOwnLineup],
   );
-  const panelSquad = useMemo(
+  // Mapa id → cartão com skill efetiva enviado pelo servidor na pausa.
+  const actionById = useMemo(
     () =>
-      isHalftime && isMyFixture
-        ? annotatedSquad.map((player) => {
-            const livePlayer = liveOwnById.get(Number(player.id));
-            if (!livePlayer) return player;
-            return {
-              ...player,
-              skill: livePlayer.skill ?? player.skill,
-              matchMinutes: livePlayer.matchMinutes ?? 0,
-              fatigueLoss: livePlayer.fatigueLoss ?? 0,
-            };
-          })
-        : annotatedSquad,
-    [isHalftime, isMyFixture, annotatedSquad, liveOwnById],
+      new Map(
+        [...(matchAction?.onPitch || []), ...(matchAction?.benchPlayers || [])].map(
+          (player) => [Number(player.id), player],
+        ),
+      ),
+    [matchAction],
   );
+  const panelSquad = useMemo(() => {
+    if (isHalftime && isMyFixture) {
+      return annotatedSquad.map((player) => {
+        const livePlayer = liveOwnById.get(Number(player.id));
+        if (!livePlayer) return player;
+        return {
+          ...player,
+          skill: livePlayer.skill ?? player.skill,
+          matchMinutes: livePlayer.matchMinutes ?? 0,
+          fatigueLoss: livePlayer.fatigueLoss ?? 0,
+        };
+      });
+    }
+    if (isUserSubPause && actionById.size > 0) {
+      return annotatedSquad.map((player) => {
+        const actionPlayer = actionById.get(Number(player.id));
+        if (!actionPlayer) return player;
+        return {
+          ...player,
+          skill: actionPlayer.skill ?? player.skill,
+          matchMinutes: actionPlayer.matchMinutes ?? 0,
+          fatigueLoss: actionPlayer.fatigueLoss ?? 0,
+        };
+      });
+    }
+    return annotatedSquad;
+  }, [isHalftime, isMyFixture, isUserSubPause, annotatedSquad, liveOwnById, actionById]);
 
   /* ── Our squad ────────────────────────────────────────────────── */
   const useTacticSquad = isHalftime || isUserSubPause;

@@ -1,3 +1,9 @@
+## Skill real nas pausas de 30'/70' (2026-09-28)
+- Queixa: na pausa de substituição a Skill mostrava a base da BD, sem a fadiga do minuto.
+- Causa: o `panelSquad` do `IntervencaoView.jsx` só fazia overlay da skill viva no intervalo; na pausa (`isUserSubPause`) caía em `annotatedSquad` puro. Estender o overlay do `fixture` não funcionava — o `panelFixture` na pausa é o `fixtureData`, que não traz lineups.
+- Fix (1 ficheiro): novo mapa `actionById` a partir de `matchAction.onPitch + benchPlayers` (o servidor já envia `getEffectiveSkill` + snapshot de fadiga via `buildPlayerCard`) fundido no `panelSquad` no mesmo padrão do intervalo, com fallback para a base; ordenação pela efetiva vem de borla via `sortPlayersByPos`. Servidor, adversário e intervalo intactos.
+- Checks: `lint` só pré-existentes noutros ficheiros · `check:types` OK · prova funcional da fusão PASS (77 fatigado vs 80 base + fallback). Sem `test:mobile` (só valor exibido, sem layout).
+
 ## Intervenção desktop: relvado clicável na 3.ª coluna (2026-09-28)
 - Pedido: botão de confirmação do mobile vertical migrado para o desktop, limpando a terceira coluna; depois: pitch da nossa equipa nessa coluna.
 - 5 ficheiros: `PitchFormation.jsx`/`MatchPitch.jsx` ganham marcadores clicáveis (`onPlayerClick`, anel rosa no escolhido/esmeralda no preview, `aria-pressed`); `SubsPanel.jsx` — 3.ª coluna passa a `PitchColumn` (11 projetado pós-troca, compacto sem scroll, contador + anular todas + fila/hint no rodapé), Mentalidade desce para o fundo da coluna Suplentes (`mentalidadeFooter` em `PlayerLists.jsx`), confirmação vira `FloatingConfirmButton` partilhado mobile+desktop (3 ramos: fila, GR improvisado, forçada com countdown); `IntervencaoView.jsx` passa `teamColor`. Sai a `MentalidadeColumn` morta. Desselecionar = re-toque (toggle já existia no contexto); botão `Limpar` explícito cai no desktop.
