@@ -132,6 +132,7 @@ export interface MatchFixture {
     appearances: Set<number>;
     goals: Map<number, number>;
     reds: Map<number, number>;
+    yellows: Map<number, { count: number; banUntil: number | null }>;
     injuries: Map<number, {
       newSkill: number;
       injuryUntil: number;

@@ -776,6 +776,8 @@ export function logMedicalNews(
   year?: number,
   io?: any,
   slot?: number,
+  /** Castigo vindo de 3 amarelos acumulados — título próprio 🟨 (FIFA). */
+  source?: "yellow",
 ) {
   game.db.get(
     `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND amount = ? LIMIT 1`,
@@ -785,7 +787,9 @@ export function logMedicalNews(
       const title =
         kind === "injury"
           ? `🩹 ${player.name} lesionado`
-          : `🟥 ${player.name} castigado`;
+          : source === "yellow"
+            ? `🟨 ${player.name} castigado (3 amarelos)`
+            : `🟥 ${player.name} castigado`;
       logClubNews(game, kind, title, teamId, {
         player_id: player.id,
         player_name: player.name,

@@ -29,6 +29,9 @@
  *   U12 — queueMatchDeltaWrites: throw síncrono repõe a flag (deltas retidos);
  *        erro no callback é reportado mas o flush completa
  *   U13 — quotaFromFormation deriva o XI da tática (fallback 4-4-2)
+ *   U14 — queueMatchDeltaWrites (amarelos FIFA): acumula sem castigo, o 3º
+ *        acumulado castiga 1 jogo e zera a contagem, o vermelho corre
+ *        depois e limpa-a; MAX/CASE preservam o castigo mais longo
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -239,6 +242,7 @@ test("U8 — queueMatchDeltaWrites retém deltas até confirmar", async () => {
       appearances: new Set([11, 22]),
       goals: new Map([[11, 2]]),
       reds: new Map(),
+      yellows: new Map(),
       injuries: new Map(),
     },
   };
@@ -382,6 +386,7 @@ test("U12 — queueMatchDeltaWrites: throw síncrono repõe a flag, deltas retid
       appearances: new Set([1]),
       goals: new Map([[7, 2]]),
       reds: new Map(),
+      yellows: new Map(),
       injuries: new Map(),
     },
   };
@@ -403,6 +408,7 @@ test("U12b — erro no callback do sqlite é reportado mas o flush completa", ()
       appearances: new Set(),
       goals: new Map([[7, 1]]),
       reds: new Map(),
+      yellows: new Map(),
       injuries: new Map(),
     },
   };
@@ -451,4 +457,50 @@ test("U13 — quotaFromFormation deriva o XI da tática (fallback 4-4-2)", () =>
     MED: 4,
     ATA: 2,
   });
+});
+
+// ── U14 ──────────────────────────────────────────────────────────────────
+test("U14 — amarelos FIFA: 3º acumulado castiga 1 jogo; vermelho limpa a contagem", async () => {
+  const calls: Array<{ sql: string; params: unknown[] }> = [];
+  const cbs: Array<(err: unknown) => void> = [];
+  const db = {
+    run(sql: string, params: unknown[], cb: (err: unknown) => void) {
+      calls.push({ sql: sql.replace(/\s+/g, " "), params });
+      cbs.push(cb);
+    },
+  };
+  const fixture: any = {
+    _deltas: {
+      calendarIndex: 5,
+      appearances: new Set(),
+      goals: new Map(),
+      // 77 apanhou 3º amarelo (castigo até à slot 6) E vermelho no mesmo jogo
+      // (até à 8): o vermelho corre depois, limpa a contagem e o CASE fica
+      // com o castigo mais longo (8).
+      reds: new Map([[77, 8]]),
+      yellows: new Map([
+        [11, { count: 1, banUntil: null }], // 1º/2º amarelo: só acumula
+        [77, { count: 1, banUntil: 6 }], // 3º amarelo: castigo de 1 jogo
+      ]),
+      injuries: new Map(),
+    },
+  };
+  queueMatchDeltaWrites(db as any, [fixture]);
+  // Acumulação sem castigo: incremento simples, sem tocar em suspensões
+  assert.match(calls[0].sql, /yellow_cards = yellow_cards \+ \?/);
+  assert.ok(!calls[0].sql.includes("suspension"), "sem castigo ao acumular");
+  assert.deepEqual(calls[0].params, [1, 11]);
+  // 3º amarelo: contagem zera, +1 jogo de castigo, MAX preserva o mais longo
+  assert.match(
+    calls[1].sql,
+    /yellow_cards = 0, suspension_games = suspension_games \+ 1, suspension_until_matchweek = MAX\(suspension_until_matchweek, \?\)/,
+  );
+  assert.deepEqual(calls[1].params, [6, 77]);
+  // Vermelho DEPOIS do amarelo do mesmo jogador: limpa a contagem
+  assert.ok(calls[2].sql.includes("yellow_cards = 0"), "vermelho limpa amarelos");
+  assert.match(calls[2].sql, /red_cards = red_cards \+ 1, career_reds = career_reds \+ 1, yellow_cards = 0, suspension_games = suspension_games \+ 2/);
+  assert.deepEqual(calls[2].params, [8, 8, 77]);
+  for (const cb of cbs) cb(null);
+  await new Promise((r) => setImmediate(r));
+  assert.equal(fixture._deltas, undefined);
 });

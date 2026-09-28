@@ -79,6 +79,7 @@ import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
 import { recalcPlayerValue, MATCH_TUNING, MORALE_NEUTRAL } from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
+import { logMedicalNews } from "../coreHelpers";
 
 /**
  * API mínima do sqlite3 usada pelo engine (audit: antes era `type Db = any`,
@@ -168,8 +169,12 @@ type MatchDeltas = {
   appearances: Set<number>;
   goals: Map<number, number>;
   reds: Map<number, number>; // playerId -> suspensionUntil
+  yellows: Map<number, MatchYellowDelta>; // playerId -> amarelos do jogo + castigo
   injuries: Map<number, MatchInjuryDelta>;
 };
+
+/** Amarelo do jogo; `banUntil != null` quando ESTE amarelo fecha os 3 acumulados. */
+type MatchYellowDelta = { count: number; banUntil: number | null };
 
 function getMatchDeltas(fixture: MatchFixture): MatchDeltas {
   if (!fixture._deltas) {
@@ -178,6 +183,7 @@ function getMatchDeltas(fixture: MatchFixture): MatchDeltas {
       appearances: new Set<number>(),
       goals: new Map<number, number>(),
       reds: new Map<number, number>(),
+      yellows: new Map<number, MatchYellowDelta>(),
       injuries: new Map<number, MatchInjuryDelta>(),
     };
   }
@@ -199,6 +205,28 @@ function recordMatchRed(
   const d = getMatchDeltas(fixture);
   const prev = d.reds.get(playerId);
   d.reds.set(playerId, prev != null ? Math.max(prev, suspensionUntil) : suspensionUntil);
+}
+
+/**
+ * Amarelo acumulado por jogos (regra FIFA): 3 amarelos em jogos oficiais —
+ * o amigável não gera cartões — castigo de 1 jogo e a contagem zera no
+ * flush (o vermelho do mesmo jogo limpa-a e o MAX absorve o overlap). A
+ * decisão do castigo fica aqui, em memória no momento do cartão: as rows
+ * do squad trazem o `yellow_cards` da DB e a decisão é determinística em
+ * replay — o flush atómico do apito final aplica-a com o resultado.
+ */
+function recordMatchYellow(
+  fixture: MatchFixture,
+  playerId: number,
+  banUntil: number | null,
+) {
+  if (typeof playerId !== "number" || playerId <= 0) return; // juniores (IDs negativos) não têm linha na DB
+  const d = getMatchDeltas(fixture);
+  const prev = d.yellows.get(playerId);
+  d.yellows.set(playerId, {
+    count: (prev?.count ?? 0) + 1,
+    banUntil: prev?.banUntil ?? banUntil, // o castigo marca-se uma só vez
+  });
 }
 
 function recordMatchInjury(
@@ -287,9 +315,28 @@ export function queueMatchDeltaWrites(db: Db, fixtures: MatchFixture[]): void {
           [count, count, id],
         );
       }
+      // Amarelos ANTES dos vermelhos: no mesmo jogo o vermelho corre depois
+      // e a sua limpeza da contagem (regra de casa) ganha.
+      for (const [id, y] of d.yellows) {
+        if (y.banUntil != null) {
+          // 3º amarelo acumulado (FIFA): castigo de 1 jogo, contagem zera;
+          // MAX preserva um vermelho anterior mais longo.
+          trackedRun(
+            "UPDATE players SET yellow_cards = 0, suspension_games = suspension_games + 1, suspension_until_matchweek = MAX(suspension_until_matchweek, ?) WHERE id = ?",
+            [y.banUntil, id],
+          );
+        } else {
+          trackedRun(
+            "UPDATE players SET yellow_cards = yellow_cards + ? WHERE id = ?",
+            [y.count, id],
+          );
+        }
+      }
       for (const [id, until] of d.reds) {
+        // O vermelho limpa a contagem de amarelos (regra de casa); o CASE
+        // absorve o castigo do 3º amarelo do mesmo jogo (fica o mais longo).
         trackedRun(
-          "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
+          "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, yellow_cards = 0, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
           [until, until, id],
         );
       }
@@ -2939,6 +2986,31 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
       } else {
         fixture._yellowCards[offenderId] =
           (fixture._yellowCards[offenderId] || 0) + 1;
+        // Acumulação de amarelos (FIFA): ao 3º em jogos oficiais (o amigável
+        // não gera cartões), castigo de 1 jogo e contagem zerada no flush.
+        // O 2º amarelo in-game que vira vermelho não acumula — é expulsão.
+        const banUntil =
+          (offender.yellow_cards || 0) + (fixture._yellowCards[offenderId] || 0) >= 3
+            ? currentMatchweek + 1
+            : null;
+        recordMatchYellow(fixture, offenderId, banUntil);
+        if (banUntil != null) {
+          // Notícia própria no momento do 3º amarelo (à FIFA: "vai cumprir
+          // castigo"); idempotente por (jogador, until) — o replay pós-crash
+          // não duplica e o scan genérico pós-finalização é deduplicado.
+          logMedicalNews(
+            game,
+            side === "home" ? fixture.homeTeamId : fixture.awayTeamId,
+            "suspension",
+            offender,
+            banUntil,
+            currentMatchweek,
+            undefined,
+            io,
+            undefined,
+            "yellow",
+          );
+        }
         fixture.events.push({
           minute,
           type: "yellow",

@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS players (
   wage INTEGER,
   goals INTEGER DEFAULT 0,
   red_cards INTEGER DEFAULT 0,
+  yellow_cards INTEGER DEFAULT 0,
   injuries INTEGER DEFAULT 0,
   career_goals INTEGER DEFAULT 0,
   career_reds INTEGER DEFAULT 0,

@@ -221,6 +221,7 @@ function ensurePlayerSchema(
     );
     const required = [
       ["red_cards", "INTEGER DEFAULT 0"],
+      ["yellow_cards", "INTEGER DEFAULT 0"],
       ["injuries", "INTEGER DEFAULT 0"],
       ["suspension_games", "INTEGER DEFAULT 0"],
       ["injury_weeks", "INTEGER DEFAULT 0"],

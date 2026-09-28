@@ -692,7 +692,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			// last_appearance_matchweek stores calendar slots (0-based); it must reset with
 			// the season or the engine's per-slot replay guard blocks slot 0 of the new
 			// season for players who appeared late in the previous one.
-			"UPDATE players SET goals = 0, red_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0",
+			"UPDATE players SET goals = 0, red_cards = 0, yellow_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0",
 			);
 			await dbRunOn(game, "COMMIT");
 		} catch (txErr) {
