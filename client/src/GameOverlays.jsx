@@ -104,6 +104,8 @@ export function GameOverlays() {
     teamInfo,
     teams,
     transferProposalModal,
+    waitingForResults,
+    resultsWaitTimedOut,
   } = useGame();
 
   // A espera multiplayer quer mostrar-se ao intervalo (pronto, sala com
@@ -120,6 +122,29 @@ export function GameOverlays() {
     dismissalModal,
     waitingWantsShow: halftimeWaitingWantsShow,
   });
+
+  // Faixa global de espera (visível em qualquer tab): prolongamento da Taça
+  // à espera de Prontos (gate sem timeout) ou resultados a tardar fora do
+  // tab Jogo (o aviso do MatchPage só lá aparece). Só ET real (90'): o
+  // intervalo normal é aos 45' e não mostra nada.
+  const etGateWait = (() => {
+    if (!showHalftimePanel || !isCupMatch || liveMinute < 90) return null;
+    const drawn = new Set(
+      (matchResults?.results || [])
+        .filter((r) => r.finalHomeGoals === r.finalAwayGoals)
+        .flatMap((r) => [String(r.homeTeamId), String(r.awayTeamId)]),
+    );
+    if (drawn.size === 0) return null;
+    const missing = (players || []).filter(
+      (p) => p.teamId != null && drawn.has(String(p.teamId)) && !p.ready,
+    );
+    if (missing.length === 0) return null;
+    const names = missing.map((p) => `${p.name}${p.socketId ? "" : " (ausente)"}`);
+    return `⏳ Prolongamento — à espera de: ${names.join(", ")}`;
+  })();
+  const showGlobalWaitBanner =
+    etGateWait != null ||
+    (waitingForResults && resultsWaitTimedOut && activeTab !== "live");
 
   // Landing pós-jogo: quando a partida TERMINOU (Liga ou Taça) e TODOS os
   // modais pós-jogo estão concluídos, regressar ao Jornal (tab landing).
@@ -208,6 +233,19 @@ export function GameOverlays() {
 
   return (
     <>
+      {showGlobalWaitBanner && (
+        <div className="fixed top-0 inset-x-0 z-40 flex justify-center pointer-events-none px-3 pt-2">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-amber-500/40 bg-zinc-950/90 px-4 py-1.5 shadow-xl backdrop-blur-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+            </span>
+            <span className="text-[11px] font-bold text-amber-200">
+              {etGateWait ?? "⏳ À espera do servidor…"}
+            </span>
+          </div>
+        </div>
+      )}
       {/* ── Festejo de golo do MEU jogo, montado no topo da app ──────────
        * Vive aqui, e não dentro do `LiveMatchHero`, porque o som de golo
        * nasce no GameContext (global) enquanto o herói só existe no tab

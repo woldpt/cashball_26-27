@@ -1071,6 +1071,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       game.gamePhase = "lobby";
       segmentRunning[game.roomCode] = false;
       saveGameState(game);
+      io.to(game.roomCode).emit("systemMessage", {
+        text: "⚠ A finalização da jornada prendeu-se — sala libertada para o lobby. Se algo parecer em falta, prime Pronto para continuar.",
+        broadcast: true,
+      });
     }, FINALIZE_WATCHDOG_MS);
     (finalizeWatchdog as any)?.unref?.();
     try {

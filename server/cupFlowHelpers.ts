@@ -2220,7 +2220,71 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			roundName,
 			roundLabel,
 		});
-		if (!cupOutcome) return;
+		if (!cupOutcome) {
+			// A transação falhou (ROLLBACK já feito): não prender os clientes
+			// nos 120' — emite os resultados simulados em memória (provisórios)
+			// e devolve a sala ao lobby do MESMO slot para a ronda repetir-se
+			// no próximo Pronto (sem marker 'finalized' nem finanças em dobro).
+			const fallbackResults = fixtures.map((fixture: any) => {
+				const cupTicketPrice = (fixture as any)._ticketPrice || 15;
+				const cupRevenue = (fixture.attendance || 0) * cupTicketPrice;
+				const cupAwayShare = Math.floor(cupRevenue * AWAY_TICKET_SHARE);
+				const cupHomeShare = cupRevenue - cupAwayShare;
+				const winnerId =
+					(fixture as any)._winnerId ??
+					(fixture.finalHomeGoals !== fixture.finalAwayGoals
+						? (fixture.finalHomeGoals > fixture.finalAwayGoals
+								? fixture.homeTeamId
+								: fixture.awayTeamId)
+						: null);
+				return {
+					homeTeamId: fixture.homeTeamId,
+					awayTeamId: fixture.awayTeamId,
+					homeTeam: fixture.homeTeam || null,
+					awayTeam: fixture.awayTeam || null,
+					homeGoals: fixture.finalHomeGoals,
+					homeTicketRevenue: cupHomeShare,
+					awayTicketRevenue: cupAwayShare,
+					awayGoals: fixture.finalAwayGoals,
+					winnerId,
+					wentToET:
+						!!(fixture as any)._decidedByPenalties ||
+						fixture.events.some((e: any) => e.minute > 90),
+					decidedByPenalties: !!(fixture as any)._decidedByPenalties,
+					penaltyHomeGoals: (fixture as any)._penaltyHomeGoals ?? null,
+					penaltyAwayGoals: (fixture as any)._penaltyAwayGoals ?? null,
+					events: fixture.events,
+					mom: computeMoms(
+						fixture.events || [],
+						fixture.homeLineup || [],
+						fixture.awayLineup || [],
+					),
+				};
+			});
+			game._etSimCompleted = true;
+			game.cupResultsPayload = {
+				round,
+				roundName,
+				results: fallbackResults,
+				season,
+				isFinal: round === 5,
+				upsets: [],
+				persistError: true,
+			};
+			io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
+			io.to(game.roomCode).emit("systemMessage", {
+				text: "⚠ Falha ao gravar a ronda da Taça — resultados provisórios. Prime Pronto para repetir a ronda.",
+				broadcast: true,
+			});
+			game.gamePhase = "lobby";
+			game.currentFixtures = [];
+			game.cupHalftimePayload = null;
+			resetAllReady(game);
+			clearSeatPositions(game);
+			emitPresence(game);
+			saveGameState(game);
+			return;
+		}
 		const { results, upsets } = cupOutcome;
 
 		// ET animation gate: wait for all connected coaches to ack before advancing

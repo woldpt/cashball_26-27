@@ -2627,3 +2627,10 @@ Plano C1+C2 (quando fizer):
 - Fix (`cupFlowHelpers.ts` `startCupRound`): emit do sorteio logo após gerar; Jornal com writes aguardadas (mesma chave de desduplicação) + `clubNewsUpdated` por equipa e um único `globalNewsUpdated` no fim. (`weeklyFlowHelpers.ts`): `startCupRound` passa para a entrada do lobby, antes da cadeia pesada.
 - Checks: `typecheck` limpo · `audit:socketio` 0 erros · `audit:gamestate FGPQH6` 82 erros/15 warnings, idênticos com e sem a mudança (dados pré-existentes da sala de dev).
 - Nota: ler saves .db com o CLI do sqlite faz checkpoint do WAL e suja ficheiros tracked — usar `mode=ro`/`immutable=1` ou restaurar com `git checkout -- saves/`.
+
+## Bloqueio pós-Taça nos 90'/120' com menus livres (2026-09-28)
+- Sintoma: relógio parado nos 90'/120', navegação livre, mas sem aterragem no Jornal — `cupRoundResults` nunca chegava.
+- Causas: ET gate sem timeout / congelamento por ausência (silenciosos); `commitCupRoundResults` null → `return` sem emitir (preso até ao watchdog de 5 min).
+- Fix A (cliente, `GameOverlays.jsx`): faixa global de espera — "Prolongamento — à espera de: nomes (+ ausentes)" derivada de presence+resultado, e "À espera do servidor…" fora do tab Jogo.
+- Fix B (servidor): `continueFromEtGate` emite `cupRoundResults` provisório (`persistError: true`) + `systemMessage` e devolve ao lobby do mesmo slot para repetir (sem marker/finanças em dobro); watchdog passa a avisar a sala.
+- Checks: `typecheck` limpo · `check:types` OK · eslint sem erros novos · `audit:socketio` 0 erros.
