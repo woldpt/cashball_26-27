@@ -23,13 +23,14 @@ const POS_GROUP_LABEL = {
 const FILTER_ALL = "ALL";
 
 const SORT_OPTIONS = [
-  { key: "base", label: "Base" },
+  { key: "alpha", label: "Alfabeticamente" },
   { key: "skill", label: "Skill" },
   { key: "wage", label: "Salário" },
   { key: "value", label: "Valor" },
 ];
 
 const SORT_COMPARATORS = {
+  alpha: (a, b) => (a.name || "").localeCompare(b.name || ""),
   skill: (a, b) => (b.skill || 0) - (a.skill || 0),
   wage: (a, b) => (b.wage || 0) - (a.wage || 0),
   value: (a, b) => (b.value || 0) - (a.value || 0),
@@ -50,7 +51,7 @@ export function MySquadTab({
   onOpenPlayerHistory,
 }) {
   const [posFilter, setPosFilter] = useState(FILTER_ALL);
-  const [sortKey, setSortKey] = useState("base");
+  const [sortKey, setSortKey] = useState("alpha");
 
   // Agrupamento, estatísticas, ordenação e índice de stagger contínuo numa
   // só passagem (a fonte é sempre o que se renderiza: annotatedSquad).

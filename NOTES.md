@@ -2,6 +2,11 @@
 - Em mobile os emblemas de fundo (`top-1/2 -translate-y-1/2`) ficavam escondidos atrás do placar central. Fix só de `className`: `top-2 translate-y-0` em mobile, `sm:top-1/2 sm:-translate-y-1/2` em desktop. Só `LiveMatchHero.jsx`.
 - Checks: `eslint` no ficheiro OK · `check:types` OK · `lint` global só os 3 pré-existentes. Tweak pontual, sem `test:mobile`.
 
+## Plantel: ordenação «Base» → «Alfabeticamente» (2026-09-29)
+- `MySquadTab.jsx`: a opção do dropdown `base`/«Base» (sem comparador — ordem original) vira `alpha`/«Alfabeticamente» e ganha comparador por `player.name` (`localeCompare`) — ordena de A–Z dentro de cada grupo de posição. O default `useState("alpha")` mantém o dropdown a abrir nesta opção.
+- Tweak de label + comparador (sem layout estrutural) → sem `test:mobile`.
+- Checks: `lint` só os 3 pré-existentes · `check:types` OK.
+
 ## StadiumIllustration: reenquadramento + direção de arte (2026-09-28)
 
 Avaliação da geração de estádios (7/10) → plano aprovado e executado. Só `StadiumIllustration.jsx` + os keyframes em `index.css` + fixtures de harness; **as 3 views não mudaram** (a revisão dos heroes não exigiu ajustes — ver abaixo).
