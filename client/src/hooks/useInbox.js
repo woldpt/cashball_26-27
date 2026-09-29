@@ -342,8 +342,11 @@ export function useInbox() {
     }
 
     // O rescaldo transitório esconde-se quando a linha persistida do mesmo
-    // jogo já chegou (evita o último jogo em duplicado no Jornal).
-    const savedMoodKeys = persistedMoodKeys(newsRows);
+    // jogo já chegou (evita o último jogo em duplicado no Jornal). Todas
+    // as épocas contam: após o rollover a linha vive na época anterior
+    // (paginada para fora) e o transitório ficava no topo, mais antigo
+    // por cima do mais recente.
+    const savedMoodKeys = persistedMoodKeys(allNewsRows);
     if (postMatchMood && !savedMoodKeys.has(postMatchMood.key)) {
       const article = buildMoodNewsArticle(postMatchMood);
       list.push({
@@ -366,11 +369,10 @@ export function useInbox() {
       if (
         m &&
         medicalCovered(
-          newsRows,
+          allNewsRows,
           m[1] === "inj" ? "injury" : "suspension",
           Number(m[2]),
           Number(m[3]),
-          seasonYear,
         )
       )
         continue;
@@ -465,6 +467,7 @@ export function useInbox() {
     cupDraw,
     postMatchMood,
     mySquad,
+    allNewsRows,
     newsRows,
     calendarIndex,
     seasonYear,

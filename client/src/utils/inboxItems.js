@@ -1343,15 +1343,17 @@ export function cupDrawCovered(rows, season, round) {
     return Number(f?.season) === Number(season) && Number(f?.round) === Number(round);
   });
 }
-export function medicalCovered(rows, kind, playerId, until, year = null) {
+export function medicalCovered(rows, kind, playerId, until) {
   return (Array.isArray(rows) ? rows : []).some((n) => {
     if (String(n?.type || "") !== kind) return false;
     if (Number(n?.player_id) !== Number(playerId)) return false;
     if (Number(n?.amount) !== Number(until)) return false;
-    // Só a época corrente cobre (linhas de épocas antigas não escondem o
-    // transitório atual; year 0/null de BDs antigas conta como coringa).
-    const rowYear = Number(n?.year) || 0;
-    return rowYear === 0 || year == null || rowYear === Number(year);
+    // Qualquer época cobre (o servidor também desduplica por
+    // jogador/until sem época em `logMedicalNews`): a linha persistida
+    // tem a data verdadeira e continua acessível via «Mostrar época
+    // anterior». O transitório com a data atual só aparece como rede de
+    // segurança quando não há linha nenhuma.
+    return true;
   });
 }
 
