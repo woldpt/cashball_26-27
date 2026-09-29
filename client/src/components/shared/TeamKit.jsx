@@ -32,19 +32,24 @@ function wrap2(name) {
  * não acompanhava o tamanho da camisola. O nome leva halo claro para se ler
  * em camisolas claras e escuras.
  *
+ * `away` usa a camisola de fora (`<slug>_away.svg`, cores trocadas) —
+ * o desempate é decidido por `useKitClash`, que só o passa nos dois pontos
+ * onde as duas camisolas coexistem (placar do LiveMatchHero, DuelHero).
+ *
  * @param {{
  *   team?: { crest?: string|null, name?: string, sponsorBrand?: object|null }|null,
  *   className?: string,
+ *   away?: boolean,
  * }} props
  * @returns {JSX.Element|null}
  */
-export function TeamKit({ team, className = "h-28 object-contain" }) {
+export function TeamKit({ team, className = "h-28 object-contain", away = false }) {
   // Guarda o URL que falhou (não um booleano) para fazer reset sozinho
   // quando a equipa mudar — mesmo padrão do `TeamCrest`.
   const [failedKit, setFailedKit] = useState(null);
   const kit =
     team?.crest?.includes("/logos/")
-      ? team.crest.replace("/logos/", "/kits/").replace(/\.\w+(\?.*)?$/, ".svg")
+      ? team.crest.replace("/logos/", "/kits/").replace(/\.\w+(\?.*)?$/, away ? "_away.svg" : ".svg")
       : null;
   if (!kit) return null;
   if (failedKit === kit)

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { TeamCrest } from "../TeamCrest.jsx";
 import { TeamKit } from "../../shared/TeamKit.jsx";
+import { useKitClash } from "../../../hooks/useKitClash.js";
 import { DifficultyGauge } from "./DifficultyGauge.jsx";
 
 /**
@@ -50,6 +51,8 @@ const DuelSlot = memo(function DuelSlot({ slot, side, onOpenTeamSquad }) {
  */
 export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
   const [home, away] = vm.slots;
+  // Empate de camisolas de casa: a equipa de fora veste a sua de fora.
+  const clash = useKitClash(home?.team?.crest, away?.team?.crest);
   const metaLine = vm.weather ? `${vm.weather.emoji} ${vm.weather.label}` : "";
 
   return (
@@ -126,7 +129,7 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
             }}
           >
             {away.team.crest.includes("/logos/") ? (
-              <TeamKit team={away.team} className="h-28 sm:h-40 lg:h-56 object-contain" />
+              <TeamKit team={away.team} className="h-28 sm:h-40 lg:h-56 object-contain" away={clash} />
             ) : (
               <img
                 src={away.team.crest}

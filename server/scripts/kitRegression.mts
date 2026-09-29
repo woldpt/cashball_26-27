@@ -2,7 +2,8 @@
  * Regression test — camisolas fixas (client/public/kits).
  *
  * Regras em causa:
- *  - Um SVG por clube (60), viewBox 100x100, molde único (clipPath id="k").
+ *  - Um SVG de casa + um de fora por clube (120), viewBox 100x100, molde
+ *    único (clipPath id="k"); a de fora só troca as cores (mesmo padrão).
  *  - Sem `<text>` nem `<image>` embutidos (o nome do patrocinador é escrito
  *    pelo TeamKit, não desenhado aqui).
  *  - kits.json cobre todos os clubes e só clubes.
@@ -41,20 +42,29 @@ const unknown = Object.keys(kits).filter((slug) => !TEAMS.some((t) => t.slug ===
 assert(!unknown.length, `kits.json só com clubes reais${unknown.length ? `: ${unknown.join(", ")}` : ""}`);
 assert(TEAMS.every((t) => PATTERNS.includes(kits[t.slug]?.pattern)), "todos os padrões válidos");
 
-// SVGs em disco: 60 válidos, molde único
+// SVGs em disco: casa + fora por clube, válidos, e a de fora sempre distinta
 const dir = path.join(import.meta.dirname, "..", "..", "client", "public", "kits");
+const valid = (body: string) =>
+  body.includes('viewBox="0 0 100 100"') &&
+  body.includes('<clipPath id="k">') &&
+  !body.includes("<text") &&
+  !body.includes("<image");
+const norm = (body: string) => body.replace(/aria-label="[^"]*"/g, "");
 let ok = 0;
+let sameAway = 0;
 for (const t of TEAMS) {
-  const p = path.join(dir, `${t.slug}.svg`);
-  const body = fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : "";
-  const valid =
-    body.includes('viewBox="0 0 100 100"') &&
-    body.includes('<clipPath id="k">') &&
-    !body.includes("<text") &&
-    !body.includes("<image");
-  if (valid) ok++;
+  const home = path.join(dir, `${t.slug}.svg`);
+  const awayF = path.join(dir, `${t.slug}_away.svg`);
+  const hb = fs.existsSync(home) ? fs.readFileSync(home, "utf-8") : "";
+  const ab = fs.existsSync(awayF) ? fs.readFileSync(awayF, "utf-8") : "";
+  if (valid(hb) && valid(ab)) ok++;
   else console.error(`FAIL: camisola em falta/inválida: ${t.slug}`);
+  if (norm(hb) === norm(ab)) {
+    sameAway++;
+    console.error(`FAIL: camisola de fora idêntica à de casa: ${t.slug}`);
+  }
 }
-assertEq(ok, TEAMS.length, "camisolas SVG válidas (molde único, sem texto/imagem)");
+assertEq(ok, TEAMS.length, "camisolas casa+fora válidas (molde único, sem texto/imagem)");
+assertEq(sameAway, 0, "nenhuma de fora idêntica à de casa");
 
 console.log("\nPASS test:kit");

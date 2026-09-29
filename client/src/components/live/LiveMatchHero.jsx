@@ -4,6 +4,7 @@ import { OddsBadge } from "../shared/OddsBadge.jsx";
 import { PreMatchIntro, KickoffBadge, FinalWhistleStamp } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
+import { useKitClash } from "../../hooks/useKitClash.js";
 import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
 
 /* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
@@ -89,10 +90,11 @@ export function LiveMatchHero({
   readOnly = false,
   hideScoreboard = false,
 }) {
+  const hInfo = myMatch ? teams.find((t) => t.id === myMatch.homeTeamId) : null;
+  const aInfo = myMatch ? teams.find((t) => t.id === myMatch.awayTeamId) : null;
+  // Empate de camisolas de casa: a equipa de fora veste a sua de fora.
+  const clash = useKitClash(hInfo?.crest, aInfo?.crest);
   if (!myMatch) return null;
-
-  const hInfo = teams.find((t) => t.id === myMatch.homeTeamId);
-  const aInfo = teams.find((t) => t.id === myMatch.awayTeamId);
   // Amigável (ronda 0): sem prefixo "Taça ·" nem estética de taça.
   const isFriendly = /amigável/i.test(cupMatchRoundName || "");
   const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
@@ -359,7 +361,7 @@ export function LiveMatchHero({
                   {aInfo?.name}
                 </span>
               </div>
-              <ScoreKit team={aInfo} isMine={awayIsMine} coach={awayCoach} />
+              <ScoreKit team={aInfo} isMine={awayIsMine} coach={awayCoach} away={clash} />
             </div>
             </div>
           </div>
@@ -533,12 +535,12 @@ export function LiveMatchHero({
 /* ── ScoreKit — camisola no placar + badge do treinador ───────────────────
  * Troca o brasão pela camisola (`TeamKit`); sem kit válido cai para o
  * `TeamCrest` quadrado. Badge âmbar/primary igual ao anterior. */
-function ScoreKit({ team, isMine, coach }) {
+function ScoreKit({ team, isMine, coach, away = false }) {
   const hasKit = team?.crest?.includes("/logos/");
   return (
     <div className="relative shrink-0">
       {hasKit ? (
-        <TeamKit team={team} className="h-10 sm:h-14" />
+        <TeamKit team={team} className="h-10 sm:h-14" away={away} />
       ) : (
         <TeamCrest team={team} isMine={isMine} size="sm" />
       )}

@@ -5,7 +5,11 @@
  * halves, sash, band, shoulders). As cores/padrões foram classificados a olho
  * a partir das fotos de equipamento do zerozero.pt (ver fetchZerozeroKits.ts).
  *
- * Uso: cd server && npx tsx scripts/generateKits.ts
+ * Cada clube gera duas camisolas: `<slug>.svg` (casa) e `<slug>_away.svg`
+ * (fora — as cores trocadas, mesmo padrão), para o desempate quando duas
+ * equipas com camisolas de casa idênticas se defrontam.
+ *
+ * Uso: cd server && npx tsx scripts/generateKits.ts [--check]
  */
 import fs from "fs";
 import path from "path";
@@ -82,15 +86,22 @@ function main() {
   const check = process.argv.includes("--check");
   if (!check) fs.mkdirSync(outDir, { recursive: true });
   const drift: string[] = [];
-  for (const t of TEAMS) {
-    const svg = shirtSvg(t.name, kits[t.slug]);
-    const file = path.join(outDir, `${t.slug}.svg`);
+  const put = (file: string, slug: string, svg: string) => {
     if (check) {
-      if (fs.existsSync(file) && fs.readFileSync(file, "utf-8") === svg) continue;
-      drift.push(t.slug);
+      if (fs.existsSync(file) && fs.readFileSync(file, "utf-8") === svg) return;
+      drift.push(slug);
     } else {
       fs.writeFileSync(file, svg);
     }
+  };
+  for (const t of TEAMS) {
+    const k = kits[t.slug];
+    put(path.join(outDir, `${t.slug}.svg`), t.slug, shirtSvg(t.name, k));
+    put(
+      path.join(outDir, `${t.slug}_away.svg`),
+      `${t.slug}_away`,
+      shirtSvg(t.name, { ...k, base: k.secondary, secondary: k.base }),
+    );
   }
   if (check) {
     if (!drift.length) console.log("tudo atualizado");
@@ -99,7 +110,7 @@ function main() {
       process.exitCode = 1;
     }
   } else {
-    console.log(`Gerados ${TEAMS.length} SVGs em ${outDir}`);
+    console.log(`Gerados ${TEAMS.length * 2} SVGs (casa + fora) em ${outDir}`);
   }
 }
 main();
