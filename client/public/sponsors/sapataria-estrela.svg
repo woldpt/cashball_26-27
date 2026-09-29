@@ -1,3 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Sapataria Estrela">
-<g transform="translate(-37.01,-43.36) scale(1.6671)"><g data-halo="1" fill="#fff"><path d="M30,60 L30,44 L44,44 L58,56 L74,58 C76,64 70,68 62,68 L34,68 Z" fill="#fff" stroke="#fff" stroke-width="2.9991639626992717" stroke-linejoin="round" stroke-linecap="round"/><path d="M62,44 L66,56" fill="#fff" stroke="#fff" stroke-width="6.999163962699272" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M30,60 L30,44 L44,44 L58,56 L74,58 C76,64 70,68 62,68 L34,68 Z" fill="#78350f"/><path d="M62,44 L66,56" stroke="#fde68a" stroke-width="4"/></g></g>
+<g transform="translate(-8.54,-0.25) scale(1.1045)"><g data-halo="1" fill="#fff"><path d="M50,12 L53.8,22.7 L65.2,23.1 L56.2,30 L59.4,40.9 L50,34.5 L40.6,40.9 L43.8,30 L34.8,23.1 L46.2,22.7 Z" fill="#fff" stroke="#fff" stroke-width="4.527027027027026" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M26,64 L26,48 L44,48 L56,58 L74,58 C80,62 76,70 66,70 L34,70 C28,70 26,68 26,64 Z" fill="#fff" stroke="#fff" stroke-width="4.527027027027026" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="26" y="70" width="54" height="9" rx="4.5" fill="#fff" stroke="#fff" stroke-width="4.527027027027026" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M50,12 L53.8,22.7 L65.2,23.1 L56.2,30 L59.4,40.9 L50,34.5 L40.6,40.9 L43.8,30 L34.8,23.1 L46.2,22.7 Z" fill="#fde68a"/>
+<path d="M26,64 L26,48 L44,48 L56,58 L74,58 C80,62 76,70 66,70 L34,70 C28,70 26,68 26,64 Z" fill="#78350f"/>
+<rect x="26" y="70" width="54" height="9" rx="4.5" fill="#451a03"/></g></g>
 </svg>

@@ -1,3 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Chave Mestra">
-<g transform="translate(-32.46,-38.70) scale(1.7484)"><g data-halo="1" fill="#fff"><circle cx="38" cy="42" r="12" fill="none" stroke="#fff" stroke-width="9.859820288580817" stroke-linejoin="round" stroke-linecap="round"/><rect x="46" y="50" width="26" height="8" rx="3" transform="rotate(35 46 50)" fill="#fff" stroke="#fff" stroke-width="2.859820288580817" stroke-linejoin="round" stroke-linecap="round"/><rect x="60" y="60" width="6" height="10" transform="rotate(35 63 65)" fill="#fff" stroke="#fff" stroke-width="2.859820288580817" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><circle cx="38" cy="42" r="12" fill="none" stroke="#57534e" stroke-width="7"/><rect x="46" y="50" width="26" height="8" rx="3" fill="#57534e" transform="rotate(35 46 50)"/><rect x="60" y="60" width="6" height="10" fill="#fefce8" transform="rotate(35 63 65)"/></g></g>
+<g transform="translate(-1.00,-3.00) scale(1.0000)"><g data-halo="1" fill="#fff"><circle cx="30" cy="50" r="16" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="30" cy="50" r="6.5" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="42" y="43" width="46" height="14" rx="7" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="70" y="54" width="11" height="18" rx="4" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="54" y="54" width="11" height="13" rx="4" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><circle cx="30" cy="50" r="16" fill="#57534e"/>
+<circle cx="30" cy="50" r="6.5" fill="#fefce8"/>
+<rect x="42" y="43" width="46" height="14" rx="7" fill="#57534e"/>
+<rect x="70" y="54" width="11" height="18" rx="4" fill="#57534e"/>
+<rect x="54" y="54" width="11" height="13" rx="4" fill="#57534e"/></g></g>
 </svg>

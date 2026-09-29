@@ -1,3 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Clínica Sorriso">
-<g transform="translate(-52.78,-50.72) scale(2.0556)"><g data-halo="1" fill="#fff"><path d="M32,32 C32,32 34,66 42,66 C47,66 47,54 50,54 C53,54 53,66 58,66 C66,66 68,32 68,32 C58,38 42,38 32,32 Z" fill="#fff" stroke="#fff" stroke-width="7.4324324324324325" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M32,32 C32,32 34,66 42,66 C47,66 47,54 50,54 C53,54 53,66 58,66 C66,66 68,32 68,32 C58,38 42,38 32,32 Z" fill="#fff" stroke="#0891b2" stroke-width="5"/></g></g>
+<g transform="translate(-52.78,-50.72) scale(2.0556)"><g data-halo="1" fill="#fff"><path d="M32,32 C32,32 34,66 42,66 C47,66 47,54 50,54 C53,54 53,66 58,66 C66,66 68,32 68,32 C58,38 42,38 32,32 Z" fill="#fff" stroke="#fff" stroke-width="7.4324324324324325" stroke-linejoin="round" stroke-linecap="round"/>
+<ellipse cx="41" cy="42" rx="5" ry="3.5" fill="#fff" stroke="#fff" stroke-width="2.4324324324324325" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M32,32 C32,32 34,66 42,66 C47,66 47,54 50,54 C53,54 53,66 58,66 C66,66 68,32 68,32 C58,38 42,38 32,32 Z" fill="#a5f3fc" stroke="#0891b2" stroke-width="5"/>
+<ellipse cx="41" cy="42" rx="5" ry="3.5" fill="#ffffff"/></g></g>
 </svg>

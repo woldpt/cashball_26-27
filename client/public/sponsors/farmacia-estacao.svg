@@ -1,3 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Farmácia da Estação">
-<g transform="translate(-42.50,-42.50) scale(1.8500)"><g data-halo="1" fill="#fff"><rect x="30" y="30" width="40" height="40" rx="8" fill="#fff" stroke="#fff" stroke-width="8.702702702702702" stroke-linejoin="round" stroke-linecap="round"/><rect x="45" y="37" width="10" height="26" fill="#fff" stroke="#fff" stroke-width="2.7027027027027026" stroke-linejoin="round" stroke-linecap="round"/><rect x="37" y="45" width="26" height="10" fill="#fff" stroke="#fff" stroke-width="2.7027027027027026" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><rect x="30" y="30" width="40" height="40" rx="8" fill="#fff" stroke="#15803d" stroke-width="6"/><rect x="45" y="37" width="10" height="26" fill="#15803d"/><rect x="37" y="45" width="26" height="10" fill="#15803d"/></g></g>
+<g transform="translate(-16.07,-18.71) scale(1.3214)"><g data-halo="1" fill="#fff"><path d="M22,26 L58,26 L78,46 L78,78 L22,78 Z" fill="#fff" stroke="#fff" stroke-width="9.783783783783784" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="43" y="34" width="14" height="36" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="32" y="45" width="36" height="14" fill="#fff" stroke="#fff" stroke-width="3.7837837837837838" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M22,26 L58,26 L78,46 L78,78 L22,78 Z" fill="#f0fdf4" stroke="#15803d" stroke-width="6"/>
+<rect x="43" y="34" width="14" height="36" fill="#15803d"/>
+<rect x="32" y="45" width="36" height="14" fill="#15803d"/></g></g>
 </svg>
