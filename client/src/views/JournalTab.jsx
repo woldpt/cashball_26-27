@@ -281,8 +281,8 @@ function RichParagraphs({
 }) {
   const cap = (FILTER_TONES[category] || FILTER_TONES.all).cap;
   const bodyCls =
-    "font-newsreader text-base short:text-sm leading-relaxed whitespace-pre-line text-justify text-on-surface";
-  const leadCls = `font-newsreader text-lg short:text-base leading-relaxed whitespace-pre-line text-justify first-letter:float-left first-letter:mr-2 first-letter:mt-1.5 first-letter:font-newsreader first-letter:text-6xl first-letter:font-black first-letter:leading-[0.8] ${cap}`;
+    "text-base short:text-sm leading-relaxed whitespace-pre-line text-justify text-on-surface";
+  const leadCls = `text-lg short:text-base leading-relaxed whitespace-pre-line text-justify first-letter:float-left first-letter:mr-2 first-letter:mt-1.5 first-letter:text-6xl first-letter:font-black first-letter:leading-[0.8] ${cap}`;
   const paragraphs =
     Array.isArray(parts) && parts.length > 0
       ? splitPartsByParagraphs(parts)

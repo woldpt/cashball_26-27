@@ -1,3 +1,8 @@
+## Jornal: corpo volta ao Inter, sem serif (2026-09-29)
+- Pedido: o corpo das mensagens estava em Newsreader/serif; volta ao tipo de letra do resto do jogo (Inter).
+- Fix (só `client/src/views/JournalTab.jsx`, `RichParagraphs`): sai `font-newsreader` do corpo, da entrada e da capitular (`first-letter:font-newsreader`); mantêm-se tamanhos, `leading`, justificação e a capitular grande na cor da categoria (agora em Inter). Título intacto (`font-headline`), token `--font-newsreader` e `ShowcaseSections.jsx` intocados.
+- Checks: `eslint` no ficheiro limpo · `check:types` OK · `lint` global só com os 2 erros pré-existentes noutros ficheiros. Tweak pontual, sem `test:mobile`.
+
 ## Scout: jogador comprado deixa de mostrar PROPOSTA (2026-09-30)
 - Queixa (print): após compra na página Scout a linha mantinha o botão PROPOSTA. Causa: `playerSearchResults` é um instantâneo — o servidor emite `playerSigned`/`mySquad`/`teamsData` mas nunca re-emite a pesquisa.
 - Fix (só `client/src/hooks/socket/market.js`, handler `playerSigned`): atualização otimista de `playerSearchData` — marca o `playerId` com `team_id` próprio (`meRef`) e `transfer_status: "none"`, e o `renderActions` existente passa a mostrar `Tua equipa`. Cobre compra fixa, proposta e leilão (os três emitem `playerSigned`).
