@@ -9,8 +9,11 @@ import { memo, useId } from "react";
  * morto é cortado até `SKY_TRIM` unidades) e desce quando a cobertura
  * do colossal precisa de mais ar. Com `preserveAspectRatio`
  * `xMidYMin slice` o corte cai sempre no relvado, nunca no telão — é o
- * que permite a mesma ilustração servir o hero do StadiumTab (aspeto 3.2),
+ * que permite a mesma ilustração servir o hero do StadiumTab,
  * o card do ClubTab (3.4) e o `short:h-16` (6.3) sem perder nada.
+ * Em `shot="close"` (só o hero do StadiumTab) a câmara desce para a
+ * bancada nos estádios sem cobertura e aperta a largura à bancada:
+ * o pelado deixava de se ver nos heros largos (70% céu).
  *
  * O número de anéis, a cobertura, os camarotes e o telão crescem
  * com a lotação; os acentos arquitectónicos e a multidão usam
@@ -42,12 +45,14 @@ import { memo, useId } from "react";
  *   className?: string,
  *   occupancy?: number|null,
  *   mood?: number|null,
+ *   shot?: string,
  * }} props
  */
 
 // `occupancy`: 0..1 (fração da lotação ocupada). `null` = bancada cheia.
 // `mood`: escala real 1–50. <23 faroeste, 23–37 neutro, ≥38 festa.
 // `null` = neutro (comportamento anterior).
+// `shot`: "wide" (default, cards) ou "close" (hero do StadiumTab).
 
 // ── Helpers de cor (determinísticos, sem dependências) ──────────────
 const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
@@ -117,6 +122,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   className = "",
   occupancy = null,
   mood = null,
+  shot = "wide",
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const gid = (n) => `s${uid}-${n}`;
@@ -220,6 +226,14 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   // unidades mortas cortadas em condições normais, mais espaço no
   // colossal. O céu é desenhado de 0 a H, por isso nunca há limbo.
   const frameTop = Math.min(SKY_TRIM, roofTopY - 6);
+  // Plano aproximado (`shot="close"`): nos estádios sem cobertura o topo
+  // desce para as colinas (92 em vez de 40) e a largura aperta-se à
+  // bancada; com cobertura mantém o plano largo (o telão precisa de ar).
+  // O corte continua a cair em baixo, no relvado — nunca na bancada.
+  const close = shot === "close";
+  const closeTop = roofed ? frameTop : 92;
+  const closeW = roofed ? W : Math.min(W, Math.max(480, standX1 - standX0 + 200));
+  const closeX = (W - closeW) / 2;
 
   /** Meia-largura do relvado na profundidade y (perspectiva em fuga). */
   const pitchHalf = (y) =>
@@ -451,6 +465,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     fx: standX0 + ((f + 0.5) / 4) * (standX1 - standX0) + (hash01(f * 6.1 + 1) - 0.5) * 10,
     fy: roofBaseY - 2,
     delay: -hash01(f * 5.5) * 0.9,
+    fill: f % 2 === 0 ? home : away,
   }));
   const weedRows = [212, 234];
 
@@ -467,7 +482,11 @@ export const StadiumIllustration = memo(function StadiumIllustration({
 
   return (
     <svg
-      viewBox={`0 ${frameTop.toFixed(1)} ${W} ${(H - frameTop).toFixed(1)}`}
+      viewBox={
+        close
+          ? `${closeX.toFixed(1)} ${closeTop.toFixed(1)} ${closeW.toFixed(1)} ${(H - closeTop).toFixed(1)}`
+          : `0 ${frameTop.toFixed(1)} ${W} ${(H - frameTop).toFixed(1)}`
+      }
       preserveAspectRatio="xMidYMin slice"
       className={className}
       role="img"

@@ -32,8 +32,9 @@ const cards = [
   { cls: "h-24 sm:h-28 short:h-16", label: "ClubTab h-24", cap: 100000, mood: null },
   { cls: "h-24 sm:h-28 short:h-16", label: "ClubTab h-24 · faroeste", cap: 100000, mood: 12 },
   { cls: "h-24 sm:h-28 short:h-16", label: "ClubTab h-24 · 22k", cap: 22000, mood: null },
-  { cls: "h-28 sm:h-40 lg:h-44 short:h-20", label: "StadiumTab h-28", cap: 100000, mood: 44 },
-  { cls: "h-28 sm:h-40 lg:h-44 short:h-20", label: "StadiumTab h-28 · 50k", cap: 50000, mood: null },
+  { cls: "h-28 sm:h-40 lg:h-44 short:h-20", label: "StadiumTab h-28", cap: 100000, mood: 44, shot: "close" },
+  { cls: "h-28 sm:h-40 lg:h-44 short:h-20", label: "StadiumTab h-28 · 50k", cap: 50000, mood: null, shot: "close" },
+  { cls: "h-28 sm:h-40 lg:h-44 short:h-20", label: "StadiumTab h-28 · 5k", cap: 5000, mood: 44, shot: "close" },
 ];
 
 const root = createRoot(document.getElementById("root"));
@@ -52,6 +53,7 @@ root.render(
               primary="#e11d48"
               secondary="#fde68a"
               mood={c.mood ?? null}
+              shot={c.shot ?? "wide"}
               className="absolute inset-0 h-full w-full"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
