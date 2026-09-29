@@ -23,7 +23,7 @@ import {
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { drawNpcChoice, drawOffers, drawOffersAny } from "./game/sponsors";
 import { generateAITactic } from "./game/matchCalculations";
-import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
+import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites, withJuniorGRs, ensureFullBench } from "./game/engine";
 import { getTeamsWithCoachNames, logClubNews, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory, currentSlot } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
@@ -773,7 +773,46 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("teamsData", updatedTeams);
 		io.to(game.roomCode).emit("topScorers", []); // Reset top scorers for new season
 		io.to(game.roomCode).emit("teamForms", {}); // Reset form display for new season
+		// O reset da BD (lesões/suspensões/cooldowns a 0) não chegava ao
+		// cliente: o mySquad em memória mantinha os timers da época velha
+		// (ex. 20J no S1) até ao próximo refresh/join. Re-emite aqui — ponto
+		// único para as vias liga e Taça (ambas passam por applySeasonEnd).
+		await emitFreshSquads(game);
 		return updatedTeams;
+	}
+
+	async function emitFreshSquads(game: ActiveGame) {
+		try {
+			const connected = getPlayerList(game).filter(
+				(p: any) => p.socketId && p.teamId != null,
+			);
+			if (connected.length === 0) return;
+			const ids = [...new Set(connected.map((p: any) => p.teamId))];
+			const rows = await runAll(
+				game.db,
+				`SELECT * FROM players WHERE team_id IN (${ids.map(() => "?").join(",")})`,
+				ids as any[],
+			);
+			const byTeam = new Map<number, any[]>();
+			for (const r of rows || []) {
+				const list = byTeam.get(r.team_id) || [];
+				list.push(r);
+				byTeam.set(r.team_id, list);
+			}
+			const mw = (game.calendarIndex ?? 0) + 1;
+			for (const pl of connected as any[]) {
+				io.to(pl.socketId).emit(
+					"mySquad",
+					ensureFullBench(
+						withJuniorGRs(byTeam.get(pl.teamId) || [], pl.teamId, mw),
+						pl.teamId,
+						mw,
+					),
+				);
+			}
+		} catch (squadErr) {
+			console.error(`[${game.roomCode}] Fresh squad emit failed:`, squadErr);
+		}
 	}
 
 	async function emitSeasonEndSummary(game: ActiveGame, opts: {
