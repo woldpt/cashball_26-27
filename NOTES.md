@@ -20,6 +20,10 @@
 - `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).
 - Inclui camisolas (contorno/molde/cores/guarda), pronto de todos os membros, sponsors legíveis, fixes de join (loop fantasma + rate limit), plantels alfabéticos e prompts que não fecham com clique fora.
 
+## Auditoria às camisolas de fora: 3 notas tratadas (2026-09-29)
+- `TeamKit` importa `kitUrl` do hook (derivação de URL numa fonte única); hook devolve `Boolean(a && b && clash)` — sem `setState`, sem erro de lint; `STYLE.md` ganha §13 Camisolas (geração 120, quando se usa a de fora, fallback para o brasão).
+- Checks: `test:kit` PASS · `--check` limpo · `lint` só os 3 pré-existentes · `check:types` 0 · `test:mobile` 170/170 (com dev próprio).
+
 ## Camisolas de fora: desempate no placar (2026-09-29)
 - 32 clubes partilham a camisola de casa com outro (ex. Porto = Juventude, listas azuis). O gerador escreve agora `<slug>_away.svg` (cores trocadas, mesmo padrão): 120 SVGs; `--check` e `test:kit` cobrem as 120 e exigem fora ≠ casa.
 - `TeamKit` recebe prop `away`; hook novo `useKitClash` compara os dois SVGs de casa (sem `aria-label`) e, em empate, a equipa de fora veste a de fora — ligado no placar do LiveMatchHero e na marca de água do DuelHero.

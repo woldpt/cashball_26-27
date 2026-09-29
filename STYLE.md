@@ -185,3 +185,16 @@ o mesmo desenho é visto a 44–48px nas listas.
 **Aceite:** `npm run sponsor:sheet` → folha com as 60 a 22px (tamanho do remendo)
 e 44px (listas) sobre claro/creme/navy/escuro. A leitura a 22px decide; o craft
 vê-se a 96px.
+
+## 13. Camisolas
+
+Molde único (`clipPath id="k"`), `viewBox="0 0 100 100"`, em
+`client/public/kits/<slug>.svg` a partir de `server/db/fixtures/kits.json`
+(cores classificadas das fotos do zerozero) — **nunca editado à mão**: o
+gerador reescreve as 120 (casa + fora). `cd server && npm run generate:kits`
+(`-- --check` deteta deriva); `npm run test:kit` exige as 120 válidas e fora ≠ casa.
+
+A de fora (`<slug>_away.svg`, cores trocadas, mesmo padrão) só se usa quando
+as duas de casa empatam: o `useKitClash` compara os SVGs e a equipa de fora
+veste a de fora (placar do `LiveMatchHero`, `DuelHero`). Em 404 da camisola,
+o `TeamKit` cai para o `TeamCrest` em vez de deixar vazio.

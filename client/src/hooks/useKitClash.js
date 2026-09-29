@@ -41,5 +41,6 @@ export function useKitClash(homeCrest, awayCrest) {
       on = false;
     };
   }, [a, b]);
-  return clash;
+  // Sem os dois URLs o empate é indefinido: nunca forçar a de fora.
+  return Boolean(a && b && clash);
 }

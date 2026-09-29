@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TeamCrest } from "./TeamCrest";
+import { kitUrl } from "../../hooks/useKitClash.js";
 
 /** Parte o nome em 2 linhas equilibradas (o patch não cabe em mais). */
 function wrap2(name) {
@@ -47,10 +48,8 @@ export function TeamKit({ team, className = "h-28 object-contain", away = false 
   // Guarda o URL que falhou (não um booleano) para fazer reset sozinho
   // quando a equipa mudar — mesmo padrão do `TeamCrest`.
   const [failedKit, setFailedKit] = useState(null);
-  const kit =
-    team?.crest?.includes("/logos/")
-      ? team.crest.replace("/logos/", "/kits/").replace(/\.\w+(\?.*)?$/, away ? "_away.svg" : ".svg")
-      : null;
+  const home = kitUrl(team?.crest);
+  const kit = home && away ? home.replace(/\.svg$/, "_away.svg") : home;
   if (!kit) return null;
   if (failedKit === kit)
     return <TeamCrest team={team} size="h-full w-full text-lg" className={className} />;
