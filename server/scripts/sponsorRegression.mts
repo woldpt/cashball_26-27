@@ -7,7 +7,8 @@
  *  - Totais sobre a base da divisão: A 100%, B 120% (20 semanas), C 110%.
  *  - `taken` exclui marcas já atribuídas; pote curto devolve as que houver.
  *  - Marcas: símbolo transparente 100x100, sem `<text>` nem `clipPath`
- *    (o nome é escrito pelos componentes e não desenhado no SVG).
+ *    (o nome é escrito pelos componentes e não desenhado no SVG), com
+ *    silhueta branca (`data-halo`) e sem ser só cores claras.
  *  - Nomes compridos têm nome curto para o patch da camisola.
  *
  * Run: cd server && npm run test:sponsor
@@ -106,9 +107,20 @@ for (const division of [1, 2, 3, 4, 5]) {
 	assert(mine.every((d) => sponsorById(d.sponsorId)?.tier === division), `display D${division} no escalão certo`);
 }
 
+// Luminância relativa (WCAG) de um hex: decide se a cor sobrevive a camisola clara.
+function luminance(hex: string) {
+	const x = hex.replace("#", "");
+	const full = x.length === 3 ? [...x].map((c) => c + c).join("") : x.slice(0, 6);
+	const [r, g, b] = (full.match(/../g) ?? [])
+		.map((h) => parseInt(h, 16) / 255)
+		.map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
 // Ficheiros fixos: 1 símbolo por marca, transparente e sem texto desenhado
 const logoDir = path.join(import.meta.dirname, "..", "..", "client", "public", "sponsors");
 let logoOk = 0;
+let lightOnly = 0;
 for (const s of SPONSORS) {
 	const p = path.join(logoDir, `${s.id}.svg`);
 	const body = fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : "";
@@ -118,11 +130,21 @@ for (const s of SPONSORS) {
 		!body.includes("<text") &&
 		!body.includes("clipPath") &&
 		body.includes('data-art="1"') &&
+		body.includes('data-halo="1"') &&
 		!body.includes('fill="#ffffff" stroke="#000000"');
 	if (ok) logoOk++;
 	else console.error(`FAIL: símbolo em falta/ inválido: ${s.id}`);
+
+	// A silhueta branca não salva um corpo claro numa camisola clara: cada
+	// marca tem de ter pelo menos uma cor escura a carregá-la.
+	const colours = [...body.matchAll(/(?:fill|stroke)="(#[0-9a-fA-F]{3,6})"/g)].map((m) => m[1]!);
+	if (!colours.some((c) => luminance(c) <= 0.8)) {
+		lightOnly++;
+		console.error(`FAIL: marca só com cores claras (invisível em camisola clara): ${s.id}`);
+	}
 }
-assertEq(logoOk, 60, "60 símbolos válidos (transparentes, sem texto)");
+assertEq(logoOk, 60, "60 símbolos válidos (transparentes, sem texto, com silhueta)");
+assertEq(lightOnly, 0, "nenhuma marca só com cores claras");
 
 // O patch da camisola cabe em 2 linhas: nome curto até 13 caracteres e sem
 // palavras maiores que 11 (a partir daí o SVG tem de apertar a linha).

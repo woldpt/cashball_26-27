@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "sponsor:marks": "node scripts/generateSponsorMarks.mjs",
+    "sponsor:sheet": "node scripts/sponsorSheet.mjs",
     "check:types": "node scripts/jsDocTypeChecker.cjs",
     "test:calendarsquad": "node scripts/teamSquadCalendarRegression.mjs",
     "test:cupetlist": "node scripts/cupEtListRegression.mjs",
