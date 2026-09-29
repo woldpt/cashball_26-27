@@ -1,3 +1,7 @@
+## LiveMatchHero: marcas de água no topo em mobile (2026-09-29)
+- Em mobile os emblemas de fundo (`top-1/2 -translate-y-1/2`) ficavam escondidos atrás do placar central. Fix só de `className`: `top-2 translate-y-0` em mobile, `sm:top-1/2 sm:-translate-y-1/2` em desktop. Só `LiveMatchHero.jsx`.
+- Checks: `eslint` no ficheiro OK · `check:types` OK · `lint` global só os 3 pré-existentes. Tweak pontual, sem `test:mobile`.
+
 ## StadiumIllustration: reenquadramento + direção de arte (2026-09-28)
 
 Avaliação da geração de estádios (7/10) → plano aprovado e executado. Só `StadiumIllustration.jsx` + os keyframes em `index.css` + fixtures de harness; **as 3 views não mudaram** (a revisão dos heroes não exigiu ajustes — ver abaixo).
