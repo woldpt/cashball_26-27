@@ -2,6 +2,12 @@
 - Em mobile os emblemas de fundo (`top-1/2 -translate-y-1/2`) ficavam escondidos atrás do placar central. Fix só de `className`: `top-2 translate-y-0` em mobile, `sm:top-1/2 sm:-translate-y-1/2` em desktop. Só `LiveMatchHero.jsx`.
 - Checks: `eslint` no ficheiro OK · `check:types` OK · `lint` global só os 3 pré-existentes. Tweak pontual, sem `test:mobile`.
 
+## GameDialog: popups de valor já não fecham com clique fora (2026-09-29)
+- Pedido: o popup do leilão (inserir valor base) fechava com clique fora e perdia o valor escrito. Fix aprovado para os 3 popups de inserir valor.
+- 1 linha em `GameDialog.jsx`: `dismissable={dialog?.mode !== "prompt"}` no `ModalShell` — leilão, venda directa e renovar contrato já não fecham com clique fora; `mode: "prompt"` só existe nesses 3 (grep). Confirmações (incl. waiting/terminal de contrato) mantêm o fechar no clique fora; Esc e Cancelar continuam a fechar.
+- Comportamento (sem layout) → sem `test:mobile`.
+- Checks: `lint` só os 3 pré-existentes · `check:types` OK.
+
 ## Plantel: ordenação «Base» → «Alfabeticamente» (2026-09-29)
 - `MySquadTab.jsx`: a opção do dropdown `base`/«Base» (sem comparador — ordem original) vira `alpha`/«Alfabeticamente» e ganha comparador por `player.name` (`localeCompare`) — ordena de A–Z dentro de cada grupo de posição. O default `useState("alpha")` mantém o dropdown a abrir nesta opção.
 - Tweak de label + comparador (sem layout estrutural) → sem `test:mobile`.

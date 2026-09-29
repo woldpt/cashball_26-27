@@ -85,7 +85,8 @@ export function GameDialog({ dialog, onClose, z = MODAL_Z.default }) {
       onClose={onClose}
       z={z}
       variant="card"
-      dismissable
+      // Prompts de valor não fecham com clique fora (perderia o valor); confirmações fecham.
+      dismissable={dialog?.mode !== "prompt"}
     >
       <div
         tabIndex={0}
