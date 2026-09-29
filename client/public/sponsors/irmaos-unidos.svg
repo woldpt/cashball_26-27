@@ -1,3 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Serralharia Irmãos Unidos">
-<g transform="translate(-20.62,-22.01) scale(1.4136)"><g data-halo="1" fill="#fff"><path d="M62,26 A14,14 0 0 0 44,32 L56,44 L32,68 A8,8 0 0 0 44,76 L68,52 L60,44 A14,14 0 0 0 62,26 Z" fill="#fff" stroke="#fff" stroke-width="3.537189122792837" stroke-linejoin="round" stroke-linecap="round"/><circle cx="58" cy="32" r="5" fill="#fff" stroke="#fff" stroke-width="3.537189122792837" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M62,26 A14,14 0 0 0 44,32 L56,44 L32,68 A8,8 0 0 0 44,76 L68,52 L60,44 A14,14 0 0 0 62,26 Z" fill="#475569"/><circle cx="58" cy="32" r="5" fill="#fff"/></g></g>
+<g transform="translate(-3.09,-13.20) scale(1.1492)"><g data-halo="1" fill="#fff"><rect x="14" y="26" width="62" height="20" rx="5" fill="#fff" stroke="#fff" stroke-width="4.350937508247994" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M66,46 C76,46 82,56 76,64 L64,54 Z" fill="#fff" stroke="#fff" stroke-width="4.350937508247994" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="42" y="42" width="14" height="42" rx="7" fill="#fff" stroke="#fff" stroke-width="4.350937508247994" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><rect x="14" y="26" width="62" height="20" rx="5" fill="#475569"/>
+<path d="M66,46 C76,46 82,56 76,64 L64,54 Z" fill="#475569"/>
+<rect x="42" y="42" width="14" height="42" rx="7" fill="#475569"/></g></g>
 </svg>

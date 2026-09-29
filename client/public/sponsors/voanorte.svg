@@ -1,3 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="VoaNorte">
-<g transform="translate(-1.39,0.67) scale(1.0278)"><g data-halo="1" fill="#fff"><path d="M50,22 L58,52 L86,62 L58,62 L54,74 L46,74 L42,62 L14,62 L42,52 Z" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M50,22 L58,52 L86,62 L58,62 L54,74 L46,74 L42,62 L14,62 L42,52 Z" fill="#0ea5e9"/></g></g>
+<g transform="translate(-7.18,-9.42) scale(1.1212)"><g data-halo="1" fill="#fff"><path d="M22,44 L30,24 L38,44 Z" fill="#fff" stroke="#fff" stroke-width="4.45945945945946" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="18" y="44" width="66" height="15" rx="7.5" fill="#fff" stroke="#fff" stroke-width="4.45945945945946" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M54,59 L36,82 L68,59 Z" fill="#fff" stroke="#fff" stroke-width="4.45945945945946" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M22,44 L30,24 L38,44 Z" fill="#0ea5e9"/>
+<rect x="18" y="44" width="66" height="15" rx="7.5" fill="#0ea5e9"/>
+<path d="M54,59 L36,82 L68,59 Z" fill="#0ea5e9"/></g></g>
 </svg>

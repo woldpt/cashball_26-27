@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Talhos Carne Boa">
-<g transform="translate(-0.99,-3.03) scale(1.0198)"><g data-halo="1" fill="#fff"><ellipse cx="50" cy="52" rx="31" ry="22" transform="rotate(-18 50 52)" fill="#fff" stroke="#fff" stroke-width="4.9028551256334465" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="47" y="34" width="7" height="40" rx="3.5" transform="rotate(-18 50 52)" fill="#fff" stroke="#fff" stroke-width="7.4028551256334465" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="36" y="34" width="26" height="7" rx="3.5" transform="rotate(-18 50 52)" fill="#fff" stroke="#fff" stroke-width="7.4028551256334465" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><ellipse cx="50" cy="52" rx="31" ry="22" fill="#b91c1c" transform="rotate(-18 50 52)"/>
-<rect x="47" y="34" width="7" height="40" rx="3.5" fill="#fee2e2" stroke="#7f1d1d" stroke-width="2.5" transform="rotate(-18 50 52)"/>
-<rect x="36" y="34" width="26" height="7" rx="3.5" fill="#fee2e2" stroke="#7f1d1d" stroke-width="2.5" transform="rotate(-18 50 52)"/></g></g>
+<g transform="translate(0.72,-3.22) scale(0.9856)"><g data-halo="1" fill="#fff"><ellipse cx="50" cy="54" rx="32" ry="23" transform="rotate(-18 50 54)" fill="#fff" stroke="#fff" stroke-width="5.073134963576858" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="32" y="32" width="36" height="10" rx="5" transform="rotate(-18 50 54)" fill="#fff" stroke="#fff" stroke-width="5.073134963576858" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="45" y="32" width="10" height="34" rx="5" transform="rotate(-18 50 54)" fill="#fff" stroke="#fff" stroke-width="5.073134963576858" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><ellipse cx="50" cy="54" rx="32" ry="23" transform="rotate(-18 50 54)" fill="#b91c1c"/>
+<rect x="32" y="32" width="36" height="10" rx="5" transform="rotate(-18 50 54)" fill="#fee2e2"/>
+<rect x="45" y="32" width="10" height="34" rx="5" transform="rotate(-18 50 54)" fill="#fee2e2"/></g></g>
 </svg>

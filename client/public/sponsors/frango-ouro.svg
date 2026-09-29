@@ -1,9 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Frango d&#x27;Ouro">
-<g transform="translate(-1.39,-4.47) scale(1.0278)"><g data-halo="1" fill="#fff"><path d="M50,86 C34,78 28,64 37,52 C44,43 46,34 46,20 C60,32 72,46 72,64 C72,78 60,84 50,86 Z" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="14" y="44" width="72" height="7" rx="3.5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="14" y="60" width="72" height="7" rx="3.5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="14" y="76" width="72" height="7" rx="3.5" fill="#fff" stroke="#fff" stroke-width="4.864864864864865" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M50,86 C34,78 28,64 37,52 C44,43 46,34 46,20 C60,32 72,46 72,64 C72,78 60,84 50,86 Z" fill="#ef4444"/>
-<rect x="14" y="44" width="72" height="7" rx="3.5" fill="#450a0a"/>
-<rect x="14" y="60" width="72" height="7" rx="3.5" fill="#450a0a"/>
-<rect x="14" y="76" width="72" height="7" rx="3.5" fill="#450a0a"/></g></g>
+<g transform="translate(0.09,-0.31) scale(0.9148)"><g data-halo="1" fill="#fff"><ellipse cx="44" cy="60" rx="24" ry="18" transform="rotate(-32 44 60)" fill="#fff" stroke="#fff" stroke-width="5.46565545571817" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="56" y="44" width="34" height="14" rx="7" transform="rotate(-32 56 51)" fill="#fff" stroke="#fff" stroke-width="5.46565545571817" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="86" cy="31" r="9" fill="#fff" stroke="#fff" stroke-width="5.46565545571817" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><ellipse cx="44" cy="60" rx="24" ry="18" transform="rotate(-32 44 60)" fill="#ef4444"/>
+<rect x="56" y="44" width="34" height="14" rx="7" transform="rotate(-32 56 51)" fill="#fcd34d"/>
+<circle cx="86" cy="31" r="9" fill="#fcd34d"/></g></g>
 </svg>
