@@ -2924,3 +2924,9 @@ Plano C1+C2 (quando fizer):
 - Rotas em `index.ts` com `apiLimiter`: `GET /api/push/key`, `POST /api/push/subscribe|unsubscribe` (sessão obrigatória, endpoint https/localhost, 404 com flag off).
 - Descobertas: `sw.js` já existe e já é registado no arranque (Passo 3 só acrescenta handlers + bump); `manifest.webmanifest` já válido (nada a fazer).
 - Checks: `typecheck` PASS · `test:connect-smoke` PASS · prova viva (flag false → 404/404; flag true → key + 401 sem sessão + 400 endpoint mau; `notifyUser` sem subscrição não faz nada) · `audit:socketio` sem alterações · `git diff --check` limpo.
+
+## Push Fase 2: gatilho no checkAllReady (2026-09-29)
+- `push.ts` ganha `maybeNotifyLastMissing(game)`: só lobby, `requiredTeamIds ≥ 2`, em falta `== 1`; throttle 5 min em `Map`; sem subscrição não carimba; nunca rebenta.
+- Gancho de 1 linha no topo do `checkAllReady` (`weeklyFlowHelpers.ts`, antes do gate de ausência — o em-falta está tipicamente com o browser fechado) + 1 import. Sem `await` bloqueante.
+- Texto: "Todos prontos. Falta a tua tática!", `url: "/"` (app sem deep-link de sala).
+- Checks: `typecheck` PASS · prova tsx 6/6 (dispara, throttle, 2 em falta, solo, flag off, intervalo) · `test:connect-smoke` PASS · `diff --check` limpo.

@@ -9,6 +9,8 @@
 
 const webpush = require("web-push");
 const auth = require("./auth");
+import { requiredTeamIds } from "./roomStateHelpers";
+import type { ActiveGame } from "./types";
 
 export interface PushPayload {
   title: string;
@@ -94,4 +96,44 @@ export async function notifyUser(
   } catch (err: any) {
     console.error("[push] notifyUser:", err?.message || err);
   }
+}
+
+// Último aviso por treinador (throttle Fase 2: 1 a cada 5 minutos; em
+// memória — um restart limpa, aceitável enquanto não há repetição).
+const lastPushAt = new Map<string, number>();
+const PUSH_COOLDOWN_MS = 5 * 60 * 1000;
+
+/**
+ * Gatilho do Passo 2: se no lobby faltar exatamente um treinador, avisa-o.
+ * Leitura pura + fire-and-forget — corre antes do gate de presença do
+ * `checkAllReady` porque o em-falta está tipicamente ausente (browser
+ * fechado). Nunca bloqueia nem rebenta o avanço do jogo.
+ */
+export function maybeNotifyLastMissing(game: ActiveGame): void {
+  void doMaybeNotify(game).catch((err: any) =>
+    console.error("[push] maybeNotify:", err?.message || err),
+  );
+}
+
+async function doMaybeNotify(game: ActiveGame): Promise<void> {
+  if (!isPushEnabled()) return;
+  if (game.gamePhase !== "lobby") return;
+  const required = requiredTeamIds(game);
+  if (required.size < 2) return;
+  const waiting = Object.values(game.seats).filter(
+    (s) => s.status === "member" && s.teamId != null && required.has(s.teamId),
+  );
+  const missing = waiting.filter((s) => !s.intent.ready);
+  if (missing.length !== 1) return;
+  const name = missing[0].name;
+  const key = name.toLowerCase();
+  if (Date.now() - (lastPushAt.get(key) || 0) < PUSH_COOLDOWN_MS) return;
+  const subs = await auth.getPushSubscriptions(name);
+  if (!subs || subs.length === 0) return;
+  lastPushAt.set(key, Date.now());
+  await notifyUser(name, {
+    title: "CashBall",
+    body: "Todos prontos. Falta a tua tática!",
+    url: "/",
+  });
 }
