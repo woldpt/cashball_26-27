@@ -349,21 +349,28 @@ export function clearSeatPositions(game: ActiveGame): void {
 
 /**
  * Equipas humanas que a fase em curso obriga a estar presentes.
- * - Fase de jogo: equipas nas fixtures em curso.
- * - Lobby: equipas dos treinadores bloqueados (a semana não arranca sem eles).
- * - Lobby da final da Taça (ronda 5): TODOS os treinadores com equipa — a
- *   final só-NPC arrancava ao primeiro clique porque só as finalistas
- *   contavam (a jornada 14 ficava sem momento de tabela). Espetadores
- *   continuam sem validação de 11 (isLobbyStarter), só o arranque espera.
+ * - Fase de jogo: equipas nas fixtures em curso (a meio da ronda só quem
+ *   joga bloqueia — um eliminado que sai não congela o jogo em curso; a
+ *   semana seguinte volta a esperá-lo no lobby).
+ * - Lobby MULTIPLAYER (2+ assentos member com equipa): TODOS os membros —
+ *   regra «todos os membros sempre»: nenhuma semana (Taça incluída) arranca
+ *   sem todos online e com Pronto clicado, mesmo eliminados/espetadores.
+ *   Antes só as equipas em jogo contavam e a ronda de Taça avançava com um
+ *   clique de espectador enquanto os outros estavam offline. Subsume o
+ *   caso antigo da final (ronda 5) e o fallback de lockedCoaches.
+ * - Lobby de sala de 1 treinador: comportamento de sempre — fixtures em
+ *   curso (rondas só-NPC da Taça avançam com um clique do espectador).
+ *   Espetadores continuam sem validação de 11 (isLobbyStarter), só o
+ *   arranque espera.
  */
 export function requiredTeamIds(game: ActiveGame): Set<number> {
   const ids = new Set<number>();
-  const event = game.currentEvent as any;
-  if (game.gamePhase === "lobby" && event?.type === "cup" && event?.round === 5) {
+  if (game.gamePhase === "lobby") {
     for (const seat of Object.values(game.seats)) {
       if (seat.status === "member" && seat.teamId != null) ids.add(seat.teamId);
     }
-    return ids;
+    if (ids.size >= 2) return ids;
+    ids.clear();
   }
   const fixtures = game.currentFixtures || [];
   if (fixtures.length > 0) {
@@ -381,8 +388,10 @@ export function requiredTeamIds(game: ActiveGame): Set<number> {
 }
 
 /**
- * Treinadores ausentes com equipa em jogo. Vazio = nada bloqueia.
- * Treinadores sem equipa (despedidos, espectadores) nunca bloqueiam.
+ * Treinadores ausentes que bloqueiam a fase: com equipa em jogo nas fixtures
+ * em curso e, no lobby multiplayer, TODOS os membros com equipa (ver
+ * `requiredTeamIds`). Vazio = nada bloqueia. Treinadores sem equipa
+ * (despedidos, espectadores) nunca bloqueiam.
  */
 export function computeAbsentees(game: ActiveGame): string[] {
   const required = requiredTeamIds(game);

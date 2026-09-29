@@ -306,3 +306,28 @@ test("F10 — kick a meio da ronda resolve a espera pendente", async () => {
     "assento persistido como kicked",
   );
 });
+
+// ── F11 ─────────────────────────────────────────────────────────────────────
+test("F11 — lobby multiplayer exige TODOS os membros (eliminados incluídos)", () => {
+  // Regra «todos os membros sempre»: com 2+ assentos member com equipa, o
+  // lobby exige todos online (e o checkAllReady exige o Pronto de todos) —
+  // mesmo eliminados da Taça, que não estão nas fixtures da ronda.
+  const game: any = makeGame({
+    gamePhase: "lobby",
+    currentFixtures: [{ homeTeamId: 101, awayTeamId: 102 }], // Taça só-NPC
+  });
+  game.seats["A"] = seat("A", HOME); // eliminado da Taça
+  game.seats["B"] = seat("B", AWAY); // eliminado da Taça
+
+  // Ninguém ligado: o lobby multiplayer congela por TODOS os membros.
+  assert.deepEqual(computeAbsentees(game), ["A", "B"]);
+
+  // A liga-se: ainda falta B — a regra «todos os membros» não avança com um só.
+  game.playersByName["A"] = { name: "A", teamId: HOME, socketId: "s1" };
+  assert.deepEqual(computeAbsentees(game), ["B"]);
+
+  // Sala de 1 treinador (B sai da sala): eliminação volta a não bloquear —
+  // o comportamento de sala de 1 (avanço com um clique) mantém-se.
+  game.seats["B"].status = "left";
+  assert.deepEqual(computeAbsentees(game), []);
+});
