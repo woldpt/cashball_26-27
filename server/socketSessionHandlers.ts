@@ -568,44 +568,54 @@ export function registerSessionSocketHandlers(
 		const trimmedName = name.trim();
 		const ip = getSocketIp(socket);
 
-		// Rate limit por nome e por IP (anti brute-force / spam)
-		if (
-			!allowLimit(
-				joinRateStore,
-				`name:${trimmedName.toLowerCase()}`,
-				JOIN_LIMIT_PER_NAME.max,
-				JOIN_LIMIT_PER_NAME.windowMs,
-			) ||
-			!allowLimit(
-				joinRateStore,
-				`ip:${ip}`,
-				JOIN_LIMIT_PER_IP.max,
-				JOIN_LIMIT_PER_IP.windowMs,
-			)
-		) {
-			return socket.emit(
-				"joinError",
-				"Demasiadas tentativas. Tenta novamente em breve.",
-			);
-		}
-
 		// Autenticação por token de sessão (nunca por password em claro)
 		const session = await verifySession(token.trim());
-		if (!session.ok) {
-			// Falha transitória de verificação (BD): não é credencial inválida.
-			// Mensagem fora do vocabulário de `isAuthError` para o cliente
-			// manter a sessão e o retry automático recuperar sozinho.
+
+		// Rate limit por nome e por IP (anti brute-force): apenas falhas de
+		// autenticação consomem — um join com sessão válida (reconect, auto-
+		// rejoin ao abrir o browser) nunca pode bloquear o dono da conta, e
+		// um erro transitório é falha do servidor, não ataque.
+		const joinNameKey = `name:${trimmedName.toLowerCase()}`;
+		const authOk =
+			!!session.ok &&
+			session.name.toLowerCase() === trimmedName.toLowerCase();
+		if (!authOk) {
 			if (session.transient) {
+				// Falha transitória de verificação (BD): não é credencial
+				// inválida e não consome o rate limit. Mensagem fora do
+				// vocabulário de `isAuthError` para o cliente manter a sessão
+				// e o retry recuperar sozinho.
 				return socket.emit(
 					"joinError",
 					"Sessão temporariamente indisponível. A tentar de novo.",
 				);
 			}
-			return socket.emit("joinError", "Sessão expirada. Volta a iniciar sessão.");
-		}
-		if (session.name.toLowerCase() !== trimmedName.toLowerCase()) {
+			if (
+				!allowLimit(
+					joinRateStore,
+					joinNameKey,
+					JOIN_LIMIT_PER_NAME.max,
+					JOIN_LIMIT_PER_NAME.windowMs,
+				) ||
+				!allowLimit(
+					joinRateStore,
+					`ip:${ip}`,
+					JOIN_LIMIT_PER_IP.max,
+					JOIN_LIMIT_PER_IP.windowMs,
+				)
+			) {
+				return socket.emit(
+					"joinError",
+					"Demasiadas tentativas. Tenta novamente em breve.",
+				);
+			}
+			if (!session.ok) {
+				return socket.emit("joinError", "Sessão expirada. Volta a iniciar sessão.");
+			}
 			return socket.emit("joinError", "Sessão inválida para este treinador.");
 		}
+		// Sessão válida: limpar falhas anteriores do nome — a conta está provada.
+		joinRateStore.delete(joinNameKey);
 
 		// Limite de criação de salas novas por treinador
 		if (
