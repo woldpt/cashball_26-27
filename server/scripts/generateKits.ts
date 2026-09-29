@@ -72,16 +72,34 @@ function main() {
   const kitsPath = path.join(__dirname, "..", "db", "fixtures", "kits.json");
   const { kits } = JSON.parse(fs.readFileSync(kitsPath, "utf-8")) as { kits: Record<string, Kit> };
   const outDir = path.join(__dirname, "..", "..", "client", "public", "kits");
-  fs.mkdirSync(outDir, { recursive: true });
   const missing = TEAMS.filter((t) => !kits[t.slug]).map((t) => t.slug);
   if (missing.length) {
     console.error(`Em falta no kits.json: ${missing.join(", ")}`);
     process.exit(1);
   }
+  // --check: só compara (sem escrever) — drift = ficheiro a divergir do que o
+  // kits.json + molde atual gerariam.
+  const check = process.argv.includes("--check");
+  if (!check) fs.mkdirSync(outDir, { recursive: true });
+  const drift: string[] = [];
   for (const t of TEAMS) {
     const svg = shirtSvg(t.name, kits[t.slug]);
-    fs.writeFileSync(path.join(outDir, `${t.slug}.svg`), svg);
+    const file = path.join(outDir, `${t.slug}.svg`);
+    if (check) {
+      if (fs.existsSync(file) && fs.readFileSync(file, "utf-8") === svg) continue;
+      drift.push(t.slug);
+    } else {
+      fs.writeFileSync(file, svg);
+    }
   }
-  console.log(`Gerados ${TEAMS.length} SVGs em ${outDir}`);
+  if (check) {
+    if (!drift.length) console.log("tudo atualizado");
+    else {
+      console.error(`drift: ${drift.join(", ")}`);
+      process.exitCode = 1;
+    }
+  } else {
+    console.log(`Gerados ${TEAMS.length} SVGs em ${outDir}`);
+  }
 }
 main();

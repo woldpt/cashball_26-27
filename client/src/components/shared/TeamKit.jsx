@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TeamCrest } from "./TeamCrest";
 
 /** Parte o nome em 2 linhas equilibradas (o patch não cabe em mais). */
 function wrap2(name) {
@@ -22,8 +23,8 @@ function wrap2(name) {
  * emblema + nome direto no tecido, sem fundo.
  *
  * O slug deriva do brasão (`/logos/<slug>.ext` → `/kits/<slug>.svg`), por isso
- * não precisa de mapa novo. Sem `crest` válido ou com erro de carga, não
- * renderiza nada (todos os 60 clubes têm brasão e camisola). Sem marca,
+ * não precisa de mapa novo. Sem `crest` válido não renderiza nada; com erro
+ * de carga da camisola cai para o `TeamCrest` (não deixa vazio). Sem marca,
  * a camisola aparece limpa.
  *
  * A marca é um SVG sobreposto no mesmo `viewBox` da camisola (100x100), por
@@ -45,7 +46,9 @@ export function TeamKit({ team, className = "h-28 object-contain" }) {
     team?.crest?.includes("/logos/")
       ? team.crest.replace("/logos/", "/kits/").replace(/\.\w+(\?.*)?$/, ".svg")
       : null;
-  if (!kit || failedKit === kit) return null;
+  if (!kit) return null;
+  if (failedKit === kit)
+    return <TeamCrest team={team} size="h-full w-full text-lg" className={className} />;
   const brand = team?.sponsorBrand;
   const lines = brand ? wrap2(brand.name || brand.short).map((l) => l.toUpperCase()) : [];
   // O texto encolhe para caber na largura do peito (~0,74 unidades por
