@@ -1,67 +1,316 @@
 {
   "generatedAt": "2026-09-27",
   "source": "Equipamento principal de cada clube segundo o zerozero.pt (época 2026/27); escouralense sem imagem no zerozero — fallback pelas cores do brasão.",
-  "patterns": ["solid", "stripes", "hoops", "halves", "sash", "band", "shoulders"],
+  "patterns": [
+    "solid",
+    "stripes",
+    "hoops",
+    "halves",
+    "sash",
+    "band",
+    "shoulders"
+  ],
   "kits": {
-    "sporting": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "hoops" },
-    "porto": { "base": "#1F5FD0", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "benfica": { "base": "#E30613", "secondary": "#F5F5F5", "pattern": "solid" },
-    "sp-braga": { "base": "#D2202F", "secondary": "#F5F5F5", "pattern": "shoulders" },
-    "famalicao": { "base": "#F5F5F5", "secondary": "#14246B", "pattern": "band" },
-    "gil-vicente": { "base": "#D2202F", "secondary": "#14246B", "pattern": "solid" },
-    "estoril": { "base": "#F5C400", "secondary": "#1F5FD0", "pattern": "solid" },
-    "moreirense": { "base": "#F5F5F5", "secondary": "#0A8A3D", "pattern": "solid" },
-    "maritimo": { "base": "#D2202F", "secondary": "#0A8A3D", "pattern": "stripes" },
-    "ac-viseu": { "base": "#151515", "secondary": "#F5F5F5", "pattern": "solid" },
-    "torreense": { "base": "#7A1F2B", "secondary": "#C9A227", "pattern": "band" },
-    "u-leiria": { "base": "#F5F5F5", "secondary": "#D2202F", "pattern": "solid" },
-    "vizela": { "base": "#6EC1E4", "secondary": "#1F5FD0", "pattern": "stripes" },
-    "lus-lourosa": { "base": "#F5C400", "secondary": "#151515", "pattern": "stripes" },
-    "feirense": { "base": "#1F5FD0", "secondary": "#F5C400", "pattern": "solid" },
-    "chaves": { "base": "#1F5FD0", "secondary": "#D2202F", "pattern": "solid" },
-    "amarante": { "base": "#151515", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "belenenses": { "base": "#1F5FD0", "secondary": "#F5F5F5", "pattern": "solid" },
-    "academica": { "base": "#151515", "secondary": "#F5F5F5", "pattern": "solid" },
-    "varzim": { "base": "#151515", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "mafra": { "base": "#F5C400", "secondary": "#0A8A3D", "pattern": "solid" },
-    "u-santarem": { "base": "#D2202F", "secondary": "#F5F5F5", "pattern": "solid" },
-    "trofense": { "base": "#D2202F", "secondary": "#14246B", "pattern": "band" },
-    "atletico": { "base": "#F5C400", "secondary": "#14246B", "pattern": "stripes" },
-    "braganca": { "base": "#F5C400", "secondary": "#1F5FD0", "pattern": "stripes" },
-    "vianense": { "base": "#1F5FD0", "secondary": "#F5F5F5", "pattern": "solid" },
-    "rebordosa": { "base": "#1F5FD0", "secondary": "#F5C400", "pattern": "solid" },
-    "leca": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "hoops" },
-    "vit-sernache": { "base": "#D2202F", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "louletano": { "base": "#D2202F", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "juventude": { "base": "#1F5FD0", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "portel": { "base": "#F5F5F5", "secondary": "#F5C400", "pattern": "sash" },
-    "u-montemor": { "base": "#151515", "secondary": "#F5F5F5", "pattern": "halves" },
-    "monte-do-trigo": { "base": "#D2202F", "secondary": "#F5F5F5", "pattern": "shoulders" },
-    "vendas-novas": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "at-reguengos": { "base": "#F5F5F5", "secondary": "#0A8A3D", "pattern": "stripes" },
-    "sp-viana": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "hoops" },
-    "arcoense": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "hoops" },
-    "redondense": { "base": "#D2202F", "secondary": "#1F5FD0", "pattern": "stripes" },
-    "arouca": { "base": "#F5C400", "secondary": "#1F5FD0", "pattern": "solid" },
-    "vitoria-sc": { "base": "#F5F5F5", "secondary": "#151515", "pattern": "shoulders" },
-    "alverca": { "base": "#1F5FD0", "secondary": "#D2202F", "pattern": "shoulders" },
-    "rio-ave": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "leixoes": { "base": "#D2202F", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "felgueiras": { "base": "#D2202F", "secondary": "#1F5FD0", "pattern": "stripes" },
-    "penafiel": { "base": "#D2202F", "secondary": "#151515", "pattern": "solid" },
-    "portimonense": { "base": "#151515", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "vit-setubal": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "sao-joao-ver": { "base": "#D2202F", "secondary": "#F5F5F5", "pattern": "hoops" },
-    "fafe": { "base": "#F5C400", "secondary": "#151515", "pattern": "solid" },
-    "lusitano-evora": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "oliv-hospital": { "base": "#1F5FD0", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "malveira": { "base": "#1F5FD0", "secondary": "#F5F5F5", "pattern": "stripes" },
-    "alcochetense": { "base": "#0A8A3D", "secondary": "#F5F5F5", "pattern": "hoops" },
-    "o-elvas": { "base": "#1F5FD0", "secondary": "#F5C400", "pattern": "band" },
-    "sintrense": { "base": "#F5C400", "secondary": "#1F5FD0", "pattern": "solid" },
-    "cabrela": { "base": "#1F5FD0", "secondary": "#D2202F", "pattern": "stripes" },
-    "escouralense": { "base": "#F5F5F5", "secondary": "#1A1A7A", "pattern": "solid", "source": "crest" },
-    "aljustrelense": { "base": "#F5F5F5", "secondary": "#D2202F", "pattern": "stripes" },
-    "castrense": { "base": "#0A8A3D", "secondary": "#151515", "pattern": "stripes" }
+    "sporting": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "hoops"
+    },
+    "porto": {
+      "base": "#1F5FD0",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "benfica": {
+      "base": "#E30613",
+      "secondary": "#F5F5F5",
+      "pattern": "solid"
+    },
+    "sp-braga": {
+      "base": "#D2202F",
+      "secondary": "#F5F5F5",
+      "pattern": "shoulders"
+    },
+    "famalicao": {
+      "base": "#F5F5F5",
+      "secondary": "#14246B",
+      "pattern": "band"
+    },
+    "gil-vicente": {
+      "base": "#D2202F",
+      "secondary": "#14246B",
+      "pattern": "solid"
+    },
+    "estoril": {
+      "base": "#F5C400",
+      "secondary": "#0A8A3D",
+      "pattern": "solid"
+    },
+    "moreirense": {
+      "base": "#F5F5F5",
+      "secondary": "#0A8A3D",
+      "pattern": "solid"
+    },
+    "maritimo": {
+      "base": "#0A8A3D",
+      "secondary": "#D2202F",
+      "pattern": "stripes"
+    },
+    "ac-viseu": {
+      "base": "#151515",
+      "secondary": "#F5F5F5",
+      "pattern": "solid"
+    },
+    "torreense": {
+      "base": "#D2202F",
+      "secondary": "#1F5FD0",
+      "pattern": "band"
+    },
+    "u-leiria": {
+      "base": "#F5F5F5",
+      "secondary": "#D2202F",
+      "pattern": "solid"
+    },
+    "vizela": {
+      "base": "#6EC1E4",
+      "secondary": "#1F5FD0",
+      "pattern": "stripes"
+    },
+    "lus-lourosa": {
+      "base": "#F5C400",
+      "secondary": "#151515",
+      "pattern": "stripes"
+    },
+    "feirense": {
+      "base": "#1F5FD0",
+      "secondary": "#D2202F",
+      "pattern": "solid"
+    },
+    "chaves": {
+      "base": "#1F5FD0",
+      "secondary": "#D2202F",
+      "pattern": "solid"
+    },
+    "amarante": {
+      "base": "#151515",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "belenenses": {
+      "base": "#1F5FD0",
+      "secondary": "#F5F5F5",
+      "pattern": "solid"
+    },
+    "academica": {
+      "base": "#151515",
+      "secondary": "#F5F5F5",
+      "pattern": "solid"
+    },
+    "varzim": {
+      "base": "#151515",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "mafra": {
+      "base": "#F5C400",
+      "secondary": "#0A8A3D",
+      "pattern": "solid"
+    },
+    "u-santarem": {
+      "base": "#D2202F",
+      "secondary": "#F5F5F5",
+      "pattern": "solid"
+    },
+    "trofense": {
+      "base": "#D2202F",
+      "secondary": "#14246B",
+      "pattern": "band"
+    },
+    "atletico": {
+      "base": "#F5C400",
+      "secondary": "#14246B",
+      "pattern": "stripes"
+    },
+    "braganca": {
+      "base": "#F5C400",
+      "secondary": "#1F5FD0",
+      "pattern": "stripes"
+    },
+    "vianense": {
+      "base": "#1F5FD0",
+      "secondary": "#F5F5F5",
+      "pattern": "solid"
+    },
+    "rebordosa": {
+      "base": "#1F5FD0",
+      "secondary": "#F5C400",
+      "pattern": "solid"
+    },
+    "leca": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "hoops"
+    },
+    "vit-sernache": {
+      "base": "#D2202F",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "louletano": {
+      "base": "#D2202F",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "juventude": {
+      "base": "#1F5FD0",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "portel": {
+      "base": "#F5F5F5",
+      "secondary": "#F5C400",
+      "pattern": "sash"
+    },
+    "u-montemor": {
+      "base": "#151515",
+      "secondary": "#F5F5F5",
+      "pattern": "halves"
+    },
+    "monte-do-trigo": {
+      "base": "#D2202F",
+      "secondary": "#F5F5F5",
+      "pattern": "shoulders"
+    },
+    "vendas-novas": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "at-reguengos": {
+      "base": "#F5F5F5",
+      "secondary": "#0A8A3D",
+      "pattern": "stripes"
+    },
+    "sp-viana": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "hoops"
+    },
+    "arcoense": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "hoops"
+    },
+    "redondense": {
+      "base": "#D2202F",
+      "secondary": "#1F5FD0",
+      "pattern": "stripes"
+    },
+    "arouca": {
+      "base": "#F5C400",
+      "secondary": "#1F5FD0",
+      "pattern": "solid"
+    },
+    "vitoria-sc": {
+      "base": "#F5F5F5",
+      "secondary": "#151515",
+      "pattern": "shoulders"
+    },
+    "alverca": {
+      "base": "#1F5FD0",
+      "secondary": "#D2202F",
+      "pattern": "shoulders"
+    },
+    "rio-ave": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "leixoes": {
+      "base": "#D2202F",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "felgueiras": {
+      "base": "#F5F5F5",
+      "secondary": "#D2202F",
+      "pattern": "halves"
+    },
+    "penafiel": {
+      "base": "#D2202F",
+      "secondary": "#151515",
+      "pattern": "solid"
+    },
+    "portimonense": {
+      "base": "#F5C400",
+      "secondary": "#0A8A3D",
+      "pattern": "solid"
+    },
+    "vit-setubal": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "sao-joao-ver": {
+      "base": "#D2202F",
+      "secondary": "#F5F5F5",
+      "pattern": "hoops"
+    },
+    "fafe": {
+      "base": "#F5C400",
+      "secondary": "#151515",
+      "pattern": "solid"
+    },
+    "lusitano-evora": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "oliv-hospital": {
+      "base": "#1F5FD0",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "malveira": {
+      "base": "#1F5FD0",
+      "secondary": "#F5F5F5",
+      "pattern": "stripes"
+    },
+    "alcochetense": {
+      "base": "#0A8A3D",
+      "secondary": "#F5F5F5",
+      "pattern": "hoops"
+    },
+    "o-elvas": {
+      "base": "#1F5FD0",
+      "secondary": "#F5C400",
+      "pattern": "band"
+    },
+    "sintrense": {
+      "base": "#F5C400",
+      "secondary": "#1F5FD0",
+      "pattern": "solid"
+    },
+    "cabrela": {
+      "base": "#1F5FD0",
+      "secondary": "#D2202F",
+      "pattern": "stripes"
+    },
+    "escouralense": {
+      "base": "#F5F5F5",
+      "secondary": "#1A1A7A",
+      "pattern": "solid",
+      "source": "crest"
+    },
+    "aljustrelense": {
+      "base": "#F5F5F5",
+      "secondary": "#D2202F",
+      "pattern": "stripes"
+    },
+    "castrense": {
+      "base": "#0A8A3D",
+      "secondary": "#151515",
+      "pattern": "stripes"
+    }
   }
 }
