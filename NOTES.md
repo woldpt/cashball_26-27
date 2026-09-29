@@ -1,3 +1,9 @@
+## Odds realistas: teto 15 + empate raro no gigante vs fraco (2026-09-30)
+- Queixa: «as odds de apostas são demasiado irrealistas» — diagnóstico: azarões a pagar demais em todo o lado (16.20 dentro da divisão, 67.00 na Taça). Causas: teto `ODDS_MAX_ODDS = 67` sem paralelo real + empate mínimo de 22% que impedia o favorito de descer a ~1,08.
+- Só `server/game/commentary.ts` (fonte única; engine, briefing e TacticsView herdam): teto 67 → 15, empate `0.22+0.08` → `0.09+0.21·proximidade` (X a ~8-9 no extremo, ~3,4 no jogo igual), divisor Elo 45 → 50 (o 50 saiu da banda 40–45 do plano porque o 45 deixava o 1.º vs 8.º a 14.78; com 50 fica a 11.82 — mesmo objetivo, uma linha). Bases de divisão, vantagem casa e margem 1.05 intactos.
+- Depois: igual 2.33/3.40/3.07 · D1 1.º vs 8.º 1.30/5.17/11.82 · extremo da Taça 1.07/8.83/15.00.
+- Checks: `typecheck` PASS · `test:engine-unit` 24/24 · `audit:socketio` salta (só display, sem sockets) · `audit:gamestate` sem sala viva, fica para a próxima.
+
 ## Deploy v26.09.23 no rick (2026-09-29)
 - Tag `v26.09.23` (CalVer rolling): bump `APP_VERSION`, push master, rebuild `docker compose` no rick.
 - `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).

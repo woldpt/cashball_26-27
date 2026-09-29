@@ -1135,7 +1135,10 @@ function tacticStartPhrase(
 const ODDS_TEAM_COUNT = 8; // equipas por divisão
 const ODDS_DIVISION_BASE = [55, 40, 27, 15, 5]; // div 1..5
 const ODDS_HOME_ADVANTAGE = 3;
-const ODDS_MAX_ODDS = 67;
+const ODDS_ELO_DIVISOR = 50; // sensibilidade ao gap de força (maior = odds mais comprimidas)
+const ODDS_MAX_ODDS = 15; // teto realista do azarão (as casas raramente passam dos 12-15)
+const ODDS_DRAW_BASE = 0.09; // empate improvável no gigante vs fraco (~9% → odd ~8-9)
+const ODDS_DRAW_CLOSE = 0.21; // +proximidade → ~30% no jogo igual (odd ~3,4)
 const ODDS_MARGIN = 1.05;
 
 interface OddsTeam {
@@ -1158,14 +1161,15 @@ export function computeMatchOdds(
   const sAway = oddsStrength(away);
   const diff = sHome + ODDS_HOME_ADVANTAGE - sAway;
 
-  const expHome = Math.pow(10, diff / 45);
-  const expAway = Math.pow(10, -diff / 45);
+  const expHome = Math.pow(10, diff / ODDS_ELO_DIVISOR);
+  const expAway = Math.pow(10, -diff / ODDS_ELO_DIVISOR);
   const winHome = expHome / (expHome + expAway);
   const winAway = expAway / (expHome + expAway);
 
-  // Empate mais provável quando as equipas estão equilibradas.
+  // Empate mais provável quando as equipas estão equilibradas; raro no
+  // gigante vs fraco — sem isto o favorito nunca desce a ~1,08.
   const closeness = Math.exp(-Math.abs(diff) / 30);
-  const pDraw = 0.22 + 0.08 * closeness;
+  const pDraw = ODDS_DRAW_BASE + ODDS_DRAW_CLOSE * closeness;
 
   let pHome = winHome * (1 - pDraw);
   let pAway = winAway * (1 - pDraw);
