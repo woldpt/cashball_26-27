@@ -1,3 +1,8 @@
+## Deploy v26.09.23 no rick (2026-09-29)
+- Tag `v26.09.23` (CalVer rolling): bump `APP_VERSION`, push master, rebuild `docker compose` no rick.
+- `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).
+- Inclui camisolas (contorno/molde/cores/guarda), pronto de todos os membros, sponsors legíveis, fixes de join (loop fantasma + rate limit), plantels alfabéticos e prompts que não fecham com clique fora.
+
 ## Camisolas: contorno, molde, cores e guarda (2026-09-29)
 - **Contraste em painel escuro:** o tema é dark (`#131313`), e a camisola mais negra (Academica/AC Viseu `#151515`) sumia no painel. O contorno passou de 1 stroke `#00000040` 2u para 2 strokes: `#ffffff59` 4u por baixo + `#00000059` 1.5u por cima (o mesmo padrão da silhueta branca das marcas). Todas as 60 legíveis nos painéis escuros e creme.
 - **Molde:** afunilamento abaixo de y=55 (x 28→31 / 72→69), bainha levemente curvada (`Q50,91.5`), costura de gola (stroke `#00000040` 0.8u na COLLAR), punhos 3.5→4u. O patch do patrocinador (faixa y 26–50) não mexe.
