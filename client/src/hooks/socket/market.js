@@ -276,6 +276,22 @@ export function registerMarketListeners(handlers, refs, ctx) {
 	});
 	socket.on("playerSigned", (data) => {
 		handlers.setSigningCelebration(data);
+		// A pesquisa do scout é um instantâneo — marca o jogador como nosso
+		// para a linha passar a "Tua equipa" sem nova pesquisa.
+		const signedId = Number(data?.playerId);
+		const myTeamId = refs.meRef.current?.teamId;
+		if (!Number.isFinite(signedId) || myTeamId == null) return;
+		handlers.setPlayerSearchData?.((prev) => {
+			if (!prev || !Array.isArray(prev.results)) return prev;
+			return {
+				...prev,
+				results: prev.results.map((p) =>
+					Number(p.id) === signedId
+						? { ...p, team_id: myTeamId, transfer_status: "none", transfer_price: 0 }
+						: p,
+				),
+			};
+		});
 	});
 	return () => {
 		socket.off("marketUpdate");

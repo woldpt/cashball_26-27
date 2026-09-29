@@ -1,3 +1,8 @@
+## Scout: jogador comprado deixa de mostrar PROPOSTA (2026-09-30)
+- Queixa (print): após compra na página Scout a linha mantinha o botão PROPOSTA. Causa: `playerSearchResults` é um instantâneo — o servidor emite `playerSigned`/`mySquad`/`teamsData` mas nunca re-emite a pesquisa.
+- Fix (só `client/src/hooks/socket/market.js`, handler `playerSigned`): atualização otimista de `playerSearchData` — marca o `playerId` com `team_id` próprio (`meRef`) e `transfer_status: "none"`, e o `renderActions` existente passa a mostrar `Tua equipa`. Cobre compra fixa, proposta e leilão (os três emitem `playerSigned`).
+- Checks: `eslint` no ficheiro limpo · `check:types` OK · `lint` global só com os 2 erros pré-existentes. Sem `test:mobile` (só dados, sem layout).
+
 ## Gráfico de saldo sem reset na viragem de época (2026-09-30)
 - Queixa: ao início do 2.º ano o gráfico fazia reset. Causa: `requestFinanceData` filtrava `team_balance_history` por `season = ?` — época nova sem linhas = histórico vazio + só o ponto sintético "Agora".
 - Fix (só `server/socketSessionHandlers.ts`): janela deslizante das últimas 20 semanas (`ORDER BY season DESC, slot DESC LIMIT 20`, reordenado para ASC) com `x` global (`(season-1) * 20 + slot`) para épocas não colapsarem no eixo; `BalanceLineChart.jsx` já ordenava por `x` e mostra o ano no tooltip, sem mudanças.
