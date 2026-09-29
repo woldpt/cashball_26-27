@@ -62,7 +62,8 @@ function shirtSvg(name: string, k: Kit): string {
 <path d="${COLLAR}" fill="${k.secondary}"/>
 <path d="M12,30 L22,35" stroke="${k.secondary}" stroke-width="3.5"/>
 <path d="M88,30 L78,35" stroke="${k.secondary}" stroke-width="3.5"/>
-<path d="${SHIRT}" fill="none" stroke="#00000040" stroke-width="2" stroke-linejoin="round"/>
+<path d="${SHIRT}" fill="none" stroke="#ffffff59" stroke-width="4" stroke-linejoin="round"/>
+<path d="${SHIRT}" fill="none" stroke="#00000059" stroke-width="1.5" stroke-linejoin="round"/>
 </svg>
 `;
 }
