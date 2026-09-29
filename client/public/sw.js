@@ -1,7 +1,7 @@
 // CashBall service worker — offline fallback para a SPA.
 // Bump VERSION on any client change so activate() clears the stale cache
 // and the user picks up new hashed bundles.
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = `cashball-${VERSION}`;
 const CORE_URLS = ['/', '/index.html'];
 
@@ -76,5 +76,40 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+  );
+});
+
+// Web Push (Fase 3): mostra o aviso; ao tocar, foca a app ou abre-a.
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'CashBall', {
+      body: data.body || 'Há novidades na tua sala.',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: 'cashball-ready',
+      renotify: true,
+      data: { url: data.url || '/' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((list) => {
+        for (const c of list) {
+          if ('focus' in c) return c.focus();
+        }
+        return self.clients.openWindow(url);
+      })
   );
 });

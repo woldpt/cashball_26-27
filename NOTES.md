@@ -2930,3 +2930,9 @@ Plano C1+C2 (quando fizer):
 - Gancho de 1 linha no topo do `checkAllReady` (`weeklyFlowHelpers.ts`, antes do gate de ausência — o em-falta está tipicamente com o browser fechado) + 1 import. Sem `await` bloqueante.
 - Texto: "Todos prontos. Falta a tua tática!", `url: "/"` (app sem deep-link de sala).
 - Checks: `typecheck` PASS · prova tsx 6/6 (dispara, throttle, 2 em falta, solo, flag off, intervalo) · `test:connect-smoke` PASS · `diff --check` limpo.
+
+## Push Fase 3: cliente (2026-09-29)
+- Novo `PushSettings.jsx` (`components/shared`): Panel "Avisos" — activar (perm + key + subscribe + registo, anula órfã se o servidor recusar), desactivar, dica iPhone (só iOS sem PWA). +2 linhas na grid de `UserSettingsPage`.
+- `sw.js`: handlers `push` (tag `cashball-ready`, ícone, `data.url`) + `notificationclick` (foca ou abre `/`); bump `v5→v6`. Manifest intocado (já válido).
+- Checks: `eslint` 0 · `check:types` OK · `node --check sw.js` · `test:mobile settings-resp-test` PASS 5/5 + screenshot 390 visto.
+- Prova viva (Chromium real, contexto persistente — incognito não tem Push API): subscrição FCM verdadeira + linha em `push_subscriptions`; envio real via `notifyUser` aceite (sem 410); unsubscribe remove a linha. Conta de teste e servidores temporários limpos.
