@@ -675,6 +675,18 @@ export function registerMatchListeners(handlers, refs, ctx) {
 		handlers.setWaitingForResults(false);
 		handlers.setResultsWaitTimedOut(false);
 		handlers.setMatchweekCount(data.matchweek);
+		// Histórico de jornadas: o servidor só envia o histórico completo no
+		// gameState (join) — fundir a jornada acabada de jogar, senão a tab
+		// Classificações fica presa no snapshot do join (ex. J11 na J13).
+		if (Number.isFinite(data.matchweek) && Array.isArray(data.results)) {
+			const slim = data.results.map((m) => ({
+				homeTeamId: m.homeTeamId,
+				awayTeamId: m.awayTeamId,
+				finalHomeGoals: m.finalHomeGoals ?? m.homeGoals ?? 0,
+				finalAwayGoals: m.finalAwayGoals ?? m.awayGoals ?? 0,
+			}));
+			handlers.setAllMatchResults((prev) => ({ ...(prev || {}), [data.matchweek]: slim }));
+		}
 		// As classificações do cliente ficam desatualizadas até o servidor
 		// emitir os dados novos (teamsData/teamForms/topScorers) e
 		// "standingsUpdated". Marca para o indicador "A atualizar…".
