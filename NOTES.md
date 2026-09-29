@@ -2916,3 +2916,11 @@ Plano C1+C2 (quando fizer):
 - Bump `APP_VERSION` para v26.09.22 (landing mostra a versão nova).
 - Push master + tag v26.09.22; `docker compose up --build -d` no rick com `backend Healthy`.
 - Fica na tag; sem push do registo.
+
+## Push Fase 1: infra Web Push inerte com flag desligada (2026-09-29)
+- Branch `feature/push`. `npm i web-push` no servidor; chaves VAPID geradas (`.env` local, ignorado; `.env.example` com placeholders vazios).
+- Tabela `push_subscriptions` em `accounts.db` (`auth.js`: PK `(coach_name, endpoint)`, upsert por browser) + 3 helpers exportados.
+- Novo `server/push.ts`: `isPushEnabled/saveSubscription/removeSubscription/notifyUser`; 410 apaga a subscrição; tudo em `try/catch`, nunca rebenta.
+- Rotas em `index.ts` com `apiLimiter`: `GET /api/push/key`, `POST /api/push/subscribe|unsubscribe` (sessão obrigatória, endpoint https/localhost, 404 com flag off).
+- Descobertas: `sw.js` já existe e já é registado no arranque (Passo 3 só acrescenta handlers + bump); `manifest.webmanifest` já válido (nada a fazer).
+- Checks: `typecheck` PASS · `test:connect-smoke` PASS · prova viva (flag false → 404/404; flag true → key + 401 sem sessão + 400 endpoint mau; `notifyUser` sem subscrição não faz nada) · `audit:socketio` sem alterações · `git diff --check` limpo.

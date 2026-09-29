@@ -222,6 +222,16 @@ db.serialize(() => {
 			}
 		},
 	);
+	// Subscrições Web Push (Fase 1): uma linha por browser — (coach_name, endpoint).
+	db.run(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      coach_name TEXT NOT NULL COLLATE NOCASE,
+      endpoint   TEXT NOT NULL,
+      keys       TEXT NOT NULL DEFAULT '{}',
+      created_at INTEGER NOT NULL,
+      PRIMARY KEY (coach_name, endpoint)
+    )
+  `);
 });
 
 /**
@@ -1565,6 +1575,71 @@ function adminSetCoachTeam(roomCode, coachName, teamId, activeGames) {
 	});
 }
 
+/**
+ * Subscrições Web Push (Fase 1, inertes atrás de ENABLE_PUSH — a flag
+ * vive nas rotas de index.ts, aqui só se guarda/apaga/lista).
+ * Uma linha por browser: (coach_name, endpoint); re-subscrever faz upsert.
+ */
+function savePushSubscription(name, endpoint, keys) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName || typeof endpoint !== "string" || !endpoint) {
+		return Promise.resolve(false);
+	}
+	return new Promise((resolve) => {
+		db.run(
+			`INSERT INTO push_subscriptions (coach_name, endpoint, keys, created_at)
+			 VALUES (?, ?, ?, ?)
+			 ON CONFLICT(coach_name, endpoint) DO UPDATE SET keys = excluded.keys, created_at = excluded.created_at`,
+			[normalizedName, endpoint, JSON.stringify(keys || {}), Date.now()],
+			(err) => {
+				if (err) {
+					console.error("[auth] savePushSubscription error:", err.message);
+					return resolve(false);
+				}
+				resolve(true);
+			},
+		);
+	});
+}
+
+function removePushSubscription(name, endpoint) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName || typeof endpoint !== "string" || !endpoint) {
+		return Promise.resolve(false);
+	}
+	return new Promise((resolve) => {
+		db.run(
+			"DELETE FROM push_subscriptions WHERE coach_name = ? COLLATE NOCASE AND endpoint = ?",
+			[normalizedName, endpoint],
+			(err) => {
+				if (err) {
+					console.error("[auth] removePushSubscription error:", err.message);
+					return resolve(false);
+				}
+				resolve(true);
+			},
+		);
+	});
+}
+
+function getPushSubscriptions(name) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve([]);
+	return new Promise((resolve) => {
+		db.all(
+			"SELECT endpoint, keys FROM push_subscriptions WHERE coach_name = ? COLLATE NOCASE",
+			[normalizedName],
+			(err, rows) => {
+				if (err) {
+					console.error("[auth] getPushSubscriptions error:", err.message);
+					return resolve([]);
+				}
+				resolve(rows || []);
+			},
+		);
+	});
+}
+
 module.exports = {
 	verifyOrCreateManager,
 	verifyManager,
@@ -1591,6 +1666,10 @@ module.exports = {
 	verifySession,
 	destroySession,
 	destroySessionsForManager,
+	// Web Push subscriptions (Fase 1)
+	savePushSubscription,
+	removePushSubscription,
+	getPushSubscriptions,
 	// Admin functions
 	adminListUsers,
 	adminChangePassword,
