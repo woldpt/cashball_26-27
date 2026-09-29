@@ -1,3 +1,8 @@
+## Gráfico de saldo sem reset na viragem de época (2026-09-30)
+- Queixa: ao início do 2.º ano o gráfico fazia reset. Causa: `requestFinanceData` filtrava `team_balance_history` por `season = ?` — época nova sem linhas = histórico vazio + só o ponto sintético "Agora".
+- Fix (só `server/socketSessionHandlers.ts`): janela deslizante das últimas 20 semanas (`ORDER BY season DESC, slot DESC LIMIT 20`, reordenado para ASC) com `x` global (`(season-1) * 20 + slot`) para épocas não colapsarem no eixo; `BalanceLineChart.jsx` já ordenava por `x` e mostra o ano no tooltip, sem mudanças.
+- Checks: `typecheck` PASS · único consumidor confirmado (`FinancesTab.jsx`).
+
 ## Resultados das Jornadas presos no snapshot do join (2026-09-30)
 - Queixa: na jornada 13 só aparecem 11 (sala P9XFLJ, faltam as 2 últimas). Causa: o servidor só envia o histórico completo (`allMatchResults`) no `gameState` (join); no pós-jogo emite `matchResults` (transiente) + `seasonState` (sem histórico) e o handler `matchResults` do cliente (`match.js`) atualizava `matchweekCount` mas nunca fundia `data.results` no `allMatchResults` — quem fica ligado entre jornadas vê o snapshot do join.
 - Fix (só `client/src/hooks/socket/match.js`): no `matchResults`, com guarda (`matchweek` finito + `results` array — taça sem jornada não toca no histórico), funde a projeção magra `{ homeTeamId, awayTeamId, finalHomeGoals, finalAwayGoals }` (fallback `homeGoals/awayGoals`) na chave da jornada, preservando as anteriores.

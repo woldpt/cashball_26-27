@@ -1864,9 +1864,10 @@ export function registerSessionSocketHandlers(
 
 				// ── Balance history ──────────────────────────────────────────────
 				// Saldo real de fim de semana, gravado em team_balance_history
-				// (um ponto por slot do calendário). Só se envia a época atual
-				// (máx. 20 pontos: 1 amigável + 14 liga + 5 taça). Cada ponto tem
-				// um `label` para o eixo X do gráfico e `x` = slot do calendário.
+				// (um ponto por slot do calendário). Janela deslizante das últimas
+				// 20 semanas (atravessa a viragem de época em vez de fazer reset).
+				// Cada ponto tem um `label` para o eixo X e `x` global
+				// (época * 20 + slot) para épocas distintas não colapsarem no eixo.
 				let balanceHistory: Array<{
 					x: number;
 					year: number;
@@ -1877,16 +1878,18 @@ export function registerSessionSocketHandlers(
 				try {
 					const histRows = await runAll(
 						game.db,
-						`SELECT slot, matchweek, year, balance FROM team_balance_history
-						 WHERE team_id = ? AND season = ?
-						 ORDER BY slot ASC`,
-						[teamId, game.season],
+						`SELECT slot, season, matchweek, year, balance FROM team_balance_history
+						 WHERE team_id = ?
+						 ORDER BY season DESC, slot DESC
+						 LIMIT 20`,
+						[teamId],
 					);
 					const cupTick = ["", "16 avos", "Oitavos", "Quartos", "Meias", "Final"];
-					balanceHistory = (histRows || []).map((r) => {
+					const ordered = [...(histRows || [])].reverse();
+					balanceHistory = ordered.map((r) => {
 						const entry = SEASON_CALENDAR[r.slot ?? 0];
 						return {
-							x: r.slot ?? 0,
+							x: (Math.max(1, r.season ?? 1) - 1) * SEASON_CALENDAR.length + (r.slot ?? 0),
 							year: r.year ?? 0,
 							matchweek: r.matchweek ?? 0,
 							balance: Math.round(r.balance ?? 0),
