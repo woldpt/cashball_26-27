@@ -3,7 +3,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, WAGE_SEED_SPREAD, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
-import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec, slimMatchResult } from "./coreHelpers";
+import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec, serializeRoomTask, slimMatchResult } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { dealDisplaySponsors } from "./game/sponsors";
 import { getOfflineCoaches, getRoomRoster } from "./presenceHelpers";
@@ -1628,6 +1628,11 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                           // com as mesmas garantias: revalida orçamento — o valor só era
                           // verificado no lance —, respeita o lock do agente e movimenta
                           // dinheiro/transferência numa transação).
+                          // Serializado por sala (mesma fila do finalizeAuction):
+                          // leilões restaurados com endsAt expirado disparam todos
+                          // no mesmo tick e o 2.º BEGIN falhava dentro da
+                          // transação do 1.º (SQLITE_ERROR).
+                          serializeRoomTask(roomCode, () =>
                           (async () => {
                             const closeUnsold = async () => {
                               const pl = await runGet<any>(db, "SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid]);
@@ -1676,7 +1681,8 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                             pushRecent(player, { playerId: pid, playerName: player.name, sold: true, buyerTeamId, buyerTeamName: buyerTeam?.name ?? "?", finalBid });
                           })().catch((err) => {
                             console.error(`[${roomCode}] ❌ finalizeAuction (crash-recovery):`, err);
-                          });
+                          }),
+                          );
                         }, timerMs) as unknown as any;
                         // unref para não bloquear shutdown
                         if (tid && typeof (tid as any).unref === "function") (tid as any).unref();

@@ -9,6 +9,7 @@ import {
   seasonToYear,
   runExec,
   runGet,
+  serializeRoomTask,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
@@ -239,14 +240,25 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     );
   };
 
-  const finalizeAuction = async (game: ActiveGame, playerId: number) => {
+  const finalizeAuction = (game: ActiveGame, playerId: number) => {
     // Nunca rejeita: os chamadores (timers e deps tipadas `=> void`) não
     // apanham promessas — qualquer erro é registado e o leilão fecha.
-    try {
-      await runFinalizeAuction(game, playerId);
-    } catch (err) {
-      console.error(`[${game.roomCode}] ❌ finalizeAuction:`, err);
-    }
+    // Serializado por sala: leilões com o mesmo endsAt disparam no mesmo
+    // tick e o 2.º BEGIN falhava dentro da transação do 1.º (SQLITE_ERROR).
+    serializeRoomTask(game.roomCode, async () => {
+      try {
+        await runFinalizeAuction(game, playerId);
+      } catch (err) {
+        console.error(`[${game.roomCode}] ❌ finalizeAuction:`, err);
+        // Nunca deixar o leilão preso sem timer: rearma uma tentativa.
+        if ((game.auctions as any)?.[playerId] && !(game.auctionTimers as any)?.[playerId]) {
+          if (!game.auctionTimers) game.auctionTimers = {};
+          (game.auctionTimers as any)[playerId] = setTimeout(() => {
+            finalizeAuction(game, playerId);
+          }, 5000);
+        }
+      }
+    });
   };
 
   const runFinalizeAuction = async (game: ActiveGame, playerId: number) => {

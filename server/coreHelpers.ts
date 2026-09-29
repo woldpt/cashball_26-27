@@ -254,6 +254,21 @@ export function runExec(
   });
 }
 
+// Fila de tarefas por sala: transações multi-statement com awaits pelo meio
+// (ex. finalizeAuction) não podem correr em concorrência na mesma ligação
+// sqlite — o 2.º BEGIN falha com "cannot start a transaction within a
+// transaction". Nunca rejeita: erros são registados e a fila continua.
+const roomTaskChains = new Map<string, Promise<unknown>>();
+export function serializeRoomTask(roomCode: string, task: () => Promise<unknown>): void {
+  const prev = roomTaskChains.get(roomCode) ?? Promise.resolve();
+  roomTaskChains.set(
+    roomCode,
+    prev.then(task).catch((err) => {
+      console.error(`[${roomCode}] ❌ room task:`, err);
+    }),
+  );
+}
+
 /**
  * Returns all teams with coach_name from managers table via JOIN.
  * Use this instead of SELECT * FROM teams when you need coach names.

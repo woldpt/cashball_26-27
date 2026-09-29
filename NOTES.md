@@ -1,3 +1,9 @@
+## Leilões presos na P9XFLJ: nested-BEGIN serializado por sala (2026-09-29)
+- Erros SQL da sala: só um, repetido — `SQLITE_ERROR: cannot start a transaction within a transaction` no `finalizeAuction` (rajadas 15:28 ~16×, 16:03, 16:05). Causa: `BEGIN` fora do `try` + timers com o mesmo `endsAt` a disparar no mesmo tick na mesma ligação. Sem retry (timer já limpo) → 22 jogadores presos em `transfer_status='auction'`; orçamentos intactos (falha antes de qualquer UPDATE); `integrity_check` ok.
+- Fix (3 ficheiros, servidor): `serializeRoomTask(roomCode, task)` novo no `coreHelpers.ts` (fila por sala, nunca rejeita); `finalizeAuction` passa pela fila e em falha rearma retry em 5 s em vez de deixar preso; o inline do `getGame` (`gameManager.ts`) envolve-se na mesma fila — dedup total evitado de propósito (o load não tem `io`/schedulers NPC; decisão do utilizador).
+- Reparação dos 22 no arranque: o próximo deploy faz restart → o restauro rearma os timers (floor 1 s) → finalizam em série pela fila (vendem ou voltam ao plantel).
+- Checks: `typecheck` PASS · prova node (16 BEGIN concorrentes: sem fila 16/16 falham, com fila 0 erros + 16 aplicados) · `audit:socketio` 0 erros/101 avisos pré-existentes. Sem cliente → sem `test:mobile`. Sem deploy no rick (utilizador não pediu).
+
 ## Jornal: corpo volta ao Inter, sem serif (2026-09-29)
 - Pedido: o corpo das mensagens estava em Newsreader/serif; volta ao tipo de letra do resto do jogo (Inter).
 - Fix (só `client/src/views/JournalTab.jsx`, `RichParagraphs`): sai `font-newsreader` do corpo, da entrada e da capitular (`first-letter:font-newsreader`); mantêm-se tamanhos, `leading`, justificação e a capitular grande na cor da categoria (agora em Inter). Título intacto (`font-headline`), token `--font-newsreader` e `ShowcaseSections.jsx` intocados.
