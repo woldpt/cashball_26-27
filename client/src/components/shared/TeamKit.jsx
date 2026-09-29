@@ -64,7 +64,7 @@ export function TeamKit({ team, className = "h-28 object-contain" }) {
       />
       {brand && (
         <svg viewBox="0 0 100 100" role="img" aria-label={brand.name} className="absolute inset-0 h-full w-full">
-          <image href={`/sponsors/${brand.sponsorId}.svg`} x="39" y="28" width="22" height="22" />
+          <image href={`/sponsors/${brand.sponsorId}.svg`} x="38" y="26" width="24" height="24" />
           {lines.map((line, i) => {
             const over = 0.74 * line.length * size > inner;
             return (
