@@ -80,6 +80,11 @@ const {
 	adminSetCoachTeam,
 } = require("./auth");
 const {
+	saveSubscription: savePushSubscription,
+	removeSubscription: removePushSubscription,
+	isPushEnabled,
+} = require("./push") as typeof import("./push");
+const {
 	getSeasonEndMatchweek,
 	runAll,
 	runGet,
@@ -846,6 +851,73 @@ app.get("/auth/avatar", apiLimiter, async (req, res) => {
 		return res.send(avatar.buffer);
 	} catch (error) {
 		console.error("[/auth/avatar] Error:", error.message);
+		return res.status(500).json({ error: "Erro interno." });
+	}
+});
+
+// ── Web Push (Fase 1: inerte com ENABLE_PUSH=false) ──────────────────────────
+function pushDisabled(res: any) {
+	return res.status(404).json({ error: "Avisos indisponíveis." });
+}
+
+function pushBodyName(body: any): string {
+	return typeof body?.name === "string" ? body.name.trim() : "";
+}
+
+async function pushSessionOk(req: any, name: string): Promise<boolean> {
+	const sessionName = await getSessionNameFromReq(req);
+	return !!sessionName && sessionName.toLowerCase() === name.toLowerCase();
+}
+
+app.get("/api/push/key", apiLimiter, async (_req, res) => {
+	if (!isPushEnabled() || !process.env.VAPID_PUBLIC) return pushDisabled(res);
+	return res.json({ key: process.env.VAPID_PUBLIC });
+});
+
+app.post("/api/push/subscribe", apiLimiter, async (req, res) => {
+	if (!isPushEnabled()) return pushDisabled(res);
+	try {
+		const name = pushBodyName(req.body);
+		const endpoint =
+			typeof req.body?.endpoint === "string" ? req.body.endpoint : "";
+		const keys = req.body?.keys;
+		if (
+			!name ||
+			(!endpoint.startsWith("https://") &&
+				!endpoint.startsWith("http://localhost")) ||
+			!keys ||
+			typeof keys.p256dh !== "string" ||
+			typeof keys.auth !== "string"
+		)
+			return res.status(400).json({ error: "Subscrição inválida." });
+		if (!(await pushSessionOk(req, name)))
+			return res.status(401).json({ error: "Sessão inválida." });
+		const ok = await savePushSubscription(name, endpoint, {
+			p256dh: keys.p256dh,
+			auth: keys.auth,
+		});
+		if (!ok) return res.status(500).json({ error: "Erro ao guardar." });
+		return res.json({ ok: true });
+	} catch (error) {
+		console.error("[/api/push/subscribe] Error:", error.message);
+		return res.status(500).json({ error: "Erro interno." });
+	}
+});
+
+app.post("/api/push/unsubscribe", apiLimiter, async (req, res) => {
+	if (!isPushEnabled()) return pushDisabled(res);
+	try {
+		const name = pushBodyName(req.body);
+		const endpoint =
+			typeof req.body?.endpoint === "string" ? req.body.endpoint : "";
+		if (!name || !endpoint)
+			return res.status(400).json({ error: "Subscrição inválida." });
+		if (!(await pushSessionOk(req, name)))
+			return res.status(401).json({ error: "Sessão inválida." });
+		await removePushSubscription(name, endpoint);
+		return res.json({ ok: true });
+	} catch (error) {
+		console.error("[/api/push/unsubscribe] Error:", error.message);
 		return res.status(500).json({ error: "Erro interno." });
 	}
 });

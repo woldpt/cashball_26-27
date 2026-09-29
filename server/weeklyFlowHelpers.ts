@@ -1,4 +1,5 @@
 import type { ActiveGame, PlayerSession, Tactic } from "./types";
+import { maybeNotifyLastMissing } from "./push";
 import type { CalendarEntry } from "./gameConstants";
 import { SPONSOR_SECOND_TRANCHE_SLOT, sponsorById } from "./game/sponsors";
 import {
@@ -2064,6 +2065,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   }
 
   async function checkAllReady(game: ActiveGame) {
+    // Web Push (Fase 2): antes do gate de presença — o em-falta está
+    // tipicamente ausente. Leitura pura + fire-and-forget, sem await.
+    maybeNotifyLastMissing(game);
     // ── Congelamento: um treinador da ronda ausente pára a sala inteira ────
     // Antes, a ausência era simplesmente ignorada a meio do jogo (só contavam
     // os ligados) e o jogo avançava sem ele — a jornada seguinte chegava-lhe

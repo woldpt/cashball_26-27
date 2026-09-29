@@ -4,6 +4,7 @@ import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
 import { ModalShell } from "../components/shared/ModalShell.jsx";
 import { processAvatarFile } from "../utils/avatarUpload.js";
 import { Panel } from "../components/shared/Panel.jsx";
+import { PushSettings } from "../components/shared/PushSettings.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { Button } from "../components/shared/Button.jsx";
@@ -579,6 +580,9 @@ export function UserSettingsPage({
 					</div>
 				)}
 			</Panel>
+
+			{/* Avisos push */}
+			<PushSettings me={me} backendUrl={backendUrl} />
 
 			{/* Change Password */}
 			<Panel title="Palavra-Passe" icon="lock">

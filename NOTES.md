@@ -2916,3 +2916,23 @@ Plano C1+C2 (quando fizer):
 - Bump `APP_VERSION` para v26.09.22 (landing mostra a versão nova).
 - Push master + tag v26.09.22; `docker compose up --build -d` no rick com `backend Healthy`.
 - Fica na tag; sem push do registo.
+
+## Push Fase 1: infra Web Push inerte com flag desligada (2026-09-29)
+- Branch `feature/push`. `npm i web-push` no servidor; chaves VAPID geradas (`.env` local, ignorado; `.env.example` com placeholders vazios).
+- Tabela `push_subscriptions` em `accounts.db` (`auth.js`: PK `(coach_name, endpoint)`, upsert por browser) + 3 helpers exportados.
+- Novo `server/push.ts`: `isPushEnabled/saveSubscription/removeSubscription/notifyUser`; 410 apaga a subscrição; tudo em `try/catch`, nunca rebenta.
+- Rotas em `index.ts` com `apiLimiter`: `GET /api/push/key`, `POST /api/push/subscribe|unsubscribe` (sessão obrigatória, endpoint https/localhost, 404 com flag off).
+- Descobertas: `sw.js` já existe e já é registado no arranque (Passo 3 só acrescenta handlers + bump); `manifest.webmanifest` já válido (nada a fazer).
+- Checks: `typecheck` PASS · `test:connect-smoke` PASS · prova viva (flag false → 404/404; flag true → key + 401 sem sessão + 400 endpoint mau; `notifyUser` sem subscrição não faz nada) · `audit:socketio` sem alterações · `git diff --check` limpo.
+
+## Push Fase 2: gatilho no checkAllReady (2026-09-29)
+- `push.ts` ganha `maybeNotifyLastMissing(game)`: só lobby, `requiredTeamIds ≥ 2`, em falta `== 1`; throttle 5 min em `Map`; sem subscrição não carimba; nunca rebenta.
+- Gancho de 1 linha no topo do `checkAllReady` (`weeklyFlowHelpers.ts`, antes do gate de ausência — o em-falta está tipicamente com o browser fechado) + 1 import. Sem `await` bloqueante.
+- Texto: "Todos prontos. Falta a tua tática!", `url: "/"` (app sem deep-link de sala).
+- Checks: `typecheck` PASS · prova tsx 6/6 (dispara, throttle, 2 em falta, solo, flag off, intervalo) · `test:connect-smoke` PASS · `diff --check` limpo.
+
+## Push Fase 3: cliente (2026-09-29)
+- Novo `PushSettings.jsx` (`components/shared`): Panel "Avisos" — activar (perm + key + subscribe + registo, anula órfã se o servidor recusar), desactivar, dica iPhone (só iOS sem PWA). +2 linhas na grid de `UserSettingsPage`.
+- `sw.js`: handlers `push` (tag `cashball-ready`, ícone, `data.url`) + `notificationclick` (foca ou abre `/`); bump `v5→v6`. Manifest intocado (já válido).
+- Checks: `eslint` 0 · `check:types` OK · `node --check sw.js` · `test:mobile settings-resp-test` PASS 5/5 + screenshot 390 visto.
+- Prova viva (Chromium real, contexto persistente — incognito não tem Push API): subscrição FCM verdadeira + linha em `push_subscriptions`; envio real via `notifyUser` aceite (sem 410); unsubscribe remove a linha. Conta de teste e servidores temporários limpos.
