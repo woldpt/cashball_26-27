@@ -2936,3 +2936,8 @@ Plano C1+C2 (quando fizer):
 - `sw.js`: handlers `push` (tag `cashball-ready`, ícone, `data.url`) + `notificationclick` (foca ou abre `/`); bump `v5→v6`. Manifest intocado (já válido).
 - Checks: `eslint` 0 · `check:types` OK · `node --check sw.js` · `test:mobile settings-resp-test` PASS 5/5 + screenshot 390 visto.
 - Prova viva (Chromium real, contexto persistente — incognito não tem Push API): subscrição FCM verdadeira + linha em `push_subscriptions`; envio real via `notifyUser` aceite (sem 410); unsubscribe remove a linha. Conta de teste e servidores temporários limpos.
+
+## Deploy v26.09.24 no rick (2026-09-29)
+- Tag `v26.09.24` (CalVer rolling): bump `APP_VERSION`, push master (16 commits, inclui Web Push Fase 1 completa), rebuild `docker compose` no rick.
+- `backend Healthy` confirmado; `.env` do rick com o par VAPID local (`ENABLE_PUSH=false` → verificado 404/404 → `true`, chave pública servida, 87 chars).
+- Push Fase 1 viva em produção mas só para quem carregar "Activar avisos".
