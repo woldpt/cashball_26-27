@@ -58,7 +58,21 @@ export async function removeSubscription(
   return auth.removePushSubscription(coachName, endpoint);
 }
 
-/** Envia a todos os browsers subscritos; subscrição expirada (410) é apagada. */
+/**
+ * Subscrição morta sob as chaves VAPID atuais: o FCM devolve 403 quando a
+ * subscrição foi criada com outras chaves (ex. chaves rodadas no servidor).
+ * Nunca vai passar — apaga-se como no 410. O match ao corpo é estreito de
+ * propósito: um 403 genérico (avaria transitória do FCM) não apaga nada.
+ */
+function isDeadSubscription(err: any): boolean {
+  return (
+    err?.statusCode === 403 &&
+    typeof err?.body === "string" &&
+    err.body.includes("do not correspond to the credentials used to create")
+  );
+}
+
+/** Envia a todos os browsers subscritos; subscrição morta/expirada é apagada. */
 export async function notifyUser(
   coachName: string,
   payload: PushPayload,
@@ -81,13 +95,16 @@ export async function notifyUser(
             body,
           );
         } catch (err: any) {
-          if (err?.statusCode === 410) {
+          if (err?.statusCode === 410 || isDeadSubscription(err)) {
             await auth.removePushSubscription(coachName, sub.endpoint);
           } else {
             console.error(
               "[push] Falha ao notificar",
               coachName + ":",
-              err?.message || err,
+              "status=" + err?.statusCode,
+              (typeof err?.body === "string" && err.body.slice(0, 160)) ||
+                err?.message ||
+                err,
             );
           }
         }
