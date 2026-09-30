@@ -2941,3 +2941,11 @@ Plano C1+C2 (quando fizer):
 - Tag `v26.09.24` (CalVer rolling): bump `APP_VERSION`, push master (16 commits, inclui Web Push Fase 1 completa), rebuild `docker compose` no rick.
 - `backend Healthy` confirmado; `.env` do rick com o par VAPID local (`ENABLE_PUSH=false` → verificado 404/404 → `true`, chave pública servida, 87 chars).
 - Push Fase 1 viva em produção mas só para quem carregar "Activar avisos".
+
+## Saneamento do .env de produção no rick (2026-09-30)
+- Pedido: verificar o `server/.env` de produção. Encontrado: push ligado (`ENABLE_PUSH=true`) com o par VAPID de dev; `.env` morto na raiz (`cashball.namek.link`, ignorado pelo compose — só `server/.env` conta via `env_file`); sem `TZ` (contentor em UTC); `ADMIN_PASSWORD` fraca e igual à de dev.
+- Feito (só no rick, zero mudanças no repo): backup `server/.env.bak-20260930`; par VAPID novo exclusivo de prod (87/43 chars, servido em `/api/push/key`); `TZ=Europe/Lisbon`; password de admin rodada (valor definido pelo utilizador, nunca no git); `.env` da raiz apagado (CORS fica só `https://cashball.lol/`, que aceita lista por vírgulas se um dia for preciso).
+- Armadilha: `docker compose restart` NÃO recarrega `env_file` (contentor manteve env antigo) — foi preciso `up -d --force-recreate backend`.
+- tzdata ausente na imagem Alpine → relógio do sistema fica em UTC; logs já saem em hora de Lisboa via `logBootstrap.js` (`Intl` + `process.env.TZ`); só os nomes das pastas de backup (`getHours()` em `backupDatabases.js`) ficam em UTC — decisão do utilizador: ficar como está, sem rebuild.
+- Checks: `/health` 200 após recreate · `TZ` + chave nova confirmados dentro do contentor · contentor `healthy`. Sem código tocado → `typecheck`/`lint`/`audit:socketio`/`audit:gamestate`/`test:mobile` saltam (registado).
+- Nota: subscrições push antigas invalidadas pelas chaves novas — cada user volta a carregar "Activar avisos".
