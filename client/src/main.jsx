@@ -4,10 +4,11 @@ import { MotionConfig } from 'framer-motion'
 import './index.css'
 import App from './App.jsx'
 
-// Registo do service worker (PWA / offline).
+// Registo do service worker (PWA / offline). URL versionado (ver topo do
+// sw.vN.js): renomear o ficheiro a cada mudança para furar caches velhas.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.v7.js').catch(() => {});
   });
 }
 

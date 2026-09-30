@@ -93,6 +93,10 @@ export async function notifyUser(
           await webpush.sendNotification(
             { endpoint: sub.endpoint, keys: JSON.parse(sub.keys || "{}") },
             body,
+            // Nudge sensível ao tempo: sem urgência o FCM adia com o ecrã
+            // apagado; sem TTL curto um «falta a tua tática» chegava horas
+            // depois, fora de contexto.
+            { urgency: "high", TTL: 2 * 60 * 60 },
           );
         } catch (err: any) {
           if (err?.statusCode === 410 || isDeadSubscription(err)) {

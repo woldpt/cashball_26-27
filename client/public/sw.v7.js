@@ -1,4 +1,7 @@
 // CashBall service worker — offline fallback para a SPA.
+// URL VERSIONADO (sw.vN.js): ao alterar este ficheiro, renomear (v7->v8)
+// e atualizar o register() em main.jsx. O URL novo fura caches HTTP
+// envenenadas e substitui o registo velho no próximo carregamento.
 // Bump VERSION on any client change so activate() clears the stale cache
 // and the user picks up new hashed bundles.
 const VERSION = 'v7';
