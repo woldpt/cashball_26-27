@@ -1,7 +1,7 @@
 // CashBall service worker — offline fallback para a SPA.
 // Bump VERSION on any client change so activate() clears the stale cache
 // and the user picks up new hashed bundles.
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE = `cashball-${VERSION}`;
 const CORE_URLS = ['/', '/index.html'];
 
@@ -63,6 +63,9 @@ self.addEventListener('fetch', (event) => {
 
 // Precarregar os ficheiros críticos.
 self.addEventListener('install', (event) => {
+  // Ativa de imediato: sem isto o SW novo fica em "waiting" enquanto
+  // houver uma aba aberta — e um handler de push novo nunca entra.
+  self.skipWaiting();
   event.waitUntil(
     caches
       .open(CACHE)
@@ -76,6 +79,7 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
