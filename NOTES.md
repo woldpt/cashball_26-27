@@ -1,3 +1,8 @@
+## Deploy v26.10.1 no rick (2026-10-01)
+- Tag `v26.10.1` (CalVer rolling, recomeça N em out): bump `APP_VERSION`, push master, rebuild `docker compose` no rick.
+- `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).
+- Inclui fix do treino (banco +2 com Forma, decay sem imunidade, histórico só com mudança) + trabalho da outra sessão (assistente, grace 90s, NPCs sem notícias).
+
 ## Notícias NPC: sem escrita + caixa limpa na contratação (2026-10-01)
 - Queixa: NPCs acumulavam notícias e quem herdava o clube recebia a caixa cheia como não lida (`club_news` por `team_id`, `inbox_reads` por treinador).
 - Fix: `isHumanTeam()` novo em `server/coreHelpers.ts` (assentos `playersByName`, mesmo offline; mapa vazio deixa passar p/ testes/scripts) + early-return em `logClubNews`/`logMedicalNews`/`logPostMatchRecap` (`logClubNewsOnce`/`logMatchMedicalNews` herdam por delegação); `handleAcceptJobOffer` e `autoAssignDismissedCoach` fazem `DELETE FROM club_news WHERE team_id = ?` antes das boas-vindas.
