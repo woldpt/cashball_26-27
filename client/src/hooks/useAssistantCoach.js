@@ -19,6 +19,25 @@ function seenKey(roomCode, calendarIndex, tipId) {
 }
 
 /**
+ * Dicas que dispensam uma vez por SALA, não por jornada. São as que exigem
+ * trabalho recorrente (o 11 refaz-se toda a jornada) mas já têm o seu próprio
+ * gate na UI que as resolve — a Tática bloqueia o Pronto com o motivo. Sem
+ * isto, a dica do 11 repetia-se todas as semanas e tapava as outras.
+ */
+const ONCE_PER_ROOM_TIPS = new Set(["lineup"]);
+
+/**
+ * @param {string} [roomCode]
+ * @param {number} [calendarIndex]
+ * @param {{id: string}} tip
+ */
+function seenKeyFor(roomCode, calendarIndex, tip) {
+  return ONCE_PER_ROOM_TIPS.has(tip.id)
+    ? seenKey(roomCode, "sala", tip.id)
+    : seenKey(roomCode, calendarIndex, tip.id);
+}
+
+/**
  * getTrainingFocus com timeout — o servidor pode nunca responder
  * (socket caído); resolve null em vez de pendurar o adjunto.
  * Espelho do `emitWithTimeout` do TrainingTab (só leitura, sem retry).
@@ -184,14 +203,16 @@ export function useAssistantCoach() {
           },
     ].filter(Boolean);
 
-    // Anti-Clippy: 1x por situação/semana + nunca na tab que resolve.
+    // Anti-Clippy: 1x por situação (semana, ou sala nas dicas recorrentes)
+    // + nunca na tab que resolve.
     return (
       candidates.find(
         (c) =>
           c.tab !== activeTab &&
           typeof window !== "undefined" &&
-          window.localStorage.getItem(seenKey(roomCode, calendarIndex, c.id)) !==
-            "1",
+          window.localStorage.getItem(
+            seenKeyFor(roomCode, calendarIndex, c),
+          ) !== "1",
       ) || null
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissTick força re-render após dispensar
@@ -220,7 +241,7 @@ export function useAssistantCoach() {
   const dismissTip = useCallback(() => {
     if (tip && typeof window !== "undefined") {
       window.localStorage.setItem(
-        seenKey(me?.roomCode, calendarIndex, tip.id),
+        seenKeyFor(me?.roomCode, calendarIndex, tip),
         "1",
       );
     }
