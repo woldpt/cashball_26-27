@@ -3,6 +3,11 @@
 - 7 dicas reescritas em `useAssistantCoach.js` (6) + `trainingCapAdvice.js` (1, mantém interpolação do foco); etiqueta `Treinador-adjunto` → `O Mister` (cabeçalho + aria-labels) em `AssistantCoach.jsx`. Só strings, zero lógica/tabs/keys.
 - Checks: `eslint` limpo nos 3 ficheiros · `check:types` OK · só texto → sem `test:mobile`; audits saltam (sem lógica de jogo/sockets).
 
+## Deploy v26.10.5 no rick (2026-10-01)
+- Tag `v26.10.5` (bump de `APP_VERSION` em `client/src/constants/index.js`); rebuild com `backend Healthy`.
+- Inclui: adjunto JJ de braços cruzados (`mister.webp` servido, bundle novo a referenciá-lo).
+- Salas de produção intactas; seed só recria `base.db` se o esquema/fixtures mudarem.
+
 ## Adjunto passa a JJ de braços cruzados (2026-10-01)
 - O retrato vetorizado confundia-se com o antigo; o adjunto passa a ser o JJ de braços cruzados (imagem do utilizador).
 - Recorte `rembg` (estádio + assinatura `.acho` fora), enquadramento cabeça+ombros, `mister.webp` 512px/52 KB com alfa; SVG seria MBs, ficou raster. `assistant.svg` (206 KB) apagado.
