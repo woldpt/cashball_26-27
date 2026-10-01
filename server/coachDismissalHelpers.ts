@@ -685,6 +685,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game.negativeBudgetStreak[team.id] = 0;
     game.boardBudgetWarned[team.id] = 0;
 
+    // Era NPC: limpar as notícias acumuladas antes de entregar o clube —
+    // sem isto o treinador herdava a caixa cheia como não lida.
+    await execQuiet(game, "DELETE FROM club_news WHERE team_id = ?", [team.id]);
+
     // Notify coach
     await emitTeamAssigned(game, coachName, team, true);
 
@@ -1103,9 +1107,12 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     );
     if (!team) return;
 
+    // Era NPC: limpar as notícias acumuladas (o novo treinador herdava a
+    // caixa cheia como não lida) antes das boas-vindas.
+    await execQuiet(game, "DELETE FROM club_news WHERE team_id = ?", [toTeamId]);
+
     // O clube novo recebe uma notícia de boas-vindas persistente. Fica ligada
-    // ao novo team_id, por isso o filtro do Jornal troca de contexto sem
-    // apagar o histórico antigo da sala.
+    // ao novo team_id; o histórico da era NPC foi apagado acima.
     try {
       await runExec(
         game.db,

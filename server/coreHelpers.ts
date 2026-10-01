@@ -678,6 +678,18 @@ export async function explainAttendance(
   return computeAttendance(db, homeTeamId, opponentTeamId, ctx);
 }
 
+/**
+ * Equipa com treinador humano (assento em playersByName, mesmo offline).
+ * As notícias do Jornal são só para humanos: linhas de equipas NPC
+ * acumulavam na BD e enchiam a caixa de quem herdava o clube.
+ * Com o mapa vazio (testes/scripts sem sessão) deixa passar.
+ */
+export function isHumanTeam(game: ActiveGame, teamId: number): boolean {
+  const seated = Object.values(game.playersByName || {});
+  if (seated.length === 0) return true;
+  return seated.some((p: any) => p?.teamId === teamId);
+}
+
 export function logClubNews(
   game: ActiveGame,
   type: string,
@@ -699,6 +711,9 @@ export function logClubNews(
   io?: any,
   extra?: Record<string, any>,
 ) {
+  // NPCs não recebem notícias: sem isto cada equipa sem treinador acumulava
+  // rescaldos, lesões e avisos que o próximo humano herdava como não lidos.
+  if (!isHumanTeam(game, teamId)) return;
   const description = data.description || null;
   game.db.run(
     `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, slot, year)
@@ -794,6 +809,7 @@ export function logMedicalNews(
   /** Castigo vindo de 3 amarelos acumulados — título próprio 🟨 (FIFA). */
   source?: "yellow",
 ) {
+  if (!isHumanTeam(game, teamId)) return;
   game.db.get(
     `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND amount = ? LIMIT 1`,
     [teamId, kind, player.id, until],
@@ -902,6 +918,7 @@ export interface PostMatchRecap {
  * Idempotente: apaga a linha do mesmo jogo antes de inserir (replay seguro).
  */
 export function logPostMatchRecap(game: ActiveGame, recap: PostMatchRecap) {
+  if (!isHumanTeam(game, recap.teamId)) return;
   const year = (recap.year ?? game.year) || 0;
   const payload = {
     v: 1,
