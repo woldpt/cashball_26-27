@@ -1,14 +1,16 @@
 import { motion } from "framer-motion";
 import { CUP_FINAL_STADIUM } from "../../constants/index.js";
-import { LiveMatchHero } from "./LiveMatchHero.jsx";
-import { TeamCrest } from "./TeamCrest.jsx";
+import { LiveMatchHero, ScoreKit } from "./LiveMatchHero.jsx";
+import { useKitClash } from "../../hooks/useKitClash.js";
 import { FLASH_COLOR, isFlashing, isGoalType } from "./liveHelpers.js";
 
 /* ── CupFinalStage — palco de gala da Final da Taça ───────────────────────
  *
  * A final é um jogo especial e merece moldura especial: faixa cerimonial
- * (troféu, Estádio do Jamor), frente-a-frente das finalistas com os
- * treinadores, e o jogo ao vivo em destaque via `LiveMatchHero`.
+ * (troféu, Estádio do Jamor), frente-a-frente das finalistas com as
+ * camisolas (`ScoreKit`, igual ao `LiveMatchHero`), emblemas como marca de
+ * água lateral e a Taça ao centro atrás do marcador, e o jogo ao vivo em
+ * destaque via `LiveMatchHero`.
  *
  * Dois regimes, mesma gala:
  *   - participas (`readOnly` falso) → marcador com intervenção normal
@@ -59,10 +61,11 @@ export function CupFinalStage({
   onScoreClick,
   finalWhistle = null,
 }) {
+  const hInfo = teams.find((t) => t.id === finalFixture?.homeTeamId);
+  const aInfo = teams.find((t) => t.id === finalFixture?.awayTeamId);
+  // Empate de camisolas: a equipa de fora veste a sua de fora (igual ao LiveMatchHero).
+  const clash = useKitClash(hInfo?.crest, aInfo?.crest);
   if (!finalFixture) return null;
-
-  const hInfo = teams.find((t) => t.id === finalFixture.homeTeamId);
-  const aInfo = teams.find((t) => t.id === finalFixture.awayTeamId);
   const hCol = hInfo?.color_primary || "#3b82f6";
   const aCol = aInfo?.color_primary || "#f43f5e";
   const homeCoach = players.find((p) => p.teamId === finalFixture.homeTeamId);
@@ -111,13 +114,37 @@ export function CupFinalStage({
           ].join(", "),
         }}
       />
-      {/* Marca de água do troféu */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-4 -top-8 select-none text-[7rem] sm:text-[10rem] leading-none opacity-[0.07]"
-      >
-        🏆
-      </div>
+      {/* Marcas de água dos emblemas (igual ao LiveMatchHero) */}
+      {hInfo?.crest && (
+        <img
+          src={hInfo.crest}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+          className="absolute -left-8 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
+          style={{
+            filter: "brightness(0.75) saturate(1)",
+            maskImage: "linear-gradient(to right, black 55%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to right, black 55%, transparent 100%)",
+          }}
+        />
+      )}
+      {aInfo?.crest && (
+        <img
+          src={aInfo.crest}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+          className="absolute -right-8 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
+          style={{
+            filter: "brightness(0.75) saturate(1)",
+            maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
+          }}
+        />
+      )}
 
       {/* ── Faixa cerimonial ── */}
       <div className="relative z-10 flex flex-col items-center px-4 pt-5 pb-1 text-center">
@@ -131,24 +158,23 @@ export function CupFinalStage({
 
         {/* ── Frente-a-frente das finalistas ── */}
         <div className="flex items-stretch justify-center gap-2 sm:gap-6 w-full max-w-2xl mt-4">
-          <div className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
-            <TeamCrest
-              team={hInfo}
-              isMine={homeIsMine}
-              size="lg"
-              rotate={8}
-            />
+          <div className="flex-1 min-w-0 flex flex-col items-center gap-3 pb-1">
+            <ScoreKit team={hInfo} isMine={homeIsMine} coach={homeCoach} />
             <span className="w-full truncate text-xs sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface">
               {hInfo?.name}
             </span>
-            {homeCoach && (
-              <span className="truncate max-w-full text-[9px] sm:text-[10px] font-bold text-amber-400">
-                {homeCoach.name}
-              </span>
-            )}
           </div>
 
-          <div className="shrink-0 flex flex-col items-center justify-center gap-1 px-1">
+          <div className="relative shrink-0 flex flex-col items-center justify-center gap-1 px-1">
+            <img
+              src="/trophies/taca-portugal.svg"
+              alt=""
+              aria-hidden
+              loading="lazy"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-28 sm:h-36 w-auto opacity-30 select-none"
+              style={{ filter: "drop-shadow(0 0 14px rgba(251,191,36,0.45))" }}
+            />
             <button
               onClick={readOnly ? undefined : onScoreClick}
               data-goal-anchor={`${finalFixture.homeTeamId}_${finalFixture.awayTeamId}`}
@@ -161,7 +187,7 @@ export function CupFinalStage({
               }
               aria-disabled={readOnly || undefined}
               tabIndex={readOnly ? -1 : undefined}
-              className={`flex flex-col items-center justify-center px-3 sm:px-4 py-2 rounded-xl bg-black/40 border border-amber-500/50 shadow-[0_0_14px_rgba(251,191,36,0.25)] ${readOnly ? "cursor-default" : "cursor-pointer"}`}
+              className={`relative z-10 flex flex-col items-center justify-center px-3 sm:px-4 py-2 rounded-xl bg-black/40 border border-amber-500/50 shadow-[0_0_14px_rgba(251,191,36,0.25)] ${readOnly ? "cursor-default" : "cursor-pointer"}`}
             >
               <span className="font-headline font-black text-xl sm:text-3xl tracking-tighter tabular-nums flex items-center gap-1.5 whitespace-nowrap">
                 <span style={flashStyle(homeFlashing)}>{homeGoals.length}</span>
@@ -174,21 +200,11 @@ export function CupFinalStage({
             </button>
           </div>
 
-          <div className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
-            <TeamCrest
-              team={aInfo}
-              isMine={awayIsMine}
-              size="lg"
-              rotate={-8}
-            />
+          <div className="flex-1 min-w-0 flex flex-col items-center gap-3 pb-1">
+            <ScoreKit team={aInfo} isMine={awayIsMine} coach={awayCoach} away={clash} />
             <span className="w-full truncate text-xs sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface">
               {aInfo?.name}
             </span>
-            {awayCoach && (
-              <span className="truncate max-w-full text-[9px] sm:text-[10px] font-bold text-amber-400">
-                {awayCoach.name}
-              </span>
-            )}
           </div>
         </div>
       </div>

@@ -535,7 +535,7 @@ export function LiveMatchHero({
 /* ── ScoreKit — camisola no placar + badge do treinador ───────────────────
  * Troca o brasão pela camisola (`TeamKit`); sem kit válido cai para o
  * `TeamCrest` quadrado. Badge âmbar/primary igual ao anterior. */
-function ScoreKit({ team, isMine, coach, away = false }) {
+export function ScoreKit({ team, isMine, coach, away = false }) {
   const hasKit = team?.crest?.includes("/logos/");
   return (
     <div className="relative shrink-0">

@@ -4,6 +4,13 @@
 - Fix: no sucesso do `chooseSponsor`, broadcast de `teamsData` para a sala (via `getTeamsWithCoachNames`, já importado) + `clubNewsUpdated { teamId }`; no cliente (`client/src/hooks/socket/news.js`), `sponsorState` com `chosen` volta a pedir `requestFinanceData` (mesmo padrão do `stadiumBuilt`).
 - Checks: server `typecheck` OK · `audit:socketio` 0 erros · client `eslint` + `check:types` OK · sem mudança de layout → sem `test:mobile`.
 
+## Final da Taça em harmonia com os match heros (2026-10-01)
+- Pedido: `CupFinalStage.jsx` destoava dos outros heros — sem camisolas nem logotipos de fundo; manter a taça, agora ao centro (SVG da Taça de Portugal).
+- Frente-a-frente passa a usar o `ScoreKit` do `LiveMatchHero` (camisola `TeamKit` + badge do treinador, fallback para `TeamCrest`; fora veste alterna via `useKitClash`) em vez do `TeamCrest` rodado; nomes dos treinadores vivem no badge, como no hero.
+- Fundo com marcas de água dos emblemas laterais iguais às do `LiveMatchHero`; troféu-emoji de canto removido, Taça em SVG (`client/public/trophies/taca-portugal.svg`, da Wikimedia Commons) centrada atrás do marcador com brilho dourado.
+- `ScoreKit` exportado do `LiveMatchHero.jsx` (1 palavra) para reutilização sem duplicar.
+- Checks: `lint` limpo nos ficheiros tocados (3 erros + 1 warning pré-existentes noutros ficheiros) · `check:types` OK · `test:mobile` PASS (175/175).
+
 ## Deploy v26.10.3 no rick (2026-10-01)
 - Tag `v26.10.3` (bump de `APP_VERSION` em `client/src/constants/index.js`); rebuild com `backend Healthy`.
 - Inclui: dica do adjunto sobre teto de treino (Forma/Resistência) + testes `trainingCapAdvice`.
