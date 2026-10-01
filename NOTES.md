@@ -5,3 +5,8 @@
 - Fix 3 (`hooks/useAssistantCoach.js`): `ONCE_PER_ROOM_TIPS = {lineup}` + `seenKeyFor()` — a dica do 11 passa a 1x por SALA em vez de por jornada. Verificado que a regra não é falsa: o cliente espelha `checkLineupReady` do servidor (11 + banco 7 com 1 GR). Efeito colateral positivo: era a dica do 11 que ficava sempre à frente e tapava as restantes (treino/finanças).
 - Checks: `lint` limpo nos 2 ficheiros · `check:types` OK · `test:mobile assistant-resp-test` PASS 5/5. Desktop não tem harness: verificado com screenshot próprio da harness a 1280/1536 px (medalhão no canto, rabicho a apontar para o retrato) + 390 px para confirmar que o mobile não mudou.
 
+
+## Barras de aviso em fluxo, sem tapar conteúdo (2026-10-01)
+- Pedido: a barra de sala bloqueada tapava o topo das tabs; âmbito alargado a todas as barras (pausa + aviso sala + toasts).
+- Fix (`client/src/GameLayout.jsx`, só este ficheiro): eliminada a coluna `fixed top-[var(--header-h)] z-100`; as 3 barras passam a filhos em fluxo no topo do `main` (`shrink-0 flex flex-col`), acima da zona de scroll — ocupam espaço e empurram o conteúdo. Sem JS nem medição de alturas; herdam a margem da sidebar e ficam sempre visíveis nas tabs. Nos painéis de jogo (`MatchPage fixed z-120`) continuam tapadas como antes.
+- Checks: `eslint src/GameLayout.jsx` limpo · `check:types` OK · `test:mobile` integral PASS 175/175 (1.ª passagem); 2.ª passagem com 2 falhas flaky no `rotateoverlay-resp-test` (`Execution context was destroyed`), isolado passa 5/5 — harness não tocado pela mudança. Screenshot `roompause-390` visto (sem overflow; ícone em texto = fonte ausente no harness, pré-existente).
