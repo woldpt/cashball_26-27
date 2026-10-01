@@ -1,3 +1,9 @@
+## Mudar de Jogo voltava à mesma sala: leaveToMenu mata o auto-join (2026-10-01)
+- Queixa: na U7ZARI, «Mudar de Jogo» voltava a cair na mesma sala em vez de ir ao menu.
+- Causa: a saída limpava só a chave legada `cashballSession` (que o auto-join já não lê) e fazia `setMe(null)` com a `savedSession` em memória intacta — o efeito de auto-join (`[savedSession, me?.teamId]`) reentrava na sala de imediato; um timer de retry pendente (`lastJoinRef`) faria o mesmo.
+- Fix (só cliente, 5 ficheiros): `leaveToMenu()` novo no `useJoinSession` (limpa timer + payload em voo + `savedSession`/ref + ponteiro real `cashball_rooms` + `leaveRoom` + `setMe(null)` + limpa seleção); exposto via `App` → `GameContext`; `GameHeader` e `GameRoutes` (saída nas Definições) passam a usá-lo em vez da escrita legada.
+- Checks: `eslint` nos 4 ficheiros limpo (só warning pré-existente no `App.jsx`; erro fast-refresh do `GameContext` também pré-existente, confirmado no HEAD) · `check:types` OK. Sem layout → sem `test:mobile`; sem servidor → sem audits. Por publicar no rick (utilizador não pediu deploy).
+
 ## Deploy v26.10.1 no rick (2026-10-01)
 - Tag `v26.10.1` (CalVer rolling, recomeça N em out): bump `APP_VERSION`, push master, rebuild `docker compose` no rick.
 - `backend Healthy` confirmado; salas e saves intocados (seed só recria `base.db` se esquema/fixtures mudarem).

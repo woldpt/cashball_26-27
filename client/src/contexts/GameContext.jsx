@@ -60,6 +60,7 @@ export function GameProvider({
 	joinTimerRef,
 	backendUrl,
 	onAcceptRoomInvite,
+	leaveToMenu,
 	children,
 }) {
 	// ── Game state ─────────────────────────────────────────────────────────
@@ -1975,6 +1976,7 @@ year: seasonYear,
 		// Auth bridge (re-exposed)
 		me,
 		setMe,
+		leaveToMenu,
 		meRef,
 		roomCodeRef,
 		joinTimerRef,
@@ -2053,7 +2055,7 @@ transferProposalModal, setTransferProposalModal, signingCelebration, setSigningC
 		setUnreadRoom, setUnreadGlobal, chatInput, setChatInput, mobileSubMenu, setMobileSubMenu, sidebarCollapsed,
 		setSidebarCollapsed, avatarSeed, setAvatarSeed, coachAvatars, setCoachAvatars, coachAvatarSeeds, setCoachAvatarSeeds, injuryCountdownRef,
 		chatMessagesRef, roomHubRef, chatOpenRef, activeChatTabRef, me, setMe,
-		meRef, roomCodeRef, joinTimerRef, backendUrl, addToast, dismissToast,
+		leaveToMenu, meRef, roomCodeRef, joinTimerRef, backendUrl, addToast, dismissToast,
 		handleHalftimeReady, handleOpenTeamSquad, handleCloseTeamSquad, refreshCalendar, closeRefereePopup, handleResolveMatchAction,
 		handleCloseMatch, buyPlayer, renewPlayerContract, listPlayerAuction, listPlayerFixed, removeFromTransferList,
 		openAuctionBid, resetGameState, isMatchInProgress, teamInfo, myMatch, mySideInHalftime,

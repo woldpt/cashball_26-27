@@ -124,7 +124,7 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     refreshCalendar,
     navigateTab,
     resetGameState,
-    setMe,
+    leaveToMenu,
     // avatares
     avatarSeed,
     setAvatarSeed,
@@ -642,28 +642,8 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         onBack={() => navigateTab("club")}
                         onLogout={handleLogout}
                         onLeaveRoom={() => {
-                          if (me?.roomCode) {
-                            socket.emit("leaveRoom");
-                            try {
-                              const s = JSON.parse(
-                                window.localStorage.getItem(
-                                  "cashballSession",
-                                ) || "{}",
-                              );
-                              window.localStorage.setItem(
-                                "cashballSession",
-                                JSON.stringify({
-                                  name: s.name,
-                                  token: s.token,
-                                  roomCode: "",
-                                }),
-                              );
-                            } catch {
-                              /* ignorar */
-                            }
-                          }
                           resetGameState();
-                          setMe(null);
+                          leaveToMenu();
                           setAuthPhase("mode");
                         }}
                       />

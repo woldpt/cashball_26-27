@@ -51,6 +51,7 @@ const MAX_JOIN_RETRIES = 5;
  * @property {Object} joinTimerRef temporizador da rede de segurança
  * @property {function} joinRoom entrada manual (formulário)
  * @property {function} switchRoom troca de sala (convite)
+ * @property {function} leaveToMenu saída para o menu (mata o auto-join)
  * @property {function} restoreSession repõe sessão guardada (após cacheReady)
  */
 
@@ -310,6 +311,26 @@ export function useJoinSession({ setRoomCode, onRoomGone }) {
 		armJoinTimeout();
 	};
 
+	// Saída voluntária para o menu de salas ("Mudar de Jogo"): mata o
+	// auto-join (timer + payload em voo + sessão em memória) e o ponteiro
+	// persistido — sem isto o efeito de auto-join reentra na mesma sala.
+	const leaveToMenu = () => {
+		if (joinTimerRef.current) {
+			clearTimeout(joinTimerRef.current);
+			joinTimerRef.current = null;
+		}
+		lastJoinRef.current = null;
+		joinRetryRef.current = 0;
+		clearRoomPointer(meRef.current?.name || lastNameRef.current);
+		savedSessionRef.current = null;
+		setSavedSession(null);
+		setJoining(false);
+		setJoinError("");
+		if (meRef.current?.roomCode) socket.emit("leaveRoom");
+		setMe(null);
+		setRoomCode("");
+	};
+
 	// Repõe a sessão guardada após o cacheReady (chamado uma vez pelo `App`).
 	const restoreSession = (session) => {
 		if (!session) return;
@@ -337,6 +358,7 @@ export function useJoinSession({ setRoomCode, onRoomGone }) {
 		joinTimerRef,
 		joinRoom,
 		switchRoom,
+		leaveToMenu,
 		restoreSession,
 	};
 }

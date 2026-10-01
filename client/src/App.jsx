@@ -173,6 +173,7 @@ function App() {
 						setRoomCode={setRoomCode}
 						setJoining={join.setJoining}
 						setJoinError={join.setJoinError}
+						leaveToMenu={join.leaveToMenu}
 						meRef={join.meRef}
 						roomCodeRef={join.roomCodeRef}
 						joinTimerRef={join.joinTimerRef}

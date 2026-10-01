@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { socket } from "../../socket.js";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
@@ -21,7 +20,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     seasonYear,
     calendarIndex,
     me,
-    setMe,
+    leaveToMenu,
     teamInfo,
     avatarSeed,
     coachAvatars,
@@ -333,28 +332,8 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                     role="menuitem"
                     onClick={() => {
                       setUserDropdownOpen(false);
-                      if (me?.roomCode) {
-                        socket.emit("leaveRoom");
-                        try {
-                          const s = JSON.parse(
-                            window.localStorage.getItem(
-                              "cashballSession",
-                            ) || "{}",
-                          );
-                          window.localStorage.setItem(
-                            "cashballSession",
-                            JSON.stringify({
-                              name: s.name,
-                              token: s.token,
-                              roomCode: "",
-                            }),
-                          );
-                        } catch {
-                          /* ignorar */
-                        }
-                      }
                       resetGameState();
-                      setMe(null);
+                      leaveToMenu();
                       setAuthPhase("mode");
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-bright transition-colors text-left"
