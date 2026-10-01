@@ -3,6 +3,11 @@
 - 7 dicas reescritas em `useAssistantCoach.js` (6) + `trainingCapAdvice.js` (1, mantém interpolação do foco); etiqueta `Treinador-adjunto` → `O Mister` (cabeçalho + aria-labels) em `AssistantCoach.jsx`. Só strings, zero lógica/tabs/keys.
 - Checks: `eslint` limpo nos 3 ficheiros · `check:types` OK · só texto → sem `test:mobile`; audits saltam (sem lógica de jogo/sockets).
 
+## Deploy v26.10.4 no rick (2026-10-01)
+- Tag `v26.10.4` (bump de `APP_VERSION` em `client/src/constants/index.js`); rebuild com `backend Healthy`.
+- Inclui: tutorial ensinado pelo adjunto + retrato do adjunto em SVG sem fundo.
+- Salas de produção intactas; seed só recria `base.db` se o esquema/fixtures mudarem.
+
 ## Retrato do adjunto vetorizado sem fundo (2026-10-01)
 - Pedido: retirar a relva do `assistant.webp` e passar a SVG; escolhido o SVG fiel de 16 cores (206 KB).
 - Recorte por matiz verde (`PIL/numpy`, cantinho branco do topo incluído) sobre o disco; `vtracer` segfaulta neste ambiente, venci com `imagetracerjs` (12→44 KB preterido, 16 cores vence). SVG só com paths preenchidos, sem `clipPath`/máscaras.
