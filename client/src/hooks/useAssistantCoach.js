@@ -3,6 +3,7 @@ import { socket } from "../socket.js";
 import { useGame } from "../contexts/GameContext.jsx";
 import { useTactics } from "../contexts/TacticsContext.jsx";
 import { isPlayerAvailable } from "../utils/playerHelpers.js";
+import { trainingCapTip } from "../utils/trainingCapAdvice.js";
 
 const SEEN_BASE_KEY = "cashball_assistant";
 const TRAINING_BASE_KEY = "cashball_training_focus";
@@ -103,9 +104,13 @@ export function useAssistantCoach() {
   const trainingKey = roomCode
     ? `${TRAINING_BASE_KEY}:${roomCode}`
     : TRAINING_BASE_KEY;
-  const hasLocalTraining =
-    typeof window !== "undefined" &&
-    Boolean(window.localStorage.getItem(trainingKey));
+  // Valor do foco (não só a existência): a dica do teto precisa de saber se
+  // o treino é Forma/Resistência. Ausente = lido da BD abaixo.
+  const localTraining =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem(trainingKey)
+      : null;
+  const hasLocalTraining = Boolean(localTraining);
 
   // A BD é a verdade; o localStorage é só o caminho rápido. Pergunta ao
   // servidor só quando o caminho rápido falha (outro dispositivo/cache limpa).
@@ -136,6 +141,13 @@ export function useAssistantCoach() {
     const serverFocus =
       serverTraining.key === weekKey ? serverTraining.focus : undefined;
     const hasTraining = hasLocalTraining || serverFocus !== null;
+    // Foco ativo: localStorage primeiro, BD como fallback. Desconhecido =
+    // sem dica de teto (não adivinhar).
+    const focusName =
+      localTraining ?? (typeof serverFocus === "string" ? serverFocus : null);
+    // Teto do atributo treinado (Forma/Resistência) já atingido pela maioria
+    // do plantel: no máximo o bónus semanal é zero, logo a semana é perdida.
+    const capTip = trainingCapTip(mySquad, focusName);
     const unavailable = (mySquad || []).filter(
       (p) => !isPlayerAvailable(p, week),
     ).length;
@@ -174,6 +186,7 @@ export function useAssistantCoach() {
             tab: "training",
             cta: "Definir treino",
           },
+      capTip,
       unavailable < 3
         ? null
         : {
@@ -234,6 +247,7 @@ export function useAssistantCoach() {
     isLineupComplete,
     activeTab,
     hasLocalTraining,
+    localTraining,
     serverTraining,
     dismissTick,
   ]);

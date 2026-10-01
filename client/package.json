@@ -24,6 +24,7 @@
     "test:postmatchflow": "node scripts/postMatchFlowRegression.mjs",
     "test:boardnewsid": "node scripts/boardNewsIdRegression.mjs",
     "test:joinerrors": "node src/utils/joinErrors.test.mjs",
+    "test:trainingcap": "node src/utils/trainingCapAdvice.test.mjs",
     "test:finalwhistle": "node src/utils/finalWhistle.test.mjs",
     "test:breakpoints": "node scripts/breakpointParityRegression.mjs",
     "test:mobile": "node scripts/mobileRespCheck.mjs"

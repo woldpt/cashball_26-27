@@ -322,6 +322,17 @@ export const POSITION_FULL_LABEL_MAP = {
 export const MAX_MATCH_SUBS = 3;
 /** Número máximo de jogadores no banco de suplentes (pré-jogo) */
 export const MAX_BENCH_SIZE = 7;
+// ── TREINO (espelho de server/gameConstants.ts) ──────────────────────────
+/** Teto da escala 1–50: ao chegar aqui o treino de forma/resistência rende 0. */
+export const FORM_MAX = 50;
+export const RES_MAX = 50;
+/** Foco de treino → campo do jogador e teto respetivo (dica do adjunto). */
+export const TRAINING_CAP_TARGETS = {
+	Forma: { field: "form", max: FORM_MAX },
+	"Resistência": { field: "resistance", max: RES_MAX },
+};
+/** A partir de que fração do plantel no teto é que o adjunto avisa. */
+export const TRAINING_CAP_SQUAD_RATIO = 0.7;
 // ── MODAL Z-INDEX (camadas centralizadas) ────────────────────────────────
 export const MODAL_Z = {
 	teamSquad: 120,

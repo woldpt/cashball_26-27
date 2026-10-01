@@ -1,12 +1,8 @@
-## Adjunto: canto inferior direito, clique dispensa, dica do 11 semanal→por sala (2026-10-01)
-- Queixas: (1) em desktop o adjunto «parecia a voar» (centrado em baixo); (2) só o ✕ dispensava; (3) «sempre com as mesmas questões do 11 não estar definido».
-- Fix 1 (`components/shared/AssistantCoach.jsx`): `lg:justify-end lg:pr-6` + `lg:flex-row-reverse` → medalhão no canto inferior direito com o balão à esquerda; rabicho espelhado por variantes `lg:` (`left-auto`/`-right-[9px]`/`border-r`). Mobile intacto (canto esquerdo + balão à direita).
-- Fix 2: `onClick={onDismiss}` no balão + `cursor-pointer` (o CTA continua a navegar e o ✕ mantém o caminho de teclado).
-- Fix 3 (`hooks/useAssistantCoach.js`): `ONCE_PER_ROOM_TIPS = {lineup}` + `seenKeyFor()` — a dica do 11 passa a 1x por SALA em vez de por jornada. Verificado que a regra não é falsa: o cliente espelha `checkLineupReady` do servidor (11 + banco 7 com 1 GR). Efeito colateral positivo: era a dica do 11 que ficava sempre à frente e tapava as restantes (treino/finanças).
-- Checks: `lint` limpo nos 2 ficheiros · `check:types` OK · `test:mobile assistant-resp-test` PASS 5/5. Desktop não tem harness: verificado com screenshot próprio da harness a 1280/1536 px (medalhão no canto, rabicho a apontar para o retrato) + 390 px para confirmar que o mobile não mudou.
+## Adjunto avisa quando o treino bate no teto (Forma/Resistência) (2026-10-01)
+- Pedido: o JJ deve avisar quando o treino já chegou ao limiar e os jogadores não avançam (Forma e Resistência).
+- Factos do motor (`server/trainingHelpers.ts`, `gameConstants.ts`): Forma +6/semana até `FORM_MAX=50`, Resistência +4.9/semana até `RES_MAX=50` — bónus só para quem jogou; no teto o ganho é zero e o acumulador de resistência é zerado, ou seja, continuar nesse foco perde a semana.
+- Decisão do utilizador: avisa com **≥70% do plantel no teto**, **1x por semana** até o foco mudar (usa a chave semanal normal — a dica extingue-se sozinha quando trocas de foco).
+- Implementação: util puro novo `client/src/utils/trainingCapAdvice.js` (foco → campo/teto) + dica `trainingcap` no `useAssistantCoach.js`, logo a seguir à do «foco não definido» e antes da enfermaria. Foco ativo lido do `localStorage` (caminho rápido) com o fallback de BD que já existia; foco de skill ou desconhecido nunca avisa.
+- Constantes novas em `client/src/constants/index.js` a espelhar o servidor (`FORM_MAX`/`RES_MAX`) + `TRAINING_CAP_TARGETS` e `TRAINING_CAP_SQUAD_RATIO` (limiar num só sítio).
+- Checks: `npm run test:trainingcap` (novo, 5 grupos de asserções) PASS · `lint` limpo nos ficheiros tocados · `check:types` OK · sem mudança de layout → sem `test:mobile`.
 
-
-## Barras de aviso em fluxo, sem tapar conteúdo (2026-10-01)
-- Pedido: a barra de sala bloqueada tapava o topo das tabs; âmbito alargado a todas as barras (pausa + aviso sala + toasts).
-- Fix (`client/src/GameLayout.jsx`, só este ficheiro): eliminada a coluna `fixed top-[var(--header-h)] z-100`; as 3 barras passam a filhos em fluxo no topo do `main` (`shrink-0 flex flex-col`), acima da zona de scroll — ocupam espaço e empurram o conteúdo. Sem JS nem medição de alturas; herdam a margem da sidebar e ficam sempre visíveis nas tabs. Nos painéis de jogo (`MatchPage fixed z-120`) continuam tapadas como antes.
-- Checks: `eslint src/GameLayout.jsx` limpo · `check:types` OK · `test:mobile` integral PASS 175/175 (1.ª passagem); 2.ª passagem com 2 falhas flaky no `rotateoverlay-resp-test` (`Execution context was destroyed`), isolado passa 5/5 — harness não tocado pela mudança. Screenshot `roompause-390` visto (sem overflow; ícone em texto = fonte ausente no harness, pré-existente).
