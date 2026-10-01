@@ -5,124 +5,33 @@ import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js"
 import { Button } from "../shared/Button.jsx";
 
 /**
- * Mascote do adjunto, estilo Hattrick: retrato meio-corpo de um veterano de
- * cabelo grisalho penteado para trás, barba branca aparada, casaco de treino
- * verde de gola aberta e apito — inspirado na fisionomia de Jorge Jesus.
+ * Retrato do adjunto em medalhão (asset `/coaches/assistant.webp`): disco verde
+ * da casa, anel a tinta e retrato recortado.
+ * `mood` só muda o tratamento do retrato — "sad" dessatura e escurece.
  * @param {string} mood Expressão do adjunto ("worried" | "sad").
  */
 function AssistantMascot({ mood }) {
   const sad = mood === "sad";
   return (
-    <svg
-      viewBox="0 0 96 128"
-      className="h-[112px] w-[84px] shrink-0 drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+    <div
       role="img"
       aria-label="Treinador-adjunto"
+      className="relative h-[108px] w-[108px] shrink-0 rounded-full flex items-center justify-center bg-[radial-gradient(circle_at_30%_25%,#1f8f4f,#0a3d1e_72%)] ring-2 ring-zinc-900 shadow-[0_4px_14px_rgba(0,0,0,0.5)]"
     >
-      {/* Pescoço (fica por baixo da barba e do colarinho) */}
-      <rect x="41" y="52" width="14" height="36" rx="6" fill="#c98f5d" />
-      {/* Orelhas */}
-      <circle cx="26.5" cy="46" r="4.5" fill="#e3a76f" />
-      <circle cx="69.5" cy="46" r="4.5" fill="#e3a76f" />
-      {/* Tronco — casaco de treino verde */}
-      <path d="M12,128 C12,98 26,86 48,86 C70,86 84,98 84,128 Z" fill="#15803d" />
-      {/* Fendas das mangas */}
-      <path
-        d="M25,90 C21,102 19,114 19,128"
-        fill="none"
-        stroke="#14532d"
-        strokeWidth="2"
-        opacity="0.55"
-        strokeLinecap="round"
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-[3px] rounded-full ring-1 ring-white/25"
       />
-      <path
-        d="M71,90 C75,102 77,114 77,128"
-        fill="none"
-        stroke="#14532d"
-        strokeWidth="2"
-        opacity="0.55"
-        strokeLinecap="round"
+      <img
+        src="/coaches/assistant.webp"
+        alt=""
+        className="h-[86%] w-[86%] rounded-full object-cover object-top ring-1 ring-zinc-900/80"
+        style={sad ? { filter: "saturate(0.45) brightness(0.82)" } : undefined}
       />
-      {/* T-shirt branca à vista + colarinho aberto */}
-      <path d="M40,90 L56,90 L48,108 Z" fill="#f8fafc" />
-      <path d="M36,88 L48,102 L48,94 C42,92 38,90 36,88 Z" fill="#166534" />
-      <path d="M60,88 L48,102 L48,94 C54,92 58,90 60,88 Z" fill="#166534" />
-      {/* Fecho central do casaco */}
-      <line x1="48" y1="108" x2="48" y2="128" stroke="#d1fae5" strokeWidth="1.5" opacity="0.7" />
-      {/* Apito com cordão, ao peito */}
-      <path
-        d="M46,96 C40,101 34,103 30,105"
-        fill="none"
-        stroke="#eab308"
-        strokeWidth="1.6"
-      />
-      <circle cx="28" cy="107" r="3.6" fill="#eab308" />
-      <circle cx="28" cy="107" r="1.4" fill="#713f12" />
-      {/* Cabeça — pele tostada */}
-      <ellipse cx="48" cy="40" rx="21" ry="24" fill="#e3a76f" />
-      {/* Cabelo grisalho penteado para trás */}
-      <path
-        d="M27,44 C22,20 34,7 48,7 C62,7 74,20 69,44 C69,31 63,24 55,21 C50,19.5 45,19.5 41,21 C33,24 27,31 27,44 Z"
-        fill="#cbd5e1"
-      />
-      <path
-        d="M38,13 C33,19 30,27 30,35"
-        fill="none"
-        stroke="#94a3b8"
-        strokeWidth="1.4"
-        opacity="0.8"
-        strokeLinecap="round"
-      />
-      <path
-        d="M58,13 C63,19 66,27 66,35"
-        fill="none"
-        stroke="#94a3b8"
-        strokeWidth="1.4"
-        opacity="0.8"
-        strokeLinecap="round"
-      />
-      {/* Barba branca aparada ao queixo */}
-      <path
-        d="M30,42 C30,63 37,74 48,74 C59,74 66,63 66,42 C66,55 58,61 48,61 C38,61 30,55 30,42 Z"
-        fill="#e2e8f0"
-      />
-      {/* Sobrancelhas grossas grisalhas */}
-      {sad ? (
-        <>
-          <path d="M30,25 L41.5,27.5" stroke="#94a3b8" strokeWidth="3.4" strokeLinecap="round" />
-          <path d="M66,25 L54.5,27.5" stroke="#94a3b8" strokeWidth="3.4" strokeLinecap="round" />
-        </>
-      ) : (
-        <>
-          <path d="M30,27 L42,31" stroke="#94a3b8" strokeWidth="3.4" strokeLinecap="round" />
-          <path d="M66,27 L54,31" stroke="#94a3b8" strokeWidth="3.4" strokeLinecap="round" />
-        </>
-      )}
-      {/* Olhos severos */}
-      <circle cx="38" cy={sad ? 38.5 : 37.5} r="2.6" fill="#0f172a" />
-      <circle cx="58" cy={sad ? 38.5 : 37.5} r="2.6" fill="#0f172a" />
-      {/* Nariz */}
-      <path d="M48,33.5 L44.5,44 C46,45.5 50,45.5 51.5,44 Z" fill="#d6995f" />
-      {/* Bigode grisalho */}
-      <path
-        d="M35,47.5 C37.5,43.5 58.5,43.5 61,47.5 C57.5,51 53,49.5 48,49.5 C43,49.5 38.5,51 35,47.5 Z"
-        fill="#eef2f7"
-      />
-      {/* Boca caída (por baixo do bigode) */}
-      {sad ? (
-        <path d="M43,58 Q48,54.5 53,58" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
-      ) : (
-        <path d="M43,56 Q48,54 53,56" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
-      )}
-    </svg>
+    </div>
   );
 }
 
-/**
- * Treinador-adjunto: mascote até à cintura + balão de banda desenhada.
- * Monta-se no `GameLayout`; o hook decide se há dica (1x/situação/semana).
- * @returns {JSX.Element|null}
- */
 /**
  * Vista pura do adjunto (sem contextos): a mesma usada em produção e no harness.
  * @param {Object} props
@@ -181,7 +90,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
 }
 
 /**
- * Treinador-adjunto: mascote até à cintura + balão de banda desenhada.
+ * Treinador-adjunto: medalhão do treinador + balão de banda desenhada.
  * Monta-se no `GameLayout`; o hook decide se há dica (1x/situação/semana).
  * @returns {JSX.Element|null}
  */
