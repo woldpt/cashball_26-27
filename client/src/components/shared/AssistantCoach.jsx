@@ -10,7 +10,7 @@ import { Button } from "../shared/Button.jsx";
  * `mood` só muda o tratamento do retrato — "sad" dessatura e escurece.
  * @param {string} mood Expressão do adjunto ("worried" | "sad").
  */
-function AssistantMascot({ mood }) {
+export function AssistantMascot({ mood }) {
   const sad = mood === "sad";
   return (
     <div

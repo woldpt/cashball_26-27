@@ -1,8 +1,11 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "../shared/Button.jsx";
+import { AssistantMascot } from "../shared/AssistantCoach.jsx";
 import { COACH_TUTORIAL_STEPS } from "./coachTutorialSteps.js";
 
 const BALLOON_W = 320;
+// Largura do conjunto medalhão + balão (108 do medalhão + gap + balão).
+const WRAP_W = 440;
 const GAP = 12;
 
 /**
@@ -109,13 +112,13 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  let balloon = { left: Math.max(8, (vw - BALLOON_W) / 2), top: vh / 2 - 100 };
+  let balloon = { left: Math.max(8, (vw - WRAP_W) / 2), top: vh / 2 - 100 };
   let below = true;
   if (rect) {
     below = rect.y + rect.h + GAP + balloonH + 16 <= vh || rect.y < 200;
     const left = Math.max(
       8,
-      Math.min(rect.x + rect.w / 2 - BALLOON_W / 2, vw - BALLOON_W - 8),
+      Math.min(rect.x + rect.w / 2 - WRAP_W / 2, vw - WRAP_W - 8),
     );
     const top = below ? rect.y + rect.h + GAP : rect.y - GAP - balloonH - 16;
     balloon = { left, top: Math.max(8, Math.min(top, vh - balloonH - 8)) };
@@ -167,70 +170,79 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
         <div className="absolute inset-0 bg-black/70" />
       )}
 
-      {/* Balão */}
+      {/* Balão do adjunto: medalhão + banda desenhada, ancorado ao alvo */}
       <div
         ref={balloonRef}
         tabIndex={-1}
-        className="absolute bg-white border border-primary/50 rounded-xl shadow-2xl p-4 flex flex-col gap-2 text-zinc-900"
+        className="absolute flex items-end gap-2"
         style={{
           left: balloon.left,
           top: balloon.top,
-          width: `min(${BALLOON_W}px, calc(100vw - 16px))`,
+          width: `min(${WRAP_W}px, calc(100vw - 16px))`,
         }}
         data-tour="tutorial-balloon"
         role="dialog"
-        aria-label={`Tutorial passo ${stepIndex + 1} de ${total}`}
+        aria-label={`Treinador-adjunto: passo ${stepIndex + 1} de ${total}`}
       >
-        {/* Seta para o alvo */}
-        {rect && (
-          <span
-            className="absolute w-3 h-3 rotate-45 bg-white border-primary/50"
-            style={{
-              left: Math.min(
-                Math.max(rect.x + rect.w / 2 - balloon.left - 6, 16),
-                BALLOON_W - 28,
-              ),
-              ...(below
-                ? { top: -7, borderLeftWidth: 1, borderTopWidth: 1 }
-                : { bottom: -7, borderRightWidth: 1, borderBottomWidth: 1 }),
-            }}
-          />
-        )}
-        <p className="text-[10px] font-black uppercase tracking-widest text-primary">
-          Tutorial · Passo {stepIndex + 1} de {total}
-        </p>
-        <h3 className="text-base font-black font-headline tracking-tight text-zinc-900 uppercase">
-          {step.title}
-        </h3>
-        <p className="text-sm text-zinc-700 leading-relaxed">
-          {step.text}
-        </p>
-        {/* Progresso */}
-        <div className="flex gap-1 mt-1" aria-hidden="true">
-          {COACH_TUTORIAL_STEPS.map((s, i) => (
+        <AssistantMascot mood="worried" />
+        <div className="relative flex-1 bg-white border-2 border-zinc-900 rounded-2xl shadow-2xl p-3 text-zinc-900">
+          {/* Seta para o alvo */}
+          {rect && (
             <span
-              key={s.id}
-              className={`h-1 flex-1 rounded-full ${i <= stepIndex ? "bg-primary" : "bg-zinc-200"}`}
+              aria-hidden
+              className="absolute w-4 h-4 rotate-45 bg-white border-zinc-900"
+              style={{
+                left: Math.min(
+                  Math.max(rect.x + rect.w / 2 - balloon.left - 122, 16),
+                  BALLOON_W - 28,
+                ),
+                ...(below
+                  ? { top: -9, borderLeftWidth: 2, borderTopWidth: 2 }
+                  : { bottom: -9, borderRightWidth: 2, borderBottomWidth: 2 }),
+              }}
             />
-          ))}
-        </div>
-        <div className="flex items-center justify-between gap-2 mt-1">
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-zinc-900 transition-colors px-1 py-2"
-          >
-            Saltar
-          </button>
-          <div className="flex gap-2">
-            {stepIndex > 0 && (
-              <Button variant="secondary" size="sm" uppercase onClick={onBack}>
-                Voltar
+          )}
+          {/* Rabicho para o retrato */}
+          <span
+            aria-hidden
+            className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[9px] border-l-2 border-b-2 border-zinc-900"
+          />
+          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+            Treinador-adjunto · Passo {stepIndex + 1} de {total}
+          </p>
+          <h3 className="text-base font-black font-headline tracking-tight text-zinc-900 uppercase mt-0.5">
+            {step.title}
+          </h3>
+          <p className="text-sm text-zinc-700 leading-relaxed mt-0.5">
+            {step.text}
+          </p>
+          {/* Progresso */}
+          <div className="flex gap-1 mt-2" aria-hidden="true">
+            {COACH_TUTORIAL_STEPS.map((s, i) => (
+              <span
+                key={s.id}
+                className={`h-1 flex-1 rounded-full ${i <= stepIndex ? "bg-primary" : "bg-zinc-200"}`}
+              />
+            ))}
+          </div>
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <button
+              type="button"
+              onClick={onSkip}
+              className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-zinc-900 transition-colors px-1 py-2"
+            >
+              Saltar
+            </button>
+            <div className="flex gap-2">
+              {stepIndex > 0 && (
+                <Button variant="secondary" size="sm" uppercase onClick={onBack}>
+                  Voltar
+                </Button>
+              )}
+              <Button variant="primary" size="sm" uppercase onClick={onNext}>
+                {isLast ? "Concluir" : "Seguinte"}
               </Button>
-            )}
-            <Button variant="primary" size="sm" uppercase onClick={onNext}>
-              {isLast ? "Concluir" : "Seguinte"}
-            </Button>
+            </div>
           </div>
         </div>
       </div>

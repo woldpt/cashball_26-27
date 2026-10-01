@@ -177,7 +177,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
       <GameOverlays />
 
-      <AssistantCoach />
+      {/* O tutorial é o adjunto a falar — as dicas normais calam-se entretanto. */}
+      {!tutorial.active && <AssistantCoach />}
 
       <WelcomeModal
         welcomeModal={dismissalModal ? null : welcomeModal}

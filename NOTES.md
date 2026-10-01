@@ -1,3 +1,9 @@
+## Tutorial passa para o treinador-adjunto (2026-10-01)
+- Pedido: o tutorial passa a ser ensinado pelo adjunto.
+- Spotlight, ordem, tabs/alvos, arranque (WelcomeModal conta nova) e «Rever tutorial» inalterados; só o balão ganha a cara do adjunto (medalhão `assistant.webp` + balão com rabicho, etiqueta «Treinador-adjunto · Passo N de 10») e os 10 textos passam à 1.ª pessoa («Mister, eu mostro-te…»).
+- `AssistantMascot` exportado de `AssistantCoach.jsx` para reutilização sem duplicar; dicas normais calam-se enquanto `tutorial.active` (`GameLayout` não monta o `AssistantCoach`, sem tocar nos `seenKey` 1x/semana).
+- Checks: `eslint` limpo nos ficheiros tocados (3 erros pré-existentes noutros ficheiros) · `check:types` OK · `test:mobile` PASS (175/175).
+
 ## Jornal sem S16 por cima de S18 (sorteio transitório) (2026-10-01)
 - Bug (sala P9XFLJ, Leça): a linha «Sorteio: Meias-finais» datada de S16 aparecia no topo por cima de notícias S18.
 - Causa: transitórios iam todos para o topo sem ordenar por data; o transitório do sorteio leva a data da semana do sorteio e, para equipa já eliminada (Leça caiu na ronda 1 — o espelho `cup_draw` só é gravado a `cupTeamIds`, equipas ainda em prova), nunca chega linha gravada que o esconda (`cupDrawCovered`), por isso envelhecia no topo. Ordem das linhas gravadas verificada correta na BD (slot desc, sem inversões).

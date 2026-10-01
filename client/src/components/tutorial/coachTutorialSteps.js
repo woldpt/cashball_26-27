@@ -23,7 +23,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: "gestao",
     targets: ['[data-tour="nav-club"]', '[data-tour="nav-club-sub"]'],
     title: "O teu Clube",
-    text: "Aqui vês o emblema, a moral do plantel e o histórico do clube. É o teu quartel-general — volta cá quando precisares de rever o tutorial.",
+    text: "Mister, eu mostro-te a casa: aqui vês o emblema, a moral do plantel e o histórico do clube. É o nosso quartel-general — volta cá quando quiseres rever esta visita.",
   },
   {
     id: "jornal",
@@ -31,7 +31,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: null,
     targets: ['[data-tour="nav-jornal"]', '[data-tour="nav-jornal-mobile"]'],
     title: "Jornal do Clube",
-    text: "A tua caixa de entrada: renovações, convites, direção, sorteio da taça e lesões. As linhas com 🚩 bloqueiam o Jogar até responderes.",
+    text: "Eu trato do correio: renovações, convites, direção, sorteio da taça e lesões. Aviso-te já — as linhas com 🚩 bloqueiam o Jogar até responderes.",
   },
   {
     id: "players",
@@ -39,7 +39,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: "gestao",
     targets: ['[data-tour="nav-players"]', '[data-tour="nav-players-sub"]'],
     title: "O teu Plantel",
-    text: "Conhece os teus jogadores: posição, skill e estado físico. Toca num jogador para ver o histórico. Precisas de 1 guarda-redes e 10 de campo para jogar.",
+    text: "Apresento-te os rapazes: posição, skill e estado físico. Toca num jogador para veres o histórico. Lembra-te do que eu te digo sempre — precisas de 1 guarda-redes e 10 de campo para jogar.",
   },
   {
     id: "skills",
@@ -47,7 +47,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: "gestao",
     targets: ['[data-tour="player-skills"]'],
     title: "Lê as skills",
-    text: "O número dourado é a skill principal: quanto maior, melhor o jogador. A seguir vêm Forma, Moral, Resistência e Agressividade. Na semana em que a skill muda, o número fica verde (subiu) ou vermelho (desceu).",
+    text: "Eu leio os números por ti: o dourado é a skill principal — quanto maior, melhor. A seguir vêm Forma, Moral, Resistência e Agressividade. Na semana em que a skill muda, marco a verde (subiu) ou a vermelho (desceu)."
   },
   {
     id: "training",
@@ -55,7 +55,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: "gestao",
     targets: ['[data-tour="nav-training"]', '[data-tour="nav-training-sub"]'],
     title: "Treino semanal",
-    text: "Escolhe o foco de treino da semana para evoluir o plantel. O treino conta antes de cada jornada — não o ignores.",
+    text: "Aqui é que eu puxo por eles: escolhe comigo o foco de treino da semana. O treino conta antes de cada jornada — não mo deixes em branco."
   },
   {
     id: "finances",
@@ -63,7 +63,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: "gestao",
     targets: ['[data-tour="nav-finances"]', '[data-tour="nav-finances-sub"]'],
     title: "Finanças",
-    text: "Controla o orçamento, os salários semanais e as receitas de bilheteira. Reforços e estádio saem daqui — gasta com cabeça.",
+    text: "Eu olho pela carteira: orçamento, salários semanais e receitas de bilheteira. Reforços e estádio saem daqui — gasta com cabeça, que eu ralhete."
   },
   {
     id: "market",
@@ -71,7 +71,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: "transferencias",
     targets: ['[data-tour="nav-market"]', '[data-tour="nav-market-sub"]'],
     title: "Mercado e Leilões",
-    text: "Reforça a equipa no Mercado ou disputa Leilões contra outros treinadores. Este passo é opcional — podes avançar sem contratar.",
+    text: "Se precisares de reforços, eu vou contigo ao Mercado ou aos Leilões contra os outros treinadores. Este passo é opcional — podes avançar sem contratar."
   },
   {
     id: "tactic-lineup",
@@ -79,7 +79,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: null,
     targets: ['[data-tour="tactic-titulares"]', '[data-tour="tactic-lineup"]'],
     title: "Monta o teu 11",
-    text: "Escolhe a formação, a mentalidade e arrasta os jogadores para Titulares. Sem 1 guarda-redes + 10 de campo, o botão de jogar fica bloqueado.",
+    text: "Agora monta o nosso 11: formação, mentalidade e arrasta os jogadores para Titulares. Sem 1 guarda-redes + 10 de campo, o botão de jogar fica bloqueado — eu não te deixo avançar coxo."
   },
   {
     id: "tactic-play",
@@ -87,7 +87,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: null,
     targets: ['[data-tour="tactic-play"]', '[data-tour="tactic-titulares"]'],
     title: "Confirma a jornada",
-    text: "Quando o 11 estiver completo, aparece o botão de jogar — prime-o para confirmar a jornada. Em salas com amigos, a jornada só avança quando todos confirmarem.",
+    text: "Com o 11 fechado, aparece o botão de jogar — prime-o e eu confirmo a jornada por ti. Em salas com amigos, só avança quando todos confirmarem."
   },
   {
     id: "simulation",
@@ -95,6 +95,6 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: null,
     targets: [],
     title: "Rumo à simulação",
-    text: "Confirmada a tática, a jornada é simulada ao vivo: golos, lesões e intervenções em direto. Boa sorte, mister — a tua época começa agora!",
+    text: "Confirmada a tática, vemos a jornada ao vivo: golos, lesões e intervenções em direto. Boa sorte, mister — a nossa época começa agora e eu fico aqui ao teu lado!"
   },
 ];
