@@ -217,9 +217,17 @@ export function GameOverlays() {
     if (postMatchLandedKeyRef.current === endedMatchKey) return;
     if (anyPostMatchModal) return;
     if (activeTab !== "live") return;
-    postMatchLandedKeyRef.current = endedMatchKey;
-    hadMatchInProgressRef.current = false;
-    navigateTab("jornal");
+    // Apito final: 2 s de narração de fim de jogo antes do landing — o
+    // carimbo e a frase aparecem no mesmo commit do fim, e o salto
+    // imediato não deixava vê-los. O latch fica no callback (re-runs
+    // durante a espera rearmam; só um timer vivo — modais bloqueiam,
+    // sair do tab cancela).
+    const t = setTimeout(() => {
+      postMatchLandedKeyRef.current = endedMatchKey;
+      hadMatchInProgressRef.current = false;
+      navigateTab("jornal");
+    }, 2000);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     endedMatchKey,

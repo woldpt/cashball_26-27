@@ -1,3 +1,8 @@
+## Apito final: 2 s antes do landing no Jornal (2026-10-01)
+- Pedido: o auto-landing pós-jogo levava ao Jornal no mesmo commit em que o apito final dispara — o carimbo (4,5 s) e a narração de fim de jogo não se viam.
+- Fix (1 efeito, `client/src/GameOverlays.jsx`): o `navigateTab("jornal")` passa a correr num `setTimeout(2000)` com cleanup — o latch (`postMatchLandedKeyRef`) fica no callback, logo re-runs durante a espera rearmam o timer (só um vivo); modais pós-jogo continuam a bloquear e sair do tab Jogo cancela.
+- Checks: `check:types` OK · `lint` só os 4 pré-existentes em ficheiros intocados (confirmado no `git status`). Sem layout/sockets → sem `test:mobile`/audits.
+
 ## Adjunto redesenhado estilo Hattrick, cara de JJ (2026-10-01)
 - Pedido: mascote mais bonita ao estilo Hattrick com fisionomia do Jorge Jesus. Opções: casaco de treino verde com gola, expressões JJ severas (worried/sad só mudam sobrancelhas/olhos/boca), mascote maior.
 - Só o SVG de `AssistantMascot` em `components/shared/AssistantCoach.jsx` (interface igual): retrato meio-corpo 84×112 (viewBox 96×128), cabelo grisalho penteado para trás, barba branca aparada + bigode, pele tostada, casaco verde com gola aberta/t-shirt branca/apito. Sem `clipPath` (PlayerAvatar não é tocado).
