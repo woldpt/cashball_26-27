@@ -22,13 +22,17 @@ import {
  *  - Resistência:  +4.9 resistance (accumulator, 1.0 = 1 ponto)
  *
  * Physical dynamics (per calendar event, whole squad, junior GRs excluded):
- *  - Not training Forma:
- *      · played  → gradient decay (the lower the form, the slower the drop)
- *      · rested  → +2 recovery (rotation keeps the squad fresh)
+ *  - Rested players always recover +2 form (even when training Forma — only
+ *    starters get the +6); starters that don't train Forma decay with a
+ *    gradient (the lower the form, the slower the drop).
  *  - Not training Resistência (deliberately slower than the training gain so
  *    neglect takes longer to noticeably harm stamina — losses halved):
  *      · played  → -0.92 resistance progress
  *      · rested  → -0.30 resistance progress
+ *
+ * Decay runs for every human team, even one that never picked a focus (no
+ * bonus without a focus, but no immunity either). History rows are only
+ * written on real level changes, with delta in whole points.
  *
  * Skill and resistance use accumulator columns (training_skill_progress,
  * training_resistance_progress) because the underlying columns are INTEGER —
@@ -72,12 +76,6 @@ export async function applyTrainingBonuses(
         // recurrent without requiring the client to re-open the training UI.
         await carryForwardMissingFocus(game, completedCalendarIndex, trainingByTeam);
 
-        const teamIds = Array.from(trainingByTeam.keys());
-        if (teamIds.length === 0) {
-          resolve();
-          return;
-        }
-
         // Equipas humanas treinam o skill mais depressa (viveirismo); os NPCs
         // mantêm o ritmo base — a vantagem é de quem gere, não da liga toda.
         const humanTeamIds = new Set<number>(
@@ -85,6 +83,16 @@ export async function applyTrainingBonuses(
             .map((p: any) => p?.teamId)
             .filter((id: any) => id != null),
         );
+
+        // Decay sem imunidade: o plantel carregado é a união das equipas com
+        // foco + todas as humanas — quem nunca escolheu foco não ganha bónus
+        // mas decai na mesma. Só as equipas com linha contam para markApplied.
+        const teamIds = Array.from(trainingByTeam.keys());
+        const squadTeamIds = Array.from(new Set([...teamIds, ...humanTeamIds]));
+        if (squadTeamIds.length === 0) {
+          resolve();
+          return;
+        }
 
         // Collect ids of players that appeared in a fixture (positive ids only,
         // junior GRs use negative ids) — these receive the training bonus.
@@ -96,17 +104,18 @@ export async function applyTrainingBonuses(
           for (const p of away) if (typeof p?.id === "number" && p.id > 0) playedPlayerIds.add(p.id);
         }
 
-        // Load the ENTIRE squad of the teams with a focus: bonuses only reach
-        // players that played, but the decay of untrained attributes (form /
-        // resistance) affects the whole squad.
-        const teamPlaceholders = teamIds.map(() => "?").join(",");
+        // Load the ENTIRE squad of the teams in scope: bonuses only reach
+        // players that played (and only with a matching focus), but the
+        // decay of untrained attributes (form / resistance) affects the
+        // whole squad, focused or not.
+        const teamPlaceholders = squadTeamIds.map(() => "?").join(",");
         game.db.all(
           `SELECT id, team_id, position, skill, form, resistance, potential,
                   training_skill_progress AS skill_progress,
                   training_resistance_progress AS resistance_progress
            FROM players
            WHERE team_id IN (${teamPlaceholders})`,
-          teamIds,
+          squadTeamIds,
           (err2: any, players: any[]) => {
             if (err2) {
               console.error(`[${game.roomCode}] training: failed to load players:`, err2);
@@ -133,8 +142,9 @@ export async function applyTrainingBonuses(
             const updates: PlayerUpdate[] = [];
 
             for (const player of players) {
-              const focus = trainingByTeam.get(player.team_id);
-              if (!focus) continue;
+              // Sem foco não há bónus, mas há decay (sem imunidade para quem
+              // nunca treinou); o rótulo do histórico cai para "Nenhum".
+              const focus = trainingByTeam.get(player.team_id) ?? "Nenhum";
 
               const upd: PlayerUpdate = {
                 playerId: player.id,
@@ -171,14 +181,16 @@ export async function applyTrainingBonuses(
                   }
                   if (newRes >= RES_MAX) newProg = 0; // cap progress at the ceiling
                   upd.fields.training_resistance_progress = Math.round(newProg * 100) / 100;
-                  if (newRes !== oldRes) upd.fields.resistance = newRes;
-                  upd.history.push({
-                    attribute: "resistance",
-                    oldValue: oldRes,
-                    newValue: newRes,
-                    delta: 4.9,
-                    focus,
-                  });
+                  if (newRes !== oldRes) {
+                    upd.fields.resistance = newRes;
+                    upd.history.push({
+                      attribute: "resistance",
+                      oldValue: oldRes,
+                      newValue: newRes,
+                      delta: newRes - oldRes,
+                      focus,
+                    });
+                  }
                 } else {
                   // Position focus
                   const targetPos =
@@ -221,13 +233,15 @@ export async function applyTrainingBonuses(
                       upd.fields.skill = newSkill;
                       upd.fields.value = recalcPlayerValue(newSkill);
                     }
-                    upd.history.push({
-                      attribute: "skill",
-                      oldValue: oldSkill,
-                      newValue: newSkill,
-                      delta: Math.round(gain * 100) / 100,
-                      focus,
-                    });
+                    if (newSkill !== oldSkill) {
+                      upd.history.push({
+                        attribute: "skill",
+                        oldValue: oldSkill,
+                        newValue: newSkill,
+                        delta: newSkill - oldSkill,
+                        focus,
+                      });
+                    }
                   }
                 }
               }
@@ -235,37 +249,37 @@ export async function applyTrainingBonuses(
               // ── Decay: untrained attributes worsen over time (whole squad) ──
               // Junior GRs (negative ids) are excluded.
               if (player.id > 0) {
-                if (focus !== "Forma") {
+                if (!played) {
+                  // Descanso: quem não jogou recupera suavemente mesmo a
+                  // treinar Forma (o +6 é só dos titulares) — rotação mantém
+                  // o plantel fresco.
                   const oldForm = player.form ?? FORM_NEUTRAL;
-                  if (!played) {
-                    // Descanso: quem não jogou e não treina Forma recupera
-                    // suavemente em vez de decair (rotação mantém o plantel fresco)
-                    const newForm = Math.min(FORM_MAX, oldForm + 2);
-                    if (newForm !== oldForm) {
-                      upd.fields.form = newForm;
-                      upd.history.push({
-                        attribute: "form",
-                        oldValue: oldForm,
-                        newValue: newForm,
-                        delta: newForm - oldForm,
-                        focus,
-                      });
-                    }
-                  } else {
-                    // Decaimento com gradiente: quanto mais baixa a forma,
-                    // menos decai (efeito piso no 1)
-                    const decay = Math.max(1, Math.round((oldForm - FORM_MIN) * 0.08));
-                    const newForm = Math.max(FORM_MIN, oldForm - decay);
-                    if (newForm !== oldForm) {
-                      upd.fields.form = newForm;
-                      upd.history.push({
-                        attribute: "form",
-                        oldValue: oldForm,
-                        newValue: newForm,
-                        delta: newForm - oldForm,
-                        focus,
-                      });
-                    }
+                  const newForm = Math.min(FORM_MAX, oldForm + 2);
+                  if (newForm !== oldForm) {
+                    upd.fields.form = newForm;
+                    upd.history.push({
+                      attribute: "form",
+                      oldValue: oldForm,
+                      newValue: newForm,
+                      delta: newForm - oldForm,
+                      focus,
+                    });
+                  }
+                } else if (focus !== "Forma") {
+                  // Decaimento com gradiente: quanto mais baixa a forma,
+                  // menos decai (efeito piso no 1)
+                  const oldForm = player.form ?? FORM_NEUTRAL;
+                  const decay = Math.max(1, Math.round((oldForm - FORM_MIN) * 0.08));
+                  const newForm = Math.max(FORM_MIN, oldForm - decay);
+                  if (newForm !== oldForm) {
+                    upd.fields.form = newForm;
+                    upd.history.push({
+                      attribute: "form",
+                      oldValue: oldForm,
+                      newValue: newForm,
+                      delta: newForm - oldForm,
+                      focus,
+                    });
                   }
                 }
 
@@ -285,14 +299,16 @@ export async function applyTrainingBonuses(
                   if (newRes <= RES_MIN && newProg < 0) newProg = 0; // clamp at floor
                   newProg = Math.round(newProg * 100) / 100;
                   upd.fields.training_resistance_progress = newProg;
-                  if (newRes !== oldRes) upd.fields.resistance = newRes;
-                  upd.history.push({
-                    attribute: "resistance",
-                    oldValue: oldRes,
-                    newValue: newRes,
-                    delta: resLoss,
-                    focus,
-                  });
+                  if (newRes !== oldRes) {
+                    upd.fields.resistance = newRes;
+                    upd.history.push({
+                      attribute: "resistance",
+                      oldValue: oldRes,
+                      newValue: newRes,
+                      delta: newRes - oldRes,
+                      focus,
+                    });
+                  }
                 }
               }
 
