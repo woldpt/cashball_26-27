@@ -66,6 +66,14 @@ export function registerNewsListeners(handlers, refs, ctx) {
 				? { pending: !!data.pending, offers: Array.isArray(data.offers) ? data.offers : [], chosen: data.chosen ?? null, taken: !!data.taken }
 				: { pending: false, offers: [], chosen: null },
 		);
+		// Patrocinador fechado (o upfront cai no budget): refrescar as finanças —
+		// sem isto o gráfico de saldo só atualizava ao revisitar as Finanças.
+		if (data?.chosen) {
+			const currentMe = refs.meRef.current;
+			if (currentMe?.teamId) {
+				socket.emit("requestFinanceData", { teamId: currentMe.teamId });
+			}
+		}
 	});
 	socket.on("stadiumBuilt", ({ teamId }) => {
 			// Re-pedir financeData se somos o clube em questão

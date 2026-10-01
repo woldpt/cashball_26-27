@@ -1714,6 +1714,13 @@ export function registerSessionSocketHandlers(
 				throw txErr;
 			}
 			socket.emit("sponsorState", await buildSponsorState(game, teamId));
+			// Sem este broadcast a camisola (TeamKit via `sponsorBrand`) e o saldo
+			// ficavam presos até ao refresh — mesmo padrão dos outros fluxos
+			// que mexem em teams (loans, estádio, transferências).
+			getTeamsWithCoachNames(game.db)
+				.then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+				.catch(() => {});
+			io.to(game.roomCode).emit("clubNewsUpdated", { teamId });
 			io.to(game.roomCode).emit("globalNewsUpdated");
 		} catch (chooseErr: any) {
 			console.error(`[${game.roomCode}] chooseSponsor error:`, chooseErr?.message || chooseErr);
