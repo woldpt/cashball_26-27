@@ -18,6 +18,7 @@ import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.j
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 import { RoomPauseBanner } from "./components/shared/RoomPauseBanner.jsx";
 import { RoomNoticeBanner } from "./components/shared/RoomNoticeBanner.jsx";
+import { AssistantCoach } from "./components/shared/AssistantCoach.jsx";
 import { GameRoutes } from "./GameRoutes.jsx";
 import { GameOverlays } from "./GameOverlays.jsx";
 import { GroupBackdrop } from "./components/shared/GroupBackdrop.jsx";
@@ -176,6 +177,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       )}
 
       <GameOverlays />
+
+      <AssistantCoach />
 
       <WelcomeModal
         welcomeModal={dismissalModal ? null : welcomeModal}

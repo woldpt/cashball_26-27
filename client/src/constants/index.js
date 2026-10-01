@@ -331,6 +331,7 @@ export const MODAL_Z = {
 	penalty: 150,
 	coachMarket: 160,
 	signing: 190,
+	assistant: 110,
 	postMatch: 210,
 	boardWarning: 220,
 	default: 200,
