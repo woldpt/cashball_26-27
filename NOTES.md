@@ -15,6 +15,12 @@
 - Ficheiros: novo `hooks/useAssistantCoach.js` · novo `components/shared/AssistantCoach.jsx` (mascote SVG pura, 2 expressões, sem `clipPath`; vista pura `AssistantCoachView` para o harness; entrada com framer-motion + `prefers-reduced-motion`) · `GameLayout.jsx` (monta abaixo dos modais) · `MODAL_Z.assistant = 110` · harness `assistant-resp-test.{html,jsx}`.
 - Checks: `eslint` nos 4 ficheiros limpo · `check:types` OK · `test:mobile` **PASS 175/175** + screenshots 360/390 vistos (balão sobre a bottom-nav, sem cortes). Sem servidor → sem `typecheck`/`audit:socketio`/`audit:gamestate` (sem lógica de jogo nem sockets novos).
 
+## Grace de presença: 25 s → 90 s (2026-10-01)
+- Pedido: telemóveis com rede a tremer não deviam congelar salas multiplayer por flapes curtos.
+- Fix (1 linha, `server/roomStateHelpers.ts`): `PRESENCE_GRACE_MS` 25_000 → 90_000. Único local; o teste `sessionFreezeRegression.mts` importa a constante e adapta-se sozinho.
+- Efeito: ausência > 90 s é que congela (antes 25 s); a pausa passa a mostrar-se até ~90 s depois de um offline real.
+- Checks: `typecheck` PASS · `test:session-freeze` 11/11. Sem deploy no rick.
+
 ## Push no telemóvel: subscrição presa a chaves VAPID antigas (2026-09-30)
 - Queixa: avisos push activados («Ligados») no Brave Android mas nada chegava. Prova no rick: `[push] Falha ao notificar Fabio: Received unexpected response code` 4× no próprio dia; teste de envio manual à subscrição guardada devolveu **403 «the VAPID credentials … do not correspond to the credentials used to create the subscriptions»**. Causa: a subscrição (29-09 20:56) foi criada com as chaves VAPID antigas; o `server/.env` foi reescrito a 30-09 12:56 (rotação) e o restart das 14:14 passou a assinar com as novas — o FCM rejeita para sempre; o log só mostrava a mensagem (sem status), o que escondia o 403.
 - Fix em 2 partes: (1) dados — linha obsoleta do Fabio apagada de `push_subscriptions` no rick (era a única; FCM declarou-a morta); **falta ele re-subscrever** (Definições › Avisos › Desactivar › Activar) para vincular às chaves atuais. (2) código, só `server/push.ts`: `isDeadSubscription()` novo — 403 com corpo mismatch apaga a sub como o 410 (match estreito ao corpo; 403 genérico não apaga); o log de falha passa a mostrar `status=` + corpo (foi o que faltou no diagnóstico).

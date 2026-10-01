@@ -15,7 +15,7 @@ import type { ActiveGame, PlayerSession, RoomSeat } from "./types";
 
 /** Grace de presença: um socket que morre (wifi → 5G) não conta como ausente
  *  durante este intervalo — evita congelar a sala num flape de poucos segundos. */
-export const PRESENCE_GRACE_MS = 25_000;
+export const PRESENCE_GRACE_MS = 90_000;
 
 const TABLE_SEATS = `CREATE TABLE IF NOT EXISTS room_seats (
   coach_name TEXT PRIMARY KEY COLLATE NOCASE,
