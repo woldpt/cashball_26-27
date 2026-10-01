@@ -5,7 +5,7 @@ import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js"
 import { Button } from "../shared/Button.jsx";
 
 /**
- * Retrato do adjunto em medalhão (asset `/coaches/assistant.webp`): disco verde
+ * Retrato do adjunto em medalhão (asset `/coaches/assistant.svg`, vetorizado): disco verde
  * da casa, anel a tinta e retrato recortado.
  * `mood` só muda o tratamento do retrato — "sad" dessatura e escurece.
  * @param {string} mood Expressão do adjunto ("worried" | "sad").
@@ -23,7 +23,7 @@ export function AssistantMascot({ mood }) {
         className="pointer-events-none absolute inset-[3px] rounded-full ring-1 ring-white/25"
       />
       <img
-        src="/coaches/assistant.webp"
+        src="/coaches/assistant.svg"
         alt=""
         className="h-[86%] w-[86%] rounded-full object-cover object-top ring-1 ring-zinc-900/80"
         style={sad ? { filter: "saturate(0.45) brightness(0.82)" } : undefined}

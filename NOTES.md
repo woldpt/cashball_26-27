@@ -3,6 +3,12 @@
 - 7 dicas reescritas em `useAssistantCoach.js` (6) + `trainingCapAdvice.js` (1, mantém interpolação do foco); etiqueta `Treinador-adjunto` → `O Mister` (cabeçalho + aria-labels) em `AssistantCoach.jsx`. Só strings, zero lógica/tabs/keys.
 - Checks: `eslint` limpo nos 3 ficheiros · `check:types` OK · só texto → sem `test:mobile`; audits saltam (sem lógica de jogo/sockets).
 
+## Retrato do adjunto vetorizado sem fundo (2026-10-01)
+- Pedido: retirar a relva do `assistant.webp` e passar a SVG; escolhido o SVG fiel de 16 cores (206 KB).
+- Recorte por matiz verde (`PIL/numpy`, cantinho branco do topo incluído) sobre o disco; `vtracer` segfaulta neste ambiente, venci com `imagetracerjs` (12→44 KB preterido, 16 cores vence). SVG só com paths preenchidos, sem `clipPath`/máscaras.
+- `AssistantCoach.jsx` (e o tutorial via `AssistantMascot`) passam a `/coaches/assistant.svg`; `.webp` apagado. Fundo do SVG é o verde-escuro do disco — funde-se com o medalhão.
+- Checks: `eslint` + `check:types` OK · confirmação visual do medalhão · sem mudança de layout → sem `test:mobile`.
+
 ## Tutorial passa para o treinador-adjunto (2026-10-01)
 - Pedido: o tutorial passa a ser ensinado pelo adjunto.
 - Spotlight, ordem, tabs/alvos, arranque (WelcomeModal conta nova) e «Rever tutorial» inalterados; só o balão ganha a cara do adjunto (medalhão `assistant.webp` + balão com rabicho, etiqueta «Treinador-adjunto · Passo N de 10») e os 10 textos passam à 1.ª pessoa («Mister, eu mostro-te…»).
