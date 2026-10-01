@@ -1,3 +1,8 @@
+## Adjunto redesenhado estilo Hattrick, cara de JJ (2026-10-01)
+- Pedido: mascote mais bonita ao estilo Hattrick com fisionomia do Jorge Jesus. Opções: casaco de treino verde com gola, expressões JJ severas (worried/sad só mudam sobrancelhas/olhos/boca), mascote maior.
+- Só o SVG de `AssistantMascot` em `components/shared/AssistantCoach.jsx` (interface igual): retrato meio-corpo 84×112 (viewBox 96×128), cabelo grisalho penteado para trás, barba branca aparada + bigode, pele tostada, casaco verde com gola aberta/t-shirt branca/apito. Sem `clipPath` (PlayerAvatar não é tocado).
+- Checks: `lint` (3 erros pré-existentes noutros ficheiros, confirmados no HEAD) · `check:types` OK · `test:mobile assistant-resp-test` PASS 5/5 + screenshots 360/430 vistos. Sem servidor → sem typecheck/audits.
+
 ## Mudar de Jogo voltava à mesma sala: leaveToMenu mata o auto-join (2026-10-01)
 - Queixa: na U7ZARI, «Mudar de Jogo» voltava a cair na mesma sala em vez de ir ao menu.
 - Causa: a saída limpava só a chave legada `cashballSession` (que o auto-join já não lê) e fazia `setMe(null)` com a `savedSession` em memória intacta — o efeito de auto-join (`[savedSession, me?.teamId]`) reentrava na sala de imediato; um timer de retry pendente (`lastJoinRef`) faria o mesmo.
