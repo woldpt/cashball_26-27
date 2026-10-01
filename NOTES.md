@@ -1,3 +1,8 @@
+## Adjunto fala JJ meme total (2026-10-01)
+- Pedido: Treinador-adjunto passa a falar na linguagem meme do Jorge Jesus, intensidade meme total, textos + CTAs + alcunha.
+- 7 dicas reescritas em `useAssistantCoach.js` (6) + `trainingCapAdvice.js` (1, mantém interpolação do foco); etiqueta `Treinador-adjunto` → `O Mister` (cabeçalho + aria-labels) em `AssistantCoach.jsx`. Só strings, zero lógica/tabs/keys.
+- Checks: `eslint` limpo nos 3 ficheiros · `check:types` OK · só texto → sem `test:mobile`; audits saltam (sem lógica de jogo/sockets).
+
 ## Tutorial passa para o treinador-adjunto (2026-10-01)
 - Pedido: o tutorial passa a ser ensinado pelo adjunto.
 - Spotlight, ordem, tabs/alvos, arranque (WelcomeModal conta nova) e «Rever tutorial» inalterados; só o balão ganha a cara do adjunto (medalhão `assistant.webp` + balão com rabicho, etiqueta «Treinador-adjunto · Passo N de 10») e os 10 textos passam à 1.ª pessoa («Mister, eu mostro-te…»).

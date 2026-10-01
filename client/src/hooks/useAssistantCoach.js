@@ -164,27 +164,27 @@ export function useAssistantCoach() {
         : {
             id: "redflag",
             mood: "worried",
-            text: "Tens pendências no Jornal que bloqueiam o Pronto.",
+            text: "Ó meus meninos! Tens o Jornal cheio de papéis. Isto não se ganha sozinho, bora despachar, tá bem?",
             tab: "jornal",
-            cta: "Ver Jornal",
+            cta: "Despachar já",
           },
       isLineupComplete
         ? null
         : {
             id: "lineup",
             mood: "worried",
-            text: "O onze não está fechado para a jornada.",
+            text: "Olha, o onze não está fechado! Queres matar o jogo como? Mete a carne toda no assador, bora!",
             tab: "tactic",
-            cta: "Fechar onze",
+            cta: "Fechar o onze",
           },
       hasTraining
         ? null
         : {
             id: "training",
             mood: "worried",
-            text: "Esqueceste-te de definir o treino da semana.",
+            text: "Esqueceste-te do treino! Quem não treina forte não ganha. O futebol é momento e o momento é agora!",
             tab: "training",
-            cta: "Definir treino",
+            cta: "Puxar treino",
           },
       capTip,
       unavailable < 3
@@ -192,27 +192,27 @@ export function useAssistantCoach() {
         : {
             id: "medical",
             mood: "worried",
-            text: "A enfermaria está cheia — revê o plantel.",
+            text: "A enfermaria está cheia! Revê os teus melões e escolhe os que estão rijos, percebes?",
             tab: "players",
-            cta: "Ver plantel",
+            cta: "Ver melões",
           },
       currentBudget >= (totalWeeklyWage || 0)
         ? null
         : {
             id: "wage",
             mood: "worried",
-            text: "O saldo não cobre uma semana de salários.",
+            text: "O cofre não chega para os salários! A bola é redonda mas o dinheiro não estica. Despacha-te!",
             tab: "finances",
-            cta: "Ver finanças",
+            cta: "Acertar contas",
           },
       fansMood == null || fansMood >= 23
         ? null
         : {
             id: "fans",
             mood: "sad",
-            text: "Os adeptos estão inquietos — precisam de uma vitória.",
+            text: "Os adeptos estão inquietos! Quem não sente não é filho de boa gente. Só dá: ganhar, ganhar, ganhar!",
             tab: "club",
-            cta: "Ver clube",
+            cta: "Ganhar já",
           },
     ].filter(Boolean);
 

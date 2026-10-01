@@ -15,7 +15,7 @@ export function AssistantMascot({ mood }) {
   return (
     <div
       role="img"
-      aria-label="Treinador-adjunto"
+      aria-label="O Mister"
       className="relative h-[108px] w-[108px] shrink-0 rounded-full flex items-center justify-center bg-[radial-gradient(circle_at_30%_25%,#1f8f4f,#0a3d1e_72%)] ring-2 ring-zinc-900 shadow-[0_4px_14px_rgba(0,0,0,0.5)]"
     >
       <span
@@ -57,7 +57,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
         className="pointer-events-auto flex items-end gap-2 w-full max-w-md lg:flex-row-reverse"
         role="dialog"
         aria-live="polite"
-        aria-label={`Treinador-adjunto: ${tip.text}`}
+        aria-label={`O Mister: ${tip.text}`}
       >
         <AssistantMascot mood={tip.mood} />
         {/* Clicar no balão dispensa — o 11 mantém-se dispensável pelo X (teclado). */}
@@ -72,7 +72,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
             className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[9px] border-l-2 border-b-2 border-zinc-900 lg:left-auto lg:-right-[9px] lg:border-l-0 lg:border-r-2"
           />
           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
-            Treinador-adjunto
+            O Mister
           </p>
           <p className="text-sm leading-snug mt-0.5">{tip.text}</p>
           <div className="flex items-center justify-between gap-2 mt-2">
