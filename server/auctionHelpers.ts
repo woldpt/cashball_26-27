@@ -365,7 +365,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       const end = contractEndInfo(player);
       closeUnsold(
         `${player.name} retirado do leilão`,
-        `${getAgentName(player.id)} bloqueou: contrato até ${seasonToYear(end.season)}, jornada ${end.matchweek}.`,
+        `${getAgentName(player.id)} bloqueou: contrato até ${seasonToYear(end.season)}, ${end.label}.`,
       );
       return;
     }
@@ -625,7 +625,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           if (callback)
             callback(
               false,
-              `O agente bloqueou a saída: contrato até ${seasonToYear(end.season)}, jornada ${end.matchweek}.`,
+              `O agente bloqueou a saída: contrato até ${seasonToYear(end.season)}, ${end.label}.`,
             );
           return;
         }

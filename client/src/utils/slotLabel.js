@@ -14,3 +14,13 @@ export function slotLabel(slot) {
   if (entry.type === "friendly") return "Pré-época";
   return entry.roundName;
 }
+
+/**
+ * Etiqueta de fim de contrato: sempre "Semana N" (1..20).
+ *
+ * @param {number} slot slot 1-based (1..20)
+ * @returns {string}
+ */
+export function contractWeekLabel(slot) {
+  return `Semana ${Math.max(1, slot || 1)}`;
+}

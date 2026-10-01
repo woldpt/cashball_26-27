@@ -30,3 +30,8 @@
 - Constantes novas em `client/src/constants/index.js` a espelhar o servidor (`FORM_MAX`/`RES_MAX`) + `TRAINING_CAP_TARGETS` e `TRAINING_CAP_SQUAD_RATIO` (limiar num só sítio).
 - Checks: `npm run test:trainingcap` (novo, 5 grupos de asserções) PASS · `lint` limpo nos ficheiros tocados · `check:types` OK · sem mudança de layout → sem `test:mobile`.
 
+
+## Contratos em semanas, não jornadas (2026-10-01)
+- Pedido: duração/fim do contrato aparecia em jornadas; passa a semanas.
+- Fix: `contractWeekLabel(slot)` → `Semana N` (server `coreHelpers.ts` + client `utils/slotLabel.js`); `contractEndInfo()` devolve `slot` + `label: Semana N`; renomeado `CONTRACT_LENGTH_MATCHWEEKS` → `CONTRACT_LENGTH_WEEKS` (alias antigo mantido), `contractEndMatchweek` → `contractEndSlot` no fio (cliente aceita o antigo em fallback); mensagens de bloqueio de leilão usam `end.label`; fallback `Jornada ${n}` no `market.js` e variáveis no `PlayerHistoryModal.jsx`/`helpers.js` atualizados.
+- Checks: server `typecheck` OK · client `eslint` limpo nos ficheiros tocados (3 erros pré-existentes noutros ficheiros) · `check:types` OK · sem mudança de layout → sem `test:mobile`.

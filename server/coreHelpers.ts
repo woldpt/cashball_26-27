@@ -2,7 +2,7 @@ import type { ActiveGame, SlimMatchResult } from "./types";
 import {
   MAX_ATTENDANCE_BY_DIVISION,
   MATCH_TUNING,
-  CONTRACT_LENGTH_MATCHWEEKS,
+  CONTRACT_LENGTH_WEEKS,
   contractEpoch,
   SEASON_CALENDAR,
   fairWeeklyWage,
@@ -99,9 +99,14 @@ export function currentEpoch(game: ActiveGame): number {
 }
 
 /**
- * Etiqueta humana de um slot (para mensagens de contrato): "Jornada N",
- * nome da ronda da Taça ou "Pré-época".
+ * Etiqueta humana de um slot (lesões, suspensões, jornal): "Jornada N",
+ * nome da ronda da Taça ou "Pré-época". Contratos usam sempre
+ * `contractWeekLabel` ("Semana N").
  */
+export function contractWeekLabel(slot: number): string {
+  return `Semana ${Math.max(1, slot || 1)}`;
+}
+
 export function slotLabel(slot: number): string {
   const entry = SEASON_CALENDAR[Math.max(1, slot) - 1];
   if (!entry) return `Semana ${slot}`;
@@ -121,7 +126,7 @@ export function isContractLocked(
 ): boolean {
   const start = player.contract_start_epoch || 0;
   if (start <= 0) return false;
-  return currentEpoch(game) < start + CONTRACT_LENGTH_MATCHWEEKS;
+  return currentEpoch(game) < start + CONTRACT_LENGTH_WEEKS;
 }
 
 /**
@@ -162,14 +167,14 @@ export function buildSkillHistory(
  */
 export function contractEndInfo(
   player: { contract_start_epoch?: number | null },
-): { season: number; matchweek: number; label: string } {
+): { season: number; slot: number; matchweek: number; label: string } {
   const start = player.contract_start_epoch || 0;
-  if (start <= 0) return { season: 0, matchweek: 0, label: "—" };
-  const endEpoch = start + CONTRACT_LENGTH_MATCHWEEKS;
-  const season = Math.ceil(endEpoch / CONTRACT_LENGTH_MATCHWEEKS);
-  const mw = endEpoch - (season - 1) * CONTRACT_LENGTH_MATCHWEEKS;
-  const slot = mw === 0 ? CONTRACT_LENGTH_MATCHWEEKS : mw;
-  return { season, matchweek: slot, label: slotLabel(slot) };
+  if (start <= 0) return { season: 0, slot: 0, matchweek: 0, label: "—" };
+  const endEpoch = start + CONTRACT_LENGTH_WEEKS;
+  const season = Math.ceil(endEpoch / CONTRACT_LENGTH_WEEKS);
+  const mw = endEpoch - (season - 1) * CONTRACT_LENGTH_WEEKS;
+  const slot = mw === 0 ? CONTRACT_LENGTH_WEEKS : mw;
+  return { season, slot, matchweek: slot, label: contractWeekLabel(slot) };
 }
 
 /**

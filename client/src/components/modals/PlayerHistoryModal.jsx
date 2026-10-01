@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef } from "react";
 import { GameContext } from "../../contexts/GameContext.jsx";
-import { slotLabel } from "../../utils/slotLabel.js";
+import { contractWeekLabel } from "../../utils/slotLabel.js";
 import { formatCurrency, seasonToYear } from "../../utils/formatters.js";
 import { BadgeSkills } from "../shared/BadgeSkills.jsx";
 import { Stars } from "../shared/Stars.jsx";
@@ -133,10 +133,10 @@ export function PlayerHistoryModal({
   const isLocked = contractStart > 0 && currentEpoch < contractStart + SEASON_WEEKS;
   const contractEndEpoch = contractStart > 0 ? contractStart + SEASON_WEEKS : 0;
   const contractEndSeason = contractStart > 0 ? Math.ceil(contractEndEpoch / SEASON_WEEKS) : 0;
-  const contractEndMatchweek = contractStart > 0
+  const contractEndSlot = contractStart > 0
     ? contractEndEpoch - (contractEndSeason - 1) * SEASON_WEEKS
     : 0;
-  const contractEndLabel = contractStart > 0 ? slotLabel(contractEndMatchweek) : "";
+  const contractEndLabel = contractStart > 0 ? contractWeekLabel(contractEndSlot) : "";
   const contractEndYear = contractStart > 0 ? seasonToYear(contractEndSeason) : 0;
   const matchInProgress = isPlayingMatch || showHalftimePanel;
   // Server uses >= to prevent re-auction in same calendar slot (startAuction

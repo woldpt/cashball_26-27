@@ -1,6 +1,6 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import {
-	CONTRACT_LENGTH_MATCHWEEKS,
+	CONTRACT_LENGTH_WEEKS,
 } from "./gameConstants";
 import { currentEpoch } from "./coreHelpers";
 import { currentHighBidOf } from "./auctionHelpers";
@@ -160,7 +160,7 @@ export function registerScoutSocketHandlers(
 			}
 			const epoch = currentEpoch(game);
 			where.push("(p.contract_start_epoch = 0 OR p.contract_start_epoch + ? <= ?)");
-			params.push(CONTRACT_LENGTH_MATCHWEEKS, epoch);
+			params.push(CONTRACT_LENGTH_WEEKS, epoch);
 		}
 
 		const sort = f.sort || "quality-desc";

@@ -1,6 +1,7 @@
 import { socket, queueEmit } from "../../socket.js";
 import { POSITION_SHORT_LABELS } from "../../constants/index.js";
 import { seasonToYear } from "../../utils/formatters.js";
+import { contractWeekLabel } from "../../utils/slotLabel.js";
 import { playSigningSound, playBooSound } from "../../utils/audio.js";
 import { buildPlayerStats, buildPositionPeers, contractAvatar, showContractOutcome } from "./helpers.js";
 
@@ -192,6 +193,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 			skill,
 			wage,
 			agent,
+			contractEndSlot,
 			contractEndMatchweek,
 			contractEndSeason,
 			contractEndLabel,
@@ -200,9 +202,10 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		}) => {
 			if (!ctx.inRoom()) return;
 			playSigningSound();
+			const endSlot = contractEndSlot ?? contractEndMatchweek;
 			const endText =
-				contractEndMatchweek && contractEndSeason
-					? `${seasonToYear(contractEndSeason)}, ${contractEndLabel || `Jornada ${contractEndMatchweek}`}`
+				endSlot && contractEndSeason
+					? `${seasonToYear(contractEndSeason)}, ${contractEndLabel || contractWeekLabel(endSlot)}`
 					: "";
 			showContractOutcome(handlers, refs, playerId, {
 				mode: "confirm",
@@ -216,7 +219,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 					position,
 					skill,
 					wage,
-					contractEndMatchweek,
+					contractEndSlot: endSlot,
 					contractEndSeason,
 				}),
 				avatar: contractAvatar(refs, playerId, {

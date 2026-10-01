@@ -1,6 +1,6 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import {
-  CONTRACT_LENGTH_MATCHWEEKS,
+  CONTRACT_LENGTH_WEEKS,
   getAgentName,
   fairWeeklyWage,
   recalcPlayerValue,
@@ -55,7 +55,7 @@ interface ContractDeps {
 }
 
 /**
- * Probabilidade/jornada de o agente ligar por um jogador cujo contrato
+ * Probabilidade/semana de o agente ligar por um jogador cujo contrato
  * terminou (lock fim) e ainda não tem pedido pendente. Não é usada na 1.ª
  * semana após o fim do lock (nunca "logo após o unlock"), apenas nas
  * seguintes — atraso aleatório em vez de chamada imediata.
@@ -70,7 +70,7 @@ const AGENT_CALL_CHANCE_WEEKLY = 0.25;
  * Regra do jogo: um treinador recebe no máximo 1 proposta de contrato nova
  * por semana (renovações + renegociações partilham o mesmo orçamento).
  * O agente NUNCA liga durante o lock do contrato vigente — pedidos só
- * começam após `contract_start_epoch + CONTRACT_LENGTH_MATCHWEEKS` (jogador
+ * começam após `contract_start_epoch + CONTRACT_LENGTH_WEEKS` (jogador
  * desbloqueado para transferência) e nunca na própria semana do fim do lock;
  * nas semanas seguintes, com a probabilidade acima. O conjunto `usedProposals`
  * (teamIds) é criado uma vez por processamento semanal e passado a todos os
@@ -196,7 +196,7 @@ export function createContractHelpers(deps: ContractDeps) {
             requestedWage,
             agent: getAgentName(player.id),
             contractEndSeason: end.season,
-            contractEndMatchweek: end.matchweek,
+            contractEndSlot: end.slot,
             contractEndLabel: end.label,
             isRenegotiation,
           });
@@ -238,7 +238,7 @@ export function createContractHelpers(deps: ContractDeps) {
         requestedWage: player.contract_requested_wage,
         agent: getAgentName(player.id),
         contractEndSeason: end.season,
-        contractEndMatchweek: end.matchweek,
+        contractEndSlot: end.slot,
         contractEndLabel: end.label,
         isRenegotiation: !!player.contract_request_is_renegotiation,
       });
@@ -264,13 +264,13 @@ export function createContractHelpers(deps: ContractDeps) {
          AND contract_request_pending = 0
          AND contract_start_epoch > 0
          AND contract_start_epoch + ? <= ?`,
-      [CONTRACT_LENGTH_MATCHWEEKS, now],
+      [CONTRACT_LENGTH_WEEKS, now],
     );
 
     for (const player of candidates) {
       // Mesmo "nunca logo após o unlock" das renovações: a 1.ª semana após o
       // fim do lock não conta.
-      if (now - player.contract_start_epoch - CONTRACT_LENGTH_MATCHWEEKS < 1)
+      if (now - player.contract_start_epoch - CONTRACT_LENGTH_WEEKS < 1)
         continue;
       // 1 proposta/treinador/semana — se a renovação já ocupou o slot, espera.
       if (usedProposals.has(player.team_id)) continue;
@@ -311,7 +311,7 @@ export function createContractHelpers(deps: ContractDeps) {
           AND p.contract_start_epoch > 0
           AND p.contract_start_epoch + ? <= ?
           AND p.transfer_status NOT IN ('fixed', 'auction')`,
-      [CONTRACT_LENGTH_MATCHWEEKS, now],
+      [CONTRACT_LENGTH_WEEKS, now],
     );
     // Ordem aleatória: se vários jogadores da mesma equipa estiverem sem
     // contrato, ninguém fica privilegiado pela ordem da base de dados.
@@ -339,9 +339,9 @@ export function createContractHelpers(deps: ContractDeps) {
         if (!usedProposals.has(player.team_id)) {
           // Nunca "logo após o unlock": a 1.ª semana após o fim do lock não
           // conta. Sem estado extra: semanas que "falham" são retomadas no
-          // processamento seguinte (probabilidade/jornada).
+          // processamento seguinte (probabilidade/semana).
           const weeksSinceEnd =
-            now - player.contract_start_epoch - CONTRACT_LENGTH_MATCHWEEKS;
+            now - player.contract_start_epoch - CONTRACT_LENGTH_WEEKS;
           if (weeksSinceEnd < 1) continue;
           if (Math.random() > AGENT_CALL_CHANCE_WEEKLY) continue;
           await maybeTriggerContractRequest(game, player, false);

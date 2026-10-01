@@ -286,7 +286,9 @@ export const AWAY_TICKET_SHARE = 0.15;
  * partir do slot X da época seguinte. Relógio único: os slots andam em
  * todas as semanas (amigável, liga e taça), não só nas jornadas da liga.
  */
-export const CONTRACT_LENGTH_MATCHWEEKS = 20;
+export const CONTRACT_LENGTH_WEEKS = 20;
+/** @deprecated alias antigo — usar CONTRACT_LENGTH_WEEKS. */
+export const CONTRACT_LENGTH_MATCHWEEKS = CONTRACT_LENGTH_WEEKS;
 
 /**
  * Fragmento SQL partilhado: limpa o estado de pedido do agente ao
@@ -331,7 +333,7 @@ export const NPC_LIST_SQUAD_THRESHOLDS = [
  * O slot é 1-based (1..20) e reseta no fim de época — monótono por época.
  */
 export function contractEpoch(season: number, slot: number): number {
-  return (Math.max(1, season) - 1) * CONTRACT_LENGTH_MATCHWEEKS + Math.min(20, Math.max(1, slot));
+  return (Math.max(1, season) - 1) * CONTRACT_LENGTH_WEEKS + Math.min(20, Math.max(1, slot));
 }
 
 /**

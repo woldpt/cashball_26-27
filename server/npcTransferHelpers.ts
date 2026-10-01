@@ -1,6 +1,6 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch } from "./coreHelpers";
-import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -45,7 +45,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
     const marketPlayers = await runAll(
       game.db,
       "SELECT * FROM players WHERE team_id IS NOT NULL AND transfer_status = 'fixed' AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?) ORDER BY skill DESC, value ASC",
-      [CONTRACT_LENGTH_MATCHWEEKS, currentEpoch(game)],
+      [CONTRACT_LENGTH_WEEKS, currentEpoch(game)],
     );
 
     for (const npcTeam of npcTeams) {
@@ -120,7 +120,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
               game.matchweek,
               game.matchweek,
               player.id,
-              CONTRACT_LENGTH_MATCHWEEKS,
+              CONTRACT_LENGTH_WEEKS,
               currentEpoch(game),
             ],
             function (this: any) {
@@ -214,7 +214,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
       const squad = await runAll(
         game.db,
         "SELECT * FROM players WHERE team_id = ? AND transfer_status = 'none' AND contract_request_pending = 0 AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?) ORDER BY skill ASC",
-        [npcTeam.id, CONTRACT_LENGTH_MATCHWEEKS, currentEpoch(game)],
+        [npcTeam.id, CONTRACT_LENGTH_WEEKS, currentEpoch(game)],
       );
 
       const listChance =

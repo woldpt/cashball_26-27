@@ -1,6 +1,6 @@
 import { POSITION_SHORT_LABELS, POSITION_TEXT_CLASS } from "../../constants/index.js";
 import { seasonToYear } from "../../utils/formatters.js";
-import { slotLabel } from "../../utils/slotLabel.js";
+import { contractWeekLabel } from "../../utils/slotLabel.js";
 
 export function buildPositionPeers(refs, position, playerId) {
 	const squad = Array.isArray(refs.mySquadRef?.current)
@@ -22,6 +22,7 @@ export function buildPlayerStats({
 	skill,
 	wage,
 	requestedWage,
+	contractEndSlot,
 	contractEndMatchweek,
 	contractEndSeason,
 }) {
@@ -43,10 +44,11 @@ export function buildPlayerStats({
 			value: `€${requestedWage.toLocaleString("pt-PT")}/sem`,
 		});
 	}
-	if (contractEndMatchweek && contractEndSeason) {
+	const contractSlot = contractEndSlot ?? contractEndMatchweek;
+	if (contractSlot && contractEndSeason) {
 		stats.push({
 			label: "Contrato",
-			value: `${seasonToYear(contractEndSeason)}, ${slotLabel(contractEndMatchweek)}`,
+			value: `${seasonToYear(contractEndSeason)}, ${contractWeekLabel(contractSlot)}`,
 		});
 	}
 	return stats;
