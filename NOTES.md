@@ -1,3 +1,9 @@
+## Jornal sem S16 por cima de S18 (sorteio transitório) (2026-10-01)
+- Bug (sala P9XFLJ, Leça): a linha «Sorteio: Meias-finais» datada de S16 aparecia no topo por cima de notícias S18.
+- Causa: transitórios iam todos para o topo sem ordenar por data; o transitório do sorteio leva a data da semana do sorteio e, para equipa já eliminada (Leça caiu na ronda 1 — o espelho `cup_draw` só é gravado a `cupTeamIds`, equipas ainda em prova), nunca chega linha gravada que o esconda (`cupDrawCovered`), por isso envelhecia no topo. Ordem das linhas gravadas verificada correta na BD (slot desc, sem inversões).
+- Fix: em `client/src/hooks/useInbox.js`, só `redFlag` fica fixo no topo; o resto (incluindo transitórios com data passada) desce para a posição cronológica via `inboxWeekKey` (`S<semana>/<ano>` → ano * 100 + semana, sort estável).
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · prova de semântica em node (redFlag primeiro, resto desc, estável em empate) · mesma lista/componentes, só ordem → sem `test:mobile`.
+
 ## Patrocinador atualiza camisola e gráfico sem refresh (2026-10-01)
 - Bug (Ano 2 S1): após `chooseSponsor`, o logotipo da camisola e o gráfico de saldo só atualizavam com refresh.
 - Causa: o handler `chooseSponsor` (`server/socketSessionHandlers.ts`) só emitia `sponsorState` ao próprio + `globalNewsUpdated` — sem `teamsData` (fonte do `sponsorBrand` do TeamKit e do budget) nem `financeData` (fonte do gráfico e de `sponsorRevenue`).

@@ -73,6 +73,18 @@ function defaultSelected(items, isUnread) {
   return items.slice().reverse().find(isUnread) || items[0] || null;
 }
 
+/**
+ * Chave cronológica de uma data `S<semana>/<ano>` (ano * 100 + semana).
+ * Sem data válida cai para o fim da lista.
+ * @param {string} date data no formato de `formatInboxDate`
+ * @returns {number}
+ */
+function inboxWeekKey(date) {
+  const m = /^S(\d+)\/(\d+)$/.exec(String(date || ""));
+  if (!m) return 0;
+  return Number(m[2]) * 100 + Number(m[1]);
+}
+
 export function useInbox() {
   const {
     contractAnswering,
@@ -164,7 +176,7 @@ export function useInbox() {
     );
   }, [allNewsRows, visibleYears, seasonYear]);
 
-  // ── Construção da lista (acionáveis primeiro, resto por ordem) ──────────
+  // ── Construção da lista (redFlags no topo, resto cronológico) ────────────
   // As linhas persistidas visíveis (BD, data fixa) são a fonte; os
   // transitórios só aparecem sem par gravado (pendências anteriores a esta
   // versão).
@@ -459,7 +471,15 @@ export function useInbox() {
       }
     }
 
-    return list;
+    // Pendências (redFlag) fixas no topo; o resto — incluindo transitórios
+    // com data passada (sorteio de equipa já eliminada, rescaldo vivo) —
+    // desce para a posição cronológica. Sem isto, um sorteio antigo sem
+    // espelho em club_news envelhecia no topo por cima de notícias mais
+    // recentes (ex. S16 sobre S18).
+    const flags = list.filter((it) => it.redFlag);
+    const rest = list.filter((it) => !it.redFlag);
+    rest.sort((a, b) => inboxWeekKey(b.date) - inboxWeekKey(a.date));
+    return [...flags, ...rest];
   }, [
     contractAnswering,
     jobOfferModal,
