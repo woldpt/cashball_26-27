@@ -1,3 +1,8 @@
+## Zoom do estádio removido (2026-10-02)
+- Pedido: estádio via-se cortado no hero do `StadiumTab`; retirar o zoom.
+- `StadiumTab.jsx`: removida a prop `shot="close"` (volta ao `wide` por defeito, sem zoom/crop da bancada).
+- Checks: `eslint` limpo nos ficheiros tocados · `check:types` OK · só enquadramento da ilustração → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Label do filtro "só os meus" no mercado (2026-10-02)
 - Pedido: a label "Mostrar os meus à venda" passava a "Mostrar só os meus à venda" (a checkbox filtra, não adiciona — o "só" evita a leitura errada).
 - `TransferHub.jsx`: só 1 string; nota: o pedido indicava `MarketPanel.jsx`, mas o texto vive no `TransferHub.jsx:549` (o `MarketPanel` só tem Mercado 1X2 + Árbitro).

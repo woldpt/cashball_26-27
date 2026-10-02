@@ -75,7 +75,6 @@ export function StadiumTab({
             secondary={teamInfo?.color_secondary}
             occupancy={occupancyPct != null ? occupancyPct / 100 : undefined}
             mood={teamInfo?.fans_mood ?? null}
-            shot="close"
             className="absolute inset-0 h-full w-full"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
