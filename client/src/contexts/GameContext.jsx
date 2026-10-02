@@ -10,6 +10,7 @@ import {
 	startTransition,
 } from "react";
 import { socket, queueEmit } from "../socket";
+import { cupFlowLog } from "../utils/cupFlowLog.js";
 import {
   DEFAULT_TACTIC,
   DEFAULT_SIM_SPEED,
@@ -354,6 +355,9 @@ export function GameProvider({
 	// o efeito de isPlayingMatch abaixo é fallback para os outros caminhos.
 	const drainPendingCupDraw = useCallback(() => {
 		if (!pendingCupDrawRef.current) return;
+		cupFlowLog("sorteio pendente drenado (apito final)", {
+			liveMinute: liveMinuteRef.current,
+		});
 		pendingCupDrawRef.current = false;
 		isCupDrawRef.current = true;
 		startTransition(() => {
@@ -490,6 +494,9 @@ export function GameProvider({
 			if (isLiveSimulation) {
 				if (liveMinute >= 120 && isCupExtraTime) {
 					const timer = setTimeout(() => {
+						cupFlowLog("relógio parado nos 120' (live)", {
+							isCupMatch,
+						});
 						setIsPlayingMatch(false);
 						setIsLiveSimulation(false);
 						setIsCupExtraTime(false);
@@ -501,6 +508,9 @@ export function GameProvider({
 				}
 				if (liveMinute >= 90 && !isCupExtraTime && !showHalftimePanel) {
 					const timer = setTimeout(() => {
+						cupFlowLog("relógio parado nos 90' (live)", {
+							isCupMatch,
+						});
 						setIsPlayingMatch(false);
 						setIsLiveSimulation(false);
 						setWaitingForResults(true);
@@ -532,6 +542,9 @@ export function GameProvider({
 				startTransition(() => setIsPlayingMatch(false));
 			} else if (liveMinute >= 120 && isCupExtraTime) {
 				const timer = setTimeout(() => {
+					cupFlowLog("relógio parado nos 120' (replay)", {
+						isCupMatch,
+					});
 					setIsPlayingMatch(false);
 					setIsCupExtraTime(false);
 					setWaitingForResults(true);
@@ -541,6 +554,9 @@ export function GameProvider({
 				return () => clearTimeout(timer);
 			} else if (liveMinute >= 90 && !isCupExtraTime && !showHalftimePanel) {
 				const timer = setTimeout(() => {
+					cupFlowLog("relógio parado nos 90' (replay)", {
+						isCupMatch,
+					});
 					setIsPlayingMatch(false);
 					setWaitingForResults(true);
 					setResultsWaitTimedOut(false);
@@ -865,6 +881,10 @@ year: seasonYear,
 			!matchAction &&
 			!isMatchActionPending;
 		if (!idle || (liveMinute < 90 && liveMinute >= 45)) return;
+		cupFlowLog("cupRoundResults drenado (pós-penáltis/apito)", {
+			liveMinute,
+			round: pendingCupRoundResults?.round,
+		});
 		startTransition(() => {
 			setPendingCupRoundResults(null);
 			// Sem salto para o tab Taça: fica no Jogo; o landing leva ao Jornal.

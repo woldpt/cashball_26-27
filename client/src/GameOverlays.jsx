@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { queueEmit } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
+import { cupFlowLog } from "./utils/cupFlowLog.js";
 import { computePostMatchFlow } from "./utils/postMatchFlow.js";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
 import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
@@ -223,6 +224,7 @@ export function GameOverlays() {
     // durante a espera rearmam; só um timer vivo — modais bloqueiam,
     // sair do tab cancela).
     const t = setTimeout(() => {
+      cupFlowLog("landing pós-jogo → Jornal", { key: endedMatchKey });
       postMatchLandedKeyRef.current = endedMatchKey;
       hadMatchInProgressRef.current = false;
       navigateTab("jornal");

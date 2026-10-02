@@ -1,3 +1,11 @@
+## Estabilização da Taça F0 — instrumentação das transições (2026-10-02)
+- Plano aprovado: estabilizar sorteio→jogo→ET→penáltis→resultados→Jornal. F0 primeiro (só logs, zero lógica), fixes (F1–F5) só após ensaio com evidência.
+- Cliente (`utils/cupFlowLog.js` novo, `[CUPFLOW +ms]`): `cupDrawStart` recebido/pendente/aberto, `cupExtraTimeStart` (espectador ou não), `cupRoundResults` recebido + drenado, relógio parado nos 90'/120' (live vs replay), landing → Jornal.
+- Servidor (`cupFlowHelpers.ts`): gate de animação do ET regista resolução por acks (ms + nº treinadores) vs timeout integral; `cupRoundResults` regista ronda/ET/nº resultados.
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros (101 warnings, sem emits/handlers novos — pré-existentes) · client `eslint` só o erro pré-existente `react-refresh` no `GameContext.jsx` (prova: HEAD já exporta 3 símbolos; diff só adiciona linhas) · `check:types` OK · sem lógica/layout → sem `test:mobile`, sem `audit:gamestate` (sem sala viva; fica para o ensaio).
+- Incidente git: `git stash push -- <path> -m ...` comeu as flags como pathspec e o `pop` a seguir aplicou um stash antigo sobre a árvore (conflitos em .db binários). Resolvido a favor da árvore (saves locais de dev; produção no rick intacta). Lição: nunca `stash` para prova de pré-existência — usar `git show HEAD:<path>` + `git diff` em vez disso. Stack de stashes antigas deixada intacta.
+- Próximo passo: ensaio com sala viva (pedir roomCode + ronda + nº humanos) e cruzar `[CUPFLOW]` do browser com logs do servidor antes de fixar (F1–F5).
+
 ## Espectador vê o prolongamento alheio em ritmo de gala (2026-10-02)
 - Pedido: após o jogo da Taça decidido aos 90', o observador ficava a olhar para o minuto 90 durante ~48 s+ (ET escondido de outro jogo + gate de animação em timeout integral) — queria-se ver o ET sem humanos com o relógio acelerado, como no B016.
 - Servidor (`server/game/engine.ts`, `simulateExtraTime`): ET só-NPC com humanos ligados passa de 100 ms/min para o ritmo de gala (`CUP_FINAL_SPECTATOR_MS_PER_MINUTE`, 500 ms → ~15 s de ET); 100 ms só quando ninguém está a ver. Tempo real com humano em campo, inalterado.
