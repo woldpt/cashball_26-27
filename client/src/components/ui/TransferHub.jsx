@@ -546,7 +546,7 @@ export function TransferHub({
               onChange={(e) => setShowOwnMarketPlayers?.(e.target.checked)}
               className="w-4 h-4 accent-emerald-500"
             />
-            Mostrar os meus à venda
+            Mostrar só os meus à venda
           </label>
         </div>
 

@@ -1,3 +1,8 @@
+## Label do filtro "só os meus" no mercado (2026-10-02)
+- Pedido: a label "Mostrar os meus à venda" passava a "Mostrar só os meus à venda" (a checkbox filtra, não adiciona — o "só" evita a leitura errada).
+- `TransferHub.jsx`: só 1 string; nota: o pedido indicava `MarketPanel.jsx`, mas o texto vive no `TransferHub.jsx:549` (o `MarketPanel` só tem Mercado 1X2 + Árbitro).
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · só texto → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Redesign do artigo do Jornal (2026-10-02)
 - Pedido: notícias feias, botões encostados à margem — polimento para todas, intensidade de redesign mantendo o registo de imprensa.
 - `JournalTab.jsx`: coluna de leitura centrada (`max-w-prose`, `px-4`/`sm:px-6`); links de entidades em pílula (`bg-primary/10` + `box-decoration-break:clone`, nunca colam às margens nem partem mal); tabelas centradas (`mx-auto`); manchete maior (`text-2xl`) com links em tinta simples (a pílula em corpo grande virava tijolo — visto em screenshot); zona de ações com mais respiro (`mt-5 pt-4`); cai o `lg:px-6` ad hoc do corpo.
