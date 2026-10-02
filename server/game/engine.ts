@@ -2901,15 +2901,16 @@ export async function simulateExtraTime(
   awayTactic: Tactic | null,
   context: SegmentContext,
 ) {
-  // Use real-time speed ONLY if a human coach is participating in ANY of the ET fixtures.
+  // Ritmo do relógio: tempo real se houver um humano em campo em QUALQUER
+  // jogo do ET (fixtures paralelas têm de partilhar o delay — ver nota abaixo).
+  // Com humanos só a assistir (observadores com o jogo decidido, incl. a
+  // Final sem humanos), ritmo de gala para acompanhar como espetador.
+  // 100 ms só quando ninguém está a ver.
   // When multiple ET fixtures run in parallel (Promise.all), NPC-only fixtures
   // must use the same delay as the human fixture — otherwise they race from
   // 91→120 in ~3s and their matchMinuteUpdate events advance liveMinute to 120
   // before the human fixture's minute-91 update arrives, causing the clock to
   // visibly jump forward and then snap back.
-  // If no human is in ANY ET fixture, run fast (100ms) to avoid wasting time.
-  // Exceção: a Final sem humanos tem ritmo de gala (meio-tempo) para se
-  // acompanhar como espetador — igual ao tempo regulamentar da final.
   const anyHumanInET =
     context.hasHumanInET ??
     (context.game &&
@@ -2918,9 +2919,12 @@ export async function simulateExtraTime(
           !!p.socketId &&
           (p.teamId === fixture.homeTeamId || p.teamId === fixture.awayTeamId),
       ));
+  const anyHumanWatching =
+    context.game &&
+    Object.values(context.game.playersByName).some((p: any) => !!p.socketId);
   const msPerMinute = anyHumanInET
     ? ((context.game as any)?.msPerMinute ?? DEFAULT_MS_PER_MINUTE)
-    : context.cupFinalSpectator
+    : context.cupFinalSpectator || anyHumanWatching
       ? CUP_FINAL_SPECTATOR_MS_PER_MINUTE
       : 100;
 
