@@ -99,6 +99,7 @@ export function ScoutView({
   const [transferStatus, setTransferStatus] = useState("all");
   const [isStar, setIsStar] = useState(false);
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [onlyAffordable, setOnlyAffordable] = useState(false);
   const [sort, setSort] = useState("quality-desc");
   const [searched, setSearched] = useState(false);
   // Lance inline: modal local — só a scout o abre, não precisa de estado global.
@@ -112,6 +113,26 @@ export function ScoutView({
     () => new Set(players.map((p) => normalizeTeamId(p.teamId))),
     [players],
   );
+
+  const filteredResults = useMemo(() => {
+    if (!onlyAffordable) return playerSearchResults;
+    return playerSearchResults.filter((player) => {
+      if (player.transfer_status === "auction") {
+        const hasBid = player.auction_high_bid_team_id != null;
+        const minBid = hasBid
+          ? player.auction_high_bid + AUCTION_BID_STEP
+          : player.auction_starting_price || player.transfer_price || 0;
+        return myBudget >= minBid;
+      }
+      if (player.transfer_status === "fixed") {
+        const price =
+          player.transfer_price ||
+          Math.round((player.value || 0) * TRANSFER_LISTED_PRICE_MULT);
+        return myBudget >= price;
+      }
+      return myBudget >= Math.round((player.value || 0) * TRANSFER_CLAUSE_MULT);
+    });
+  }, [onlyAffordable, playerSearchResults, myBudget]);
 
   const search = () => {
     setSearched(true);
@@ -399,6 +420,15 @@ export function ScoutView({
                 />
                 Disponível p/ compra
               </label>
+              <label className="flex items-center gap-2 text-xs font-bold text-on-surface cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={onlyAffordable}
+                  onChange={(e) => setOnlyAffordable(e.target.checked)}
+                  className="accent-primary w-4 h-4"
+                />
+                Cabe no saldo
+              </label>
             </div>
             <Button
               variant="primary"
@@ -415,7 +445,9 @@ export function ScoutView({
         title="Resultados"
         meta={
           searched
-            ? `${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}${playerSearchTruncated ? ` (a mostrar ${playerSearchResults.length})` : ""}`
+            ? onlyAffordable
+              ? `${filteredResults.length} de ${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}`
+              : `${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}${playerSearchTruncated ? ` (a mostrar ${playerSearchResults.length})` : ""}`
             : "—"
         }
       >
@@ -429,15 +461,19 @@ export function ScoutView({
             title="Preenche os filtros e pesquisa"
             description="Procura jogadores em toda a base de dados."
           />
-        ) : playerSearchResults.length === 0 ? (
+        ) : filteredResults.length === 0 ? (
           <EmptyState
             emoji="🤷"
             title="Sem resultados"
-            description="Nenhum jogador corresponde aos filtros."
+            description={
+              onlyAffordable && playerSearchResults.length > 0
+                ? "Nenhum cabe no teu saldo com estes filtros."
+                : "Nenhum jogador corresponde aos filtros."
+            }
           />
         ) : (
           <div className="flex flex-col gap-1.5">
-            {playerSearchResults.map((player) => (
+            {filteredResults.map((player) => (
               <PlayerRow
                 key={player.id}
                 player={player}

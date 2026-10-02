@@ -1,3 +1,9 @@
+## Filtro «Cabe no saldo» na Scout (2026-10-02)
+- Pedido: terceira checkbox ao lado de «Só craques» e «Disponível p/ compra» para filtrar só os jogadores que o saldo cobre.
+- Decisões do utilizador: filtro só no cliente (instantâneo, sem nova pesquisa) e nos leilões compara com o lance mínimo atual (igual ao botão Licitar/Sem saldo).
+- `ScoutView.jsx`: estado `onlyAffordable` + `filteredResults` (`useMemo`, mesma regra dos botões: `fixed` → preço de lista, `auction` → lance mínimo atual, resto → cláusula `valor × 1.35`); `meta` mostra «N de M» com o filtro ligado e vazio dedicado («Nenhum cabe no teu saldo…»). Só frontend, servidor intocado.
+- Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · mesma linha `flex-wrap` existente → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Resync de segurança pós-join contra S1 fantasma (2026-10-02)
 - Bug (sala X4Z1BI, após reboot/deploy): entrada manual mostrou Semana 1 com plantel vazio e tática morta, estando a sala em S5; refresh curou. Vilão: a rajada do join (`mySquad` → `gameState`) chegou antes da montagem tardia do `GameProvider` (transição `mode="wait"`), perdeu-se sem listeners, e o `teamAssigned` (cadeia lenta) chegou depois, abriu o jogo e cancelou o retry de 10 s — preso nos defaults (`matchweekCount 0` bloqueia o briefing).
 - Fix só-cliente: `joinStateSeenRef` (falso por join: reset em mudança de `me.roomCode` e no rejoin do `onConnect`); `gameState` marca visto; `teamAssigned`/`coachDismissed` emitem `requestResync` (handler de servidor existente, sem loop: a resposta traz `gameState` e o sinal seguinte já não reemite). Toca `GameContext.jsx` + `socket/session.js` + `socket/coach.js` (+32 linhas).
