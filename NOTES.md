@@ -1,3 +1,8 @@
+## Deploy v26.10.7 no rick (2026-10-02)
+- Desde a v26.10.6: redesign do artigo do Jornal, resync pós-join contra S1 fantasma, filtros «só os meus» (mercado + leilões) e «cabe no saldo» (scout), débitos da semana a negativo/vermelho, hero do estádio sem zoom.
+- Push master + tag v26.10.7 publicadas; `docker compose up --build -d` no rick com `backend Healthy`; seed não toca salas.
+- Rick fica exatamente na tag; este registo vai em commit local sem push.
+
 ## Débitos da semana a negativo e vermelho (2026-10-02)
 - Pedido: na notícia das contas da semana, os valores de Débito a negativo e vermelho.
 - `JournalTab.jsx` (`WeeklyFinanceTable`): Salários, Manutenção, Juros e Capital marcados como `debit` — valor com sinal negativo (`-X €`, guarda contra `-0 €`) e `text-error`; Rendimento e Saldo como estavam (Saldo já pintava negativo/positivo).
