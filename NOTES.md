@@ -1,3 +1,8 @@
+## Balões do adjunto redesenhados + tamanho estável (2026-10-02)
+- Pedido: balões redesenhados; nascer já com o tamanho do texto completo em vez de crescer a cada linha da máquina de escrever. Decisões: banda desenhada polida, altura final desde o início, dica + tutorial, JJ intocado.
+- Dica (`AssistantCoach.jsx`) e tutorial (`CoachTutorial.jsx`): bordo 3px, `rounded-3xl`, sombra suave, respiro `p-4`, rabicho alinhado à nova espessura; parágrafo em duas camadas (texto integral invisível reserva a altura, digitado sobreposto em absoluto).
+- Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · só polimento + reserva de altura (mesmo DOM/flex) → sem `test:mobile`; sem lógica/sockets → sem audits.
+
 ## Deploy v26.10.8 no rick (2026-10-02)
 - Desde a v26.10.7: rodapé Notícias CM em breaking-news (erros de sala só no log), notícias automáticas por resultados/mercado, mascote do adjunto a partir das jj1/jj2, filtros «só os meus» e «cabe no saldo» no servidor, pacote de micro-efeitos por zona.
 - Push master + tag v26.10.8 publicadas; `docker compose up --build -d` no rick com `backend Healthy`; seed não toca salas.

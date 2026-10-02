@@ -85,7 +85,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
         {/* O balão surge quando o boneco chega; ao dispensar desvanece primeiro. */}
         <motion.div
           onClick={() => (done ? onDismiss() : complete())}
-          className="relative flex-1 cursor-pointer bg-white border-2 border-zinc-900 rounded-2xl shadow-2xl p-3 pr-2 text-zinc-900"
+          className="relative flex-1 cursor-pointer bg-white border-[3px] border-zinc-900 rounded-3xl p-4 pr-3 text-zinc-900 shadow-[0_18px_50px_rgba(0,0,0,0.45)]"
           initial={reducedMotion ? false : { opacity: 0, y: 16 }}
           animate={reducedMotion ? undefined : { opacity: 1, y: 0, transition: { delay: 0.3, duration: 0.25 } }}
           exit={reducedMotion ? undefined : { opacity: 0, transition: { duration: 0.15 } }}
@@ -94,18 +94,23 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
               à direita em desktop, onde o retrato fica no canto). */}
           <span
             aria-hidden
-            className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[9px] border-l-2 border-b-2 border-zinc-900 lg:left-auto lg:-right-[9px] lg:border-l-0 lg:border-r-2"
+            className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[11px] border-l-[3px] border-b-[3px] border-zinc-900 lg:left-auto lg:-right-[11px] lg:border-l-0 lg:border-r-[3px]"
           />
           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
             Treinador-adjunto
           </p>
-          <p className="text-sm leading-snug mt-0.5" aria-hidden="true">
-            {shown}
-            {!done && (
-              <span aria-hidden="true" className="animate-pulse font-black text-emerald-700">
-                ▌
-              </span>
-            )}
+          <p className="relative text-sm leading-snug mt-1" aria-hidden="true">
+            {/* Camada invisível reserva a altura final desde o início —
+                a máquina de escrever revela por cima sem empurrar o balão. */}
+            <span className="invisible">{tip.text}</span>
+            <span className="absolute inset-0">
+              {shown}
+              {!done && (
+                <span aria-hidden="true" className="animate-pulse font-black text-emerald-700">
+                  ▌
+                </span>
+              )}
+            </span>
           </p>
           <div className="flex items-center justify-between gap-2 mt-2">
             <Button variant="primary" size="sm" uppercase onClick={onGo}>

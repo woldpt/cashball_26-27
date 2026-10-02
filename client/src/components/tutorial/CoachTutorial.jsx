@@ -173,11 +173,11 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
           <div className="hidden sm:block">
             <AssistantMascot mood="worried" />
           </div>
-          <div className="relative flex-1 bg-white border-2 border-zinc-900 rounded-2xl shadow-2xl p-3 text-zinc-900">
+          <div className="relative flex-1 bg-white border-[3px] border-zinc-900 rounded-3xl p-4 text-zinc-900 shadow-[0_18px_50px_rgba(0,0,0,0.45)]">
             {/* Rabicho para o retrato */}
           <span
             aria-hidden
-            className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[9px] border-l-2 border-b-2 border-zinc-900"
+            className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[11px] border-l-[3px] border-b-[3px] border-zinc-900"
           />
           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
             Treinador-adjunto · Passo {stepIndex + 1} de {total}
@@ -185,13 +185,17 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
           <h3 className="text-base font-black font-headline tracking-tight text-zinc-900 uppercase mt-0.5">
             {step.title}
           </h3>
-          <p className="text-sm text-zinc-700 leading-relaxed mt-0.5">
-            {shown}
-            {!done && (
-              <span aria-hidden="true" className="animate-pulse font-black text-emerald-700">
-                ▌
-              </span>
-            )}
+          <p className="relative text-sm text-zinc-700 leading-relaxed mt-1">
+            {/* Altura final reservada desde o início; a máquina escreve por cima. */}
+            <span className="invisible" aria-hidden="true">{step.text}</span>
+            <span className="absolute inset-0" aria-hidden="true">
+              {shown}
+              {!done && (
+                <span aria-hidden="true" className="animate-pulse font-black text-emerald-700">
+                  ▌
+                </span>
+              )}
+            </span>
           </p>
           {/* Progresso */}
           <div className="flex gap-1 mt-2" aria-hidden="true">
