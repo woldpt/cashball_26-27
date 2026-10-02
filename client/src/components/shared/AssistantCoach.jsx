@@ -7,10 +7,10 @@ import { useTypewriter } from "../../hooks/useTypewriter.js";
 import { Button } from "../shared/Button.jsx";
 
 /**
- * Retrato do adjunto em medalhão (assets `/coaches/jj-fechada.webp` e
- * `/coaches/jj-aberta.webp`, caricatura espelhada a olhar para a direita
- * dele): disco verde da casa, anel a tinta e retrato recortado. A boca
- * alterna em loop (~420ms) enquanto a dica está visível; com
+ * Boneco do adjunto sem moldura (assets `/coaches/jj-fechada.webp` e
+ * `/coaches/jj-aberta.webp` com fundo transparente, caricatura espelhada
+ * a olhar para a direita dele): busto flutuante com sombra suave.
+ * A boca alterna em loop (~420ms) enquanto a dica está visível; com
  * `prefers-reduced-motion` fica parado em boca fechada.
  * `mood` só muda o tratamento do retrato — "sad" dessatura e escurece.
  * @param {string} mood Expressão do adjunto ("worried" | "sad").
@@ -28,19 +28,15 @@ export function AssistantMascot({ mood, compact }) {
   const size = compact
     ? "h-[76px] w-[76px]"
     : "h-[108px] w-[108px] lg:h-[132px] lg:w-[132px]";
-  const imgClass =
-    "h-[86%] w-[86%] rounded-full object-cover object-top ring-1 ring-zinc-900/80";
-  const filter = sad ? { filter: "saturate(0.45) brightness(0.82)" } : undefined;
+  const imgClass = "h-full w-full";
+  const shadow = "drop-shadow(0 6px 10px rgba(0,0,0,0.45))";
+  const filter = sad ? { filter: `saturate(0.45) brightness(0.82) ${shadow}` } : { filter: shadow };
   return (
     <div
       role="img"
       aria-label="Treinador-adjunto"
-      className={`relative ${size} shrink-0 rounded-full flex items-center justify-center bg-[radial-gradient(circle_at_30%_25%,#1f8f4f,#0a3d1e_72%)] ring-2 ring-zinc-900 shadow-[0_4px_14px_rgba(0,0,0,0.5)]`}
+      className={`relative ${size} shrink-0`}
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-[3px] rounded-full ring-1 ring-white/25"
-      />
       <img src="/coaches/jj-fechada.webp" alt="" className={imgClass} style={filter} />
       <img
         src="/coaches/jj-aberta.webp"
@@ -131,7 +127,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
 }
 
 /**
- * Treinador-adjunto: medalhão do treinador + balão de banda desenhada.
+ * Treinador-adjunto: boneco do treinador + balão de banda desenhada.
  * Monta-se no `GameLayout`; o hook decide se há dica (1x/situação/semana).
  * @returns {JSX.Element|null}
  */

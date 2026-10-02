@@ -138,3 +138,8 @@
 - Tag `v26.10.6` (APP_VERSION já estava em `v26.10.6`, sem commit de bump); rebuild com `backend Healthy`.
 - Inclui: adjunto com caricatura JJ a falar (boca em loop, medalhão maior em desktop) + máquina de escrever nos balões + entrada/saída faseada de baixo + dica do 11 só após 90s de inatividade.
 - Salas de produção intactas; seed só recria `base.db` se o esquema/fixtures mudarem.
+
+## Adjunto sem círculo, fundo transparente (2026-10-02)
+- Pedido: boneco sem o círculo verde, com fundo transparente.
+- Implementação: fundo xadrez removido por inundação a partir das bordas (limiar >=225, contornos pretos fechados protegem olhos/dentes/brilhos; penugem 0.6px) e busto a 93% em tela transparente — `jj-fechada.webp`/`jj-aberta.webp` regenerados com alfa (~30KB); `AssistantMascot` sem disco/argolas, busto a encher a caixa com `drop-shadow` (acumula com o filtro `sad`); tutorial herda por partilhar o componente.
+- Checks: `eslint` limpo · `check:types` OK · mesma caixa, só estilo → sem `test:mobile`.
