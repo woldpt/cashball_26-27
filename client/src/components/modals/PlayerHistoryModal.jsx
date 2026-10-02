@@ -30,6 +30,7 @@ import {
  *   isPlayingMatch?: boolean,
  *   showHalftimePanel?: boolean,
  *   renewPlayerContract?: function,
+ *   respondContractRequest?: function,
  *   listPlayerAuction?: function,
  *   listPlayerFixed?: function,
  *   removeFromTransferList?: function,
@@ -48,6 +49,7 @@ export function PlayerHistoryModal({
   isPlayingMatch = false,
   showHalftimePanel = false,
   renewPlayerContract,
+  respondContractRequest,
   listPlayerAuction,
   listPlayerFixed,
   removeFromTransferList,
@@ -145,6 +147,12 @@ export function PlayerHistoryModal({
   const alreadyAuctionedThisWeek =
     nowIdx > 0 &&
     (player.last_auctioned_matchweek || 0) >= nowIdx;
+
+  // Pedido de renovação pendente (red flag): só os dois botões da notícia —
+  // aceitar pelo exigido ou mandar a leilão. O payload vem fresco do
+  // requestPlayerHistory em cada abertura.
+  const hasPendingRequest = isMyPlayer && !!player.contract_request_pending;
+  const requestedWage = Number(player.contract_requested_wage) || null;
 
   // Market purchase — only when player belongs to *another* team and is listed
   const isListedInMarket =
@@ -250,6 +258,47 @@ export function PlayerHistoryModal({
                   🔒 Contrato em vigor até {contractEndYear}, {contractEndLabel} — não pode ser transferido.
                 </p>
               )}
+              {hasPendingRequest ? (
+                <div className="flex flex-col gap-2 md:flex-row">
+                  {requestedWage != null && (
+                    <p className="w-full text-xs font-bold text-on-surface">
+                      Exige {formatCurrency(requestedWage)}/sem
+                    </p>
+                  )}
+                  <Button
+                    variant="success"
+                    className="flex-1"
+                    disabled={matchInProgress}
+                    title={
+                      matchInProgress
+                        ? "Disponível após as partidas"
+                        : "Aceitar a renovação pelo valor exigido"
+                    }
+                    onClick={() => {
+                      respondContractRequest?.(player.id, true, requestedWage);
+                      closeModal();
+                    }}
+                  >
+                    📝 Aceitar renovação
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="flex-1"
+                    disabled={matchInProgress}
+                    title={
+                      matchInProgress
+                        ? "Disponível após as partidas"
+                        : "Recusar — o jogador vai a leilão"
+                    }
+                    onClick={() => {
+                      respondContractRequest?.(player.id, false);
+                      closeModal();
+                    }}
+                  >
+                    🔨 Enviar para leilão
+                  </Button>
+                </div>
+              ) : (
               <div className="flex flex-col gap-2 md:flex-row">
                 <Button
                   variant="primary"
@@ -325,6 +374,7 @@ export function PlayerHistoryModal({
                   </Button>
                 )}
               </div>
+              )}
             </div>
           )}
           {/* ── 2-COLUMN LAYOUT (md+) ── */}

@@ -1567,6 +1567,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                           pausedRemainingMs: a.pausedRemainingMs,
                           npcRelicitationCount: a.npcRelicitationCount || {},
                           isExClub: !!a.isExClub,
+                          guaranteed: !!a.guaranteed,
                         };
                       } else {
                         // open — recalcular tempo restante; se já expirou, agenda finalização curta
@@ -1588,6 +1589,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                           pausedRemainingMs: undefined,
                           npcRelicitationCount: a.npcRelicitationCount || {},
                           isExClub: !!a.isExClub,
+                          guaranteed: !!a.guaranteed,
                         };
                         if (!game.auctionTimers) game.auctionTimers = {} as any;
                         // Agenda finalização delayed — usa lógica inline para não depender de auctionHelpers no load

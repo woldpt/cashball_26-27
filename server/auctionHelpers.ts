@@ -9,6 +9,7 @@ import {
   seasonToYear,
   runExec,
   runGet,
+  runAll,
   serializeRoomTask,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
@@ -348,6 +349,40 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       if (team && (team.budget || 0) >= cand.amount) {
         winner = cand;
         break;
+      }
+    }
+
+    // Venda garantida (recusa de renovação): sem lances válidos, o NPC
+    // elegível mais rico compra pelo preço-base em vez de fechar deserto.
+    // Elegibilidade = a do scheduler (não-humano, ±2 divisões, com orçamento).
+    // Sem nenhum NPC capaz de pagar, mantém o fecho deserto (sem inventar dinheiro).
+    if (!winner && (auction as any).guaranteed === true) {
+      const humanTeamIds = new Set(
+        Object.values(game.playersByName)
+          .map((p) => (p as PlayerSession).teamId)
+          .filter(Boolean),
+      );
+      const sellerDivRow = await runGet<{ division?: number }>(
+        game.db,
+        "SELECT division FROM teams WHERE id = ?",
+        [auction.sellerTeamId],
+      ).catch(() => null);
+      const sellerDivision = sellerDivRow?.division ?? 3;
+      const richTeams = await runAll<{ id: number; division?: number; budget?: number }>(
+        game.db,
+        "SELECT id, division, budget FROM teams WHERE budget >= ?",
+        [auction.startingPrice],
+      ).catch(() => []);
+      const eligible = (richTeams || [])
+        .filter(
+          (t) =>
+            t.id !== auction.sellerTeamId &&
+            !humanTeamIds.has(t.id) &&
+            Math.abs((t.division ?? 3) - sellerDivision) <= 2,
+        )
+        .sort((a, b) => (b.budget || 0) - (a.budget || 0));
+      if (eligible.length > 0) {
+        winner = { teamId: eligible[0].id, amount: auction.startingPrice };
       }
     }
 

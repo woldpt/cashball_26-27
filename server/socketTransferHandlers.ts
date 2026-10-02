@@ -445,6 +445,10 @@ export function registerTransferSocketHandlers(
             )
               return;
             listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
+              // Recusa de renovação: venda garantida — se fechar deserto,
+              // um NPC compra pelo preço-base (cobre os 3 caminhos de recusa).
+              const live = (game.auctions as any)?.[playerId];
+              if (live) live.guaranteed = true;
               game.db.run(
                 "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, contract_start_epoch = 0 WHERE id = ?",
                 [playerId],
@@ -512,6 +516,10 @@ export function registerTransferSocketHandlers(
         const auctionPrice = renewalAuctionPrice(value, demandedWage);
 
         listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
+          // Recusa de renovação: venda garantida — se fechar deserto,
+          // um NPC compra pelo preço-base.
+          const live = (game.auctions as any)?.[playerId];
+          if (live) live.guaranteed = true;
           game.db.run(
             "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, contract_start_epoch = 0 WHERE id = ?",
             [playerId],

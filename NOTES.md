@@ -3,6 +3,12 @@
 - `JournalTab.jsx`: novo `CupDrawIntro` antes do `CupDrawTable` — ronda (`facts.roundName` ou título), adversário clicável + casa/fora, em jogo o lugar na próxima eliminatória (final, nas meias) e uma linha de favoritismo pela divisão (`teams` já traz `division`); sem jogo próprio (eliminado), genérico da ronda. Só frontend, corpo/snippet inalterados.
 - Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · só texto num painel existente → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
 
+## Renovação com red flag: modal restrito + venda NPC garantida (2026-10-02)
+- Pedido (2 pontos): com pedido de renovação pendente, o `PlayerHistoryModal` mostrava 4 botões (renovação manual com salário arbitrário contornava o exigido; venda fixa contornava a decisão forçada); leilão de recusa podia fechar deserto (lances NPC probabilísticos).
+- Ponto 1 (`PlayerHistoryModal.jsx` + `GameOverlays.jsx`): se `player.contract_request_pending` (payload fresco do `requestPlayerHistory` a cada abertura), a faixa mostra só **Aceitar renovação** (via `respondContractRequest(id, true, requestedWage)`, = red flag) e **Enviar para leilão** (`(id, false)`); `respondContractRequest` passa do contexto via `GameOverlays` (guarda anti-duplo já lá dentro).
+- Ponto 2 (servidor): `sendToAuction` da recusa marca `auction.guaranteed = true` (1 edição cobre os 3 caminhos: `declineContractRequest`, contra-proposta `renewContract`, `acceptCounterOffer` rejeitada); `runFinalizeAuction` sem vencedor + `guaranteed` sintetiza comprador NPC (não-humano, ≠ vendedor, ±2 divisões, orçamento ≥ preço-base, o mais rico) pelo preço-base e o fluxo de venda corre intocado; sem NPC capaz de pagar, mantém o deserto (sem inventar dinheiro); `gameManager.ts` preserva o flag no restore pós-restart (snapshot já o serializava).
+- Checks: server `typecheck` OK · client `eslint` limpo nos ficheiros tocados (3 erros pré-existentes noutros) · `check:types` OK · `audit:socketio` 0 erros (101 warnings, baseline) · sem layout novo → sem `test:mobile` · `audit:gamestate` fica para sala viva.
+
 ## Tutorial com treinador fixo no centro (2026-10-02)
 - Pedido: balão do adjunto sempre no meio do ecrã; só o retângulo de destaque se move.
 - `CoachTutorial.jsx`: balão centrado com flex, sem cálculo de posição (saem `BALLOON_W`/`WRAP_W`/`GAP`, `balloon`/`below`, medição de altura e seta para o alvo; rabicho para o retrato fica). Spotlight, scroll até ao alvo, Escape, progresso e `data-tour`/aria-labels inalterados.

@@ -81,6 +81,7 @@ export function GameOverlays() {
     redCardedHalftimeIds,
     removeFromTransferList,
     renewPlayerContract,
+    respondContractRequest,
     roomCreator,
     roomSettingsOpen,
     simSpeed,
@@ -401,6 +402,7 @@ export function GameOverlays() {
         isPlayingMatch={isPlayingMatch}
         showHalftimePanel={showHalftimePanel}
         renewPlayerContract={renewPlayerContract}
+        respondContractRequest={respondContractRequest}
         listPlayerAuction={listPlayerAuction}
         listPlayerFixed={listPlayerFixed}
         removeFromTransferList={removeFromTransferList}
