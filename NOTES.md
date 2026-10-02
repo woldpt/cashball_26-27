@@ -241,3 +241,8 @@
 - Implementação: helper novo `server/cmNews.ts` (`emitCmNews`, `readCmLeaders`/`diffCmLeaders` pela ordenação oficial, `pickCmGoleada` com margem mínima 4, templates CM + `Intl` pt-PT); hooks em `weeklyFlowHelpers.ts` (snapshot de líderes antes da transação de `finalizeLeagueEvent`, emite novo líder + goleada após o persist), `auctionHelpers.ts` (venda fechada; `BOMBA` se superar `_cmTopSale` em memória) e `cupFlowHelpers.ts` (tomba-gigantes via `upsets` já calculados). Cliente intocado (ticker já consome `cm: true`).
 - Checks: `typecheck` OK (1 erro de scope `cmLeadersBefore` corrigido via `_cmLeadersBefore` no `game`) · funções puras verificadas com `tsx` (líder, goleada, limiares, templates) · `audit:socketio` 0 erros (sem eventos novos).
 - Nota: o utilizador estava a editar em paralelo (ex. `reduced-motion` no `CmTicker`) — commit só dos 5 caminhos do servidor + NOTES; ficheiros dele intactos.
+
+## Ticker passa 1x e esconde-se (2026-10-02)
+- Pedido: cada notícia passa uma vez; sem notícias a barra esconde-se com movimento bonito; etiqueta vermelha mais pequena no mobile.
+- Implementação: `CmTicker.jsx` reescrito — pendentes derivados de `shownIds` (estado, sem `ref` em render nem `setState` em efeitos: o `react-hooks/refs` e o `set-state-in-effect` chumbaram as 1.as versões); tira com `pl-[100%]` + `translateX(-100%)` de 1 iteração, duração ∝ carateres (60ms/car, mín. 6s); fim via `onAnimationEnd`; saída/entrada com slide do `AnimatePresence`; `reduced-motion` com keyframes estáticos de 5s (mesmo `animationend`, sem movimento); etiqueta `px-2 text-[10px]` no mobile.
+- Checks: `eslint` limpo · `check:types` OK · `test:mobile` 175/175 (uma 1.ª passagem com 3 falhas flake, dois reruns limpos).
