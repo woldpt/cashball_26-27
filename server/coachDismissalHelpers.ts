@@ -301,6 +301,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     io.to(game.roomCode).emit("systemMessage", {
       text: `${coachName} foi despedido de ${teamName}${reasonText}`,
       broadcast: true,
+      cm: true,
     });
 
     await autoAssignDismissedCoach(game, coachName, oldTeamId);
@@ -375,6 +376,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     io.to(game.roomCode).emit("systemMessage", {
       text: `${team.name} contratou ${manager.name}.`,
       broadcast: true,
+      cm: true,
     });
 
     broadcastTeamsData(game);
@@ -420,6 +422,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     io.to(game.roomCode).emit("systemMessage", {
       text: `${team.name} despediu o seu treinador.`,
       broadcast: true,
+      cm: true,
     });
 
     // Contratar um substituto NPC
@@ -705,6 +708,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     io.to(game.roomCode).emit("systemMessage", {
       text: `${coachName} foi atribuído a ${team.name}.`,
       broadcast: true,
+      cm: true,
     });
 
     broadcastTeamsData(game);
@@ -1140,6 +1144,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     io.to(game.roomCode).emit("systemMessage", {
       text: `${coachName} aceitou o convite de ${team.name}.`,
       broadcast: true,
+      cm: true,
     });
 
     // Broadcast updated teams

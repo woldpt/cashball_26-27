@@ -132,6 +132,8 @@ export function RoomHub() {
       // Only show broadcast system messages (sent to the whole room)
       if (typeof data === "string") return;
       if (!data.broadcast) return;
+      // Notícias CM (cm:true) vivem no rodapé, não no chat.
+      if (data.cm) return;
       const text = data.text;
       if (!text) return;
       setSystemMessages((prev) => [

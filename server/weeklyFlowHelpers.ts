@@ -1072,11 +1072,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       game.gamePhase = "lobby";
       segmentRunning[game.roomCode] = false;
       saveGameState(game);
-      io.to(game.roomCode).emit("systemMessage", {
-        text: "⚠ A finalização da jornada prendeu-se — sala libertada para o lobby. Se algo parecer em falta, prime Pronto para continuar.",
-        broadcast: true,
-        warning: true,
-      });
+      console.error(
+        `[${game.roomCode}] ⚠ finalização da jornada presa — sala libertada para o lobby`,
+      );
     }, FINALIZE_WATCHDOG_MS);
     (finalizeWatchdog as any)?.unref?.();
     try {
@@ -1913,11 +1911,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       // Reset ready states so coaches can retry
       resetAllReady(game);
       emitPresence(game);
-      io.to(game.roomCode).emit("systemMessage", {
-        text: "⚠ Erro ao gerar jogos. Tenta novamente.",
-        broadcast: true,
-        warning: true,
-      });
+      console.error(`[${game.roomCode}] ⚠ erro ao gerar jogos — sala revertida para o lobby.`);
       return;
     }
 

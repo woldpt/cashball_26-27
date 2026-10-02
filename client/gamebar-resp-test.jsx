@@ -1,7 +1,7 @@
-// GameNoticeBar / RoomNoticeBar mobile responsiveness harness — reproduz o
+// GameNoticeBar mobile responsiveness harness — reproduz o
 // shell do GameLayout (header FIXO com fundo sólido + coluna de avisos + main
-// com pt-[var(--header-h)]) com o pior caso: aviso persistente de sala, pausa
-// da sala e 2 avisos transitórios empilhados, um deles com mensagem longa.
+// com pt-[var(--header-h)]) com o pior caso: pausa da sala e 2 avisos
+// transitórios empilhados, um deles com mensagem longa.
 // Self-reporta overflow/clipping em #report. NOT part of the app.
 //
 // Contract (read by client/scripts/mobileRespCheck.mjs):
@@ -11,7 +11,6 @@
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { GameNoticeBar } from "./src/components/layout/SystemOverlays.jsx";
-import { RoomNoticeBar } from "./src/components/shared/RoomNoticeBanner.jsx";
 import { RoomPauseBar } from "./src/components/shared/RoomPauseBanner.jsx";
 
 // Pior caso: mensagem comprida sem espaços (nome de clube colado), emoji,
@@ -40,10 +39,6 @@ root.render(
   <div className="h-dvh overflow-hidden bg-surface text-on-surface flex flex-col relative isolate">
     <div className="fixed top-[var(--header-h)] left-0 right-0 z-100 flex flex-col pointer-events-none">
       <RoomPauseBar pause={pause} />
-      <RoomNoticeBar
-        notice={{ id: 1, text: "⚠ Falha ao gravar a ronda da Taça — resultados provisórios. Prime Pronto para repetir a ronda." }}
-        onDismiss={() => {}}
-      />
       <GameNoticeBar notices={notices} onDismiss={() => {}} />
     </div>
     {/* Header fixo (fundo sólido, como o GameHeader real) */}

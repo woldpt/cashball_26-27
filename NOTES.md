@@ -211,3 +211,10 @@
 - Pedido: usar `docs/jj1.png` (boca fechada) e `docs/jj2.png` (boca aberta) no Treinador Adjunto.
 - Implementação: ambas já trazem alfa real e olham para a direita dele (sem espelhar); recorte quadrado cabeça+ombros do topo → `jj-fechada.webp`/`jj-aberta.webp` 512×512 (~39KB). Componente intocado (fala em loop, sem círculo, entrada/saída faseada e máquina de escrever se mantêm).
 - Checks: confirmação visual dos recortes; sem código alterado → sem `lint`/`check:types`/`test:mobile`.
+
+## Notícias CM em rodapé + erros só no log (2026-10-02)
+- Pedido: eliminar os avisos de erro (só log do servidor); fim de época + treinadores/equipas num rodapé vermelho breaking-news "Notícias CM" (sucessor do antigo Alerta CM, removido em junho).
+- Servidor: 11 `systemMessage broadcast` marcados com `cm: true` (5 de treinadores em `coachDismissalHelpers.ts`, 6 de fim de época em `cupFlowHelpers.ts`); 3 `warning: true` trocados por `console.error` (`weeklyFlowHelpers.ts` ×2, `cupFlowHelpers.ts` ×1).
+- Cliente: `cmNews` + `pushCmNews` no `GameContext` (teto 50, limpo ao sair da sala); `core.js` encaminha `broadcast+cm` para o rodapé; `RoomHub` ignora `cm` (fica só com pausa/lesão/Admin); `CmTicker.jsx` novo (scroll infinito em CSS, escondido em direto, por cima da `MobileNav`); `RoomNoticeBanner.jsx` + `subscribeRoomNotice` apagados; harness `gamebar-resp-test` atualizado (testava o banner removido).
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros · client `lint` só com o erro pré-existente (react-refresh no GameContext, já no HEAD) · `check:types` OK · `test:mobile` 175/175.
+- WIP de mercado (`TransferHub.jsx`, filtro `showOwnMarketPlayers`) já estava commitado no HEAD — nada por commitar além desta tarefa.

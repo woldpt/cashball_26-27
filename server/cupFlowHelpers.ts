@@ -302,6 +302,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			io.to(game.roomCode).emit("systemMessage", {
 				text: `🏆 ${iLigaWinner.name} é o Campeão Nacional de ${year}! (+2.000.000€)`,
 				broadcast: true,
+				cm: true,
 			});
 		}
 
@@ -345,6 +346,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				io.to(game.roomCode).emit("systemMessage", {
 					text: `🥇 ${winner.name} é Campeão ${DIVISION_NAMES[div]} de ${year}! (+${prizeFormatted}€)`,
 					broadcast: true,
+					cm: true,
 				});
 			}
 		}
@@ -379,6 +381,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("systemMessage", {
 			text: "📺 Receitas de patrocinadores distribuídas.",
 			broadcast: true,
+			cm: true,
 		});
 	}
 
@@ -497,6 +500,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			io.to(game.roomCode).emit("systemMessage", {
 				text: `⚽ ${topScorer.name} (${topScorer.team_name}) é o Melhor Marcador com ${topScorer.goals} golos! (+500.000€ para ${topScorer.team_name})`,
 				broadcast: true,
+				cm: true,
 			});
 		}
 		return topScorer;
@@ -607,6 +611,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			io.to(game.roomCode).emit("systemMessage", {
 				text: `⬆️ ${promotedNews.length} equipas subiram de divisão (+100.000€ cada)!`,
 				broadcast: true,
+				cm: true,
 			});
 		}
 		return { promotions, relegatedFromDiv4 };
@@ -2169,6 +2174,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					io.to(game.roomCode).emit("systemMessage", {
 						text: `🏆 ${winnerTeam.name} venceu a Taça de Portugal de ${game.year}! (+500 000 €) no Estádio do Jamor`,
 						broadcast: true,
+						cm: true,
 					});
 				}
 			}
@@ -2311,11 +2317,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				persistError: true,
 			};
 			io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
-			io.to(game.roomCode).emit("systemMessage", {
-				text: "⚠ Falha ao gravar a ronda da Taça — resultados provisórios. Prime Pronto para repetir a ronda.",
-				broadcast: true,
-				warning: true,
-			});
+			console.error(
+				`[${game.roomCode}] ⚠ Falha ao gravar a ronda da Taça — resultados provisórios.`,
+			);
 			game.gamePhase = "lobby";
 			game.currentFixtures = [];
 			game.cupHalftimePayload = null;

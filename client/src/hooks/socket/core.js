@@ -86,6 +86,11 @@ export function registerCoreListeners(handlers, refs, ctx) {
 		// já o lista — em vez de aviso, acende o badge de não-lidas para não
 		// se perder com o hub fechado.
 		if (typeof msg === "object" && msg.broadcast) {
+			// Notícias CM: vão para o rodapé breaking-news, sempre visível.
+			if (msg.cm) {
+				if (ctx.inRoom()) handlers.pushCmNews(text);
+				return;
+			}
 			const viewing =
 				refs.chatOpenRef?.current &&
 				refs.activeChatTabRef?.current === "room";

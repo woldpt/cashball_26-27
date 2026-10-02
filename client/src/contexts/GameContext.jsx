@@ -315,6 +315,12 @@ export function GameProvider({
 	const dismissToast = useCallback((id) => {
 		setToasts((prev) => prev.filter((t) => t.id !== id));
 	}, []);
+	// Notícias CM (rodapé breaking-news): só vivem na sessão, sem persistência.
+	const [cmNews, setCmNews] = useState([]);
+	const pushCmNews = useCallback((text) => {
+		if (!text) return;
+		setCmNews((prev) => [...prev.slice(-49), { id: Date.now() + Math.random(), text }]);
+	}, []);
 
 	const [chatPeek, setChatPeekState] = useState(null);
 	const setChatPeek = useCallback((peek) => {
@@ -1146,6 +1152,7 @@ year: seasonYear,
 			setChatPeek,
 			flashReconnect,
 			addToast,
+			pushCmNews,
 			setSubstitutionPause,
 			setTacticFamiliarity,
 			setAllTacticFamiliarity,
@@ -1752,6 +1759,7 @@ year: seasonYear,
 		setCupBracketData(null);
 		setSeasonYear(2026);
 		setClubNews([]);
+		setCmNews([]);
 		setFinanceData(null);
 		setSponsorState({ pending: false, offers: [], chosen: null });
 		setJobOfferModal(null);
@@ -1808,6 +1816,7 @@ year: seasonYear,
 		sessionDisplaced,
 		setSessionDisplaced,
 		toasts,
+		cmNews,
 		chatPeek,
 		reconnectFlash,
 		lockedCoaches,
@@ -2049,7 +2058,7 @@ year: seasonYear,
 	}), [
 		teams, setTeams, prevStandings, setPrevStandings, teamForms, setTeamForms,
 		players, setPlayers, mySquad, setMySquad, disconnected, setDisconnected,
-		sessionDisplaced, setSessionDisplaced, toasts, chatPeek, reconnectFlash, lockedCoaches,
+		sessionDisplaced, setSessionDisplaced, toasts, cmNews, chatPeek, reconnectFlash, lockedCoaches,
 		awaitingCoaches, roomRoster, roomCreator, simSpeed, matchResults, allMatchResults, matchweekCount,
 		season, seasonYear, activeTab, setActiveTab, navigateTab, topScorers,
 		standingsStale, marketPairs, marketPositionFilter, setMarketPositionFilter, marketSort, setMarketSort,

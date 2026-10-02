@@ -17,7 +17,7 @@ import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
 import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 import { RoomPauseBanner } from "./components/shared/RoomPauseBanner.jsx";
-import { RoomNoticeBanner } from "./components/shared/RoomNoticeBanner.jsx";
+import { CmTicker } from "./components/ui/CmTicker.jsx";
 import { AssistantCoach } from "./components/shared/AssistantCoach.jsx";
 import { GameRoutes } from "./GameRoutes.jsx";
 import { GameOverlays } from "./GameOverlays.jsx";
@@ -129,7 +129,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               fixa anterior flutuava sobre o topo das tabs. */}
           <div className="shrink-0 flex flex-col">
             <RoomPauseBanner />
-            <RoomNoticeBanner />
             <GameNoticeBar notices={toasts} onDismiss={dismissToast} />
           </div>
           {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,
@@ -174,6 +173,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           </div>
         </main>
       )}
+
+      <CmTicker hidden={isMatchInProgress} sidebarCollapsed={sidebarCollapsed} />
 
       <GameOverlays />
 
