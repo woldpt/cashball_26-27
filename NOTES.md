@@ -1,3 +1,9 @@
+## Espectador vê o prolongamento alheio em ritmo de gala (2026-10-02)
+- Pedido: após o jogo da Taça decidido aos 90', o observador ficava a olhar para o minuto 90 durante ~48 s+ (ET escondido de outro jogo + gate de animação em timeout integral) — queria-se ver o ET sem humanos com o relógio acelerado, como no B016.
+- Servidor (`server/game/engine.ts`, `simulateExtraTime`): ET só-NPC com humanos ligados passa de 100 ms/min para o ritmo de gala (`CUP_FINAL_SPECTATOR_MS_PER_MINUTE`, 500 ms → ~15 s de ET); 100 ms só quando ninguém está a ver. Tempo real com humano em campo, inalterado.
+- Cliente (`client/src/hooks/socket/cup.js`, `cupExtraTimeStart`): quem não está em `drawnTeamIds` segue como espectador (`isCupExtraTime` + badge, relógio 90→120, `isPlayingMatch`, limpa `waitingForResults` da corrida dos 3 s) em vez de `return`. Sidebar «Outros jogos» atualiza em direto; hero do jogo decidido já se escondia sozinho; aos 120' o `cupExtraTimeDone` resolve o gate sem timeout. Sem popup de penáltis para espectadores (só resultado).
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros · client `eslint` limpo no ficheiro (3 erros + 1 warning pré-existentes noutros) · `check:types` OK · só fluxo de estado/badge existente → sem `test:mobile`.
+
 ## Adjunto fala JJ meme total (2026-10-01)
 - Pedido: Treinador-adjunto passa a falar na linguagem meme do Jorge Jesus, intensidade meme total, textos + CTAs + alcunha.
 - 7 dicas reescritas em `useAssistantCoach.js` (6) + `trainingCapAdvice.js` (1, mantém interpolação do foco); etiqueta `Treinador-adjunto` → `O Mister` (cabeçalho + aria-labels) em `AssistantCoach.jsx`. Só strings, zero lógica/tabs/keys.

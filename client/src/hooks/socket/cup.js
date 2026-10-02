@@ -155,10 +155,11 @@ export function registerCupListeners(handlers, refs, ctx) {
 		// Guard against multiple ET fixtures in the same round resetting the clock/display.
 		const alreadyInET = refs.isCupExtraTimeRef.current;
 		handlers.setShowHalftimePanel(false);
-		// Só quem tem equipa num jogo empatado segue o relógio do
-		// prolongamento. Os outros ficam no resultado final dos 90' a
-		// aguardar o cupRoundResults (os minutos do ET são ignorados —
-		// ver guarda no matchMinuteUpdate).
+		// Quem não tem equipa num jogo empatado segue o ET como espectador
+		// (relógio de gala, sem badge de decisão): o guarda do matchMinuteUpdate
+		// deixa os minutos 91–120 avançar com isCupExtraTime=true e a sidebar
+		// «Outros jogos» atualiza em direto; aos 120' o ack cupExtraTimeDone
+		// resolve o gate de animação sem o timeout integral.
 		const myId = refs.meRef.current?.teamId;
 		const etTeamIds =
 			data?.drawnTeamIds?.length > 0
@@ -166,17 +167,20 @@ export function registerCupListeners(handlers, refs, ctx) {
 				: data
 					? [data.homeTeamId, data.awayTeamId]
 					: [];
-		if (myId == null || !etTeamIds.some((id) => id == myId)) {
-			handlers.setCupExtraTimeBadge(false);
-			return;
-		}
+		const isSpectator =
+			myId == null || !etTeamIds.some((id) => id == myId);
 		handlers.setIsCupExtraTime(true);
 		handlers.setCupExtraTimeBadge(true);
 		if (!alreadyInET) {
 			handlers.setLiveMinute(90);
 			handlers.setIsPlayingMatch(true);
 			handlers.setIsLiveSimulation(true);
+			// O timer dos 90' pode já ter marcado espera de resultados antes
+			// deste evento chegar — o ET está a decorrer, não há espera.
+			handlers.setWaitingForResults(false);
+			handlers.setResultsWaitTimedOut(false);
 		}
+		if (isSpectator) return;
 		if (data) {
 			handlers.setMatchResults((prev) => {
 				if (!prev) return prev;
