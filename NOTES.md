@@ -195,3 +195,8 @@
 - Pedido: boneco sem o círculo verde, com fundo transparente.
 - Implementação: fundo xadrez removido por inundação a partir das bordas (limiar >=225, contornos pretos fechados protegem olhos/dentes/brilhos; penugem 0.6px) e busto a 93% em tela transparente — `jj-fechada.webp`/`jj-aberta.webp` regenerados com alfa (~30KB); `AssistantMascot` sem disco/argolas, busto a encher a caixa com `drop-shadow` (acumula com o filtro `sad`); tutorial herda por partilhar o componente.
 - Checks: `eslint` limpo · `check:types` OK · mesma caixa, só estilo → sem `test:mobile`.
+
+## Adjunto com as novas jj1/jj2 (2026-10-02)
+- Pedido: usar `docs/jj1.png` (boca fechada) e `docs/jj2.png` (boca aberta) no Treinador Adjunto.
+- Implementação: ambas já trazem alfa real e olham para a direita dele (sem espelhar); recorte quadrado cabeça+ombros do topo → `jj-fechada.webp`/`jj-aberta.webp` 512×512 (~39KB). Componente intocado (fala em loop, sem círculo, entrada/saída faseada e máquina de escrever se mantêm).
+- Checks: confirmação visual dos recortes; sem código alterado → sem `lint`/`check:types`/`test:mobile`.
