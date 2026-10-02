@@ -1,3 +1,8 @@
+## Estabilização da Taça F1+F3 — dreno único e fim de relógio único (2026-10-02)
+- F1 (`GameContext.jsx`): o dreno do `pendingCupRoundResults` passa a regra explícita — drena se (parado E relógio no fim) OU (parado E nunca viu o jogo); tabela de verdade idêntica, mas o `return` silencioso virou log `cupRoundResults a aguardar dreno` com o motivo (idle/halftime/ação/minuto).
+- F3 (`GameContext.jsx`): os 4 ramos de fim de jogo (live/replay × 90'/120') colapsam num `finishClock` único; tempos intactos (2 s aos 120', 3 s aos 90'), ordem de setters intacta, acks continuam no-ops intencionais.
+- Checks: `eslint` só o erro pré-existente `react-refresh` · `check:types` OK · sem lógica de jogo/layout → sem audits/mobile.
+
 ## Estabilização da Taça F0 — instrumentação das transições (2026-10-02)
 - Plano aprovado: estabilizar sorteio→jogo→ET→penáltis→resultados→Jornal. F0 primeiro (só logs, zero lógica), fixes (F1–F5) só após ensaio com evidência.
 - Cliente (`utils/cupFlowLog.js` novo, `[CUPFLOW +ms]`): `cupDrawStart` recebido/pendente/aberto, `cupExtraTimeStart` (espectador ou não), `cupRoundResults` recebido + drenado, relógio parado nos 90'/120' (live vs replay), landing → Jornal.
