@@ -247,6 +247,11 @@
 - Checks: `typecheck` OK (1 erro de scope `cmLeadersBefore` corrigido via `_cmLeadersBefore` no `game`) · funções puras verificadas com `tsx` (líder, goleada, limiares, templates) · `audit:socketio` 0 erros (sem eventos novos).
 - Nota: o utilizador estava a editar em paralelo (ex. `reduced-motion` no `CmTicker`) — commit só dos 5 caminhos do servidor + NOTES; ficheiros dele intactos.
 
+## Deploy v26.10.9 no rick (2026-10-02)
+- Tag `v26.10.9` (bump de APP_VERSION); push + rebuild com `backend Healthy`.
+- Inclui: rodapé Notícias CM (passagem única + saída a deslizar) + notícias automáticas de jornada/mercado/Taça + erros de sala só no log.
+- Salas de produção intactas; seed só recria `base.db` se o esquema/fixtures mudarem.
+
 ## Ticker passa 1x e esconde-se (2026-10-02)
 - Pedido: cada notícia passa uma vez; sem notícias a barra esconde-se com movimento bonito; etiqueta vermelha mais pequena no mobile.
 - Implementação: `CmTicker.jsx` reescrito — pendentes derivados de `shownIds` (estado, sem `ref` em render nem `setState` em efeitos: o `react-hooks/refs` e o `set-state-in-effect` chumbaram as 1.as versões); tira com `pl-[100%]` + `translateX(-100%)` de 1 iteração, duração ∝ carateres (60ms/car, mín. 6s); fim via `onAnimationEnd`; saída/entrada com slide do `AnimatePresence`; `reduced-motion` com keyframes estáticos de 5s (mesmo `animationend`, sem movimento); etiqueta `px-2 text-[10px]` no mobile.
