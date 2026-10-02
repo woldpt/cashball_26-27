@@ -22,6 +22,7 @@ import { staggerItemProps } from "../motion.js";
 
 export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me, teams = [], teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
   const [positionFilter, setPositionFilter] = useState("all");
+  const [showOwnOnly, setShowOwnOnly] = useState(false);
 
   // Navegação com contexto (ex.: fallback do modal da scout): leva o cromo
   // correspondente para a vista e destaca-o com um anel âmbar.
@@ -33,12 +34,23 @@ export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me
   }, [highlightAuctionId, activeAuctions.length]);
 
   const matchesPos = (a) => positionFilter === "all" || a.position === positionFilter;
-  const live = activeAuctions.filter((a) => !a.closed && matchesPos(a));
+  // "Os meus": vendo ou licitei (em curso, via histórico) ou comprei (recentes, via resultado).
+  const matchesOwn = (a) => {
+    if (!showOwnOnly) return true;
+    if (me?.teamId == null) return false;
+    const mine = Number(me.teamId);
+    if (Number(a.sellerTeamId) === mine) return true;
+    if ((a.auction_bid_history || []).some((b) => Number(b.teamId ?? b.team_id) === mine)) return true;
+    return Number(a.result?.buyerTeamId) === mine;
+  };
+  const liveAll = activeAuctions.filter((a) => !a.closed && matchesPos(a));
   // Recentes: mais recentes primeiro (defesa — a ordem do servidor é de
   // inserção, que já é cronológica, mas não contractual).
-  const closed = activeAuctions
+  const closedAll = activeAuctions
     .filter((a) => a.closed && matchesPos(a))
     .sort((a, b) => (b.closedMatchweek ?? 0) - (a.closedMatchweek ?? 0));
+  const live = liveAll.filter(matchesOwn);
+  const closed = closedAll.filter(matchesOwn);
 
   const positionTabs = [
     { key: "all", label: `Todas · ${activeAuctions.length}` },
@@ -59,13 +71,13 @@ export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me
       <div className="grid grid-cols-3 gap-1.5 sm:gap-3 short:gap-1 p-2 sm:p-4 short:p-1.5 pb-1.5 short:pb-1 shrink-0">
         <SummaryWidget
           label="Leilões a decorrer"
-          value={live.length}
+          value={liveAll.length}
           valueClass="text-[11px] sm:text-2xl min-w-0 truncate"
           mini
         />
         <SummaryWidget
           label="Leilões recentes"
-          value={closed.length}
+          value={closedAll.length}
           accentClass="border-tertiary"
           valueClass="text-[11px] sm:text-2xl min-w-0 truncate"
           mini
@@ -83,6 +95,15 @@ export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me
       {activeAuctions.length > 0 && (
         <div className="px-2 sm:px-4 short:px-2 pb-1.5 short:pb-1 shrink-0">
           <TabBar tabs={positionTabs} active={positionFilter} onChange={setPositionFilter} expand />
+          <label className="flex items-center gap-2 px-1 py-2 text-[11px] font-bold text-on-surface-variant cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showOwnOnly}
+              onChange={(e) => setShowOwnOnly(e.target.checked)}
+              className="w-4 h-4 accent-emerald-500"
+            />
+            Mostrar só os meus
+          </label>
         </div>
       )}
 
@@ -142,7 +163,9 @@ export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me
             title={activeAuctions.length > 0 ? "Sem leilões para esta posição" : "Sem leilões a mostrar"}
             description={
               activeAuctions.length > 0
-                ? "Escolhe outra posição no filtro."
+                ? showOwnOnly
+                  ? "Ajusta a posição ou desmarca «Mostrar só os meus»."
+                  : "Escolhe outra posição no filtro."
                 : "Quando um clube colocar um jogador em leilão, aparece aqui."
             }
           />

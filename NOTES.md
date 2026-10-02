@@ -8,6 +8,11 @@
 - `StadiumTab.jsx`: removida a prop `shot="close"` (volta ao `wide` por defeito, sem zoom/crop da bancada).
 - Checks: `eslint` limpo nos ficheiros tocados · `check:types` OK · só enquadramento da ilustração → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
 
+## Filtro "só os meus" nos leilões (2026-10-02)
+- Pedido: checkbox como a do mercado no `AuctionsTab` — "os meus" = vendo ou licito (inclui licitações superadas), em curso + recentes.
+- `AuctionsTab.jsx`: estado local `showOwnOnly` (como o `positionFilter`); `matchesOwn` via `sellerTeamId`, `auction_bid_history` e `result.buyerTeamId` (recentes não trazem histórico, só o comprador); widgets contam totais, painéis filtram; empty-state sugere desmarcar o filtro.
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · 1 controlo na zona de filtros existente → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Label do filtro "só os meus" no mercado (2026-10-02)
 - Pedido: a label "Mostrar os meus à venda" passava a "Mostrar só os meus à venda" (a checkbox filtra, não adiciona — o "só" evita a leitura errada).
 - `TransferHub.jsx`: só 1 string; nota: o pedido indicava `MarketPanel.jsx`, mas o texto vive no `TransferHub.jsx:549` (o `MarketPanel` só tem Mercado 1X2 + Árbitro).
