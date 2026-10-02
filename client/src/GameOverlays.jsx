@@ -312,7 +312,14 @@ export function GameOverlays() {
         setCupDrawRevealIdx={setCupDrawRevealIdx}
       />
 
+      {/* Chave por eliminatória (F4): um 2.º shootout da mesma ronda
+          remonta limpo em vez de herdar a revelação do anterior. */}
       <PenaltyShootoutPopup
+        key={
+          cupPenaltyPopup
+            ? `pen-${cupPenaltyPopup.round}:${cupPenaltyPopup.homeTeamId}-${cupPenaltyPopup.awayTeamId}`
+            : "pen-none"
+        }
         cupPenaltyPopup={cupPenaltyPopup}
         cupPenaltyKickIdx={cupPenaltyKickIdx}
         teams={teams}

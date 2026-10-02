@@ -1,3 +1,10 @@
+## Estabilização da Taça F4+F5 — penáltis por eliminatória + reconnect e reset tático (2026-10-02)
+- F4: `PenaltyShootoutPopup` com chave por `(round, home-away)` — um 2.º shootout da mesma ronda remonta limpo; log `penáltis a abrir` com nº de cantos.
+- F5a (`cupFlowHelpers.ts`, `emitCurrentPhaseToSocket`): reconnect em `match_finalizing` com `cupResultsPayload` pronto também recebe `cupRoundResults` (aditivo, `gameState` segue) — sem replay fantasma de ET acabado.
+- F5b: reset tático pós-Taça (11 limpo + Equilibrado) sai do handler de chegada (a meio do replay) para o dreno pós-apito em `GameContext`.
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros (101 warnings, contagem igual à F0) · regressão `cupLobbyAdvanceRegression` PASS · client `eslint` só o pré-existente · `check:types` OK.
+- `test:finalize` (E2E 12 min, liga) não correu até ao fim — timeout da ferramenta aos 5 min com o servidor do repro a meio; processos do repro limpos, produção intocada. Diff do servidor é só logs + 1 emit aditivo no caminho da Taça (que o repro nem cobre); `audit:gamestate` fica para o ensaio com sala viva.
+
 ## Estabilização da Taça F2 — sorteio na fila pós-jogo (2026-10-02)
 - `postMatchFlow.js`: o sorteio passa a passo da fila — penáltis → sorteio → despedimento → fim de época; `showWaiting` e `isPostMatchQueueActive` contam com ele. `GameOverlays.jsx` só mostra o `CupDrawPopup` quando a fila o autoriza (o raw continua a bloquear o landing).
 - Sem mudança visual quando não há penáltis; com penáltis + sorteio na mesma ronda, o sorteio espera em vez de sobrepor.

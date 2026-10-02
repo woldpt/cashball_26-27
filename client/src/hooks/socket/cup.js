@@ -305,15 +305,9 @@ export function registerCupListeners(handlers, refs, ctx) {
 		// matchweek doesn't increment after cup rounds, so the useEffect in App.jsx
 		// won't fire — refresh calendar manually.
 		socket.emit("requestCalendar");
-		// Reset intencional de jornada (igual à liga): 11 limpo + Neutro.
-		handlers.setTactic((prev) => {
-			const allExcluded = Object.fromEntries(
-				(refs.mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
-			);
-			const next = { ...prev, positions: allExcluded, style: "Balanced" };
-			queueEmit("setTactic", next);
-			return next;
-		});
+		// Reset intencional de jornada (11 limpo + Equilibrado): movido para o
+		// dreno em GameContext (F5) — aqui chegava a meio do replay e competia
+		// com a edição do briefing da ronda seguinte.
 	});
 	socket.on("cupSecondHalfStart", (data) => {
 		handlers.setIsMatchActionPending(false);
@@ -345,6 +339,12 @@ export function registerCupListeners(handlers, refs, ctx) {
 		handlers.setCurrentCupRound(data.round ?? null);
 	});
 	socket.on("cupPenaltyShootout", (data) => {
+		cupFlowLog("penáltis a abrir", {
+			round: data?.round,
+			homeTeamId: data?.homeTeamId,
+			awayTeamId: data?.awayTeamId,
+			kicks: data?.kicks?.length,
+		});
 		handlers.setCupPenaltyPopup(data);
 		handlers.setCupPenaltyKickIdx(0);
 	});

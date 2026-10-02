@@ -867,6 +867,17 @@ year: seasonYear,
 				setIsCupExtraTime(false);
 				setCupExtraTimeBadge(false);
 			});
+			// Reset intencional de jornada (F5, igual à liga): 11 limpo +
+			// Equilibrado, SÓ depois do apito — antes corria na chegada do
+			// evento, a meio do replay, e competia com a edição do briefing.
+			setTactic((prev) => {
+				const allExcluded = Object.fromEntries(
+					(mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
+				);
+				const next = { ...prev, positions: allExcluded, style: "Balanced" };
+				queueEmit("setTactic", next);
+				return next;
+			});
 			return;
 		}
 		// Diagnóstico (só re-dispara com as deps): diz PORQUÊ o resultado

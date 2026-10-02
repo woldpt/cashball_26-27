@@ -2772,6 +2772,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		// Recovery for match_finalizing: tell the client we are wrapping up
 		if (game.gamePhase === "match_finalizing") {
+			// Taça com resultados já construídos (gate de animação, treino ou
+			// timers a correr): entrega-os ao reconnect em vez de o deixar à
+			// espera de um replay que já acabou (F5). Aditivo — o gameState segue.
+			if ((game.currentEvent as any)?.type !== "league" && (game as any).cupResultsPayload) {
+				socket.emit("cupRoundResults", (game as any).cupResultsPayload);
+			}
 			socket.emit("gameState", {
 				gamePhase: game.gamePhase,
 				calendarIndex: game.calendarIndex,
