@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { MODAL_Z } from "../../constants/index.js";
 import { useAssistantCoach } from "../../hooks/useAssistantCoach.js";
 import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
+import { useTypewriter } from "../../hooks/useTypewriter.js";
 import { Button } from "../shared/Button.jsx";
 
 /**
@@ -62,6 +63,7 @@ export function AssistantMascot({ mood, compact }) {
  */
 export function AssistantCoachView({ tip, onGo, onDismiss }) {
   const reducedMotion = usePrefersReducedMotion();
+  const { shown, done, complete } = useTypewriter(tip.text);
 
   return (
     <div
@@ -80,9 +82,9 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
         aria-label={`Treinador-adjunto: ${tip.text}`}
       >
         <AssistantMascot mood={tip.mood} />
-        {/* Clicar no balão dispensa — o 11 mantém-se dispensável pelo X (teclado). */}
+        {/* Clicar no balão dispensa — 1.º clique a meio da escrita só completa o texto. */}
         <div
-          onClick={onDismiss}
+          onClick={() => (done ? onDismiss() : complete())}
           className="relative flex-1 cursor-pointer bg-white border-2 border-zinc-900 rounded-2xl shadow-2xl p-3 pr-2 text-zinc-900"
         >
           {/* Rabicho do balão: aponta ao retrato (à esquerda no mobile,
@@ -94,7 +96,14 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
             Treinador-adjunto
           </p>
-          <p className="text-sm leading-snug mt-0.5">{tip.text}</p>
+          <p className="text-sm leading-snug mt-0.5" aria-hidden="true">
+            {shown}
+            {!done && (
+              <span aria-hidden="true" className="animate-pulse font-black text-emerald-700">
+                ▌
+              </span>
+            )}
+          </p>
           <div className="flex items-center justify-between gap-2 mt-2">
             <Button variant="primary" size="sm" uppercase onClick={onGo}>
               {tip.cta}

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "../shared/Button.jsx";
 import { AssistantMascot } from "../shared/AssistantCoach.jsx";
+import { useTypewriter } from "../../hooks/useTypewriter.js";
 import { COACH_TUTORIAL_STEPS } from "./coachTutorialSteps.js";
 
 /**
@@ -38,6 +39,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
   /** @type {[{x:number,y:number,w:number,h:number}|null, Function]} */
   const [rect, setRect] = useState(null);
   const balloonRef = useRef(null);
+  const { shown, done } = useTypewriter(step.text);
 
   useLayoutEffect(() => {
     onNavigate(step);
@@ -151,7 +153,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
           className="flex items-end gap-2 w-full max-w-md"
           data-tour="tutorial-balloon"
           role="dialog"
-          aria-label={`Treinador-adjunto: passo ${stepIndex + 1} de ${total}`}
+          aria-label={`Treinador-adjunto: passo ${stepIndex + 1} de ${total}. ${step.title}. ${step.text}`}
         >
           <div className="sm:hidden">
             <AssistantMascot mood="worried" compact />
@@ -172,7 +174,12 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
             {step.title}
           </h3>
           <p className="text-sm text-zinc-700 leading-relaxed mt-0.5">
-            {step.text}
+            {shown}
+            {!done && (
+              <span aria-hidden="true" className="animate-pulse font-black text-emerald-700">
+                ▌
+              </span>
+            )}
           </p>
           {/* Progresso */}
           <div className="flex gap-1 mt-2" aria-hidden="true">

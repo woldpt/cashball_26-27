@@ -117,3 +117,9 @@
 - Decisões do utilizador: reutilizar o PNG (não vetorizar) · recorte apertado (não remoção de fundo) · loop da boca enquanto a dica está visível.
 - Implementação: `client/public/coaches/jj-fechada.webp` + `jj-aberta.webp` (metades 768×1024 → quadrado 668×668 cabeça+ombros → espelhar → 512×512, ~25KB cada); `AssistantMascot` sobrepõe as duas (aberta em `absolute` com `opacity`) e alterna a cada 420ms, parado em boca fechada com `prefers-reduced-motion`; desktop 108px → 132px (`lg:`); `mister.webp` fica no disco mas sem referências.
 - Checks: `eslint` limpo no ficheiro · `check:types` OK · mudança só no breakpoint `lg` (mobile portrait se alterado) → sem `test:mobile`.
+
+## Balões do adjunto com máquina de escrever (2026-10-02)
+- Pedido: efeito de máquina de escrever no texto dos balões (dica + tutorial); 1.º clique a meio completa o texto, 2.º dispensa.
+- Implementação: hook novo `client/src/hooks/useTypewriter.js` (letra/18ms, recomeça ao mudar o texto, `complete()` revela tudo, `prefers-reduced-motion` devolve tudo de imediato; cadeia de `setTimeout` para cumprir a regra `set-state-in-effect` do eslint).
+- `AssistantCoachView`: 1.º clique completa, 2.º dispensa; parágrafo digitado com `aria-hidden` (texto integral já no `aria-label`, evita spam do `aria-live`); CTA/X/2.º clique mantêm o comportamento. `CoachTutorial`: digita `step.text` (título e botões estáticos), texto integral no `aria-label`; cursor `▌` com `animate-pulse` em ambos.
+- Checks: `eslint` limpo nos 3 ficheiros · `check:types` OK · overlay sem mudança estrutural → sem `test:mobile`.
