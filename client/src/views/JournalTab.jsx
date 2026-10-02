@@ -12,7 +12,9 @@
  * respostas reutilizam os fluxos existentes (diálogo do agente, emits).
  *
  * O detalhe segue registo de imprensa clássica: manchete em tinta forte,
- * entrada com capitular, filetes a separar corpo e ações.
+ * entrada com capitular, coluna de leitura centrada (`max-w-prose`),
+ * filetes a separar corpo e ações; links de entidades em pílula para nunca
+ * colarem às margens e tabelas centradas.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -96,15 +98,23 @@ const CATEGORY_EMOJIS = {
   market: "💰",
 };
 
-/** Link de entidade clicável (jogador/equipa) no corpo das notícias. */
+/** Tinta simples para links de entidades no título: sem pílula (em corpo
+ * grande dominava a manchete). */
+const TITLE_LINK_CLS =
+  "font-black text-primary hover:text-on-surface transition-colors";
+
+/** Link de entidade clicável (jogador/equipa) no corpo das notícias: pílula
+ * com fundo ténue em vez de sublinhado nu — o `px-1` garante que nunca cola
+ * às margens e o `box-decoration-break` mantém a pílula legível quando parte
+ * em quebra de linha. */
 const LINK_CLS =
-  "font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface transition-colors";
+  "rounded-sm bg-primary/10 px-1 font-black text-primary [box-decoration-break:clone] hover:bg-primary/20 hover:text-on-surface transition-colors";
 
 /** Invólucro, tabela e cabeçalho das tabelas do Jornal (Taça, classificação). */
 const TABLE_WRAP_CLS =
   "mt-3 overflow-x-auto rounded-sm border border-outline-variant/20";
 const TABLE_CLS =
-  "w-full max-w-md border-collapse text-sm tabular-nums text-on-surface";
+  "mx-auto w-full max-w-md border-collapse text-sm tabular-nums text-on-surface";
 const THEAD_ROW_CLS =
   "bg-surface-container-high/60 text-[10px] font-black uppercase tracking-widest text-on-surface-variant";
 
@@ -218,7 +228,7 @@ function splitPartsByParagraphs(parts) {
 
 /**
  * Texto de notícia com entidades clicáveis + suporte a parágrafos.
- * @param {{ parts?: Array, fallback?: string, teams: Array, onOpenTeamSquad?: Function, onOpenPlayerHistory?: Function }} props
+ * @param {{ parts?: Array, fallback?: string, teams: Array, onOpenTeamSquad?: Function, onOpenPlayerHistory?: Function, bareLinks?: boolean }} props
  */
 function RichNewsText({
   parts,
@@ -226,7 +236,9 @@ function RichNewsText({
   teams,
   onOpenTeamSquad,
   onOpenPlayerHistory,
+  bareLinks = false,
 }) {
+  const linkCls = bareLinks ? TITLE_LINK_CLS : LINK_CLS;
   if (!Array.isArray(parts)) return fallback;
   return parts.map((part, index) => {
     const key = `${part.type}-${part.id ?? index}`;
@@ -235,7 +247,7 @@ function RichNewsText({
         <button
           key={key}
           type="button"
-          className={LINK_CLS}
+          className={linkCls}
           onClick={() => onOpenPlayerHistory?.(part)}
         >
           {part.label}
@@ -248,7 +260,7 @@ function RichNewsText({
         <button
           key={key}
           type="button"
-          className={LINK_CLS}
+          className={linkCls}
           onClick={() => team?.id && onOpenTeamSquad?.(team)}
           disabled={!team?.id || !onOpenTeamSquad}
         >
@@ -1145,20 +1157,24 @@ export function JournalTab({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="relative rounded-sm border border-outline-variant/20 bg-surface-container px-3 py-2.5 short:py-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col overflow-y-auto"
+                className="relative rounded-sm border border-outline-variant/20 bg-surface-container px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col overflow-y-auto"
               >
                 {/* Faixa lateral: categoria, ou error nas pendências */}
                 <CategoryAccentBar category={selected.cat} urgent={selected.redFlag} />
 
+                {/* Coluna de leitura: meta, manchete, corpo e ações com
+                    largura de imprensa, centrada; tabelas centram-se a si */}
+                <div className="mx-auto w-full max-w-prose">
                 {/* Metadados: categoria e data */}
                 <ArticleMeta item={selected} catLabel={labelOf(selected.cat)} />
 
                 {/* Título */}
-                <h2 className="mt-2 font-headline text-xl short:text-lg font-black tracking-tight text-balance text-left text-on-surface">
+                <h2 className="mt-1.5 font-headline text-2xl short:text-xl font-black tracking-tight text-balance text-left text-on-surface">
                   <RichNewsText
                     parts={selected.titleParts}
                     fallback={selected.title}
                     teams={teams}
+                    bareLinks
                     onOpenTeamSquad={onOpenTeamSquad}
                     onOpenPlayerHistory={onOpenPlayerHistory}
                   />
@@ -1204,7 +1220,7 @@ export function JournalTab({
                     />
                   </div>
                 ) : selected.body && (
-                  <div className="mt-3 lg:px-6 space-y-3 border-t border-outline-variant/25 pt-3">
+                  <div className="mt-3 space-y-3 border-t border-outline-variant/25 pt-3">
                     <RichParagraphs
                       parts={selected.bodyParts}
                       fallback={selected.body}
@@ -1242,7 +1258,7 @@ export function JournalTab({
                   ["contract", "job", "board", "cupdraw", "sponsor"].includes(
                     selected.kind,
                   ) && (
-                  <div className="mt-4 border-t border-outline-variant/25 pt-3">
+                  <div className="mt-5 border-t border-outline-variant/25 pt-4">
                     <InboxActions
                       item={selected}
                       inbox={inbox}
@@ -1251,6 +1267,7 @@ export function JournalTab({
                     />
                   </div>
                 )}
+                </div>
               </motion.section>
             )}
           </AnimatePresence>

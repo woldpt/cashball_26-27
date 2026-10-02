@@ -1,3 +1,8 @@
+## Redesign do artigo do Jornal (2026-10-02)
+- Pedido: notícias feias, botões encostados à margem — polimento para todas, intensidade de redesign mantendo o registo de imprensa.
+- `JournalTab.jsx`: coluna de leitura centrada (`max-w-prose`, `px-4`/`sm:px-6`); links de entidades em pílula (`bg-primary/10` + `box-decoration-break:clone`, nunca colam às margens nem partem mal); tabelas centradas (`mx-auto`); manchete maior (`text-2xl`) com links em tinta simples (a pílula em corpo grande virava tijolo — visto em screenshot); zona de ações com mais respiro (`mt-5 pt-4`); cai o `lg:px-6` ad hoc do corpo.
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · `test:mobile` só `journal-resp-test` PASS 5/5 + screenshot 390 verificado; sem lógica de jogo/sockets → sem audits.
+
 ## Sorteio da Taça com parágrafo antes da tabela (2026-10-02)
 - Pedido: no detalhe da notícia do sorteio, um parágrafo a dizer o que nos calhou, só depois a tabela completa (antes era só a tabela seca).
 - `JournalTab.jsx`: novo `CupDrawIntro` antes do `CupDrawTable` — ronda (`facts.roundName` ou título), adversário clicável + casa/fora, em jogo o lugar na próxima eliminatória (final, nas meias) e uma linha de favoritismo pela divisão (`teams` já traz `division`); sem jogo próprio (eliminado), genérico da ronda. Só frontend, corpo/snippet inalterados.
