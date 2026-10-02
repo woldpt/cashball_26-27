@@ -1,3 +1,8 @@
+## Deploy v26.10.8 no rick (2026-10-02)
+- Desde a v26.10.7: rodapé Notícias CM em breaking-news (erros de sala só no log), notícias automáticas por resultados/mercado, mascote do adjunto a partir das jj1/jj2, filtros «só os meus» e «cabe no saldo» no servidor, pacote de micro-efeitos por zona.
+- Push master + tag v26.10.8 publicadas; `docker compose up --build -d` no rick com `backend Healthy`; seed não toca salas.
+- Rick fica exatamente na tag; este registo vai em commit local sem push.
+
 ## Pacote «impressionar sem pesar» — micro-efeitos por zona (2026-10-02)
 - Só `transform`/`opacity` (+1 `background-position`), durações curtas, tudo parado com movimento reduzido; zero deps novas (`CountUp` em rAF próprio, framer-motion já cá estava).
 - Jogo: `goal-shake` no marcador do `LiveMatchHero`/`CupFinalStage` (remount via key nos golos) + `liveclock-urgent` no `LiveClock` (85'+/prolongamento). Leilões: anel SVG na contagem decrescente (`AuctionCard`, esvazia nos últimos 60 s). Saldo: `CountUp.jsx` novo nos 3 widgets do `FinancesTab`. Troféus: varrimento dourado por `background-position` (`TrophyCabinet`) — a 1.ª versão com filho a transbordar chumbou `club`+`topwidgets` (linhas cortadas), corrigido sem transbordo. Taça: `bracket-draw` nas linhas + `champion-glow` + esqueletos `skeleton-shimmer` no loading (`CupBracketPage`). Jornal: `flag-pulse` na faixa das pendências. Estádio: holofotes em gradiente + zoom ténue em hover. `CmTicker` pausa com movimento reduzido.
