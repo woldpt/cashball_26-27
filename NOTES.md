@@ -1,3 +1,8 @@
+## Sorteio da Taça com parágrafo antes da tabela (2026-10-02)
+- Pedido: no detalhe da notícia do sorteio, um parágrafo a dizer o que nos calhou, só depois a tabela completa (antes era só a tabela seca).
+- `JournalTab.jsx`: novo `CupDrawIntro` antes do `CupDrawTable` — ronda (`facts.roundName` ou título), adversário clicável + casa/fora, em jogo o lugar na próxima eliminatória (final, nas meias) e uma linha de favoritismo pela divisão (`teams` já traz `division`); sem jogo próprio (eliminado), genérico da ronda. Só frontend, corpo/snippet inalterados.
+- Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · só texto num painel existente → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Tutorial com treinador fixo no centro (2026-10-02)
 - Pedido: balão do adjunto sempre no meio do ecrã; só o retângulo de destaque se move.
 - `CoachTutorial.jsx`: balão centrado com flex, sem cálculo de posição (saem `BALLOON_W`/`WRAP_W`/`GAP`, `balloon`/`below`, medição de altura e seta para o alvo; rabicho para o retrato fica). Spotlight, scroll até ao alvo, Escape, progresso e `data-tour`/aria-labels inalterados.

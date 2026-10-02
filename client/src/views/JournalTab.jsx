@@ -545,6 +545,102 @@ function CupDrawTable({ fixtures, viewerTeamId, teams, onOpenTeamSquad }) {
 }
 
 /**
+ * Prefixo da ronda («dos Quartos de final», «das Meias-finais»).
+ */
+function cupDrawRoundPrefix(roundName) {
+  if (!roundName) return "da próxima eliminatória";
+  if (/^meias/i.test(roundName)) return `das ${roundName}`;
+  if (/^final/i.test(roundName)) return `da ${roundName}`;
+  return `dos ${roundName}`;
+}
+
+/**
+ * Parágrafo de abertura do sorteio da Taça: o que nos calhou (adversário
+ * + casa/fora, com uma linha de favoritismo pela divisão) antes da tabela
+ * completa. Sem jogo próprio (já eliminado), genérico da ronda.
+ * @param {{ fixtures?: Array, viewerTeamId?: number|string|null, roundName?: string, titleFallback?: string, teams: Array, onOpenTeamSquad?: Function }} props
+ * @returns {JSX.Element}
+ */
+function CupDrawIntro({ fixtures, viewerTeamId, roundName, titleFallback, teams, onOpenTeamSquad }) {
+  const list = Array.isArray(fixtures) ? fixtures : [];
+  const name =
+    roundName ||
+    String(titleFallback || "").split("Sorteio:")[1]?.trim() ||
+    "";
+  const prefix = cupDrawRoundPrefix(name);
+  const cls =
+    "text-base short:text-sm leading-relaxed text-justify text-on-surface";
+  const vId = viewerTeamId == null ? null : String(viewerTeamId);
+  const mine =
+    vId == null
+      ? null
+      : list.find(
+          (f) =>
+            String(f.homeTeamId) === vId || String(f.awayTeamId) === vId,
+        ) || null;
+  if (!mine) {
+    return (
+      <p className={cls}>
+        O sorteio {prefix} já ditou os duelos da próxima eliminatória — o
+        quadro completo fica abaixo.
+      </p>
+    );
+  }
+  const isHome = String(mine.homeTeamId) === vId;
+  const oppId = isHome ? mine.awayTeamId : mine.homeTeamId;
+  const oppName = isHome ? mine.awayName : mine.homeName;
+  const opp = teamFromRef(teams, { id: oppId, label: oppName });
+  const myDiv = teamFromRef(teams, {
+    id: isHome ? mine.homeTeamId : mine.awayTeamId,
+  })?.division;
+  const oppDiv = opp?.division;
+  const stakes = /^meias/i.test(name)
+    ? "Em jogo está um lugar na final."
+    : "Em jogo está um lugar na próxima eliminatória.";
+  const spice =
+    myDiv == null || oppDiv == null
+      ? ""
+      : myDiv === oppDiv
+        ? " Duelo entre equipas do mesmo escalão, sem favorito claro."
+        : myDiv < oppDiv
+          ? " O favoritismo veste as nossas cores, mas a Taça raramente respeita favoritismos."
+          : " O favoritismo sorri ao adversário, mas a Taça vive destas noites.";
+  return (
+    <p className={cls}>
+      O sorteio {prefix} calhou-te{" "}
+      {isHome ? (
+        <>
+          o{" "}
+          <button
+            type="button"
+            className={LINK_CLS}
+            onClick={() => opp?.id && onOpenTeamSquad?.(opp)}
+            disabled={!opp?.id || !onOpenTeamSquad}
+          >
+            {oppName}
+          </button>{" "}
+          em casa
+        </>
+      ) : (
+        <>
+          deslocação ao terreno do{" "}
+          <button
+            type="button"
+            className={LINK_CLS}
+            onClick={() => opp?.id && onOpenTeamSquad?.(opp)}
+            disabled={!opp?.id || !onOpenTeamSquad}
+          >
+            {oppName}
+          </button>
+        </>
+      )}
+      . {stakes}
+      {spice}
+    </p>
+  );
+}
+
+/**
  * Tabela do resumo financeiro semanal (notícia `weekly_finance`, valores em
  * `facts`): rendimento, salários e manutenção, mais juros e capital só com
  * empréstimo, com o saldo em destaque. Notícias antigas (sem factos)
@@ -1085,12 +1181,21 @@ export function JournalTab({
                   />
                 )}
 
-                {/* Corpo do artigo (entrada + parágrafos) — ou a tabela do
-                    sorteio da Taça, em vez da lista seca */}
+                {/* Corpo do artigo (entrada + parágrafos) — no sorteio da
+                    Taça, um parágrafo com o que nos calhou e só depois a
+                    tabela completa */}
                 {selected.kind === "cupdraw" &&
                 Array.isArray(selected.facts?.fixtures) &&
                 selected.facts.fixtures.length > 0 ? (
                   <div className="mt-3 border-t border-outline-variant/25 pt-3">
+                    <CupDrawIntro
+                      fixtures={selected.facts.fixtures}
+                      viewerTeamId={selected.facts.viewerTeamId}
+                      roundName={selected.facts.roundName}
+                      titleFallback={selected.title}
+                      teams={teams}
+                      onOpenTeamSquad={onOpenTeamSquad}
+                    />
                     <CupDrawTable
                       fixtures={selected.facts.fixtures}
                       viewerTeamId={selected.facts.viewerTeamId}
