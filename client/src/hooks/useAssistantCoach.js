@@ -4,6 +4,7 @@ import { useGame } from "../contexts/GameContext.jsx";
 import { useTactics } from "../contexts/TacticsContext.jsx";
 import { isPlayerAvailable } from "../utils/playerHelpers.js";
 import { trainingCapTip } from "../utils/trainingCapAdvice.js";
+import { useIdle } from "./useIdle.js";
 
 const SEEN_BASE_KEY = "cashball_assistant";
 const TRAINING_BASE_KEY = "cashball_training_focus";
@@ -25,6 +26,12 @@ function seenKey(roomCode, calendarIndex, tipId) {
  * gate na UI que as resolve — a Tática bloqueia o Pronto com o motivo. Sem
  * isto, a dica do 11 repetia-se todas as semanas e tapava as outras.
  */
+/**
+ * Onze incompleto só nagado após inatividade: aparecer logo no início da
+ * semana torna-se maçador; surge só com a janela aberta e parada.
+ */
+const LINEUP_IDLE_MS = 90_000;
+
 const ONCE_PER_ROOM_TIPS = new Set(["lineup"]);
 
 /**
@@ -95,6 +102,14 @@ export function useAssistantCoach() {
 
   // Re-render ao dispensar: a chave de visto é sincrónica em localStorage.
   const [dismissTick, setDismissTick] = useState(0);
+  // Onze por fechar: só após inatividade (janela aberta e parada) —
+  // nunca logo no início da semana. Depois de aparecer 1x, trava até
+  // dispensar/fechar (senão escondia-se ao ir clicar no CTA).
+  const lineupIdle = useIdle(LINEUP_IDLE_MS);
+  const [lineupGate, setLineupGate] = useState({ week: calendarIndex, shown: false });
+  if (lineupGate.week !== calendarIndex || (isLineupComplete && lineupGate.shown)) {
+    setLineupGate({ week: calendarIndex, shown: false });
+  }
   // Foco vindo da BD, carimbado por semana: chave diferente = ainda a
   // perguntar (benefício da dúvida: não nagar); focus string = definido
   // (atual ou herdado); null = nunca houve treino.
@@ -168,7 +183,7 @@ export function useAssistantCoach() {
             tab: "jornal",
             cta: "Despachar já",
           },
-      isLineupComplete
+      isLineupComplete || (!lineupIdle && !lineupGate.shown)
         ? null
         : {
             id: "lineup",
@@ -245,12 +260,19 @@ export function useAssistantCoach() {
     totalWeeklyWage,
     currentBudget,
     isLineupComplete,
+    lineupIdle,
+    lineupGate.shown,
     activeTab,
     hasLocalTraining,
     localTraining,
     serverTraining,
     dismissTick,
   ]);
+
+  // Trava depois de aparecer: sem isto escondia-se ao ir clicar no CTA.
+  if (tip?.id === "lineup" && !lineupGate.shown) {
+    setLineupGate((g) => ({ ...g, shown: true }));
+  }
 
   const dismissTip = useCallback(() => {
     if (tip && typeof window !== "undefined") {

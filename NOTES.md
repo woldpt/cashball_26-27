@@ -128,3 +128,8 @@
 - Pedido: o boneco surge de baixo e esconde-se para baixo; o balão só surge quando o boneco chega e desaparece primeiro; tutorial entra/sai 1x (sem animar entre passos), com movimento ao Saltar/Concluir.
 - Implementação: `AssistantCoachView` separa boneco e balão em dois `motion.div` (boneco `y:120%→0` 0,3s, `exit` atrasado 0,15s; balão entra com atraso 0,3s e sai só em opacidade 0,15s); `AssistantCoach` envolve a dica em `AnimatePresence` (chave `tip.id` na vista). `CoachTutorial` com raiz `motion.div` (entra/sai `y:120`+opacidade 1x) e `AnimatePresence` no `GameLayout.jsx`; `reduced-motion` mantém tudo estático.
 - Checks: `eslint` limpo nos 3 ficheiros · `check:types` OK · só animação (DOM/classes iguais) → sem `test:mobile`.
+
+## Dica do 11 só após inatividade (2026-10-02)
+- Pedido: a frase do onze por fechar não aparece logo no início da semana (maçador); só com a janela aberta e parada 1–2 min.
+- Implementação: hook novo `client/src/hooks/useIdle.js` (qualquer rato/toque/tecla/scroll rearma; `true` após `LINEUP_IDLE_MS = 90_000`); `useAssistantCoach.js` só candidata `lineup` com `lineupIdle`. Trava `shown` 1x/semana depois de aparecer (senão escondia-se ao ir clicar no CTA) e rearma ao fechar o 11 ou mudar de semana; resto das dicas imediato como antes.
+- Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · sem mudança visual/estrutural → sem `test:mobile`.
