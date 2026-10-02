@@ -123,3 +123,8 @@
 - Implementação: hook novo `client/src/hooks/useTypewriter.js` (letra/18ms, recomeça ao mudar o texto, `complete()` revela tudo, `prefers-reduced-motion` devolve tudo de imediato; cadeia de `setTimeout` para cumprir a regra `set-state-in-effect` do eslint).
 - `AssistantCoachView`: 1.º clique completa, 2.º dispensa; parágrafo digitado com `aria-hidden` (texto integral já no `aria-label`, evita spam do `aria-live`); CTA/X/2.º clique mantêm o comportamento. `CoachTutorial`: digita `step.text` (título e botões estáticos), texto integral no `aria-label`; cursor `▌` com `animate-pulse` em ambos.
 - Checks: `eslint` limpo nos 3 ficheiros · `check:types` OK · overlay sem mudança estrutural → sem `test:mobile`.
+
+## Boneco entra/sai de baixo em fases (2026-10-02)
+- Pedido: o boneco surge de baixo e esconde-se para baixo; o balão só surge quando o boneco chega e desaparece primeiro; tutorial entra/sai 1x (sem animar entre passos), com movimento ao Saltar/Concluir.
+- Implementação: `AssistantCoachView` separa boneco e balão em dois `motion.div` (boneco `y:120%→0` 0,3s, `exit` atrasado 0,15s; balão entra com atraso 0,3s e sai só em opacidade 0,15s); `AssistantCoach` envolve a dica em `AnimatePresence` (chave `tip.id` na vista). `CoachTutorial` com raiz `motion.div` (entra/sai `y:120`+opacidade 1x) e `AnimatePresence` no `GameLayout.jsx`; `reduced-motion` mantém tudo estático.
+- Checks: `eslint` limpo nos 3 ficheiros · `check:types` OK · só animação (DOM/classes iguais) → sem `test:mobile`.

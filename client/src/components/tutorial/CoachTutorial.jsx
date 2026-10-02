@@ -1,7 +1,9 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "../shared/Button.jsx";
 import { AssistantMascot } from "../shared/AssistantCoach.jsx";
 import { useTypewriter } from "../../hooks/useTypewriter.js";
+import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
 import { COACH_TUTORIAL_STEPS } from "./coachTutorialSteps.js";
 
 /**
@@ -39,6 +41,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
   /** @type {[{x:number,y:number,w:number,h:number}|null, Function]} */
   const [rect, setRect] = useState(null);
   const balloonRef = useRef(null);
+  const reducedMotion = usePrefersReducedMotion();
   const { shown, done } = useTypewriter(step.text);
 
   useLayoutEffect(() => {
@@ -99,8 +102,17 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex]);
 
+  // Entra de baixo 1x ao abrir e sai para baixo 1x ao Saltar/Concluir —
+  // entre passos o conteúdo troca sem animar.
   return (
-    <div className="fixed inset-0 z-[300]" data-tour="tutorial-overlay">
+    <motion.div
+      className="fixed inset-0 z-[300]"
+      data-tour="tutorial-overlay"
+      initial={reducedMotion ? false : { opacity: 0, y: 120 }}
+      animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+      exit={reducedMotion ? undefined : { opacity: 0, y: 120 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Spotlight: 4 faixas à volta do alvo */}
       {rect ? (
         <>
@@ -212,6 +224,6 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
         </div>
       </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

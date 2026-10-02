@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { MODAL_Z } from "../../constants/index.js";
 import { useAssistantCoach } from "../../hooks/useAssistantCoach.js";
 import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
@@ -71,21 +71,28 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
       style={{ zIndex: MODAL_Z.assistant }}
       data-tour="assistant-coach"
     >
-      <motion.div
-        key={tip.id}
-        initial={reducedMotion ? false : { y: "110%" }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.3 }}
+      <div
         className="pointer-events-auto flex items-end gap-2 w-full max-w-md lg:flex-row-reverse"
         role="dialog"
         aria-live="polite"
         aria-label={`Treinador-adjunto: ${tip.text}`}
       >
-        <AssistantMascot mood={tip.mood} />
-        {/* Clicar no balão dispensa — 1.º clique a meio da escrita só completa o texto. */}
-        <div
+        {/* O boneco sobe primeiro; ao dispensar sai por último. */}
+        <motion.div
+          initial={reducedMotion ? false : { y: "120%" }}
+          animate={reducedMotion ? undefined : { y: 0 }}
+          exit={reducedMotion ? undefined : { y: "120%", transition: { delay: 0.15, duration: 0.25 } }}
+          transition={{ duration: 0.3 }}
+        >
+          <AssistantMascot mood={tip.mood} />
+        </motion.div>
+        {/* O balão surge quando o boneco chega; ao dispensar desvanece primeiro. */}
+        <motion.div
           onClick={() => (done ? onDismiss() : complete())}
           className="relative flex-1 cursor-pointer bg-white border-2 border-zinc-900 rounded-2xl shadow-2xl p-3 pr-2 text-zinc-900"
+          initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+          animate={reducedMotion ? undefined : { opacity: 1, y: 0, transition: { delay: 0.3, duration: 0.25 } }}
+          exit={reducedMotion ? undefined : { opacity: 0, transition: { duration: 0.15 } }}
         >
           {/* Rabicho do balão: aponta ao retrato (à esquerda no mobile,
               à direita em desktop, onde o retrato fica no canto). */}
@@ -117,8 +124,8 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
               X
             </button>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -131,7 +138,11 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
 export function AssistantCoach() {
   const { tip, dismissTip, goTip } = useAssistantCoach();
 
-  if (!tip) return null;
-
-  return <AssistantCoachView tip={tip} onGo={goTip} onDismiss={dismissTip} />;
+  return (
+    <AnimatePresence>
+      {tip && (
+        <AssistantCoachView key={tip.id} tip={tip} onGo={goTip} onDismiss={dismissTip} />
+      )}
+    </AnimatePresence>
+  );
 }

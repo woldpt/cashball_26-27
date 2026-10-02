@@ -187,8 +187,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         onNewWelcomeClose={startTutorial}
       />
 
-      {tutorial.active && !isMatchInProgress && !welcomeModal && (
-        <CoachTutorial
+      <AnimatePresence>
+        {tutorial.active && !isMatchInProgress && !welcomeModal && (
+          <CoachTutorial
           stepIndex={tutorial.index}
           onNavigate={handleTutorialNavigate}
           onNext={() => {
@@ -206,8 +207,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             setMobileSubMenu(null);
             skipTutorial();
           }}
-        />
-      )}
+          />
+        )}
+      </AnimatePresence>
 
     </div>
   );
