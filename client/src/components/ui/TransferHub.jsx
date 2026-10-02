@@ -472,8 +472,9 @@ export function TransferHub({
     const base = (game?.marketPairs ?? players).filter(
       (p) =>
         p.transfer_status !== "auction" &&
-        (p.team_id !== me?.teamId ||
-          (showOwnMarketPlayers && p.transfer_status === "fixed")),
+        (showOwnMarketPlayers
+          ? p.team_id === me?.teamId
+          : p.team_id !== me?.teamId),
     );
     const counts = { all: base.length, GR: 0, DEF: 0, MED: 0, ATA: 0 };
     for (const p of base) {

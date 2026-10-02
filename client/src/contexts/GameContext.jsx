@@ -1668,10 +1668,10 @@ year: seasonYear,
 			return (b.skill || 0) - (a.skill || 0);
 		};
 		return marketPairs
-			.filter(
-				(player) =>
-					player.team_id !== marketTeamId ||
-					(showOwnMarketPlayers && player.transfer_status === "fixed"),
+			.filter((player) =>
+				showOwnMarketPlayers
+					? player.team_id === marketTeamId
+					: player.team_id !== marketTeamId,
 			)
 			.filter((player) =>
 				marketPositionFilter === "all"

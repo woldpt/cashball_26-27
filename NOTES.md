@@ -1,3 +1,8 @@
+## Checkbox do Mercado passa a filtrar "só os meus" (2026-10-02)
+- Bug: a checkbox "Mostrar só os meus à venda" nunca filtrava — o predicado (`team_id !== mine || (show && fixed)`) com a caixa marcada ADICIONAVA os meus aos dos outros em vez de mostrar só os meus (a renomeação para "só" expôs a divergência).
+- Fix (`GameContext.jsx` `filteredMarketPlayers` + `TransferHub.jsx` `posCounts`, mesmo ternário nos dois): marcada → só os meus; desmarcada → esconde os meus (comportamento anterior).
+- Checks: prova de semântica em node (marcada só meus, desmarcada só outros) · `check:types` OK · `eslint` só o erro pré-existente `react-refresh` no `GameContext.jsx` (provado no HEAD) · só predicados, sem layout → sem `test:mobile`; sem sockets/jogo → sem audits.
+
 ## Deploy v26.10.7 no rick (2026-10-02)
 - Desde a v26.10.6: redesign do artigo do Jornal, resync pós-join contra S1 fantasma, filtros «só os meus» (mercado + leilões) e «cabe no saldo» (scout), débitos da semana a negativo/vermelho, hero do estádio sem zoom.
 - Push master + tag v26.10.7 publicadas; `docker compose up --build -d` no rick com `backend Healthy`; seed não toca salas.
