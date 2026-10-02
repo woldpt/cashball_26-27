@@ -65,6 +65,7 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		if (pendingDismissal) {
 			refs.pendingDismissalRef.current = null;
 			handlers.setDismissalModal({ ...pendingDismissal, newTeam: data });
+			ensureJoinState();
 			return;
 		}
 		if (data.isNew) {
@@ -80,9 +81,22 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		// (O gameState também faz flush — o primeiro a chegar vence, o
 			// segundo é no-op porque a fila já está vazia.)
 		flushOutbox();
+		ensureJoinState();
 	});
+	// Rede de segurança pós-join (X4Z1BI): se a rajada do join (mySquad +
+	// gameState) se perdeu mas o sinal de join completo chegou, pedir o
+	// snapshot ao servidor — sem isto o cliente fica preso nos defaults (S1,
+	// plantel vazio, tática morta). Idempotente e sem loop: a resposta traz
+	// gameState (marca visto) e o teamAssigned seguinte já não reemite.
+	const ensureJoinState = () => {
+		if (!refs.joinStateSeenRef.current) {
+			refs.joinStateSeenRef.current = true;
+			socket.emit("requestResync");
+		}
+	};
 	socket.on("gameState", (data) => {
 		if (!ctx.inRoom()) return;
+		refs.joinStateSeenRef.current = true;
 		if (data.allMatchResults)
 			handlers.setAllMatchResults(data.allMatchResults);
 		if (data.matchweek) handlers.setMatchweekCount(data.matchweek - 1);
@@ -226,6 +240,8 @@ export function registerSessionListeners(handlers, refs, ctx) {
 			// Feedback imediato: o rejoin + flush se dão no gameState/
 			// teamAssigned que se seguem.
 			handlers.flashReconnect();
+			// Nova rajada a caminho: rearmar a rede de segurança pós-join.
+			refs.joinStateSeenRef.current = false;
 			socket.emit("joinGame", {
 				name: currentMe.name,
 				token: currentMe.token,

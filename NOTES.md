@@ -1,3 +1,8 @@
+## Resync de segurança pós-join contra S1 fantasma (2026-10-02)
+- Bug (sala X4Z1BI, após reboot/deploy): entrada manual mostrou Semana 1 com plantel vazio e tática morta, estando a sala em S5; refresh curou. Vilão: a rajada do join (`mySquad` → `gameState`) chegou antes da montagem tardia do `GameProvider` (transição `mode="wait"`), perdeu-se sem listeners, e o `teamAssigned` (cadeia lenta) chegou depois, abriu o jogo e cancelou o retry de 10 s — preso nos defaults (`matchweekCount 0` bloqueia o briefing).
+- Fix só-cliente: `joinStateSeenRef` (falso por join: reset em mudança de `me.roomCode` e no rejoin do `onConnect`); `gameState` marca visto; `teamAssigned`/`coachDismissed` emitem `requestResync` (handler de servidor existente, sem loop: a resposta traz `gameState` e o sinal seguinte já não reemite). Toca `GameContext.jsx` + `socket/session.js` + `socket/coach.js` (+32 linhas).
+- Checks: `eslint` só os 3 erros pré-existentes · `check:types` OK · `audit:socketio` 0 erros (101 warnings, contagem igual) · sem layout → sem `test:mobile`; sem lógica de jogo → sem `audit:gamestate`.
+
 ## Zoom do estádio removido (2026-10-02)
 - Pedido: estádio via-se cortado no hero do `StadiumTab`; retirar o zoom.
 - `StadiumTab.jsx`: removida a prop `shot="close"` (volta ao `wide` por defeito, sem zoom/crop da bancada).

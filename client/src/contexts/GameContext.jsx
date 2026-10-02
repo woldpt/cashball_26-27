@@ -272,6 +272,12 @@ export function GameProvider({
 	const isCupExtraTimeRef = useRef(false);
 	const pendingDismissalRef = useRef(null);
 	const matchReplayActiveRef = useRef(false);
+	// `gameState` do join atual já foi visto? A rajada do join (mySquad +
+	// gameState) pode perder-se (montagem tardia do provider, flape) enquanto
+	// o teamAssigned — cadeia async mais lenta — chega e cancela o retry de
+	// 10 s (X4Z1BI: preso em S1, plantel vazio, tática morta). Falso por join;
+	// o teamAssigned/coachDismissed pedem `requestResync` quando continua falso.
+	const joinStateSeenRef = useRef(false);
 	const liveMinuteRef = useRef(0);
 	const selectedTeamRef = useRef(null);
 	// Cache de plantéis por teamId (SWR): reabrir uma equipa mostra o último
@@ -464,6 +470,9 @@ export function GameProvider({
 	}, [me, meRef]);
 	useEffect(() => {
 		roomCodeRef.current = me?.roomCode || "";
+		// Novo join = nova rajada esperada: sem isto um rejoin herdava o
+		// "visto" do join anterior e saltava o resync de segurança.
+		joinStateSeenRef.current = false;
 	}, [me?.roomCode, roomCodeRef]);
 
 	// ── Me → players sync (sets teamId after join) ─────────────────────────
@@ -1160,6 +1169,7 @@ year: seasonYear,
 			isCupExtraTimeRef,
 			pendingDismissalRef,
 			matchReplayActiveRef,
+			joinStateSeenRef,
 			selectedTeamRef,
 			squadCacheRef,
 			marketPairsRef,

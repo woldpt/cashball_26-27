@@ -21,6 +21,12 @@ export function registerCoachListeners(handlers, refs, ctx) {
 		}
 		handlers.setJobOfferModal(null);
 		refs.pendingDismissalRef.current = { reason, teamName, detail };
+		// Mesmo resync de segurança do teamAssigned (X4Z1BI): despedido não
+		// recebe teamAssigned; se o gameState se perdeu, ficava em S1.
+		if (!refs.joinStateSeenRef.current) {
+			refs.joinStateSeenRef.current = true;
+			socket.emit("requestResync");
+		}
 	});
 
 	socket.on("boardBudgetWarning", (data) => {
