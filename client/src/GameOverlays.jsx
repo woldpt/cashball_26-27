@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { queueEmit } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
+import { cupFlowLog } from "./utils/cupFlowLog.js";
 import { computePostMatchFlow } from "./utils/postMatchFlow.js";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
 import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
@@ -119,9 +120,14 @@ export function GameOverlays() {
   const postMatchFlow = computePostMatchFlow({
     seasonEndModal,
     cupPenaltyPopup,
+    cupDrawPending: showCupDrawPopup && !!cupDraw,
     dismissalModal,
     waitingWantsShow: halftimeWaitingWantsShow,
   });
+  // O sorteio espera pela fila (penáltis primeiro); o raw continua a
+  // bloquear o landing via anyPostMatchModal até ser fechado.
+  const showCupDrawPopupGated =
+    postMatchFlow.showCupDraw && showCupDrawPopup;
 
   // Faixa global de espera (visível em qualquer tab): prolongamento da Taça
   // à espera de Prontos (gate sem timeout) ou resultados a tardar fora do
@@ -223,6 +229,7 @@ export function GameOverlays() {
     // durante a espera rearmam; só um timer vivo — modais bloqueiam,
     // sair do tab cancela).
     const t = setTimeout(() => {
+      cupFlowLog("landing pós-jogo → Jornal", { key: endedMatchKey });
       postMatchLandedKeyRef.current = endedMatchKey;
       hadMatchInProgressRef.current = false;
       navigateTab("jornal");
@@ -296,7 +303,7 @@ export function GameOverlays() {
       />
 
       <CupDrawPopup
-        showCupDrawPopup={showCupDrawPopup}
+        showCupDrawPopup={showCupDrawPopupGated}
         cupDraw={cupDraw}
         cupDrawRevealIdx={cupDrawRevealIdx}
         me={me}
@@ -305,7 +312,14 @@ export function GameOverlays() {
         setCupDrawRevealIdx={setCupDrawRevealIdx}
       />
 
+      {/* Chave por eliminatória (F4): um 2.º shootout da mesma ronda
+          remonta limpo em vez de herdar a revelação do anterior. */}
       <PenaltyShootoutPopup
+        key={
+          cupPenaltyPopup
+            ? `pen-${cupPenaltyPopup.round}:${cupPenaltyPopup.homeTeamId}-${cupPenaltyPopup.awayTeamId}`
+            : "pen-none"
+        }
         cupPenaltyPopup={cupPenaltyPopup}
         cupPenaltyKickIdx={cupPenaltyKickIdx}
         teams={teams}

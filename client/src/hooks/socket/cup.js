@@ -1,4 +1,5 @@
 import { socket, queueEmit } from "../../socket.js";
+import { cupFlowLog } from "../../utils/cupFlowLog.js";
 
 /**
  * Listeners de Taça e prolongamento.
@@ -11,6 +12,11 @@ import { socket, queueEmit } from "../../socket.js";
 export function registerCupListeners(handlers, refs, ctx) {
 	socket.on("cupDrawStart", (data) => {
 		if (!ctx.inRoom()) return;
+		cupFlowLog("cupDrawStart recebido", {
+			round: data?.round,
+			isPlayingMatch: !!refs.isPlayingMatchRef.current,
+			humanInCup: data?.humanInCup,
+		});
 		// Guarda sempre os dados do sorteio. O servidor emite o sorteio logo
 		// após o fim do jogo anterior, enquanto o cliente ainda está a
 		// terminar o replay (isPlayingMatch=true) — em vez de descartar o
@@ -26,8 +32,12 @@ export function registerCupListeners(handlers, refs, ctx) {
 			socket.emit("requestNextMatchSummary", { teamId: myTeamId });
 		if (refs.isPlayingMatchRef.current) {
 			refs.pendingCupDrawRef.current = true;
+			cupFlowLog("sorteio pendente (replay a correr)", {
+				round: data?.round,
+			});
 			return;
 		}
+		cupFlowLog("sorteio a abrir popup", { round: data?.round });
 		refs.isCupDrawRef.current = true;
 		// Close any open auction modal to avoid overlap with the draw animation
 		handlers.setSelectedAuctionPlayer(null);
@@ -180,6 +190,11 @@ export function registerCupListeners(handlers, refs, ctx) {
 			handlers.setWaitingForResults(false);
 			handlers.setResultsWaitTimedOut(false);
 		}
+		cupFlowLog("cupExtraTimeStart", {
+			isSpectator,
+			alreadyInET,
+			drawnTeamIds: etTeamIds,
+		});
 		if (isSpectator) return;
 		if (data) {
 			handlers.setMatchResults((prev) => {
@@ -272,6 +287,12 @@ export function registerCupListeners(handlers, refs, ctx) {
 	});
 	socket.on("cupBracketData", (data) => handlers.setCupBracketData(data));
 	socket.on("cupRoundResults", (data) => {
+		cupFlowLog("cupRoundResults recebido", {
+			round: data?.round,
+			isPlayingMatch: !!refs.isPlayingMatchRef.current,
+			liveMinute: refs.liveMinuteRef?.current,
+			pendingPenalty: !!refs.matchActionRef?.current,
+		});
 		refs.isCupDrawRef.current = false;
 		handlers.setCurrentCupRound(data.round ?? null);
 		socket.emit("requestCupBracket");
@@ -284,15 +305,9 @@ export function registerCupListeners(handlers, refs, ctx) {
 		// matchweek doesn't increment after cup rounds, so the useEffect in App.jsx
 		// won't fire — refresh calendar manually.
 		socket.emit("requestCalendar");
-		// Reset intencional de jornada (igual à liga): 11 limpo + Neutro.
-		handlers.setTactic((prev) => {
-			const allExcluded = Object.fromEntries(
-				(refs.mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
-			);
-			const next = { ...prev, positions: allExcluded, style: "Balanced" };
-			queueEmit("setTactic", next);
-			return next;
-		});
+		// Reset intencional de jornada (11 limpo + Equilibrado): movido para o
+		// dreno em GameContext (F5) — aqui chegava a meio do replay e competia
+		// com a edição do briefing da ronda seguinte.
 	});
 	socket.on("cupSecondHalfStart", (data) => {
 		handlers.setIsMatchActionPending(false);
@@ -324,6 +339,12 @@ export function registerCupListeners(handlers, refs, ctx) {
 		handlers.setCurrentCupRound(data.round ?? null);
 	});
 	socket.on("cupPenaltyShootout", (data) => {
+		cupFlowLog("penáltis a abrir", {
+			round: data?.round,
+			homeTeamId: data?.homeTeamId,
+			awayTeamId: data?.awayTeamId,
+			kicks: data?.kicks?.length,
+		});
 		handlers.setCupPenaltyPopup(data);
 		handlers.setCupPenaltyKickIdx(0);
 	});

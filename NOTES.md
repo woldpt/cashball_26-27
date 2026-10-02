@@ -10,6 +10,30 @@
 - Adeptos (`useAssistantCoach.js`): texto sem meme ("precisam de uma vitória. Prepara o onze e vai buscá-la.") e destino `club` → `tactic`, para o CTA "Ganhar já" aterrar onde se ganha.
 - Teto (`trainingCapAdvice.js`): volta `A ${focusName} já está no teto — este treino não rende.` + CTA `Mudar foco`; a versão JJ (`Muda o chip, Forma!`) partia o teste (foco em vocativo) — `trainingCapAdvice.test.mjs` volta a passar sem lhe tocar.
 - Checks: teste do teto 5/5 OK · `eslint` limpo nos 3 ficheiros · `check:types` OK · só strings + 1 tab de destino → sem `test:mobile`; audits saltam (sem lógica de jogo/sockets).
+## Estabilização da Taça F4+F5 — penáltis por eliminatória + reconnect e reset tático (2026-10-02)
+- F4: `PenaltyShootoutPopup` com chave por `(round, home-away)` — um 2.º shootout da mesma ronda remonta limpo; log `penáltis a abrir` com nº de cantos.
+- F5a (`cupFlowHelpers.ts`, `emitCurrentPhaseToSocket`): reconnect em `match_finalizing` com `cupResultsPayload` pronto também recebe `cupRoundResults` (aditivo, `gameState` segue) — sem replay fantasma de ET acabado.
+- F5b: reset tático pós-Taça (11 limpo + Equilibrado) sai do handler de chegada (a meio do replay) para o dreno pós-apito em `GameContext`.
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros (101 warnings, contagem igual à F0) · regressão `cupLobbyAdvanceRegression` PASS · client `eslint` só o pré-existente · `check:types` OK.
+- `test:finalize` (E2E 12 min, liga) não correu até ao fim — timeout da ferramenta aos 5 min com o servidor do repro a meio; processos do repro limpos, produção intocada. Diff do servidor é só logs + 1 emit aditivo no caminho da Taça (que o repro nem cobre); `audit:gamestate` fica para o ensaio com sala viva.
+
+## Estabilização da Taça F2 — sorteio na fila pós-jogo (2026-10-02)
+- `postMatchFlow.js`: o sorteio passa a passo da fila — penáltis → sorteio → despedimento → fim de época; `showWaiting` e `isPostMatchQueueActive` contam com ele. `GameOverlays.jsx` só mostra o `CupDrawPopup` quando a fila o autoriza (o raw continua a bloquear o landing).
+- Sem mudança visual quando não há penáltis; com penáltis + sorteio na mesma ronda, o sorteio espera em vez de sobrepor.
+- Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · sem layout novo → sem `test:mobile`.
+
+## Estabilização da Taça F1+F3 — dreno único e fim de relógio único (2026-10-02)
+- F1 (`GameContext.jsx`): o dreno do `pendingCupRoundResults` passa a regra explícita — drena se (parado E relógio no fim) OU (parado E nunca viu o jogo); tabela de verdade idêntica, mas o `return` silencioso virou log `cupRoundResults a aguardar dreno` com o motivo (idle/halftime/ação/minuto).
+- F3 (`GameContext.jsx`): os 4 ramos de fim de jogo (live/replay × 90'/120') colapsam num `finishClock` único; tempos intactos (2 s aos 120', 3 s aos 90'), ordem de setters intacta, acks continuam no-ops intencionais.
+- Checks: `eslint` só o erro pré-existente `react-refresh` · `check:types` OK · sem lógica de jogo/layout → sem audits/mobile.
+
+## Estabilização da Taça F0 — instrumentação das transições (2026-10-02)
+- Plano aprovado: estabilizar sorteio→jogo→ET→penáltis→resultados→Jornal. F0 primeiro (só logs, zero lógica), fixes (F1–F5) só após ensaio com evidência.
+- Cliente (`utils/cupFlowLog.js` novo, `[CUPFLOW +ms]`): `cupDrawStart` recebido/pendente/aberto, `cupExtraTimeStart` (espectador ou não), `cupRoundResults` recebido + drenado, relógio parado nos 90'/120' (live vs replay), landing → Jornal.
+- Servidor (`cupFlowHelpers.ts`): gate de animação do ET regista resolução por acks (ms + nº treinadores) vs timeout integral; `cupRoundResults` regista ronda/ET/nº resultados.
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros (101 warnings, sem emits/handlers novos — pré-existentes) · client `eslint` só o erro pré-existente `react-refresh` no `GameContext.jsx` (prova: HEAD já exporta 3 símbolos; diff só adiciona linhas) · `check:types` OK · sem lógica/layout → sem `test:mobile`, sem `audit:gamestate` (sem sala viva; fica para o ensaio).
+- Incidente git: `git stash push -- <path> -m ...` comeu as flags como pathspec e o `pop` a seguir aplicou um stash antigo sobre a árvore (conflitos em .db binários). Resolvido a favor da árvore (saves locais de dev; produção no rick intacta). Lição: nunca `stash` para prova de pré-existência — usar `git show HEAD:<path>` + `git diff` em vez disso. Stack de stashes antigas deixada intacta.
+- Próximo passo: ensaio com sala viva (pedir roomCode + ronda + nº humanos) e cruzar `[CUPFLOW]` do browser com logs do servidor antes de fixar (F1–F5).
 
 ## Espectador vê o prolongamento alheio em ritmo de gala (2026-10-02)
 - Pedido: após o jogo da Taça decidido aos 90', o observador ficava a olhar para o minuto 90 durante ~48 s+ (ET escondido de outro jogo + gate de animação em timeout integral) — queria-se ver o ET sem humanos com o relógio acelerado, como no B016.

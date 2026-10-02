@@ -2350,6 +2350,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// Emit results
+		console.log(
+			`[${game.roomCode}] 📣 cupRoundResults emitido | ronda=${round} (${roundName}) | ET=${hasAnyET} | resultados=${results.length}`,
+		);
 		io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
 		io.to(game.roomCode).emit("globalNewsUpdated");
 
@@ -2590,8 +2593,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 	function cupETAnimGate(game: ActiveGame, timeoutMs = 45000): Promise<void> {
 		return new Promise<void>((resolve) => {
+			const startedAt = Date.now();
 			const acks = new Set<string>();
 			const timeout = setTimeout(() => {
+				console.warn(
+					`[${game.roomCode}] ⏳ ET anim gate: timeout integral (${timeoutMs}ms, ${acks.size} acks) — a avançar`,
+				);
 				delete game._cupETAnimHandler;
 				resolve();
 			}, timeoutMs);
@@ -2625,6 +2632,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					relevant.length > 0 &&
 					relevant.every((p) => acks.has(p.socketId as string))
 				) {
+					console.log(
+						`[${game.roomCode}] ✅ ET anim gate resolvido por acks em ${Date.now() - startedAt}ms (${relevant.length} treinadores)`,
+					);
 					clearTimeout(timeout);
 					delete game._cupETAnimHandler;
 					resolve();
@@ -2762,6 +2772,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		// Recovery for match_finalizing: tell the client we are wrapping up
 		if (game.gamePhase === "match_finalizing") {
+			// Taça com resultados já construídos (gate de animação, treino ou
+			// timers a correr): entrega-os ao reconnect em vez de o deixar à
+			// espera de um replay que já acabou (F5). Aditivo — o gameState segue.
+			if ((game.currentEvent as any)?.type !== "league" && (game as any).cupResultsPayload) {
+				socket.emit("cupRoundResults", (game as any).cupResultsPayload);
+			}
 			socket.emit("gameState", {
 				gamePhase: game.gamePhase,
 				calendarIndex: game.calendarIndex,

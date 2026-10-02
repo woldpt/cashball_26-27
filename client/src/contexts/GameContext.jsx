@@ -10,6 +10,7 @@ import {
 	startTransition,
 } from "react";
 import { socket, queueEmit } from "../socket";
+import { cupFlowLog } from "../utils/cupFlowLog.js";
 import {
   DEFAULT_TACTIC,
   DEFAULT_SIM_SPEED,
@@ -354,6 +355,9 @@ export function GameProvider({
 	// o efeito de isPlayingMatch abaixo é fallback para os outros caminhos.
 	const drainPendingCupDraw = useCallback(() => {
 		if (!pendingCupDrawRef.current) return;
+		cupFlowLog("sorteio pendente drenado (apito final)", {
+			liveMinute: liveMinuteRef.current,
+		});
 		pendingCupDrawRef.current = false;
 		isCupDrawRef.current = true;
 		startTransition(() => {
@@ -487,33 +491,36 @@ export function GameProvider({
 	useEffect(() => {
 		if (isPlayingMatch) {
 			if (isMatchActionPending) return;
+			// Fim de jogo ÚNICO (F3): um só caminho para os 90'/120', em direto
+			// ou em replay — antes eram 4 ramos quase iguais. Tempos intactos:
+			// 2 s de narração aos 120', 3 s aos 90'. Os acks emitidos são
+			// no-ops intencionais no servidor; os resultados chegam por evento.
+			const finishClock = (atExtraTimeEnd) => {
+				cupFlowLog(
+					atExtraTimeEnd ? "relógio parado nos 120'" : "relógio parado nos 90'",
+					{ via: isLiveSimulation ? "live" : "replay", isCupMatch },
+				);
+				setIsPlayingMatch(false);
+				if (isLiveSimulation) setIsLiveSimulation(false);
+				if (atExtraTimeEnd) setIsCupExtraTime(false);
+				else drainPendingCupDraw();
+				setWaitingForResults(true);
+				setResultsWaitTimedOut(false);
+				if (atExtraTimeEnd) socket.emit("cupExtraTimeDone");
+				else if (isCupMatch) socket.emit("cupSecondHalfDone");
+				else {
+					socket.emit("leagueAnimDone");
+					// Sem salto para a Classificação: fica no Jogo durante os
+					// modais pós-jogo; o landing (GameOverlays) leva ao Jornal.
+				}
+			};
 			if (isLiveSimulation) {
 				if (liveMinute >= 120 && isCupExtraTime) {
-					const timer = setTimeout(() => {
-						setIsPlayingMatch(false);
-						setIsLiveSimulation(false);
-						setIsCupExtraTime(false);
-						setWaitingForResults(true);
-						setResultsWaitTimedOut(false);
-						socket.emit("cupExtraTimeDone");
-					}, 2000);
+					const timer = setTimeout(() => finishClock(true), 2000);
 					return () => clearTimeout(timer);
 				}
 				if (liveMinute >= 90 && !isCupExtraTime && !showHalftimePanel) {
-					const timer = setTimeout(() => {
-						setIsPlayingMatch(false);
-						setIsLiveSimulation(false);
-						setWaitingForResults(true);
-						setResultsWaitTimedOut(false);
-						drainPendingCupDraw();
-						if (isCupMatch) {
-							socket.emit("cupSecondHalfDone");
-						} else {
-							socket.emit("leagueAnimDone");
-							// Sem salto para a Classificação: fica no Jogo durante os
-							// modais pós-jogo; o landing (GameOverlays) leva ao Jornal.
-						}
-					}, 3000);
+					const timer = setTimeout(() => finishClock(false), 3000);
 					return () => clearTimeout(timer);
 				}
 				return;
@@ -531,28 +538,10 @@ export function GameProvider({
 			} else if (liveMinute === 45 && !isSecondHalfReplay && !showHalftimePanel) {
 				startTransition(() => setIsPlayingMatch(false));
 			} else if (liveMinute >= 120 && isCupExtraTime) {
-				const timer = setTimeout(() => {
-					setIsPlayingMatch(false);
-					setIsCupExtraTime(false);
-					setWaitingForResults(true);
-					setResultsWaitTimedOut(false);
-					socket.emit("cupExtraTimeDone");
-				}, 2000);
+				const timer = setTimeout(() => finishClock(true), 2000);
 				return () => clearTimeout(timer);
 			} else if (liveMinute >= 90 && !isCupExtraTime && !showHalftimePanel) {
-				const timer = setTimeout(() => {
-					setIsPlayingMatch(false);
-					setWaitingForResults(true);
-					setResultsWaitTimedOut(false);
-					drainPendingCupDraw();
-					if (isCupMatch) {
-						socket.emit("cupSecondHalfDone");
-					} else {
-						socket.emit("leagueAnimDone");
-						// Sem salto para a Classificação: fica no Jogo durante os
-						// modais pós-jogo; o landing (GameOverlays) leva ao Jornal.
-					}
-				}, 3000);
+				const timer = setTimeout(() => finishClock(false), 3000);
 				return () => clearTimeout(timer);
 			}
 		}
@@ -850,28 +839,55 @@ year: seasonYear,
 		return () => clearTimeout(timer);
 	}, [cupPenaltyPopup, cupPenaltyKickIdx]);
 
+	// Dreno ÚNICO dos resultados da Taça (F1): um só lugar com regra explícita.
+	// O cupRoundResults chega mal o servidor simula o 90', ainda com o direto
+	// do cliente a correr: esperar pelo apito final em vez de cortar o jogo.
+	// O matchResults é mantido — o Jogo mostra o resultado final até ao
+	// landing (como na liga). Drena se (parado E relógio no fim) OU (parado E
+	// nunca viu o jogo, ex. recovery por reconnect com liveMinute < 45).
 	useEffect(() => {
-		if (cupPenaltyPopup !== null) return;
-		if (!pendingCupRoundResults) return;
-		// O cupRoundResults chega mal o servidor simula o 90', ainda com o
-		// direto do cliente a correr: esperar pelo apito final (3 s nos 90')
-		// em vez de cortar o jogo de imediato. O matchResults é mantido — o
-		// Jogo mostra o resultado final até ao landing (como na liga).
-		// liveMinute < 45 com tudo parado = cliente que nunca viu o jogo
-		// (recovery por reconnect); aí drena de imediato.
+		if (cupPenaltyPopup !== null || !pendingCupRoundResults) return;
 		const idle =
 			!isPlayingMatch &&
 			!showHalftimePanel &&
 			!matchAction &&
 			!isMatchActionPending;
-		if (!idle || (liveMinute < 90 && liveMinute >= 45)) return;
-		startTransition(() => {
-			setPendingCupRoundResults(null);
-			// Sem salto para o tab Taça: fica no Jogo; o landing leva ao Jornal.
-			setIsCupMatch(false);
-			setCupPreMatch(false);
-			setIsCupExtraTime(false);
-			setCupExtraTimeBadge(false);
+		const clockDone = liveMinute >= 90;
+		const neverSawGame = liveMinute < 45;
+		if (idle && (clockDone || neverSawGame)) {
+			cupFlowLog("cupRoundResults drenado (pós-penáltis/apito)", {
+				liveMinute,
+				round: pendingCupRoundResults?.round,
+			});
+			startTransition(() => {
+				setPendingCupRoundResults(null);
+				// Sem salto para o tab Taça: fica no Jogo; o landing leva ao Jornal.
+				setIsCupMatch(false);
+				setCupPreMatch(false);
+				setIsCupExtraTime(false);
+				setCupExtraTimeBadge(false);
+			});
+			// Reset intencional de jornada (F5, igual à liga): 11 limpo +
+			// Equilibrado, SÓ depois do apito — antes corria na chegada do
+			// evento, a meio do replay, e competia com a edição do briefing.
+			setTactic((prev) => {
+				const allExcluded = Object.fromEntries(
+					(mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
+				);
+				const next = { ...prev, positions: allExcluded, style: "Balanced" };
+				queueEmit("setTactic", next);
+				return next;
+			});
+			return;
+		}
+		// Diagnóstico (só re-dispara com as deps): diz PORQUÊ o resultado
+		// ainda não desceu — antes era um `return` silencioso.
+		cupFlowLog("cupRoundResults a aguardar dreno", {
+			idle,
+			liveMinute,
+			halftime: showHalftimePanel,
+			action: !!matchAction,
+			round: pendingCupRoundResults?.round,
 		});
 	}, [
 		cupPenaltyPopup,
