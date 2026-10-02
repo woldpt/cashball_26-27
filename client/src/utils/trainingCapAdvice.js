@@ -28,8 +28,8 @@ export function trainingCapTip(squad, focusName) {
   return {
     id: "trainingcap",
     mood: "worried",
-    text: `Isto já está no top, muito forte! Insistir aqui é falar de cor. Muda o chip, ${focusName}!`,
+    text: `A ${focusName} já está no teto — este treino não rende.`,
     tab: "training",
-    cta: "Mudar o chip",
+    cta: "Mudar foco",
   };
 }

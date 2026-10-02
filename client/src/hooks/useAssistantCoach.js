@@ -210,8 +210,8 @@ export function useAssistantCoach() {
         : {
             id: "fans",
             mood: "sad",
-            text: "Os adeptos estão inquietos! Quem não sente não é filho de boa gente. Só dá: ganhar, ganhar, ganhar!",
-            tab: "club",
+            text: "Os adeptos estão inquietos — precisam de uma vitória. Prepara o onze e vai buscá-la.",
+            tab: "tactic",
             cta: "Ganhar já",
           },
     ].filter(Boolean);

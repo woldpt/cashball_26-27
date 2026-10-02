@@ -1,3 +1,10 @@
+## Adjunto: nome único + dica dos adeptos + dica do teto (2026-10-02)
+- Pedido: corrigir 3 pontos da lista do adjunto — nome, adeptos e teto de treino.
+- Nome único `Treinador-adjunto`: revertidos os 3 `O Mister` do `AssistantCoach.jsx` (cabeçalho + 2 aria-labels); tutorial já dizia `Treinador-adjunto`.
+- Adeptos (`useAssistantCoach.js`): texto sem meme ("precisam de uma vitória. Prepara o onze e vai buscá-la.") e destino `club` → `tactic`, para o CTA "Ganhar já" aterrar onde se ganha.
+- Teto (`trainingCapAdvice.js`): volta `A ${focusName} já está no teto — este treino não rende.` + CTA `Mudar foco`; a versão JJ (`Muda o chip, Forma!`) partia o teste (foco em vocativo) — `trainingCapAdvice.test.mjs` volta a passar sem lhe tocar.
+- Checks: teste do teto 5/5 OK · `eslint` limpo nos 3 ficheiros · `check:types` OK · só strings + 1 tab de destino → sem `test:mobile`; audits saltam (sem lógica de jogo/sockets).
+
 ## Espectador vê o prolongamento alheio em ritmo de gala (2026-10-02)
 - Pedido: após o jogo da Taça decidido aos 90', o observador ficava a olhar para o minuto 90 durante ~48 s+ (ET escondido de outro jogo + gate de animação em timeout integral) — queria-se ver o ET sem humanos com o relógio acelerado, como no B016.
 - Servidor (`server/game/engine.ts`, `simulateExtraTime`): ET só-NPC com humanos ligados passa de 100 ms/min para o ritmo de gala (`CUP_FINAL_SPECTATOR_MS_PER_MINUTE`, 500 ms → ~15 s de ET); 100 ms só quando ninguém está a ver. Tempo real com humano em campo, inalterado.
