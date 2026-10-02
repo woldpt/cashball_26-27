@@ -134,7 +134,9 @@ export function ScoutView({
     });
   }, [onlyAffordable, playerSearchResults, myBudget]);
 
-  const search = () => {
+  const search = (nextAffordable) => {
+    const affordable =
+      typeof nextAffordable === "boolean" ? nextAffordable : onlyAffordable;
     setSearched(true);
     setPlayerSearchLoading(true);
     socket.emit("requestPlayerSearch", {
@@ -151,6 +153,7 @@ export function ScoutView({
       transferStatus,
       isStar,
       onlyAvailable,
+      onlyAffordable: affordable,
       sort,
     });
   };
@@ -424,7 +427,11 @@ export function ScoutView({
                 <input
                   type="checkbox"
                   checked={onlyAffordable}
-                  onChange={(e) => setOnlyAffordable(e.target.checked)}
+                  onChange={(e) => {
+                    const value = e.target.checked;
+                    setOnlyAffordable(value);
+                    if (searched) search(value);
+                  }}
                   className="accent-primary w-4 h-4"
                 />
                 Cabe no saldo
@@ -433,7 +440,7 @@ export function ScoutView({
             <Button
               variant="primary"
               className="w-full sm:w-auto"
-              onClick={search}
+              onClick={() => search()}
             >
               Pesquisar
             </Button>
@@ -445,9 +452,7 @@ export function ScoutView({
         title="Resultados"
         meta={
           searched
-            ? onlyAffordable
-              ? `${filteredResults.length} de ${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}`
-              : `${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}${playerSearchTruncated ? ` (a mostrar ${playerSearchResults.length})` : ""}`
+            ? `${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}${playerSearchTruncated || filteredResults.length !== playerSearchResults.length ? ` (a mostrar ${filteredResults.length})` : ""}`
             : "—"
         }
       >

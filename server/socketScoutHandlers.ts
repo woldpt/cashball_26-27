@@ -1,6 +1,7 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import {
 	CONTRACT_LENGTH_WEEKS,
+	AUCTION_BID_STEP,
 } from "./gameConstants";
 import { currentEpoch } from "./coreHelpers";
 import { currentHighBidOf } from "./auctionHelpers";
@@ -34,6 +35,7 @@ interface PlayerSearchFilters {
 	transferStatus?: string;
 	isStar?: boolean;
 	onlyAvailable?: boolean;
+	onlyAffordable?: boolean;
 	sort?: string;
 	searchId?: number | null;
 }
@@ -163,6 +165,32 @@ export function registerScoutSocketHandlers(
 			params.push(CONTRACT_LENGTH_WEEKS, epoch);
 		}
 
+		// Filtro «Cabe no saldo»: preço de aquisição <= saldo da equipa (lido da
+		// BD, nunca do cliente). Usa o mesmo preço dos filtros mín/máx; leilões
+		// com lance ao vivo acima do saldo caem a seguir ao enriquecimento.
+		let affordableBudget: number | null = null;
+		if (f.onlyAffordable) {
+			try {
+				const playerState = getPlayerBySocket(game, socket.id);
+				if (playerState?.teamId != null) {
+					const [teamRow] = await runAll<any>(
+						game.db,
+						"SELECT budget FROM teams WHERE id = ?",
+						[playerState.teamId],
+					);
+					const budgetValue = Math.trunc(Number(teamRow?.budget));
+					if (Number.isFinite(budgetValue)) {
+						affordableBudget = budgetValue;
+						where.push(`${ACQUISITION_PRICE_SQL} <= ?`);
+						params.push(budgetValue);
+					}
+				}
+			} catch {
+				// Sem saldo conhecido: ignora o filtro em vez de falhar a pesquisa.
+				affordableBudget = null;
+			}
+		}
+
 		const sort = f.sort || "quality-desc";
 		const sortMap: Record<string, string> = {
 			"quality-desc": "p.skill DESC, p.name ASC",
@@ -205,7 +233,7 @@ export function registerScoutSocketHandlers(
 
 			// Estado de leilão ao vivo (lance atual/mínimo) para o modal de lance
 			// inline na scout — mesma fonte de verdade que a tab de leilões.
-			const results = (rows || []).map((row: any) => {
+			let results = (rows || []).map((row: any) => {
 				if (row.transfer_status !== "auction") return row;
 				const auction = (game.auctions as any)?.[row.id];
 				if (!auction) return row;
@@ -218,6 +246,16 @@ export function registerScoutSocketHandlers(
 					auction_paused: auction.status === "paused",
 				};
 			});
+			if (affordableBudget !== null) {
+				results = results.filter((row: any) => {
+					if (row.transfer_status !== "auction") return true;
+					const minBid =
+						row.auction_high_bid_team_id != null
+							? row.auction_high_bid + AUCTION_BID_STEP
+							: row.auction_starting_price || row.transfer_price || 0;
+					return affordableBudget >= minBid;
+				});
+			}
 			const truncated = total > results.length;
 
 			socket.emit("playerSearchResults", {

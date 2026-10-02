@@ -8,6 +8,12 @@
 - `JournalTab.jsx` (`WeeklyFinanceTable`): Salários, Manutenção, Juros e Capital marcados como `debit` — valor com sinal negativo (`-X €`, guarda contra `-0 €`) e `text-error`; Rendimento e Saldo como estavam (Saldo já pintava negativo/positivo).
 - Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · só `className`/texto → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
 
+## Filtro «Cabe no saldo» passa ao servidor (2026-10-02)
+- Bug: com 200+ resultados, o filtro dizia que nada cabia no saldo. Causa: o servidor limita a 200 (ordenados dos mais cotados para baixo) e o filtro só-cliente escondia tudo o que via — os acessíveis nem chegavam ao cliente.
+- `socketScoutHandlers.ts`: novo `onlyAffordable` — saldo lido da BD (`teams.budget`, nunca do cliente) com `preço-aquisição <= saldo` no SQL (mesmo preço dos filtros mín/máx); leilões com lance ao vivo acima do saldo caem após o enriquecimento (total pode contar mais 1 ou 2 nesses casos raros).
+- `ScoutView.jsx`: envia `onlyAffordable`; clicar na checkbox com pesquisa feita repesquisa logo; `meta` volta ao total do servidor; refinamento cá fora fica só para os lances ao vivo.
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros (101 warnings, baseline) · `eslint` limpo no ficheiro · `check:types` OK · mesma linha de checkboxes → sem `test:mobile`.
+
 ## Filtro «Cabe no saldo» na Scout (2026-10-02)
 - Pedido: terceira checkbox ao lado de «Só craques» e «Disponível p/ compra» para filtrar só os jogadores que o saldo cobre.
 - Decisões do utilizador: filtro só no cliente (instantâneo, sem nova pesquisa) e nos leilões compara com o lance mínimo atual (igual ao botão Licitar/Sem saldo).
