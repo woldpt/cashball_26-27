@@ -1,3 +1,9 @@
+## Pacote «impressionar sem pesar» — micro-efeitos por zona (2026-10-02)
+- Só `transform`/`opacity` (+1 `background-position`), durações curtas, tudo parado com movimento reduzido; zero deps novas (`CountUp` em rAF próprio, framer-motion já cá estava).
+- Jogo: `goal-shake` no marcador do `LiveMatchHero`/`CupFinalStage` (remount via key nos golos) + `liveclock-urgent` no `LiveClock` (85'+/prolongamento). Leilões: anel SVG na contagem decrescente (`AuctionCard`, esvazia nos últimos 60 s). Saldo: `CountUp.jsx` novo nos 3 widgets do `FinancesTab`. Troféus: varrimento dourado por `background-position` (`TrophyCabinet`) — a 1.ª versão com filho a transbordar chumbou `club`+`topwidgets` (linhas cortadas), corrigido sem transbordo. Taça: `bracket-draw` nas linhas + `champion-glow` + esqueletos `skeleton-shimmer` no loading (`CupBracketPage`). Jornal: `flag-pulse` na faixa das pendências. Estádio: holofotes em gradiente + zoom ténue em hover. `CmTicker` pausa com movimento reduzido.
+- Saltado de propósito: tática (arrasto já tem escala/opacidade) e transições globais (`GameLayout` já tem `AnimatePresence` + `MotionConfig reducedMotion="user"`). Sem lógica de jogo/sockets → sem audits; `audit:gamestate` sem sala viva fica para a próxima.
+- Checks: `eslint` limpo nos ficheiros · `check:types` OK · `test:mobile` PASS 175/175 (a regressão do troféu foi provada minha via worktree no HEAD: 10/10 PASS) + capturas 390 verificadas (hero, leilões, finanças, estádio).
+
 ## Checkbox do Mercado passa a filtrar "só os meus" (2026-10-02)
 - Bug: a checkbox "Mostrar só os meus à venda" nunca filtrava — o predicado (`team_id !== mine || (show && fixed)`) com a caixa marcada ADICIONAVA os meus aos dos outros em vez de mostrar só os meus (a renomeação para "só" expôs a divergência).
 - Fix (`GameContext.jsx` `filteredMarketPlayers` + `TransferHub.jsx` `posCounts`, mesmo ternário nos dois): marcada → só os meus; desmarcada → esconde os meus (comportamento anterior).

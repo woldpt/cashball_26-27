@@ -1,4 +1,5 @@
 import { useGame } from "../../contexts/GameContext.jsx";
+import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
 
 /**
  * Notícias CM — rodapé breaking-news (estilo CNN): etiqueta vermelha fixa +
@@ -11,6 +12,7 @@ import { useGame } from "../../contexts/GameContext.jsx";
  */
 export function CmTicker({ hidden = false, sidebarCollapsed = false }) {
   const { cmNews } = useGame();
+  const reduced = usePrefersReducedMotion();
   const items = cmNews || [];
 
   if (hidden || items.length === 0) return null;
@@ -41,7 +43,7 @@ export function CmTicker({ hidden = false, sidebarCollapsed = false }) {
           className="absolute whitespace-nowrap flex items-center h-full text-[10px] text-zinc-200"
           style={{
             gap: "5rem",
-            animation: `cmTickerScroll ${duration}s linear infinite`,
+            animation: reduced ? "none" : `cmTickerScroll ${duration}s linear infinite`,
           }}
         >
           {doubled.map((item, idx) => (

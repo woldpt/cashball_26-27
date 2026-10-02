@@ -42,7 +42,7 @@ export function TrophyCabinet({ trophies = [], onOpenPlayer, className = "" }) {
                   title: "Abrir histórico do jogador",
                 }
               : {})}
-            className={`group flex w-full items-center gap-3 rounded-md border border-amber-500/20 bg-gradient-to-r from-amber-500/[0.07] via-surface-container-low to-surface-container-low px-3 py-2.5 text-left transition-colors ${
+            className={`group flex w-full items-center gap-3 rounded-md border border-amber-500/20 bg-gradient-to-r from-amber-500/[0.07] via-surface-container-low to-surface-container-low px-3 py-2.5 text-left transition-colors relative ${
               canOpenPlayer
                 ? "cursor-pointer hover:border-amber-500/40 hover:from-amber-500/[0.12]"
                 : ""
@@ -95,6 +95,7 @@ export function TrophyCabinet({ trophies = [], onOpenPlayer, className = "" }) {
                 person
               </span>
             )}
+            <span aria-hidden className="trophy-shine" />
           </Row>
         );
       })}

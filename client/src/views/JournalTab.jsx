@@ -1072,7 +1072,7 @@ export function JournalTab({
                       >
                         {/* Faixa lateral: categoria, ou error sempre visível nas pendências */}
                         <div
-                          className={`mt-0.5 h-4 w-1 shrink-0 rounded-full transition-opacity ${it.redFlag ? "bg-error opacity-100" : `${tone.bar} ${active ? "opacity-100" : "opacity-0"}`}`}
+                          className={`mt-0.5 h-4 w-1 shrink-0 rounded-full transition-opacity ${it.redFlag ? "bg-error opacity-100 flag-pulse" : `${tone.bar} ${active ? "opacity-100" : "opacity-0"}`}`}
                           aria-hidden
                         />
                         <span className="w-20 short:w-16 shrink-0 truncate text-[10px] font-bold text-on-surface-variant tabular-nums">

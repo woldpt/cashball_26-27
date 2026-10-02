@@ -608,3 +608,73 @@ body {
     animation: none;
   }
 }
+
+/* ── Pacote "impressionar sem pesar": micro-efeitos por zona ─────────────
+   Só transform/opacity (composição GPU), durações curtas, tudo parado
+   com movimento reduzido (animações só em `no-preference`). */
+@keyframes goal-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px) rotate(-0.6deg); }
+  55% { transform: translateX(3px) rotate(0.6deg); }
+  80% { transform: translateX(-1px); }
+}
+@keyframes liveclock-urgent {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.06); }
+}
+@keyframes flag-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@keyframes trophy-shine-sweep {
+  0% { background-position: 120% 0; }
+  55%, 100% { background-position: -20% 0; }
+}
+@keyframes bracket-draw {
+  from { stroke-dashoffset: 600; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes champion-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(251, 191, 36, 0.25); }
+  50% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.6); }
+}
+/* Faixa do varrimento dourado: ocupa a linha toda e o brilho viaja por
+   `background-position` — sem filho a transbordar (não chumba o mobile). */
+.trophy-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(251, 191, 36, 0.14) 50%, transparent 65%);
+  background-size: 280% 100%;
+  background-position: 120% 0;
+  pointer-events: none;
+}
+/* Esqueleto de carregamento — reutiliza o `@keyframes shimmer` existente. */
+.skeleton-shimmer {
+  background: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.07) 50%, transparent 80%);
+  background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Remount via key no golo relança o abanão uma vez. */
+  .goal-shake {
+    animation: goal-shake 0.45s ease-out;
+  }
+  .liveclock-urgent {
+    animation: liveclock-urgent 1.2s ease-in-out infinite;
+  }
+  .flag-pulse {
+    animation: flag-pulse 1.6s ease-in-out infinite;
+  }
+  .trophy-shine {
+    animation: trophy-shine-sweep 3.2s ease-in-out infinite;
+  }
+  .bracket-draw {
+    stroke-dasharray: 600;
+    animation: bracket-draw 0.9s ease-out;
+  }
+  .champion-glow {
+    animation: champion-glow 2.2s ease-in-out infinite;
+  }
+  .skeleton-shimmer {
+    animation: shimmer 1.8s linear infinite;
+  }
+}

@@ -40,6 +40,34 @@ function formatSecs(secs) {
   return `${h}h ${String(m % 60).padStart(2, "0")}m`;
 }
 
+/* Anel de contagem decrescente — esvazia nos últimos 60 s; antes disso,
+   anel cheio estático (só SVG, sem JS de animação). */
+const RING_WINDOW = 60;
+const RING_C = 2 * Math.PI * 10;
+function AuctionRing({ secs, urgent }) {
+  if (secs == null) return null;
+  const pct = secs <= RING_WINDOW ? Math.max(0, secs / RING_WINDOW) : 1;
+  const color = urgent ? "var(--color-error)" : "var(--color-primary)";
+  return (
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden className="shrink-0">
+      <circle cx="13" cy="13" r="10" fill="none" stroke={color} strokeWidth="3" opacity="0.2" />
+      <circle
+        cx="13"
+        cy="13"
+        r="10"
+        fill="none"
+        stroke={color}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray={RING_C}
+        strokeDashoffset={RING_C * (1 - pct)}
+        transform="rotate(-90 13 13)"
+        style={{ transition: "stroke-dashoffset 0.5s linear, stroke 0.3s" }}
+      />
+    </svg>
+  );
+}
+
 /**
  * AuctionCard — cromo de leilão (face única).
  *
@@ -201,12 +229,17 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           <div
             className={`rounded-lg border py-1.5 text-center transition-colors ${urgent ? "border-error/50 bg-error-container/40 animate-pulse" : "border-outline-variant/15 bg-surface/50"}`}
           >
-            <p className={`font-mono font-black tabular-nums leading-none text-[26px] short:text-lg ${urgent ? "text-error" : "text-on-surface"}`}>
-              {formatSecs(secs)}
-            </p>
-            <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70 mt-0.5">
-              {urgent ? "a terminar!" : "restantes"}
-            </p>
+            <div className="flex items-center justify-center gap-2">
+              <AuctionRing secs={secs} urgent={urgent} />
+              <div>
+                <p className={`font-mono font-black tabular-nums leading-none text-[26px] short:text-lg ${urgent ? "text-error" : "text-on-surface"}`}>
+                  {formatSecs(secs)}
+                </p>
+                <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70 mt-0.5">
+                  {urgent ? "a terminar!" : "restantes"}
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

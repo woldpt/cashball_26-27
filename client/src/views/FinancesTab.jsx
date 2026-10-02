@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { socket } from "../socket.js";
 import { formatCurrency } from "../utils/formatters.js";
+import { CountUp } from "../components/shared/CountUp.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Button } from "../components/shared/Button.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
@@ -266,7 +267,7 @@ export function FinancesTab({
         <SummaryWidget
           flat
           label="Saldo Actual"
-          value={formatCurrency(currentBudget)}
+          value={<CountUp value={currentBudget} format={formatCurrency} />}
           valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
           valueColorClass={currentBudget >= 0 ? "text-primary" : "text-error"}
           className="relative overflow-hidden short:!p-2"
@@ -293,7 +294,7 @@ export function FinancesTab({
         <SummaryWidget
           flat
           label="Resultado da Época"
-          value={`${seasonResult >= 0 ? "+" : ""}${formatCurrency(seasonResult)}`}
+          value={<CountUp value={seasonResult} format={(v) => `${v >= 0 ? "+" : ""}${formatCurrency(v)}`} />}
           valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
           className="short:!p-2"
           valueColorClass={seasonResult >= 0 ? "text-tertiary" : "text-error"}
@@ -315,7 +316,7 @@ export function FinancesTab({
         <SummaryWidget
           flat
           label="Saldo previsto fim de época"
-          value={`${projection.projectedEndBudget >= 0 ? "+" : ""}${formatCurrency(projection.projectedEndBudget)}`}
+          value={<CountUp value={projection.projectedEndBudget} format={(v) => `${v >= 0 ? "+" : ""}${formatCurrency(v)}`} />}
           valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
           valueColorClass={projection.projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}
           className="relative overflow-hidden short:!p-2"

@@ -189,7 +189,7 @@ export function CupFinalStage({
               tabIndex={readOnly ? -1 : undefined}
               className={`relative z-10 flex flex-col items-center justify-center px-3 sm:px-4 py-2 rounded-xl bg-black/40 border border-amber-500/50 shadow-[0_0_14px_rgba(251,191,36,0.25)] ${readOnly ? "cursor-default" : "cursor-pointer"}`}
             >
-              <span className="font-headline font-black text-xl sm:text-3xl tracking-tighter tabular-nums flex items-center gap-1.5 whitespace-nowrap">
+              <span key={`${homeGoals.length}-${awayGoals.length}`} className="goal-shake font-headline font-black text-xl sm:text-3xl tracking-tighter tabular-nums flex items-center gap-1.5 whitespace-nowrap">
                 <span style={flashStyle(homeFlashing)}>{homeGoals.length}</span>
                 <span className="text-on-surface/20 text-base sm:text-xl">:</span>
                 <span style={flashStyle(awayFlashing)}>{awayGoals.length}</span>

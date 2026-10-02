@@ -255,6 +255,7 @@ function BracketTree({ rounds, myTeamId, onOpenTeam }) {
           {qfsfLines.map((l, i) => (
             <path
               key={`qf-${i}`}
+              className="bracket-draw"
               d={`M ${l.from[0]},${l.from[1]} H ${MID_QF_SF} V ${l.to[1]} H ${l.to[0]}`}
               fill="none"
               stroke={connColor(l.m)}
@@ -266,6 +267,7 @@ function BracketTree({ rounds, myTeamId, onOpenTeam }) {
             sffnLines.map((l, i) => (
               <path
                 key={`sf-${i}`}
+                className="bracket-draw"
                 d={`M ${l.from[0]},${l.from[1]} H ${MID_SF_FN} V ${l.to[1]} H ${l.to[0]}`}
                 fill="none"
                 stroke={connColor(l.m)}
@@ -328,7 +330,7 @@ function BracketTree({ rounds, myTeamId, onOpenTeam }) {
               <TeamCrest
                 team={winner}
                 size="w-9 h-9 text-sm"
-                className="border-2 border-amber-500/50 shadow-lg shadow-amber-500/20"
+                className="champion-glow border-2 border-amber-500/50 shadow-lg shadow-amber-500/20"
               />
               <div>
                 <TeamName
@@ -524,19 +526,13 @@ export function CupBracketPage({
   // ── Loading ────────────────────────────────────────────────────────────────
   if (!bracketData) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <span
-          className="material-symbols-outlined text-amber-400/30 animate-pulse"
-          style={{ fontSize: 48 }}
-        >
-          emoji_events
-        </span>
-        <p className="text-on-surface-variant/40 font-bold text-sm">
-          A carregar…
-        </p>
+      <div className="flex flex-col gap-2 py-24 px-6" aria-label="A carregar">
+        <div className="skeleton-shimmer h-8 w-2/3 rounded-md" />
+        <div className="skeleton-shimmer h-16 w-full rounded-md" />
+        <div className="skeleton-shimmer h-16 w-full rounded-md" />
         <button
           onClick={onRequestRefresh}
-          className="text-xs text-primary/50 hover:text-primary transition-colors font-bold"
+          className="mt-2 text-xs text-primary/50 hover:text-primary transition-colors font-bold"
         >
           Tentar novamente
         </button>

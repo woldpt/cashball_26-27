@@ -67,7 +67,7 @@ export function StadiumTab({
   return (
     <div className="space-y-4 short:space-y-2">
       {/* ── HERO: ESTÁDIO ─────────────────────────────────────────── */}
-      <div className="rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
+      <div className="rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container group">
         <div className="h-28 sm:h-40 lg:h-44 short:h-20 relative flex items-end overflow-hidden">
           <StadiumIllustration
             capacity={stadiumCapacity}
@@ -75,7 +75,16 @@ export function StadiumTab({
             secondary={teamInfo?.color_secondary}
             occupancy={occupancyPct != null ? occupancyPct / 100 : undefined}
             mood={teamInfo?.fans_mood ?? null}
-            className="absolute inset-0 h-full w-full"
+            className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-[1.02]"
+          />
+          {/* Holofotes: dois cones de luz fria do topo (só gradiente, sem custo). */}
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(60% 55% at 18% 0%, rgba(255,255,240,0.10) 0%, transparent 60%), radial-gradient(60% 55% at 82% 0%, rgba(255,255,240,0.10) 0%, transparent 60%)",
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
           <div className="relative px-4 short:px-3 pb-3 short:pb-2 w-full">

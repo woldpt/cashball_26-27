@@ -71,12 +71,16 @@ export function LiveClock({
       ? `Minuto ${liveMinute}, ${longPhase}`
       : `Jogo ${longPhase}`;
 
+  // Urgência: últimos 5' do tempo regulamentar ou prolongamento da Taça.
+  const urgent =
+    (isPlayingMatch && liveMinute >= 85) || (!!cupExtraTimeBadge && !cupPreMatch);
+
   return (
-    <div className="absolute left-1/2 -translate-x-1/2 max-w-[38vw] pointer-events-none">
+    <div className={`absolute left-1/2 -translate-x-1/2 max-w-[38vw] pointer-events-none ${urgent ? "liveclock-urgent" : ""}`}>
       <span
         role="timer"
         aria-label={ariaLabel}
-        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-outline-variant/50 max-w-full"
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border max-w-full ${urgent ? "border-amber-400/60" : "border-outline-variant/50"}`}
       >
         <span
           aria-hidden
