@@ -1,3 +1,8 @@
+## Estabilização da Taça F2 — sorteio na fila pós-jogo (2026-10-02)
+- `postMatchFlow.js`: o sorteio passa a passo da fila — penáltis → sorteio → despedimento → fim de época; `showWaiting` e `isPostMatchQueueActive` contam com ele. `GameOverlays.jsx` só mostra o `CupDrawPopup` quando a fila o autoriza (o raw continua a bloquear o landing).
+- Sem mudança visual quando não há penáltis; com penáltis + sorteio na mesma ronda, o sorteio espera em vez de sobrepor.
+- Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · sem layout novo → sem `test:mobile`.
+
 ## Estabilização da Taça F1+F3 — dreno único e fim de relógio único (2026-10-02)
 - F1 (`GameContext.jsx`): o dreno do `pendingCupRoundResults` passa a regra explícita — drena se (parado E relógio no fim) OU (parado E nunca viu o jogo); tabela de verdade idêntica, mas o `return` silencioso virou log `cupRoundResults a aguardar dreno` com o motivo (idle/halftime/ação/minuto).
 - F3 (`GameContext.jsx`): os 4 ramos de fim de jogo (live/replay × 90'/120') colapsam num `finishClock` único; tempos intactos (2 s aos 120', 3 s aos 90'), ordem de setters intacta, acks continuam no-ops intencionais.

@@ -120,9 +120,14 @@ export function GameOverlays() {
   const postMatchFlow = computePostMatchFlow({
     seasonEndModal,
     cupPenaltyPopup,
+    cupDrawPending: showCupDrawPopup && !!cupDraw,
     dismissalModal,
     waitingWantsShow: halftimeWaitingWantsShow,
   });
+  // O sorteio espera pela fila (penáltis primeiro); o raw continua a
+  // bloquear o landing via anyPostMatchModal até ser fechado.
+  const showCupDrawPopupGated =
+    postMatchFlow.showCupDraw && showCupDrawPopup;
 
   // Faixa global de espera (visível em qualquer tab): prolongamento da Taça
   // à espera de Prontos (gate sem timeout) ou resultados a tardar fora do
@@ -298,7 +303,7 @@ export function GameOverlays() {
       />
 
       <CupDrawPopup
-        showCupDrawPopup={showCupDrawPopup}
+        showCupDrawPopup={showCupDrawPopupGated}
         cupDraw={cupDraw}
         cupDrawRevealIdx={cupDrawRevealIdx}
         me={me}

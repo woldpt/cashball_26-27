@@ -12,8 +12,9 @@
  *
  * Ordem de revelação:
  *   1. cupPenaltyPopup — grandes penalidades (sempre primeiro)
- *   2. dismissalModal — despedimento
- *   3. seasonEndModal — fim de época, POR ÚLTIMO (só quando nada mais pendente)
+ *   2. sorteio da Taça — a seguir aos penáltis, antes do resto (F2)
+ *   3. dismissalModal — despedimento
+ *   4. seasonEndModal — fim de época, POR ÚLTIMO (só quando nada mais pendente)
  *
  * O humor pós-jogo, os avisos da direção e os convites de clubes deixaram
  * de ser modais: são linhas da caixa de entrada (Jornal) — ver `useInbox`.
@@ -32,6 +33,7 @@
  * @typedef {object} PostMatchInputs
  * @property {object|null} seasonEndModal Estado bruto do modal de fim de época.
  * @property {object|null} cupPenaltyPopup Estado bruto das grandes penalidades.
+ * @property {boolean} [cupDrawPending] Sorteio da Taça por mostrar (raw).
  * @property {object|null} dismissalModal Estado bruto do despedimento.
  * @property {boolean} [waitingWantsShow] Espera multiplayer quer mostrar-se.
  *
@@ -45,18 +47,22 @@
 export function computePostMatchFlow({
   seasonEndModal,
   cupPenaltyPopup,
+  cupDrawPending = false,
   dismissalModal,
   waitingWantsShow = false,
 }) {
   const penalties = !!cupPenaltyPopup;
+  const draw = !!cupDrawPending;
   const dismiss = !!dismissalModal;
   const seasonEnd = !!seasonEndModal;
 
   // Um passo mostra-se só quando os anteriores já não estão ativos.
   const afterPenalties = !penalties;
+  const showCupDraw = afterPenalties && draw;
+  const afterDraw = afterPenalties && !draw;
 
-  const showDismissal = afterPenalties && dismiss;
-  const afterDismiss = afterPenalties && !dismiss;
+  const showDismissal = afterDraw && dismiss;
+  const afterDismiss = afterDraw && !dismiss;
 
   // Fim de época é sempre o ÚLTIMO: só revela quando o resto já foi.
   const showSeasonEnd = afterDismiss && seasonEnd;
@@ -65,11 +71,13 @@ export function computePostMatchFlow({
   const queueBusy = isPostMatchQueueActive({
     seasonEndModal,
     cupPenaltyPopup,
+    cupDrawPending,
     dismissalModal,
   });
   const showWaiting = !!waitingWantsShow && !queueBusy;
 
   return {
+    showCupDraw,
     showDismissal,
     showSeasonEnd,
     showWaiting,
@@ -87,7 +95,8 @@ export function computePostMatchFlow({
 export function isPostMatchQueueActive({
   seasonEndModal,
   cupPenaltyPopup,
+  cupDrawPending = false,
   dismissalModal,
 }) {
-  return !!(seasonEndModal || cupPenaltyPopup || dismissalModal);
+  return !!(seasonEndModal || cupPenaltyPopup || cupDrawPending || dismissalModal);
 }
