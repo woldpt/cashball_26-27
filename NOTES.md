@@ -133,3 +133,8 @@
 - Pedido: a frase do onze por fechar não aparece logo no início da semana (maçador); só com a janela aberta e parada 1–2 min.
 - Implementação: hook novo `client/src/hooks/useIdle.js` (qualquer rato/toque/tecla/scroll rearma; `true` após `LINEUP_IDLE_MS = 90_000`); `useAssistantCoach.js` só candidata `lineup` com `lineupIdle`. Trava `shown` 1x/semana depois de aparecer (senão escondia-se ao ir clicar no CTA) e rearma ao fechar o 11 ou mudar de semana; resto das dicas imediato como antes.
 - Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · sem mudança visual/estrutural → sem `test:mobile`.
+
+## Deploy v26.10.6 no rick (2026-10-02)
+- Tag `v26.10.6` (APP_VERSION já estava em `v26.10.6`, sem commit de bump); rebuild com `backend Healthy`.
+- Inclui: adjunto com caricatura JJ a falar (boca em loop, medalhão maior em desktop) + máquina de escrever nos balões + entrada/saída faseada de baixo + dica do 11 só após 90s de inatividade.
+- Salas de produção intactas; seed só recria `base.db` se o esquema/fixtures mudarem.
