@@ -1,3 +1,8 @@
+## Débitos da semana a negativo e vermelho (2026-10-02)
+- Pedido: na notícia das contas da semana, os valores de Débito a negativo e vermelho.
+- `JournalTab.jsx` (`WeeklyFinanceTable`): Salários, Manutenção, Juros e Capital marcados como `debit` — valor com sinal negativo (`-X €`, guarda contra `-0 €`) e `text-error`; Rendimento e Saldo como estavam (Saldo já pintava negativo/positivo).
+- Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · só `className`/texto → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Filtro «Cabe no saldo» na Scout (2026-10-02)
 - Pedido: terceira checkbox ao lado de «Só craques» e «Disponível p/ compra» para filtrar só os jogadores que o saldo cobre.
 - Decisões do utilizador: filtro só no cliente (instantâneo, sem nova pesquisa) e nos leilões compara com o lance mínimo atual (igual ao botão Licitar/Sem saldo).

@@ -665,12 +665,12 @@ function WeeklyFinanceTable({ facts }) {
   const net = Number(facts.net) || 0;
   const rows = [
     { label: "Rendimento base", value: facts.income },
-    { label: "Salários", value: facts.wages },
-    { label: "Manutenção do estádio", value: facts.upkeep },
+    { label: "Salários", value: facts.wages, debit: true },
+    { label: "Manutenção do estádio", value: facts.upkeep, debit: true },
     ...(facts.hasLoan
       ? [
-          { label: "Juros do empréstimo", value: facts.interest },
-          { label: "Capital do empréstimo", value: facts.installment },
+          { label: "Juros do empréstimo", value: facts.interest, debit: true },
+          { label: "Capital do empréstimo", value: facts.installment, debit: true },
         ]
       : []),
   ];
@@ -684,17 +684,22 @@ function WeeklyFinanceTable({ facts }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr
-              key={r.label}
-              className="border-t border-outline-variant/15 odd:bg-surface-container/15"
-            >
-              <td className="px-2 py-1.5 text-left">{r.label}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums">
-                {formatCurrency(r.value ?? 0)}
-              </td>
-            </tr>
-          ))}
+          {rows.map((r) => {
+            const v = Number(r.value ?? 0) || 0;
+            return (
+              <tr
+                key={r.label}
+                className="border-t border-outline-variant/15 odd:bg-surface-container/15"
+              >
+                <td className="px-2 py-1.5 text-left">{r.label}</td>
+                <td
+                  className={`px-2 py-1.5 text-right tabular-nums ${r.debit ? "text-error" : ""}`}
+                >
+                  {formatCurrency(r.debit && v > 0 ? -v : v)}
+                </td>
+              </tr>
+            );
+          })}
           <tr className="border-t border-outline-variant/15 bg-tertiary/10 font-black">
             <td className="px-2 py-1.5 text-left">Saldo da semana</td>
             <td
