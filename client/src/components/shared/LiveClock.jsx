@@ -71,9 +71,11 @@ export function LiveClock({
       ? `Minuto ${liveMinute}, ${longPhase}`
       : `Jogo ${longPhase}`;
 
-  // Urgência: últimos 5' do tempo regulamentar ou prolongamento da Taça.
+  // Urgência: últimos 15' do tempo regulamentar (75'+) e do
+  // prolongamento (110'+) — fora disso o relógio fica quieto.
   const urgent =
-    (isPlayingMatch && liveMinute >= 85) || (!!cupExtraTimeBadge && !cupPreMatch);
+    isPlayingMatch &&
+    (liveMinute >= 110 || (liveMinute >= 75 && liveMinute <= 90));
 
   return (
     <div className={`absolute left-1/2 -translate-x-1/2 max-w-[38vw] pointer-events-none ${urgent ? "liveclock-urgent" : ""}`}>

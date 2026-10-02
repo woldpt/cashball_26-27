@@ -3,6 +3,12 @@
 - Push master + tag v26.10.8 publicadas; `docker compose up --build -d` no rick com `backend Healthy`; seed não toca salas.
 - Rick fica exatamente na tag; este registo vai em commit local sem push.
 
+## Relógio: urgência aos 75'/110' + centro em mobile (2026-10-02)
+- Urgência passa de 85' para 75'–90' e 110'+ no prolongamento (`LiveClock.jsx`); fora disso quieto.
+- Descentragem em mobile: o keyframe animava `transform: translateX(-50%)`, que no Tailwind v4 compõe com a propriedade `translate` do `-translate-x-1/2` (duplo -50%) — passa a animar só `scale`, que compõe bem.
+- Checks: `eslint` + `check:types` OK · `test:mobile` 175/175 · harness temporária (apagada após uso) com 33'/80'/115' confirmou centro e limiares em captura 390.
+- Nota: `CmTicker.jsx` tem alterações de outra mão por commitar na árvore (passagem única) — commit só com os 2 ficheiros meus.
+
 ## Pacote «impressionar sem pesar» — micro-efeitos por zona (2026-10-02)
 - Só `transform`/`opacity` (+1 `background-position`), durações curtas, tudo parado com movimento reduzido; zero deps novas (`CountUp` em rAF próprio, framer-motion já cá estava).
 - Jogo: `goal-shake` no marcador do `LiveMatchHero`/`CupFinalStage` (remount via key nos golos) + `liveclock-urgent` no `LiveClock` (85'+/prolongamento). Leilões: anel SVG na contagem decrescente (`AuctionCard`, esvazia nos últimos 60 s). Saldo: `CountUp.jsx` novo nos 3 widgets do `FinancesTab`. Troféus: varrimento dourado por `background-position` (`TrophyCabinet`) — a 1.ª versão com filho a transbordar chumbou `club`+`topwidgets` (linhas cortadas), corrigido sem transbordo. Taça: `bracket-draw` nas linhas + `champion-glow` + esqueletos `skeleton-shimmer` no loading (`CupBracketPage`). Jornal: `flag-pulse` na faixa das pendências. Estádio: holofotes em gradiente + zoom ténue em hover. `CmTicker` pausa com movimento reduzido.

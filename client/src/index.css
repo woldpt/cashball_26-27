@@ -619,8 +619,8 @@ body {
   80% { transform: translateX(-1px); }
 }
 @keyframes liveclock-urgent {
-  0%, 100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.06); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
 }
 @keyframes flag-pulse {
   0%, 100% { opacity: 1; }
