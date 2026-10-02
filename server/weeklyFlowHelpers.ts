@@ -3,6 +3,14 @@ import { maybeNotifyLastMissing } from "./push";
 import type { CalendarEntry } from "./gameConstants";
 import { SPONSOR_SECOND_TRANCHE_SLOT, sponsorById } from "./game/sponsors";
 import {
+  emitCmNews,
+  readCmLeaders,
+  diffCmLeaders,
+  cmLeaderText,
+  pickCmGoleada,
+  cmGoleadaText,
+} from "./cmNews";
+import {
   SEASON_CALENDAR,
   DIVISION_NAMES,
   LOAN_INSTALLMENT_BY_DIVISION,
@@ -1241,6 +1249,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       // cadeia antiga por callbacks). Falha aqui → ROLLBACK + lobby, sem COMMIT.
       void (async () => {
         try {
+          // Líderes antes da jornada (para o rodapé Notícias CM).
+          (game as any)._cmLeadersBefore = await readCmLeaders(game.db);
           await dbRun(game.db, "BEGIN TRANSACTION");
 
           // Deltas do jogo (golos, cartões, lesões, presenças) acumulados em
@@ -1450,6 +1460,15 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 io.to(game.roomCode).emit("globalNewsUpdated");
               },
             );
+
+            // Notícias CM: novo líder por divisão + goleada da jornada.
+            readCmLeaders(game.db).then((cmLeadersAfter) => {
+              for (const { div, name } of diffCmLeaders((game as any)._cmLeadersBefore ?? new Map(), cmLeadersAfter)) {
+                emitCmNews(game, io, cmLeaderText(div, name));
+              }
+              const gol = pickCmGoleada(fixtures);
+              if (gol) emitCmNews(game, io, cmGoleadaText(gol));
+            });
 
             applyPostMatchQualityEvolution(game.db, fixtures, completedCalendarIndex + 1, game.season || 1, completedCalendarIndex)
               .then(() =>

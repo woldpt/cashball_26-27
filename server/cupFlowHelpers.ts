@@ -21,6 +21,7 @@ import {
   incrementSubCount,
 } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
+import { emitCmNews, cmUpsetText } from "./cmNews";
 import { drawNpcChoice, drawOffers, drawOffersAny } from "./game/sponsors";
 import { generateAITactic } from "./game/matchCalculations";
 import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites, withJuniorGRs, ensureFullBench } from "./game/engine";
@@ -2359,6 +2360,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		);
 		io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
 		io.to(game.roomCode).emit("globalNewsUpdated");
+		// Notícias CM: tomba-gigantes da ronda.
+		for (const u of upsets || []) {
+			emitCmNews(game, io, cmUpsetText(u.winnerName, u.winnerDiv, u.loserName));
+		}
 
 		await applyPostRoundTrainingAndEvolution(game, fixtures, "cup");
 

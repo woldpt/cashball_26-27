@@ -218,3 +218,9 @@
 - Cliente: `cmNews` + `pushCmNews` no `GameContext` (teto 50, limpo ao sair da sala); `core.js` encaminha `broadcast+cm` para o rodapé; `RoomHub` ignora `cm` (fica só com pausa/lesão/Admin); `CmTicker.jsx` novo (scroll infinito em CSS, escondido em direto, por cima da `MobileNav`); `RoomNoticeBanner.jsx` + `subscribeRoomNotice` apagados; harness `gamebar-resp-test` atualizado (testava o banner removido).
 - Checks: server `typecheck` OK · `audit:socketio` 0 erros · client `lint` só com o erro pré-existente (react-refresh no GameContext, já no HEAD) · `check:types` OK · `test:mobile` 175/175.
 - WIP de mercado (`TransferHub.jsx`, filtro `showOwnMarketPlayers`) já estava commitado no HEAD — nada por commitar além desta tarefa.
+
+## Notícias automáticas do rodapé (2026-10-02)
+- Pedido: inventar notícias de rodapé dependentes de resultados/classificações; tipos=todas, tom=estilo CM, cobertura=todas as divisões, condição=só mudanças.
+- Implementação: helper novo `server/cmNews.ts` (`emitCmNews`, `readCmLeaders`/`diffCmLeaders` pela ordenação oficial, `pickCmGoleada` com margem mínima 4, templates CM + `Intl` pt-PT); hooks em `weeklyFlowHelpers.ts` (snapshot de líderes antes da transação de `finalizeLeagueEvent`, emite novo líder + goleada após o persist), `auctionHelpers.ts` (venda fechada; `BOMBA` se superar `_cmTopSale` em memória) e `cupFlowHelpers.ts` (tomba-gigantes via `upsets` já calculados). Cliente intocado (ticker já consome `cm: true`).
+- Checks: `typecheck` OK (1 erro de scope `cmLeadersBefore` corrigido via `_cmLeadersBefore` no `game`) · funções puras verificadas com `tsx` (líder, goleada, limiares, templates) · `audit:socketio` 0 erros (sem eventos novos).
+- Nota: o utilizador estava a editar em paralelo (ex. `reduced-motion` no `CmTicker`) — commit só dos 5 caminhos do servidor + NOTES; ficheiros dele intactos.
