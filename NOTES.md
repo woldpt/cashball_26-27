@@ -110,3 +110,10 @@
 - Pedido: duração/fim do contrato aparecia em jornadas; passa a semanas.
 - Fix: `contractWeekLabel(slot)` → `Semana N` (server `coreHelpers.ts` + client `utils/slotLabel.js`); `contractEndInfo()` devolve `slot` + `label: Semana N`; renomeado `CONTRACT_LENGTH_MATCHWEEKS` → `CONTRACT_LENGTH_WEEKS` (alias antigo mantido), `contractEndMatchweek` → `contractEndSlot` no fio (cliente aceita o antigo em fallback); mensagens de bloqueio de leilão usam `end.label`; fallback `Jornada ${n}` no `market.js` e variáveis no `PlayerHistoryModal.jsx`/`helpers.js` atualizados.
 - Checks: server `typecheck` OK · client `eslint` limpo nos ficheiros tocados (3 erros pré-existentes noutros ficheiros) · `check:types` OK · sem mudança de layout → sem `test:mobile`.
+
+## Adjunto com cara nova e a falar (2026-10-02)
+- Pedido: converter a caricatura `docs/jj.png` (2 poses: boca fechada/aberta) num avatar que simula fala, espelhado (a olhar para a direita dele), maior em desktop, a substituir o avatar anterior do Treinador Adjunto.
+- Descobertas: o `jj.png` (1536×1024, RGB) traz o xadrez cozido (sem alfa) — corte limpo ao meio (x=768); o avatar anterior era `/coaches/mister.webp` (512×512 com alfa) no `AssistantMascot` (`AssistantCoach.jsx`, também usado no `CoachTutorial.jsx`).
+- Decisões do utilizador: reutilizar o PNG (não vetorizar) · recorte apertado (não remoção de fundo) · loop da boca enquanto a dica está visível.
+- Implementação: `client/public/coaches/jj-fechada.webp` + `jj-aberta.webp` (metades 768×1024 → quadrado 668×668 cabeça+ombros → espelhar → 512×512, ~25KB cada); `AssistantMascot` sobrepõe as duas (aberta em `absolute` com `opacity`) e alterna a cada 420ms, parado em boca fechada com `prefers-reduced-motion`; desktop 108px → 132px (`lg:`); `mister.webp` fica no disco mas sem referências.
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · mudança só no breakpoint `lg` (mobile portrait se alterado) → sem `test:mobile`.

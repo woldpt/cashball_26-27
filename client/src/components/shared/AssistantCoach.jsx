@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { MODAL_Z } from "../../constants/index.js";
 import { useAssistantCoach } from "../../hooks/useAssistantCoach.js";
@@ -5,15 +6,30 @@ import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js"
 import { Button } from "../shared/Button.jsx";
 
 /**
- * Retrato do adjunto em medalhão (asset `/coaches/mister.webp`, JJ sem fundo): disco verde
- * da casa, anel a tinta e retrato recortado.
+ * Retrato do adjunto em medalhão (assets `/coaches/jj-fechada.webp` e
+ * `/coaches/jj-aberta.webp`, caricatura espelhada a olhar para a direita
+ * dele): disco verde da casa, anel a tinta e retrato recortado. A boca
+ * alterna em loop (~420ms) enquanto a dica está visível; com
+ * `prefers-reduced-motion` fica parado em boca fechada.
  * `mood` só muda o tratamento do retrato — "sad" dessatura e escurece.
  * @param {string} mood Expressão do adjunto ("worried" | "sad").
  * @param {boolean} [compact] Medalhão mais pequeno (tutorial no telemóvel).
  */
 export function AssistantMascot({ mood, compact }) {
   const sad = mood === "sad";
-  const size = compact ? "h-[76px] w-[76px]" : "h-[108px] w-[108px]";
+  const reducedMotion = usePrefersReducedMotion();
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (reducedMotion) return;
+    const id = setInterval(() => setOpen((v) => !v), 420);
+    return () => clearInterval(id);
+  }, [reducedMotion]);
+  const size = compact
+    ? "h-[76px] w-[76px]"
+    : "h-[108px] w-[108px] lg:h-[132px] lg:w-[132px]";
+  const imgClass =
+    "h-[86%] w-[86%] rounded-full object-cover object-top ring-1 ring-zinc-900/80";
+  const filter = sad ? { filter: "saturate(0.45) brightness(0.82)" } : undefined;
   return (
     <div
       role="img"
@@ -24,11 +40,13 @@ export function AssistantMascot({ mood, compact }) {
         aria-hidden
         className="pointer-events-none absolute inset-[3px] rounded-full ring-1 ring-white/25"
       />
+      <img src="/coaches/jj-fechada.webp" alt="" className={imgClass} style={filter} />
       <img
-        src="/coaches/mister.webp"
+        src="/coaches/jj-aberta.webp"
         alt=""
-        className="h-[86%] w-[86%] rounded-full object-cover object-top ring-1 ring-zinc-900/80"
-        style={sad ? { filter: "saturate(0.45) brightness(0.82)" } : undefined}
+        aria-hidden
+        className={`${imgClass} absolute inset-0 m-auto transition-opacity duration-100 ${open ? "opacity-100" : "opacity-0"}`}
+        style={filter}
       />
     </div>
   );
