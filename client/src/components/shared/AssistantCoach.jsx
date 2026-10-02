@@ -9,14 +9,16 @@ import { Button } from "../shared/Button.jsx";
  * da casa, anel a tinta e retrato recortado.
  * `mood` só muda o tratamento do retrato — "sad" dessatura e escurece.
  * @param {string} mood Expressão do adjunto ("worried" | "sad").
+ * @param {boolean} [compact] Medalhão mais pequeno (tutorial no telemóvel).
  */
-export function AssistantMascot({ mood }) {
+export function AssistantMascot({ mood, compact }) {
   const sad = mood === "sad";
+  const size = compact ? "h-[76px] w-[76px]" : "h-[108px] w-[108px]";
   return (
     <div
       role="img"
       aria-label="Treinador-adjunto"
-      className="relative h-[108px] w-[108px] shrink-0 rounded-full flex items-center justify-center bg-[radial-gradient(circle_at_30%_25%,#1f8f4f,#0a3d1e_72%)] ring-2 ring-zinc-900 shadow-[0_4px_14px_rgba(0,0,0,0.5)]"
+      className={`relative ${size} shrink-0 rounded-full flex items-center justify-center bg-[radial-gradient(circle_at_30%_25%,#1f8f4f,#0a3d1e_72%)] ring-2 ring-zinc-900 shadow-[0_4px_14px_rgba(0,0,0,0.5)]`}
     >
       <span
         aria-hidden

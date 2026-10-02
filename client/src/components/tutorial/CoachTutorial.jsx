@@ -3,11 +3,6 @@ import { Button } from "../shared/Button.jsx";
 import { AssistantMascot } from "../shared/AssistantCoach.jsx";
 import { COACH_TUTORIAL_STEPS } from "./coachTutorialSteps.js";
 
-const BALLOON_W = 320;
-// Largura do conjunto medalhão + balão (108 do medalhão + gap + balão).
-const WRAP_W = 440;
-const GAP = 12;
-
 /**
  * Encontra o primeiro alvo visível do passo (desktop primeiro, fallback mobile).
  * @param {Array<string>} targets
@@ -25,8 +20,8 @@ function findTarget(targets) {
 }
 
 /**
- * Overlay spotlight + balão ancorado do tutorial de Coach.
- * Navega para a tab do passo e ancora o balão ao elemento `data-tour`.
+ * Overlay spotlight + balão fixo no centro do tutorial de Coach.
+ * Navega para a tab do passo e destaca o elemento `data-tour` — o balão não se move.
  *
  * @param {Object} props
  * @param {number} props.stepIndex - índice do passo atual
@@ -43,8 +38,6 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
   /** @type {[{x:number,y:number,w:number,h:number}|null, Function]} */
   const [rect, setRect] = useState(null);
   const balloonRef = useRef(null);
-  // Altura real do balão (medida após montar) para prender o balão ao viewport.
-  const [balloonH, setBalloonH] = useState(240);
 
   useLayoutEffect(() => {
     onNavigate(step);
@@ -104,26 +97,6 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex]);
 
-  // Mede a altura real do balão para o cálculo de posição (só re-renderiza se mudar).
-  useLayoutEffect(() => {
-    const h = balloonRef.current?.offsetHeight;
-    if (h && h !== balloonH) setBalloonH(h);
-  }, [balloonH, stepIndex]);
-
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  let balloon = { left: Math.max(8, (vw - WRAP_W) / 2), top: vh / 2 - 100 };
-  let below = true;
-  if (rect) {
-    below = rect.y + rect.h + GAP + balloonH + 16 <= vh || rect.y < 200;
-    const left = Math.max(
-      8,
-      Math.min(rect.x + rect.w / 2 - WRAP_W / 2, vw - WRAP_W - 8),
-    );
-    const top = below ? rect.y + rect.h + GAP : rect.y - GAP - balloonH - 16;
-    balloon = { left, top: Math.max(8, Math.min(top, vh - balloonH - 8)) };
-  }
-
   return (
     <div className="fixed inset-0 z-[300]" data-tour="tutorial-overlay">
       {/* Spotlight: 4 faixas à volta do alvo */}
@@ -170,39 +143,24 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
         <div className="absolute inset-0 bg-black/70" />
       )}
 
-      {/* Balão do adjunto: medalhão + banda desenhada, ancorado ao alvo */}
-      <div
-        ref={balloonRef}
-        tabIndex={-1}
-        className="absolute flex items-end gap-2"
-        style={{
-          left: balloon.left,
-          top: balloon.top,
-          width: `min(${WRAP_W}px, calc(100vw - 16px))`,
-        }}
-        data-tour="tutorial-balloon"
-        role="dialog"
-        aria-label={`Treinador-adjunto: passo ${stepIndex + 1} de ${total}`}
-      >
-        <AssistantMascot mood="worried" />
-        <div className="relative flex-1 bg-white border-2 border-zinc-900 rounded-2xl shadow-2xl p-3 text-zinc-900">
-          {/* Seta para o alvo */}
-          {rect && (
-            <span
-              aria-hidden
-              className="absolute w-4 h-4 rotate-45 bg-white border-zinc-900"
-              style={{
-                left: Math.min(
-                  Math.max(rect.x + rect.w / 2 - balloon.left - 122, 16),
-                  BALLOON_W - 28,
-                ),
-                ...(below
-                  ? { top: -9, borderLeftWidth: 2, borderTopWidth: 2 }
-                  : { bottom: -9, borderRightWidth: 2, borderBottomWidth: 2 }),
-              }}
-            />
-          )}
-          {/* Rabicho para o retrato */}
+      {/* Balão do adjunto: fixo no centro — só o destaque se move */}
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          ref={balloonRef}
+          tabIndex={-1}
+          className="flex items-end gap-2 w-full max-w-md"
+          data-tour="tutorial-balloon"
+          role="dialog"
+          aria-label={`Treinador-adjunto: passo ${stepIndex + 1} de ${total}`}
+        >
+          <div className="sm:hidden">
+            <AssistantMascot mood="worried" compact />
+          </div>
+          <div className="hidden sm:block">
+            <AssistantMascot mood="worried" />
+          </div>
+          <div className="relative flex-1 bg-white border-2 border-zinc-900 rounded-2xl shadow-2xl p-3 text-zinc-900">
+            {/* Rabicho para o retrato */}
           <span
             aria-hidden
             className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[9px] border-l-2 border-b-2 border-zinc-900"
@@ -245,6 +203,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

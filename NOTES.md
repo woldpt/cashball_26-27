@@ -1,3 +1,9 @@
+## Tutorial com treinador fixo no centro (2026-10-02)
+- Pedido: balão do adjunto sempre no meio do ecrã; só o retângulo de destaque se move.
+- `CoachTutorial.jsx`: balão centrado com flex, sem cálculo de posição (saem `BALLOON_W`/`WRAP_W`/`GAP`, `balloon`/`below`, medição de altura e seta para o alvo; rabicho para o retrato fica). Spotlight, scroll até ao alvo, Escape, progresso e `data-tour`/aria-labels inalterados.
+- `AssistantCoach.jsx`: prop opcional `compact` no `AssistantMascot` (76px); tutorial rende medalhão compacto só no telemóvel, 108px no desktop.
+- Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · `test:mobile` 175/175 PASS + screenshot da tática vista; nenhuma harness rende o tutorial, por isso a confirmação visual do balão centrado fica para sala viva.
+
 ## Adjunto: nome único + dica dos adeptos + dica do teto (2026-10-02)
 - Pedido: corrigir 3 pontos da lista do adjunto — nome, adeptos e teto de treino.
 - Nome único `Treinador-adjunto`: revertidos os 3 `O Mister` do `AssistantCoach.jsx` (cabeçalho + 2 aria-labels); tutorial já dizia `Treinador-adjunto`.
