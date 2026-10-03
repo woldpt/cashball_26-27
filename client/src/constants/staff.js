@@ -11,7 +11,6 @@
 /**
  * @typedef {object} StaffRoleMeta
  * @property {string} label Nome do papel.
- * @property {string} icon Ícone `material-symbols-outlined`.
  * @property {string} description Uma linha sobre o que o papel faz.
  * @property {(effect: object) => string} effect Efeito do nível, já formatado.
  */
@@ -20,13 +19,11 @@
 export const STAFF_ROLE_META = {
   auxiliar: {
     label: "Treinador Auxiliar",
-    icon: "school",
     description: "Acelera a evolução das skills no treino semanal.",
     effect: (e) => `Treino +${e.trainingPct}%`,
   },
   fisico: {
     label: "Preparador Físico",
-    icon: "fitness_center",
     description: "Recupera a forma de quem descansa e trava o desgaste.",
     effect: (e) => {
       const parts = [];
@@ -38,7 +35,6 @@ export const STAFF_ROLE_META = {
   },
   comunicacao: {
     label: "Director de Comunicação",
-    icon: "campaign",
     description: "Enche o estádio e segura o ânimo da bancada.",
     effect: (e) => {
       const parts = [];
@@ -49,7 +45,6 @@ export const STAFF_ROLE_META = {
   },
   medico: {
     label: "Médico",
-    icon: "medical_services",
     description: "Menos lesões, mais curtas e com menos skill perdido.",
     effect: (e) => {
       const parts = [];
@@ -63,7 +58,6 @@ export const STAFF_ROLE_META = {
 
 const FALLBACK = {
   label: "Funcionário",
-  icon: "badge",
   description: "Trabalha nos bastidores do clube.",
   effect: () => "",
 };

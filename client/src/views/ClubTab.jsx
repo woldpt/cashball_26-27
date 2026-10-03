@@ -8,6 +8,7 @@ import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { TeamKit } from "../components/shared/TeamKit.jsx";
 import { TrophyCabinet } from "../components/shared/TrophyCabinet.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
+import { StaffAvatar } from "../components/shared/StaffAvatar.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
@@ -141,28 +142,27 @@ function StaffRoleCard({ role, board, member, pending, onHire, onFire }) {
 
   return (
     <div className="bg-surface-container-high/40 rounded-md border border-outline-variant/25 p-3 short:p-2 flex flex-col gap-2">
-      {/* Identificação do papel: ícone + nome + estado numa linha (o nome
-          fica com a largura toda antes do badge) e a descrição por baixo. */}
+      {/* Identificação do papel: caricatura + nome + estado e a descrição por
+          baixo. A cara segue o nível: no cartão vazio é o nível escolhido no
+          stepper (pré-visualização de quem se vai contratar), no contratado é
+          o nível dele. */}
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="material-symbols-outlined text-lg text-tertiary shrink-0"
-          >
-            {meta.icon}
-          </span>
-          <h3 className="font-headline font-black text-sm text-on-surface leading-tight flex-1 min-w-0">
-            {meta.label}
-          </h3>
-          {member ? (
-            <Badge variant="info" size="sm">
-              Nível {member.level}
-            </Badge>
-          ) : (
-            <Badge variant="neutral" size="sm">
-              Vazio
-            </Badge>
-          )}
+        <div className="flex items-start gap-2">
+          <StaffAvatar role={role} level={member ? member.level : level} size="mdR" />
+          <div className="flex-1 min-w-0 space-y-0.5">
+            <h3 className="font-headline font-black text-sm text-on-surface leading-tight">
+              {meta.label}
+            </h3>
+            {member ? (
+              <Badge variant="info" size="sm">
+                Nível {member.level}
+              </Badge>
+            ) : (
+              <Badge variant="neutral" size="sm">
+                Vazio
+              </Badge>
+            )}
+          </div>
         </div>
         <p className="text-[10px] text-on-surface-variant leading-tight">
           {meta.description}
