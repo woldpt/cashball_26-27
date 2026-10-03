@@ -267,7 +267,7 @@ export function PlayerHistoryModal({
                   )}
                   <Button
                     variant="success"
-                    className="flex-1"
+                    className="flex-1 shadow-[0_0_14px_rgba(239,68,68,0.55)]"
                     disabled={matchInProgress}
                     title={
                       matchInProgress
@@ -283,7 +283,7 @@ export function PlayerHistoryModal({
                   </Button>
                   <Button
                     variant="secondary"
-                    className="flex-1"
+                    className="flex-1 shadow-[0_0_14px_rgba(239,68,68,0.55)]"
                     disabled={matchInProgress}
                     title={
                       matchInProgress
