@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { DIVISION_NAMES, SEASON_JORNADAS } from "../../constants/index.js";
 import { EmptyState } from "../shared/EmptyState.jsx";
 import { FormDots } from "../shared/FormDots.jsx";
+import { TabBar } from "../shared/TabBar.jsx";
 import { initialsFromName } from "../../utils/initials.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { TrendArrow } from "../shared/TrendArrow.jsx";
@@ -342,8 +343,40 @@ function MatchweekRow({ matchweek, matches, teamMap }) {
   );
 }
 
-function GoldenBootSidebar({ topScorers, myTeamId }) {
-  if (!topScorers?.length) return null;
+function GoldenBootSidebar({ topScorers, teams, myTeamId }) {
+  // Ranking por divisão (o servidor manda o top 10 de cada uma, divisões 1–4):
+  // o prémio de fim de época é entregue por divisão, por isso a corrida ao
+  // título de goleador também se lê por divisão. A divisão da minha equipa
+  // abre por omissão (a minha corrida), com D1 como rede para quem não tem
+  // equipa (ex.: treinador despedido).
+  const byDiv = useMemo(() => {
+    const map = new Map();
+    for (const s of topScorers || []) {
+      const div = Number(s.division);
+      if (!(div >= 1 && div <= 4)) continue;
+      const list = map.get(div) || [];
+      list.push(s);
+      map.set(div, list);
+    }
+    return map;
+  }, [topScorers]);
+  const myDivision = Number(
+    (teams || []).find((t) => String(t.id) === String(myTeamId))?.division,
+  );
+  const [picked, setPicked] = useState(null);
+
+  const divisions = useMemo(
+    () => [...byDiv.keys()].sort((a, b) => a - b),
+    [byDiv],
+  );
+  if (divisions.length === 0) return null;
+  const active =
+    picked != null && byDiv.has(picked)
+      ? picked
+      : byDiv.has(myDivision)
+        ? myDivision
+        : divisions[0];
+  const rows = byDiv.get(active) || [];
 
   return (
     <section className="bg-surface-container rounded-md overflow-hidden">
@@ -353,8 +386,26 @@ function GoldenBootSidebar({ topScorers, myTeamId }) {
           Corrida ao Título de Goleador
         </h3>
       </div>
+      {divisions.length > 1 && (
+        <div className="px-3 pt-3">
+          <TabBar
+            size="sm"
+            expand
+            active={String(active)}
+            onChange={(key) => setPicked(Number(key))}
+            tabs={divisions.map((div) => ({
+              key: String(div),
+              label: (
+                <span title={DIVISION_NAMES[div] || `Divisão ${div}`}>
+                  D{div}
+                </span>
+              ),
+            }))}
+          />
+        </div>
+      )}
       <div className="divide-y divide-outline-variant/10">
-        {topScorers.slice(0, 10).map((s, i) => {
+        {rows.map((s, i) => {
           const isMe = String(s.team_id) === String(myTeamId);
           return (
             <div
@@ -583,7 +634,11 @@ export function LeagueStandings({
 
         {/* Sidebar */}
         <div className="xl:col-span-3 flex flex-col gap-4">
-          <GoldenBootSidebar topScorers={topScorers} myTeamId={myTeamId} />
+          <GoldenBootSidebar
+            topScorers={topScorers}
+            teams={teams}
+            myTeamId={myTeamId}
+          />
         </div>
       </div>
 

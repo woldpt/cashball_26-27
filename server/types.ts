@@ -131,6 +131,8 @@ export interface MatchFixture {
     calendarIndex: number;
     appearances: Set<number>;
     goals: Map<number, number>;
+    /** Golos por clube: teamId → (playerId → golos). Espelha `MatchDeltas`. */
+    goalsByTeam: Map<number, Map<number, number>>;
     reds: Map<number, number>;
     yellows: Map<number, { count: number; banUntil: number | null }>;
     injuries: Map<number, {

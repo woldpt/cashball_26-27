@@ -144,6 +144,7 @@ export function buildWeeklyFinanceFacts(p: {
   });
 }
 import {
+  fetchTopScorers,
   getAllTeamForms,
   getStandingsRows,
   getTeamsWithCoachNames,
@@ -1452,14 +1453,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 io.to(game.roomCode).emit("teamForms", forms);
               })
               .catch(() => {});
-            game.db.all(
-              "SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
-              (err3: any, scorers: any[]) => {
-                io.to(game.roomCode).emit("topScorers", scorers || []);
-                io.to(game.roomCode).emit("standingsUpdated");
-                io.to(game.roomCode).emit("globalNewsUpdated");
-              },
-            );
+            fetchTopScorers(game.db).then((scorers) => {
+              io.to(game.roomCode).emit("topScorers", scorers);
+              io.to(game.roomCode).emit("standingsUpdated");
+              io.to(game.roomCode).emit("globalNewsUpdated");
+            });
 
             // Notícias CM: novo líder por divisão + goleada da jornada.
             readCmLeaders(game.db).then((cmLeadersAfter) => {
@@ -1579,9 +1577,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 // Standings (teamsData/teamForms/topScorers) were already
                 // broadcast right after persistMatchResults — only squad info
                 // and presence remain.
-                game.db.all(
-                  "SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
-                  (_err3: any, _scorers: any[]) => {
+                fetchTopScorers(game.db).then(() => {
                     const connectedPlayers = getPlayerList(game);
                     const activeTeamIds = connectedPlayers
                       .filter((p) => p.socketId && p.teamId != null)
@@ -1637,8 +1633,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                       },
                     );
                     return;
-                  },
-                );
+                  });
               })
               .catch((error: any) => {
                 console.error(

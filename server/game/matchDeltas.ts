@@ -22,6 +22,8 @@ export type MatchDeltas = {
   calendarIndex: number;
   appearances: Set<number>;
   goals: Map<number, number>;
+  /** Golos por clube: teamId → (playerId → golos). Alimenta `player_season_goals`. */
+  goalsByTeam: Map<number, Map<number, number>>;
   reds: Map<number, number>; // playerId -> suspensionUntil
   yellows: Map<number, MatchYellowDelta>; // playerId -> amarelos do jogo + castigo
   injuries: Map<number, MatchInjuryDelta>;
@@ -36,6 +38,7 @@ export function getMatchDeltas(fixture: MatchFixture): MatchDeltas {
       calendarIndex: 0,
       appearances: new Set<number>(),
       goals: new Map<number, number>(),
+      goalsByTeam: new Map<number, Map<number, number>>(),
       reds: new Map<number, number>(),
       yellows: new Map<number, MatchYellowDelta>(),
       injuries: new Map<number, MatchInjuryDelta>(),
@@ -44,10 +47,18 @@ export function getMatchDeltas(fixture: MatchFixture): MatchDeltas {
   return fixture._deltas;
 }
 
-export function recordMatchGoal(fixture: MatchFixture, playerId: number) {
+export function recordMatchGoal(
+  fixture: MatchFixture,
+  playerId: number,
+  teamId?: number | null,
+) {
   if (typeof playerId !== "number" || playerId <= 0) return; // juniores (IDs negativos) não têm linha na DB
   const d = getMatchDeltas(fixture);
   d.goals.set(playerId, (d.goals.get(playerId) ?? 0) + 1);
+  if (teamId == null) return;
+  const byTeam = d.goalsByTeam.get(teamId) ?? new Map<number, number>();
+  byTeam.set(playerId, (byTeam.get(playerId) ?? 0) + 1);
+  d.goalsByTeam.set(teamId, byTeam);
 }
 
 export function recordMatchRed(
@@ -168,6 +179,16 @@ export function queueMatchDeltaWrites(db: Db, fixtures: MatchFixture[]): void {
           "UPDATE players SET goals = goals + ?, career_goals = career_goals + ? WHERE id = ?",
           [count, count, id],
         );
+      }
+      // Atribuição por clube (mesma transação): quem perde o goleador numa
+      // transferência a meio da época não perde os golos que ele já marcou.
+      for (const [teamId, byPlayer] of d.goalsByTeam) {
+        for (const [playerId, count] of byPlayer) {
+          trackedRun(
+            "INSERT INTO player_season_goals (player_id, team_id, goals) VALUES (?, ?, ?) ON CONFLICT(player_id, team_id) DO UPDATE SET goals = goals + excluded.goals",
+            [playerId, teamId, count],
+          );
+        }
       }
       // Amarelos ANTES dos vermelhos: no mesmo jogo o vermelho corre depois
       // e a sua limpeza da contagem (regra de casa) ganha.

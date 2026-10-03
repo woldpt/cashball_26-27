@@ -38,6 +38,7 @@ const clubHistory = {
     { season: 2026, achievement: "Campeão Nacional", coach_name: "Rúben Amorim da Silva Santos", is_human_coach: 1, player_id: null },
     { season: 2026, achievement: "Vencedor da Taça de Portugal", coach_name: "Rúben Amorim da Silva Santos", is_human_coach: 1, player_id: null },
     { season: 2025, achievement: "Melhor Marcador (31 golos)", coach_name: "Viktor Gyökeres Johansson", is_human_coach: 1, player_id: 42 },
+    { season: 2026, achievement: "Melhor Marcador — Campeonato de Portugal (19 golos)", coach_name: "João Maria dos Santos Ferreira", is_human_coach: 0, player_id: 43 },
     { season: 2024, achievement: "Campeão Nacional", coach_name: "Rúben Amorim da Silva Santos", is_human_coach: 1, player_id: null },
   ],
   events: [

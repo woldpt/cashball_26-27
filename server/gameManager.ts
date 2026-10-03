@@ -908,6 +908,30 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
     },
   );
 
+  // Golos por clube na época em curso (atribuição golo → clube) — prémio de
+  // Melhor Marcador ao clube que os sofreu. Criação idempotente por sala para
+  // salas já existentes antes desta feature.
+  db.run(
+    "CREATE TABLE IF NOT EXISTS player_season_goals (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      player_id INTEGER NOT NULL,\n      team_id INTEGER NOT NULL,\n      goals INTEGER NOT NULL DEFAULT 0,\n      FOREIGN KEY(player_id) REFERENCES players(id),\n      FOREIGN KEY(team_id) REFERENCES teams(id)\n    )",
+    (psgErr: Error | null) => {
+      if (psgErr)
+        console.error(
+          `[gameManager] Failed to create player_season_goals table for ${roomCode}:`,
+          psgErr.message,
+        );
+      db.run(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_player_season_goals_unique ON player_season_goals(player_id, team_id)",
+        (idxErr: Error | null) => {
+          if (idxErr)
+            console.warn(
+              `[gameManager] player_season_goals unique index failed for ${roomCode}:`,
+              idxErr.message,
+            );
+        },
+      );
+    },
+  );
+
   db.run(
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {
@@ -984,7 +1008,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
           // da última semana da época anterior (slot 20) em vez de 1 —
           // ficavam no topo do Jornal a época nova inteira. Idempotente.
           db.run(
-            "UPDATE club_news SET slot = 1 WHERE type = 'prize' AND matchweek = 1 AND COALESCE(slot, 0) > 1 AND (title LIKE 'Prémio de Campeão%' OR title IN ('Patrocinadores', 'Prémio de Melhor Marcador', 'Bónus de Subida'))",
+            "UPDATE club_news SET slot = 1 WHERE type = 'prize' AND matchweek = 1 AND COALESCE(slot, 0) > 1 AND (title LIKE 'Prémio de Campeão%' OR title = 'Patrocinadores' OR title LIKE 'Prémio de Melhor Marcador%' OR title = 'Bónus de Subida')",
             () => {},
           );
           // Escala das estrelas 1–5 → 0–10 (v3, estilo Hattrick): o

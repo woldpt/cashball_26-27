@@ -309,51 +309,52 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                 </div>
               )}
 
-              {/* Top Scorer */}
-              {data.topScorer && (
-                <div className="p-4">
+              {/* Melhor Marcador — um por divisão (empates aparecem todos) */}
+              {data.topScorers?.length > 0 && (
+                <div className="p-4 space-y-2">
                   <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-3">
                     Melhor Marcador
                   </p>
-                  <motion.div
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${
-                      isMyTeam(data.topScorer.teamId)
-                        ? "bg-emerald-500/10 border border-emerald-500/30"
-                        : "bg-surface-container-high"
-                    }`}
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{
-                      opacity: revealed ? 1 : 0,
-                      x: revealed ? 0 : -16,
-                    }}
-                    transition={{ delay: 0.52 }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="material-symbols-outlined text-emerald-400 shrink-0"
-                      style={{ fontSize: 20 }}
+                  {data.topScorers.map((scorer, i) => (
+                    <motion.div
+                      key={`${scorer.divId}-${scorer.teamId}-${scorer.name}`}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${
+                        isMyTeam(scorer.teamId)
+                          ? "bg-emerald-500/10 border border-emerald-500/30"
+                          : "bg-surface-container-high"
+                      }`}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{
+                        opacity: revealed ? 1 : 0,
+                        x: revealed ? 0 : -16,
+                      }}
+                      transition={{ delay: 0.52 + i * 0.05 }}
                     >
-                      sports_soccer
-                    </span>
-                    <TeamCrest
-                      team={crestFor(
-                        data.topScorer.teamId,
-                        data.topScorer.teamName,
-                      )}
-                      size="w-8 h-8 text-xs"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-black text-sm text-on-surface truncate">
-                        {data.topScorer.name}
-                      </p>
-                      <p className="text-[10px] text-on-surface-variant/50 font-bold">
-                        {data.topScorer.teamName} · {data.topScorer.goals} golos
-                      </p>
-                    </div>
-                    <span className="text-[11px] font-black text-emerald-400 shrink-0">
-                      +{fmt(data.topScorer.prize)}
-                    </span>
-                  </motion.div>
+                      <span
+                        aria-hidden="true"
+                        className="material-symbols-outlined text-emerald-400 shrink-0"
+                        style={{ fontSize: 20 }}
+                      >
+                        sports_soccer
+                      </span>
+                      <TeamCrest
+                        team={crestFor(scorer.teamId, scorer.teamName)}
+                        size="w-8 h-8 text-xs"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-sm text-on-surface truncate">
+                          {scorer.name}
+                        </p>
+                        <p className="text-[10px] text-on-surface-variant/50 font-bold truncate">
+                          {scorer.divName} · {scorer.teamName} · {" "}
+                          {scorer.goals} golos
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-black text-emerald-400 shrink-0">
+                        +{fmt(scorer.prize)}
+                      </span>
+                    </motion.div>
+                  ))}
                 </div>
               )}
 

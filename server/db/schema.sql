@@ -294,6 +294,24 @@ CREATE TABLE IF NOT EXISTS match_moms (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_match_moms_unique ON match_moms(season, competition, matchweek, round, team_id);
 CREATE INDEX IF NOT EXISTS idx_match_moms_season ON match_moms(season, competition);
 
+-- Golos por clube na época em curso (atribuição golo → clube).
+-- `players.goals` é um contador único por jogador e viaja com ele numa
+-- transferência; este registo diz por que clube os golos foram marcados, para
+-- o prémio de Melhor Marcador ir a quem os sofreu (comprar o goleador na
+-- última jornada não rouba o troféu). Alimentado no flush transacional do
+-- apito final (Liga + Taça) e limpo no fim de época, a par de `players.goals`.
+CREATE TABLE IF NOT EXISTS player_season_goals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER NOT NULL,
+  team_id INTEGER NOT NULL,
+  goals INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(player_id) REFERENCES players(id),
+  FOREIGN KEY(team_id) REFERENCES teams(id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_player_season_goals_unique ON player_season_goals(player_id, team_id);
+CREATE INDEX IF NOT EXISTS idx_player_season_goals_team ON player_season_goals(team_id);
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Estado da sala (assentos duráveis, log de eventos) + tabelas de histórico
 -- que antes só existiam como CREATE TABLE IF NOT EXISTS no getGame/roomState.

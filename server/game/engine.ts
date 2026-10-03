@@ -1341,7 +1341,7 @@ async function applyPenaltyEvent({
     if (teamSide === "home") fixture.finalHomeGoals++;
     else fixture.finalAwayGoals++;
     // Acumulado em memória — flush transacional no apito final.
-    recordMatchGoal(fixture, taker.id);
+    recordMatchGoal(fixture, taker.id, teamId);
     fixture.events.push({
       minute: fixture._minute,
       type: "penalty_goal",
@@ -2434,7 +2434,11 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
 
     if (scorer) {
       // Acumulado em memória — flush transacional no apito final.
-      recordMatchGoal(fixture, scorer.id);
+      recordMatchGoal(
+        fixture,
+        scorer.id,
+        attackingSide === "home" ? fixture.homeTeamId : fixture.awayTeamId,
+      );
     }
 }
 export async function resolvePenaltyKick(tick: MinuteTickContext, shared: MinuteShared): Promise<void> {

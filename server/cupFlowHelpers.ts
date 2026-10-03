@@ -42,6 +42,51 @@ import {
 } from "./roomStateHelpers";
 
 /**
+ * Prémio de Melhor Marcador: 500K€ por divisão (1–4), a cada vencedor —
+ * empates levam o prémio cheio. Divisões 5 (pool interno) fora.
+ */
+const TOP_SCORER_PRIZE = 500000;
+
+/** Linha de candidato ao Melhor Marcador, já com o clube atribuído. */
+export interface TopScorerRow {
+	id: number;
+	name: string;
+	team_id: number;
+	team_name?: string;
+	division: number;
+	goals: number;
+	skill?: number;
+}
+
+/**
+ * Vencedores: em cada divisão, todos os jogadores com o máximo de golos.
+ * Puro — a ordem de entrada não interessa; a divisão é a do clube que os
+ * golos foram marcados (é a atribuição que decide, não o clube atual).
+ *
+ * Um jogador só leva UM troféu por divisão: se marcou por dois clubes da mesma
+ * divisão (transferência interna a meio da época) fica com a primeira linha
+ * que aparecer — o SQL põe o clube atual à frente, por isso o troféu acaba onde
+ * ele fecha a época. Duas divisões diferentes continuam a poder dar dois
+ * prémios (meia época em cada escalão).
+ */
+export function pickTopScorerWinners(rows: TopScorerRow[] = []): TopScorerRow[] {
+	const best = new Map<number, number>();
+	for (const row of rows) {
+		const div = Number(row.division);
+		const goals = Number(row.goals) || 0;
+		if (!best.has(div) || goals > (best.get(div) as number)) best.set(div, goals);
+	}
+	const seen = new Set<string>();
+	return rows.filter((row) => {
+		if ((Number(row.goals) || 0) !== best.get(Number(row.division))) return false;
+		const key = `${row.division}:${row.id}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
+/**
  * Prémio por ultrapassar cada eliminatória da Taça (ronda → €).
  * A final (ronda 5) não entra aqui: mantém o prémio próprio de 500K€.
  */
@@ -457,54 +502,94 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("globalNewsUpdated");
 	}
 
-	async function payTopScorerPrize(game: ActiveGame, year: number) {
-		const topScorer = await runGet(
+	/**
+	 * Candidatos ao Melhor Marcador por divisão, um registo por (jogador, clube)
+	 * que marcou. Fonte primária: `player_season_goals` (golos por clube, liga e
+	 * Taça, escritos no flush do apito final) — quem vendeu o goleador a meio da
+	 * época fica com os golos dele e o comprador não herda o troféu.
+	 *
+	 * Sala sem atribuição nenhuma (época a decorrer no dia do deploy): cai no
+	 * contador do jogador + clube atual, o comportamento anterior. O JOIN a
+	 * `teams` (em vez do LEFT JOIN antigo) tira os agentes livres: eram o único
+	 * vencedor possível de sair sem prémio nenhum (sem equipa, sem divisão).
+	 */
+	async function findTopScorers(game: ActiveGame): Promise<TopScorerRow[]> {
+		const attributed = await runAll<TopScorerRow>(
 			game.db,
-			`SELECT p.id, p.name, p.team_id, p.goals, t.name as team_name
-       FROM players p
-       LEFT JOIN teams t ON p.team_id = t.id
-       WHERE p.goals > 0
-       ORDER BY p.goals DESC, p.skill DESC
-       LIMIT 1`,
+			`SELECT g.player_id as id, p.name, g.team_id, g.goals, p.skill, t.name as team_name, t.division
+       FROM player_season_goals g
+       JOIN teams t ON t.id = g.team_id
+       JOIN players p ON p.id = g.player_id
+       WHERE g.goals > 0 AND t.division BETWEEN 1 AND 4
+       ORDER BY t.division ASC, (g.team_id = p.team_id) DESC, g.goals DESC, p.skill DESC`,
 		);
-		if (topScorer && topScorer.team_id) {
-			await new Promise((resolve) => {
-				game.db.run(
-					"UPDATE teams SET budget = budget + 500000 WHERE id = ?",
-					[topScorer.team_id],
-					resolve,
-				);
-			});
-			logClubNews(game, "prize", "Prémio de Melhor Marcador", topScorer.team_id, {
-				amount: 500000,
-				description: `${topScorer.name} — ${topScorer.goals} golos (época ${year})`,
-				player_id: topScorer.id,
-				player_name: topScorer.name,
+		if (attributed.length > 0) return pickTopScorerWinners(attributed);
+		const legacy = await runAll<TopScorerRow>(
+			game.db,
+			`SELECT p.id, p.name, p.team_id, p.goals, p.skill, t.name as team_name, t.division
+       FROM players p
+       JOIN teams t ON p.team_id = t.id
+       WHERE p.goals > 0 AND t.division BETWEEN 1 AND 4
+       ORDER BY t.division ASC, p.goals DESC, p.skill DESC`,
+		);
+		return pickTopScorerWinners(legacy);
+	}
+
+	async function payTopScorerPrize(game: ActiveGame, year: number) {
+		const winners = await findTopScorers(game);
+		const paid: any[] = [];
+		const byDivision = new Map<number, any[]>();
+		for (const winner of winners) {
+			const divId = Number(winner.division);
+			const divName = DIVISION_NAMES[divId] || `Divisão ${divId}`;
+			// O dinheiro vai ao clube que sofreu os golos, que pode não ser o clube
+			// onde o jogador fecha a época (venda a meio da época).
+			await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [
+				TOP_SCORER_PRIZE,
+				winner.team_id,
+			]);
+			logClubNews(game, "prize", `Prémio de Melhor Marcador — ${divName}`, winner.team_id, {
+				amount: TOP_SCORER_PRIZE,
+				description: `${winner.name} — ${winner.goals} golos (época ${year})`,
+				player_id: winner.id,
+				player_name: winner.name,
 				year: year + 1,
 				matchweek: 1,
 				slot: 1,
 			});
-			await new Promise((resolve) => {
-				game.db.run(
-					"INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach, player_id) VALUES (?, ?, ?, ?, ?, ?)",
-					[
-						topScorer.team_id,
-						year,
-						`Melhor Marcador (${topScorer.goals} golos)`,
-						topScorer.name,
-						1,
-						topScorer.id,
-					],
-					resolve,
-				);
-			});
+			await dbRunOn(game,
+				"INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach, player_id) VALUES (?, ?, ?, ?, ?, ?)",
+				[
+					winner.team_id,
+					year,
+					`Melhor Marcador — ${divName} (${winner.goals} golos)`,
+					// `coach_name` guarda o JOGADOR (o histórico do jogador cai neste campo
+					// nas linhas antigas); `is_human_coach` fica 0 senão o museu escrevia
+					// «Treinador: <jogador>» na conquista.
+					winner.name,
+					0,
+					winner.id,
+				],
+			);
+			const entry = { ...winner, divId, divName, prize: TOP_SCORER_PRIZE };
+			paid.push(entry);
+			const list = byDivision.get(divId) || [];
+			list.push(entry);
+			byDivision.set(divId, list);
+		}
+		// Um anúncio por divisão, com todos os empatados (podem ser de clubes
+		// diferentes) — como os prémios de campeão, um CM por divisão.
+		const prizeFormatted = new Intl.NumberFormat("pt-PT").format(TOP_SCORER_PRIZE);
+		for (const list of byDivision.values()) {
+			const divName = list[0].divName;
+			const names = list.map((w: any) => `${w.name} (${w.team_name})`).join(", ");
 			io.to(game.roomCode).emit("systemMessage", {
-				text: `⚽ ${topScorer.name} (${topScorer.team_name}) é o Melhor Marcador com ${topScorer.goals} golos! (+500.000€ para ${topScorer.team_name})`,
+				text: `⚽ ${names} — Melhor Marcador · ${divName} com ${list[0].goals} golos! (+${prizeFormatted}€ por jogador)`,
 				broadcast: true,
 				cm: true,
 			});
 		}
-		return topScorer;
+		return paid;
 	}
 
 	async function applyPromotionsAndRelegations(game: ActiveGame, byDiv: Record<number, any[]>, allTeams: any[], year: number) {
@@ -700,6 +785,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			// season for players who appeared late in the previous one.
 			"UPDATE players SET goals = 0, red_cards = 0, yellow_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0",
 			);
+			// Atribuição de golos por clube (liga + Taça): vive e morre com a época,
+			// como `players.goals` — o prémio de Melhor Marcador já foi pago acima.
+			await dbRunOn(game, "DELETE FROM player_season_goals");
 			await dbRunOn(game, "COMMIT");
 		} catch (txErr) {
 			await dbRunOn(game, "ROLLBACK").catch(() => {});
@@ -823,9 +911,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 	async function emitSeasonEndSummary(game: ActiveGame, opts: {
 		season: number; year: number; byDiv: Record<number, any[]>;
-		iLigaWinner: any; promotions: Promotion[]; topScorer: any;
+		iLigaWinner: any; promotions: Promotion[]; topScorers: any[];
 	}) {
-		const { season, year, byDiv, iLigaWinner, promotions, topScorer } = opts;
+		const { season, year, byDiv, iLigaWinner, promotions, topScorers } = opts;
 		// Build season-end summary for the modal
 		const divisionChampions = ([1, 2, 3, 4, 5] as number[])
 			.map((div) => {
@@ -866,13 +954,25 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						prize: 500000,
 					}
 				: null,
-			topScorer: topScorer
+			// Um Melhor Marcador por divisão (1–4). `topScorer` (objeto único)
+			// mantém-se para os clientes atrasados (app mobile): um cliente antigo
+			// ignora o array novo e mostra o vencedor da Primeira Liga.
+			topScorers: (topScorers || []).map((w: any) => ({
+				divId: w.divId,
+				divName: w.divName,
+				name: w.name,
+				teamId: w.team_id,
+				teamName: w.team_name,
+				goals: w.goals,
+				prize: w.prize,
+			})),
+			topScorer: topScorers && topScorers.length > 0
 				? {
-						name: topScorer.name,
-						teamId: topScorer.team_id,
-						teamName: topScorer.team_name,
-						goals: topScorer.goals,
-						prize: 500000,
+						name: topScorers[0].name,
+						teamId: topScorers[0].team_id,
+						teamName: topScorers[0].team_name,
+						goals: topScorers[0].goals,
+						prize: topScorers[0].prize,
 					}
 				: null,
 		});
@@ -900,7 +1000,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		await paySponsorRevenue(game, allTeams, year);
 
-		const topScorer = await payTopScorerPrize(game, year);
+		const topScorers = await payTopScorerPrize(game, year);
 
 		// Jornal do Clube persiste entre épocas — não apagar club_news.
 		// As notícias são agregadas por ano no frontend (ClubTab.jsx) para evitar lista infinita.
@@ -920,7 +1020,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			byDiv,
 			iLigaWinner,
 			promotions,
-			topScorer,
+			topScorers,
 		});
 
 		// Despedimento obrigatório de treinadores humanos despromovidos do
@@ -2815,6 +2915,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 	return {
 		applySeasonEnd,
+		payTopScorerPrize,
 		prepareFriendlyFixtures,
 		finalizeFriendly,
 		startCupRound,

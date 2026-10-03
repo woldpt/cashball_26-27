@@ -250,6 +250,7 @@ test("U8 — queueMatchDeltaWrites retém deltas até confirmar", async () => {
       calendarIndex: 3,
       appearances: new Set([11, 22]),
       goals: new Map([[11, 2]]),
+      goalsByTeam: new Map(),
       reds: new Map(),
       yellows: new Map(),
       injuries: new Map(),
@@ -394,6 +395,7 @@ test("U12 — queueMatchDeltaWrites: throw síncrono repõe a flag, deltas retid
       calendarIndex: 3,
       appearances: new Set([1]),
       goals: new Map([[7, 2]]),
+      goalsByTeam: new Map(),
       reds: new Map(),
       yellows: new Map(),
       injuries: new Map(),
@@ -416,6 +418,7 @@ test("U12b — erro no callback do sqlite é reportado mas o flush completa", ()
       calendarIndex: 3,
       appearances: new Set(),
       goals: new Map([[7, 1]]),
+      goalsByTeam: new Map(),
       reds: new Map(),
       yellows: new Map(),
       injuries: new Map(),
@@ -426,6 +429,37 @@ test("U12b — erro no callback do sqlite é reportado mas o flush completa", ()
   for (const cb of cbs) cb(new Error("boom"));
   assert.equal(fixture._deltas, undefined);
   assert.equal(fixture._deltasQueued, false);
+});
+
+test("U12c — golos por clube: o flush atribui o golo ao clube do jogador", () => {
+  // A atribuição (`player_season_goals`) é o que decide o prémio de Melhor
+  // Marcador: sem ela, vender o goleador na última jornada dava-lhe o troféu.
+  const calls: Array<{ sql: string; params: unknown[] }> = [];
+  const cbs: Array<(err: unknown) => void> = [];
+  const db = {
+    run(sql: string, params: unknown[], cb: (err: unknown) => void) {
+      calls.push({ sql: sql.replace(/\s+/g, " "), params });
+      cbs.push(cb);
+    },
+  };
+  const fixture: any = {
+    _deltas: {
+      calendarIndex: 4,
+      appearances: new Set(),
+      goals: new Map([[7, 2]]),
+      goalsByTeam: new Map([[2, new Map([[7, 2]])]]),
+      reds: new Map(),
+      yellows: new Map(),
+      injuries: new Map(),
+    },
+  };
+  queueMatchDeltaWrites(db as any, [fixture]);
+  const attr = calls.find((c) => c.sql.includes("player_season_goals"));
+  assert.ok(attr, "flush escreve a atribuição por clube");
+  assert.match(attr!.sql, /ON CONFLICT\(player_id, team_id\) DO UPDATE SET goals = goals \+ excluded.goals/);
+  assert.deepEqual(attr!.params, [7, 2, 2]);
+  for (const cb of cbs) cb(null);
+  assert.equal(fixture._deltas, undefined);
 });
 
 test("U13 — quotaFromFormation deriva o XI da tática (fallback 4-4-2)", () => {
@@ -483,6 +517,7 @@ test("U14 — amarelos FIFA: 3º acumulado castiga 1 jogo; vermelho limpa a cont
       calendarIndex: 5,
       appearances: new Set(),
       goals: new Map(),
+      goalsByTeam: new Map(),
       // 77 apanhou 3º amarelo (castigo até à slot 6) E vermelho no mesmo jogo
       // (até à 8): o vermelho corre depois, limpa a contagem e o CASE fica
       // com o castigo mais longo (8).

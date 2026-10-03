@@ -300,6 +300,43 @@ function withSponsorBrand(t: AnyRow): AnyRow {
   };
 }
 
+/**
+ * Ranking do Melhor Marcador por divisão: top 10 de cada uma, divisões 1–4
+ * (a 5 é o pool interno invisível).
+ *
+ * A fonte é `player_season_goals` (golos por clube, escritos no flush do apito
+ * final, Liga + Taça) — o ranking mostra os golos que o jogador marcou PELO
+ * CLUBE atual, igual à regra do prémio: quem vendeu o goleador não o vê a subir
+ * na tabela do comprador, e o clube que os sofreu mantém os dele.
+ * Jogadores sem atribuição nenhuma na época (sala a decorrer no dia do deploy)
+ * caem no contador global `players.goals` — o comportamento anterior.
+ */
+export function fetchTopScorers(db: Db): Promise<AnyRow[]> {
+  return runAll(
+    db,
+    `SELECT id, name, position, goals, team_id, team_name, color_primary, color_secondary, division
+     FROM (
+       SELECT p.id, p.name, p.position, p.team_id, t.name AS team_name,
+              t.color_primary, t.color_secondary, t.division, p.skill,
+              COALESCE(g.goals, CASE WHEN a.player_id IS NULL THEN p.goals ELSE 0 END) AS goals,
+              ROW_NUMBER() OVER (
+                PARTITION BY t.division
+                ORDER BY COALESCE(g.goals, CASE WHEN a.player_id IS NULL THEN p.goals ELSE 0 END) DESC,
+                         p.skill DESC
+              ) AS rn
+       FROM players p
+       JOIN teams t ON t.id = p.team_id
+       LEFT JOIN player_season_goals g ON g.player_id = p.id AND g.team_id = p.team_id
+       LEFT JOIN (SELECT DISTINCT player_id FROM player_season_goals) a ON a.player_id = p.id
+       WHERE t.division BETWEEN 1 AND 4
+     )
+     WHERE goals > 0 AND rn <= 10`,
+  ).catch((err: any) => {
+    console.error("[coreHelpers] fetchTopScorers:", err?.message || err);
+    return [];
+  });
+}
+
 export function getStandingsRows(teams: AnyRow[] = []) {
   return [...teams].sort((a, b) => {
     const aGoalDifference = (a.goals_for || 0) - (a.goals_against || 0);

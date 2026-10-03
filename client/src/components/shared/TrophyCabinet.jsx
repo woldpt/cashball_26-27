@@ -106,15 +106,18 @@ export function TrophyCabinet({ trophies = [], onOpenPlayer, className = "" }) {
 /**
  * Normaliza a conquista em tipo de troféu (ícone + chave de agrupamento).
  * `Campeão <divisão>` mantém o texto original como chave (cada divisão é
- * um troféu distinto); "Melhor Marcador (N golos)" agrupa sem os golos
- * (que variam por época).
+ * um troféu distinto); "Melhor Marcador — <divisão> (N golos)" também agrupa
+ * por divisão, sem os golos (que variam por época).
  *
  * @param {string} achievement
  * @returns {{ key: string, label: string, icon: string }}
  */
 function trophyKind(achievement = "") {
   if (achievement.startsWith("Melhor Marcador")) {
-    return { key: "melhor-marcador", label: "Melhor Marcador", icon: "sports_soccer" };
+    // A divisão faz parte do troféu (como «Campeão Liga 3» já faz); os golos
+    // variam por época e saem da chave para o ×N agrupar as repetições.
+    const label = achievement.replace(/\s*\(\d+\s*golos\)\s*$/, "");
+    return { key: label, label, icon: "sports_soccer" };
   }
   return { key: achievement, label: achievement, icon: "emoji_events" };
 }

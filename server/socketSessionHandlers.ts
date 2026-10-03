@@ -1,5 +1,5 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, logClubNews } from "./coreHelpers";
+import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, fetchTopScorers, logClubNews } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, FRIENDLY_ROUND_NAME, SEASON_CALENDAR } from "./gameConstants";
 import { drawOffers, drawOffersAny, sponsorById } from "./game/sponsors";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
@@ -426,12 +426,7 @@ export function registerSessionSocketHandlers(
 			},
 		);
 
-		game.db.all(
-			"SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
-			(_err3: any, scorers: any[]) => {
-				socket.emit("topScorers", scorers || []);
-			},
-		);
+		fetchTopScorers(game.db).then((scorers) => socket.emit("topScorers", scorers));
 
 		game.db.get(
 			"SELECT id, name, division, budget, points, wins, draws, losses, goals_for, goals_against, color_primary, color_secondary, crest, stadium_capacity, stadium_name FROM teams WHERE id = ?",
@@ -1619,10 +1614,7 @@ export function registerSessionSocketHandlers(
 			emitPresencePause(game, io);
 			emitGlobalPlayerUpdate?.();
 		}
-		game.db.all(
-			"SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
-			(_err3: any, scorers: any[]) => socket.emit("topScorers", scorers || []),
-		);
+		fetchTopScorers(game.db).then((scorers) => socket.emit("topScorers", scorers));
 	});
 
 	/** Estado do patrocinador de um clube para o `sponsorState` (Jornal + modal). */
