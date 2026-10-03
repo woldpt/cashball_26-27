@@ -33,6 +33,7 @@ const teams = [
   {
     id: 2,
     name: "SL Benfica",
+    crest: "/logos/benfica.webp",
     division: 1,
     coach_name: "João Pedro Almeida",
     color_primary: "#e63946",
@@ -46,6 +47,7 @@ const teams = [
   {
     id: 3,
     name: "FC Porto",
+    crest: "/logos/porto.webp",
     division: 1,
     coach_name: "Maria do Céu Ferreira Magalhães",
     color_primary: "#1c2b7d",
@@ -59,6 +61,7 @@ const teams = [
   {
     id: 4,
     name: "Sporting de Braga",
+    crest: "/logos/sp-braga.webp",
     division: 1,
     coach_name: "Pelé",
     color_primary: "#d69d0a",
@@ -72,6 +75,7 @@ const teams = [
   {
     id: 5,
     name: "Vitória SC",
+    crest: "/logos/vitoria-sc.webp",
     division: 1,
     coach_name: null,
     color_primary: "#8a8a8a",
@@ -98,6 +102,7 @@ const teams = [
   {
     id: 7,
     name: "Rio Ave FC",
+    crest: "/logos/rio-ave.webp",
     division: 1,
     coach_name: null,
     color_primary: "#0057a8",
@@ -138,6 +143,7 @@ const teams = [
   {
     id: 22,
     name: "Académico de Viseu FC",
+    crest: "/logos/ac-viseu.webp",
     division: 2,
     coach_name: null,
     color_primary: "#e8b400",
@@ -151,6 +157,7 @@ const teams = [
   {
     id: 23,
     name: "União Desportiva de Leiria Futebol SAD",
+    crest: "/logos/u-leiria.webp",
     division: 2,
     coach_name: null,
     color_primary: "#d00027",
@@ -165,6 +172,7 @@ const teams = [
   {
     id: 31,
     name: "Académica de Coimbra",
+    crest: "/logos/academica.webp",
     division: 3,
     coach_name: "Inês",
     color_primary: "#1d1d1b",
@@ -174,6 +182,35 @@ const teams = [
     wins: 4,
     draws: 1,
     losses: 1,
+  },
+  // ── Divisão 4 ──
+  {
+    id: 41,
+    name: "Varzim SC",
+    crest: "/logos/varzim.webp",
+    division: 4,
+    coach_name: "Francisco Almeida Pires",
+    color_primary: "#000000",
+    points: 14,
+    goals_for: 12,
+    goals_against: 7,
+    wins: 4,
+    draws: 2,
+    losses: 1,
+  },
+  {
+    id: 42,
+    name: "AD Fafe",
+    crest: "/logos/fafe.webp",
+    division: 4,
+    coach_name: null,
+    color_primary: "#0b6e4f",
+    points: 11,
+    goals_for: 10,
+    goals_against: 9,
+    wins: 3,
+    draws: 2,
+    losses: 2,
   },
 ];
 
@@ -185,6 +222,7 @@ const players = [
   { id: 4, name: "Jogador D", teamId: 4 },
   { id: 5, name: "Jogador E", teamId: 21 },
   { id: 6, name: "Jogador F", teamId: 31 },
+  { id: 7, name: "Jogador G", teamId: 41 },
 ];
 
 const teamForms = {
@@ -202,13 +240,16 @@ const teamForms = {
   31: "VEV",
 };
 
+// `division` é obrigatório: a corrida ao goleador é por divisão e sem ele a
+// lista (e as tabs D1–D4) não renderiza — era o que acontecia neste harness.
 const topScorers = [
-  { id: 101, team_id: 1, color_primary: "#00a859", team_name: "Associação Desportiva de São João da Madeira SAD", name: "Rúben Gonçalves Pereira", goals: 12 },
-  { id: 102, team_id: 2, color_primary: "#e63946", team_name: "SL Benfica", name: "Tiago Manuel da Silva Correia", goals: 10 },
-  { id: 103, team_id: 3, color_primary: "#1c2b7d", team_name: "FC Porto", name: "Gonçalo Filipe Nunes Ribeiro", goals: 9 },
-  { id: 104, team_id: 21, color_primary: "#233d7d", team_name: "CD Nacional", name: "André Filipe Martins Teixeira", goals: 7 },
-  { id: 105, team_id: 22, color_primary: "#e8b400", team_name: "Académico de Viseu FC", name: "Bruno Alexandre Alves Portela", goals: 6 },
-  { id: 106, team_id: 31, color_primary: "#1d1d1b", team_name: "Académica de Coimbra", name: "Nuno Miguel Rodrigues Campos", goals: 5 },
+  { id: 101, team_id: 1, division: 1, color_primary: "#00a859", team_name: "Associação Desportiva de São João da Madeira SAD", name: "Rúben Gonçalves Pereira", goals: 12 },
+  { id: 102, team_id: 2, division: 1, color_primary: "#e63946", team_name: "SL Benfica", name: "Tiago Manuel da Silva Correia", goals: 10 },
+  { id: 103, team_id: 3, division: 1, color_primary: "#1c2b7d", team_name: "FC Porto", name: "Gonçalo Filipe Nunes Ribeiro", goals: 9 },
+  { id: 104, team_id: 21, division: 2, color_primary: "#233d7d", team_name: "CD Nacional", name: "André Filipe Martins Teixeira", goals: 7 },
+  { id: 105, team_id: 22, division: 2, color_primary: "#e8b400", team_name: "Académico de Viseu FC", name: "Bruno Alexandre Alves Portela", goals: 6 },
+  { id: 106, team_id: 31, division: 3, color_primary: "#1d1d1b", team_name: "Académica de Coimbra", name: "Nuno Miguel Rodrigues Campos", goals: 5 },
+  { id: 107, team_id: 41, division: 4, color_primary: "#000000", team_name: "Varzim SC", name: "Hélder Manuel Sousa Barbosa", goals: 4 },
 ];
 
 const allMatchResults = {
@@ -226,6 +267,7 @@ const allMatchResults = {
     { homeTeamId: 6, awayTeamId: 5, homeGoals: 0, awayGoals: 2 },
     { homeTeamId: 8, awayTeamId: 7, homeGoals: 1, awayGoals: 1 },
     { homeTeamId: 22, awayTeamId: 23, homeGoals: 1, awayGoals: 2 },
+    { homeTeamId: 41, awayTeamId: 42, homeGoals: 2, awayGoals: 1 },
     { homeTeamId: 31, awayTeamId: 22, homeGoals: 2, awayGoals: 0 },
   ],
 };

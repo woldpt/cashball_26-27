@@ -104,6 +104,8 @@ Colunas por posição (`flex items-end`, altura 80px): trilho `bg-primary/10 rou
 
 Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grupos canónicos em `constants/navigation.js` (Clube/Gestão/Competição/Transferências); offsets do sidebar: elementos fixos/absolutos usam `lg:left-[var(--sidebar-w-collapsed)]` / `lg:left-[var(--sidebar-w)]`.
 
+**Armadilha do tema:** no CSS gerado, o bloco `@media (width >= 40rem)` (`sm`) sai **depois** de `md` (768) e `lg` (1024) — o `@theme` em `index.css` redefine `--breakpoint-md`/`--breakpoint-lg` e muda a ordem. Como a especificidade é igual, **`sm:*` ganha sempre a `md:*`/`lg:*`** para a mesma propriedade: `max-w-22 sm:max-w-32 md:max-w-none` fica preso em 32 (era o que truncava os nomes na classificação). Só `xl`/`2xl` saem depois de `sm` — uma escala crescente tem de ficar em `base → sm → xl` (nunca desfazer em `md`/`lg`).
+
 ## 8. Efeitos
 
 | Efeito | Classe |

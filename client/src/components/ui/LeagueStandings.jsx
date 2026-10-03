@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { DIVISION_NAMES, SEASON_JORNADAS } from "../../constants/index.js";
 import { EmptyState } from "../shared/EmptyState.jsx";
 import { FormDots } from "../shared/FormDots.jsx";
+import { TeamCrest } from "../shared/TeamCrest.jsx";
 import { TabBar } from "../shared/TabBar.jsx";
 import { initialsFromName } from "../../utils/initials.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
@@ -24,7 +25,19 @@ function DivisionTable({
   humanTeamIds,
   coachNames,
   onTeamClick,
+  variant = "compact",
 }) {
+  // `hero` é a tabela da nossa divisão: brasões maiores, cabeçalho com ícone e
+  // realce próprio. `compact` são as outras três, que vivem lado a lado: sem a
+  // coluna Forma (a mais larga) e com V/E/D só quando a tabela está sozinha.
+  const hero = variant === "hero";
+  const statColsClass = hero ? "hidden sm:table-cell" : "sm:hidden";
+  // Teto do nome do clube. O auto-layout de tabelas dá ao nome a largura do
+  // texto todo e empurra a tabela para fora do painel (as últimas colunas
+  // ficam atrás de scroll horizontal) — por isso o teto, em todas as linhas
+  // (a mais longa é que decide a largura da tabela). Sem `md:max-w-none`:
+  // neste tema o bloco `sm` do CSS sai depois do `md`, logo `sm:*` ganharia.
+  const nameCap = hero ? "max-w-22 sm:max-w-48" : "max-w-22 sm:max-w-32";
   // Mesmo comparador do servidor, via rankStandings (fonte única de ordem).
   const divTeams = useMemo(
     () => rankStandings(teams.filter((t) => t.division === div)),
@@ -45,14 +58,36 @@ function DivisionTable({
   const divLabel = DIVISION_NAMES[div] || `Divisão ${div}`;
 
   return (
-    <section className="bg-surface-container rounded-md overflow-hidden flex flex-col">
+    <section
+      className={`bg-surface-container rounded-md overflow-hidden flex flex-col ${
+        hero ? "border border-tertiary/30 shadow-md shadow-black/30" : ""
+      }`}
+    >
       {/* Header */}
-      <div className="px-4 py-2.5 bg-surface-container-high flex justify-between items-center border-b border-outline-variant/20">
-        <h3 className="font-headline font-black text-xs tracking-tight uppercase text-tertiary">
-          {divLabel}
-        </h3>
+      <div
+        className={`px-4 py-2.5 flex justify-between items-center gap-2 border-b border-outline-variant/20 ${
+          hero ? "bg-tertiary/15" : "bg-surface-container-high"
+        }`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {hero && (
+            <span
+              className="material-symbols-outlined text-[18px] text-tertiary"
+              aria-hidden
+            >
+              emoji_events
+            </span>
+          )}
+          <h3
+            className={`font-headline font-black tracking-tight uppercase text-tertiary truncate ${
+              hero ? "text-sm sm:text-base" : "text-xs"
+            }`}
+          >
+            {divLabel}
+          </h3>
+        </div>
         {myDivision && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 text-primary text-[9px] font-black uppercase rounded-sm border border-primary/30">
+          <span className="shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 text-primary text-[9px] font-black uppercase rounded-sm border border-primary/30">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />A tua
             divisão
           </span>
@@ -61,7 +96,11 @@ function DivisionTable({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-[10px] sm:text-xs md:text-sm text-left border-separate border-spacing-y-px">
+        <table
+          className={`w-full text-left border-separate border-spacing-y-px ${
+            hero ? "text-[10px] sm:text-sm" : "text-[10px] sm:text-xs md:text-sm"
+          }`}
+        >
           <thead>
             <tr className="text-[8px] sm:text-[9px] uppercase text-on-surface-variant/50 font-bold bg-surface-container-low/60">
               <th className="pl-4 pr-2 py-1.5 w-8">Pos</th>
@@ -70,28 +109,35 @@ function DivisionTable({
                 Mov
               </th>
               <th className="px-1 py-1.5 text-center w-6">J</th>
-              <th className="px-1 py-1.5 text-center w-6 hidden sm:table-cell">
+              <th className={`px-1 py-1.5 text-center w-6 ${statColsClass}`}>
                 V
               </th>
-              <th className="px-1 py-1.5 text-center w-6 hidden sm:table-cell">
+              <th className={`px-1 py-1.5 text-center w-6 ${statColsClass}`}>
                 E
               </th>
-              <th className="px-1 py-1.5 text-center w-6 hidden sm:table-cell">
+              <th className={`px-1 py-1.5 text-center w-6 ${statColsClass}`}>
                 D
               </th>
               <th className="px-1 py-1.5 text-center w-8 hidden sm:table-cell">
                 DG
               </th>
-              <th className="px-1 py-1.5 text-center w-8 text-tertiary/70">
+              <th
+                className={`py-1.5 text-center w-8 text-tertiary/70 ${hero ? "px-1" : "pr-4"}`}
+              >
                 Pts
               </th>
-              <th className="pr-4 pl-2 py-1.5 text-right w-17">Forma</th>
+              {hero && (
+                <th className="pr-4 pl-2 py-1.5 text-right w-17 hidden sm:table-cell">
+                  Forma
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {divTeams.map((t, idx) => {
               const isMe = String(t.id) === String(myTeamId);
               const isHuman = humanTeamIds.has(String(t.id));
+              const coach = coachNames?.[t.id];
               const gd = (t.goals_for || 0) - (t.goals_against || 0);
               const played = (t.wins || 0) + (t.draws || 0) + (t.losses || 0);
               const isPromo = div > 1 && idx < 2;
@@ -143,12 +189,18 @@ function DivisionTable({
                   {/* Team */}
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span
-                        className="shrink-0 w-2 h-2 rounded-full"
-                        style={{ backgroundColor: t.color_primary || "#666" }}
+                      {/* Brasão do clube (sem brasão: inicial sobre a cor). */}
+                      <TeamCrest
+                        team={t}
+                        size={
+                          hero
+                            ? "w-5 h-5 sm:w-7 sm:h-7 text-[9px] sm:text-[10px]"
+                            : "w-4 h-4 sm:w-5 sm:h-5 text-[8px]"
+                        }
                       />
                       <span
-                        className={`flex-1 min-w-0 truncate ${isMe ? "" : "max-w-22 sm:max-w-32 md:max-w-none"} ${isRelegate && !isPromo ? "opacity-60" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
+                        title={t.name}
+                        className={`flex-1 min-w-0 truncate ${nameCap} ${isRelegate && !isPromo ? "opacity-60" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
                       >
                         {t.name}
                       </span>
@@ -157,13 +209,22 @@ function DivisionTable({
                           TU
                         </span>
                       )}
-                      {!isMe && isHuman && coachNames?.[t.id] && (
+                      {!isMe && isHuman && coach && (
                         <span
-                          title={coachNames[t.id]}
+                          title={coach}
                           className="shrink-0 px-1 sm:px-1.5 py-px bg-amber-400/15 text-amber-400 text-[8px] font-black rounded-sm border border-amber-400/30 whitespace-nowrap"
                         >
-                          <span className="sm:hidden">{initialsFromName(coachNames[t.id])}</span>
-                          <span className="hidden sm:inline">{coachNames[t.id]}</span>
+                          {/* Nas compactas o nome do treinador não cabe: iniciais. */}
+                          {hero ? (
+                            <>
+                              <span className="sm:hidden">
+                                {initialsFromName(coach)}
+                              </span>
+                              <span className="hidden sm:inline">{coach}</span>
+                            </>
+                          ) : (
+                            initialsFromName(coach)
+                          )}
                         </span>
                       )}
                     </div>
@@ -181,15 +242,15 @@ function DivisionTable({
                     {played}
                   </td>
                   {/* V */}
-                  <td className="px-1 py-2 text-center text-on-surface-variant/60 hidden sm:table-cell">
+                  <td className={`px-1 py-2 text-center text-on-surface-variant/60 ${statColsClass}`}>
                     {t.wins || 0}
                   </td>
                   {/* E */}
-                  <td className="px-1 py-2 text-center text-on-surface-variant/60 hidden sm:table-cell">
+                  <td className={`px-1 py-2 text-center text-on-surface-variant/60 ${statColsClass}`}>
                     {t.draws || 0}
                   </td>
                   {/* D */}
-                  <td className="px-1 py-2 text-center text-on-surface-variant/60 hidden sm:table-cell">
+                  <td className={`px-1 py-2 text-center text-on-surface-variant/60 ${statColsClass}`}>
                     {t.losses || 0}
                   </td>
                   {/* DG */}
@@ -199,13 +260,17 @@ function DivisionTable({
                     {gd > 0 ? `+${gd}` : gd}
                   </td>
                   {/* Pts */}
-                  <td className="px-1 py-2 text-center font-black font-headline text-on-surface">
+                  <td
+                    className={`py-2 text-center font-black font-headline text-on-surface ${hero ? "px-1" : "pr-4"}`}
+                  >
                     {t.points || 0}
                   </td>
                   {/* Form */}
-                  <td className="pr-4 pl-2 py-2">
-                    <FormDots form={teamForms[t.id] || ""} />
-                  </td>
+                  {hero && (
+                    <td className="pr-4 pl-2 py-2 hidden sm:table-cell">
+                      <FormDots form={teamForms[t.id] || ""} />
+                    </td>
+                  )}
                 </motion.tr>
               );
             })}
@@ -363,6 +428,14 @@ function GoldenBootSidebar({ topScorers, teams, myTeamId }) {
   const myDivision = Number(
     (teams || []).find((t) => String(t.id) === String(myTeamId))?.division,
   );
+  // O ranking traz só `team_id` + cores: o brasão vem do `teams` da sala.
+  const teamById = useMemo(() => {
+    const map = {};
+    (teams || []).forEach((t) => {
+      map[t.id] = t;
+    });
+    return map;
+  }, [teams]);
   const [picked, setPicked] = useState(null);
 
   const divisions = useMemo(
@@ -429,10 +502,16 @@ function GoldenBootSidebar({ topScorers, teams, myTeamId }) {
                 {i + 1}
               </span>
 
-              {/* Team colour dot */}
-              <span
-                className="shrink-0 w-2 h-2 rounded-full"
-                style={{ backgroundColor: s.color_primary || "#666" }}
+              {/* Brasão do clube (sem brasão: inicial sobre a cor do clube) */}
+              <TeamCrest
+                team={
+                  teamById[s.team_id] || {
+                    name: s.team_name,
+                    color_primary: s.color_primary,
+                    color_secondary: s.color_secondary,
+                  }
+                }
+                size="w-5 h-5 text-[9px]"
               />
 
               {/* Name + team */}
@@ -573,6 +652,16 @@ export function LeagueStandings({
     return map;
   }, [teams]);
 
+  // A divisão da minha equipa manda no destaque; sem equipa (espectador,
+  // treinador despedido) o destaque é a Primeira Liga.
+  const heroDivision = useMemo(() => {
+    const div = Number(
+      (teams || []).find((t) => String(t.id) === String(myTeamId))?.division,
+    );
+    return div >= 1 && div <= 4 ? div : 1;
+  }, [teams, myTeamId]);
+  const otherDivisions = [1, 2, 3, 4].filter((d) => d !== heroDivision);
+
   if (!teams?.length) {
     return (
       <div className="space-y-4">
@@ -613,33 +702,47 @@ export function LeagueStandings({
         )}
       </div>
 
-      {/* Main layout: tables (left) + sidebar (right) */}
+      {/* A nossa divisão em destaque, com a corrida ao goleador ao lado */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        {/* Division tables */}
-        <div className="xl:col-span-9 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((div) => (
-            <DivisionTable
-              key={div}
-              div={div}
-              teams={teams}
-              prevStandings={prevStandings}
-              teamForms={teamForms}
-              myTeamId={myTeamId}
-              humanTeamIds={humanTeamIds}
-              coachNames={coachNames}
-              onTeamClick={onTeamClick}
-            />
-          ))}
+        <div className="xl:col-span-8">
+          <DivisionTable
+            variant="hero"
+            div={heroDivision}
+            teams={teams}
+            prevStandings={prevStandings}
+            teamForms={teamForms}
+            myTeamId={myTeamId}
+            humanTeamIds={humanTeamIds}
+            coachNames={coachNames}
+            onTeamClick={onTeamClick}
+          />
         </div>
 
-        {/* Sidebar */}
-        <div className="xl:col-span-3 flex flex-col gap-4">
+        {/* Goleadores — a corrida da nossa divisão abre por omissão */}
+        <div className="xl:col-span-4 flex flex-col gap-4">
           <GoldenBootSidebar
             topScorers={topScorers}
             teams={teams}
             myTeamId={myTeamId}
           />
         </div>
+      </div>
+
+      {/* Os outros campeonatos, lado a lado */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {otherDivisions.map((div) => (
+          <DivisionTable
+            key={div}
+            div={div}
+            teams={teams}
+            prevStandings={prevStandings}
+            teamForms={teamForms}
+            myTeamId={myTeamId}
+            humanTeamIds={humanTeamIds}
+            coachNames={coachNames}
+            onTeamClick={onTeamClick}
+          />
+        ))}
       </div>
 
       {/* Matchweek results */}
