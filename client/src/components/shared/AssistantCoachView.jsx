@@ -27,9 +27,12 @@ export function AssistantMascot({ mood, compact }) {
     const id = setInterval(() => setOpen((v) => !v), 420);
     return () => clearInterval(id);
   }, [reducedMotion]);
+  // Caixa com o MESMO aspecto dos assets (336×512 = 0.656): o `<img>` usa
+  // `object-fit: fill`, logo qualquer diferença de aspecto entorta o boneco.
+  // 128px de altura mantém o tamanho da cabeça que a caixa quadrada dava.
   const size = compact
-    ? "h-[76px] w-[76px]"
-    : "h-[108px] w-[108px] lg:h-[132px] lg:w-[132px]";
+    ? "h-[76px] w-[50px]"
+    : "h-[128px] w-[84px] lg:h-[156px] lg:w-[102px]";
   const imgClass = "h-full w-full";
   const shadow = "drop-shadow(0 6px 10px rgba(0,0,0,0.45))";
   const filter = sad ? { filter: `saturate(0.45) brightness(0.82) ${shadow}` } : { filter: shadow };
