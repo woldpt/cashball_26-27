@@ -6,6 +6,7 @@ import {
   contractEpoch,
   SEASON_CALENDAR,
   fairWeeklyWage,
+  staffAttendanceMult,
 } from "./gameConstants";
 import { getWeatherForFixture } from "./game/matchCalculations";
 import { sponsorById, sponsorShortName } from "./game/sponsors";
@@ -480,6 +481,15 @@ async function computeAttendance(
   const effectiveCap = Math.min(capacity, fanbase);
   const fansMood = team.fans_mood ?? T.fansMoodDefault;
   const ticketPrice = team.ticket_price ?? T.ticketBasePrice;
+  // Director de Comunicação: mais bilhetes vendidos (não muda o mood, muda a
+  // conversão do mesmo entusiasmo em bancada). Leitura falhada → 0, para as
+  // DBs mínimas dos testes de regressão continuarem válidas.
+  const staffRow = await runGet<{ level: number }>(
+    db,
+    "SELECT level FROM team_staff WHERE team_id = ? AND role = 'comunicacao'",
+    [homeTeamId],
+  ).catch(() => null);
+  const commLevel = Number(staffRow?.level) || 0;
 
   const recentMatches = await runAll<{
     home_team_id: number;
@@ -616,6 +626,14 @@ async function computeAttendance(
 
   // ── Multiplicadores: Taça, meteo, preço ───────────────────────────────
   let mult = 1 + bonus;
+  const staffMult = staffAttendanceMult(commLevel);
+  if (staffMult !== 1) {
+    mult *= staffMult;
+    reasons.push({
+      label: "departamento de comunicação",
+      impact: Math.abs(staffMult - 1) + 0.02,
+    });
+  }
   const competition = ctx?.competition ?? "league";
   if (competition === "cup" && ctx?.cupRound != null) {
     const cupMult = T.attendanceCupRoundMult[ctx.cupRound] ?? 1;

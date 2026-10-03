@@ -2,7 +2,7 @@ import type { MatchFixture } from "../types";
 import { dbRunAsync, dbAllAsync, type Db } from "./dbAsync";
 import type { Rng } from "./matchCalculations";
 import { clampSkill } from "./matchCalculations";
-import { recalcPlayerValue, MATCH_TUNING, MORALE_NEUTRAL } from "../gameConstants";
+import { recalcPlayerValue, MATCH_TUNING, MORALE_NEUTRAL, STAFF_FANS_DECAY_REDUCTION_PER_LEVEL } from "../gameConstants";
 
 export async function applyPostMatchQualityEvolution(
   db: Db,
@@ -113,8 +113,19 @@ export async function applyPostMatchQualityEvolution(
         const baseCase = Object.entries(T.fansBaseByDivision)
           .map(([div, base]) => `WHEN ${Number(div)} THEN ${Number(base)}`)
           .join(" ");
+        // Director de Comunicação: trava o decaimento (-8%/nível). A tabela
+        // `team_staff` não existe nas DBs mínimas dos testes de regressão, por
+        // isso é referida no SQL só quando existe (senão o UPDATE rebentava).
+        const hasStaffTable = await dbAll<{ n: number }>(
+          "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'team_staff'",
+        )
+          .then((rows) => (rows[0]?.n ?? 0) > 0)
+          .catch(() => false);
+        const staffDecaySql = hasStaffTable
+          ? ` * (1 - ${STAFF_FANS_DECAY_REDUCTION_PER_LEVEL} * COALESCE((SELECT level FROM team_staff WHERE team_id = teams.id AND role = 'comunicacao'), 0))`
+          : "";
         await dbRun(
-          `UPDATE teams SET fans_mood = MAX(1, MIN(50, CAST(fans_mood + ((CASE division ${baseCase} ELSE 25 END) - fans_mood) * ${T.fansMoodDecayRate} AS INTEGER)))`,
+          `UPDATE teams SET fans_mood = MAX(1, MIN(50, CAST(fans_mood + ((CASE division ${baseCase} ELSE 25 END) - fans_mood) * ${T.fansMoodDecayRate}${staffDecaySql} AS INTEGER)))`,
         );
         const fanCases: string[] = [];
         const fanParams: any[] = [];

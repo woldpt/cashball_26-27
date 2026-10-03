@@ -291,10 +291,11 @@ export const STAFF_SEVERANCE_WEEKS = 2;
 /**
  * Papéis disponíveis (ordem canónica da UI e do payload).
  * `auxiliar` = Treinador Auxiliar (treino) · `fisico` = Preparador Físico
- * (forma/resistência). O cliente tem os rótulos em `constants/staff.js` —
- * daqui saem só os números.
+ * (forma/resistência) · `comunicacao` = Director de Comunicação (adeptos e
+ * bilheteira) · `medico` = Médico (lesões). O cliente tem os rótulos em
+ * `constants/staff.js` — daqui saem só os números.
  */
-export const STAFF_ROLES = ["auxiliar", "fisico"] as const;
+export const STAFF_ROLES = ["auxiliar", "fisico", "comunicacao", "medico"] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
 /** Nível de contratação automática dos NPCs, por divisão. */
@@ -331,6 +332,51 @@ export const STAFF_RESTED_FORM_PER_2_LEVELS = 1;
 export const STAFF_RESISTANCE_PER_LEVEL = 0.5;
 /** Preparador Físico: -8% no decaimento de resistência (sem foco) por nível. */
 export const STAFF_RES_DECAY_REDUCTION_PER_LEVEL = 0.08;
+/** Director de Comunicação: +2% de lotação por nível. */
+export const STAFF_ATTENDANCE_PER_LEVEL = 0.02;
+/** Director de Comunicação: -8% no decaimento do mood dos adeptos por nível. */
+export const STAFF_FANS_DECAY_REDUCTION_PER_LEVEL = 0.08;
+/** Médico: -6% na probabilidade de lesão por nível (nível 5 = -30%). */
+export const STAFF_INJURY_REDUCTION_PER_LEVEL = 0.06;
+/** Médico: -1 semana de lesão a cada 2 níveis (mínimo 1 semana). */
+export const STAFF_INJURY_WEEKS_PER_2_LEVELS = 1;
+/** Médico: -1 ponto de skill perdido nas lesões graves por nível (mínimo 0). */
+export const STAFF_INJURY_SKILL_LOSS_PER_LEVEL = 1;
+
+/**
+ * Multiplicadores puros dos efeitos de staff — a engine e a folha semanal
+ * chamam-nos em vez de repetir as fórmulas (e os testes de regressão medem
+ * exatamente estes números).
+ */
+export function staffInjuryChanceMult(level: number): number {
+  const lvl = Math.min(STAFF_MAX_LEVEL, Math.max(0, Math.floor(Number(level) || 0)));
+  return 1 - STAFF_INJURY_REDUCTION_PER_LEVEL * lvl;
+}
+
+/** Semanas de lesão depois do médico (nunca menos de 1). */
+export function staffInjuryWeeks(level: number, weeks: number): number {
+  const lvl = Math.min(STAFF_MAX_LEVEL, Math.max(0, Math.floor(Number(level) || 0)));
+  const cut = Math.floor(lvl / 2) * STAFF_INJURY_WEEKS_PER_2_LEVELS;
+  return Math.max(1, Math.round(weeks) - cut);
+}
+
+/** Skill perdida numa lesão grave depois do médico (nunca negativa). */
+export function staffInjurySkillLoss(level: number, loss: number): number {
+  const lvl = Math.min(STAFF_MAX_LEVEL, Math.max(0, Math.floor(Number(level) || 0)));
+  return Math.max(0, Math.round(loss) - lvl * STAFF_INJURY_SKILL_LOSS_PER_LEVEL);
+}
+
+/** Multiplicador de lotação do Director de Comunicação. */
+export function staffAttendanceMult(level: number): number {
+  const lvl = Math.min(STAFF_MAX_LEVEL, Math.max(0, Math.floor(Number(level) || 0)));
+  return 1 + STAFF_ATTENDANCE_PER_LEVEL * lvl;
+}
+
+/** Multiplicador do decaimento semanal do mood (1 = sem funcionário). */
+export function staffFansDecayMult(level: number): number {
+  const lvl = Math.min(STAFF_MAX_LEVEL, Math.max(0, Math.floor(Number(level) || 0)));
+  return 1 - STAFF_FANS_DECAY_REDUCTION_PER_LEVEL * lvl;
+}
 
 /**
  * Lugares isentos da manutenção semanal do estádio: os primeiros 3000

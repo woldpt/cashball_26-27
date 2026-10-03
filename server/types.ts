@@ -118,6 +118,9 @@ export interface MatchFixture {
   _homeFullRoster?: PlayerRow[];
   _awayFullRoster?: PlayerRow[];
   _injuryLoadMult?: { home: number; away: number };
+  /** Nível do Médico (funcionário) por equipa, fixado no arranque do segmento
+   * (determinismo de replay: a engine não lê a BD durante a simulação). */
+  _staffInjury?: { home: number; away: number };
   _homeMorale?: number;
   _awayMorale?: number;
   _t1?: Tactic | null;

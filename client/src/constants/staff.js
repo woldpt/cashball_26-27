@@ -36,6 +36,29 @@ export const STAFF_ROLE_META = {
       return parts.join(" · ");
     },
   },
+  comunicacao: {
+    label: "Director de Comunicação",
+    icon: "campaign",
+    description: "Enche o estádio e segura o ânimo da bancada.",
+    effect: (e) => {
+      const parts = [];
+      if (e.attendancePct) parts.push(`+${e.attendancePct}% lotação`);
+      if (e.fansDecayPct) parts.push(`−${e.fansDecayPct}% queda de ânimo`);
+      return parts.join(" · ");
+    },
+  },
+  medico: {
+    label: "Médico",
+    icon: "medical_services",
+    description: "Menos lesões, mais curtas e com menos skill perdido.",
+    effect: (e) => {
+      const parts = [];
+      if (e.injuryPct) parts.push(`−${e.injuryPct}% lesões`);
+      if (e.weeksCut) parts.push(`−${e.weeksCut} sem.`);
+      if (e.skillSaved) parts.push(`poupa ${e.skillSaved} skill`);
+      return parts.join(" · ");
+    },
+  },
 };
 
 const FALLBACK = {

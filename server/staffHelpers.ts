@@ -21,6 +21,11 @@ import {
   STAFF_NPC_LEVEL_BY_DIVISION,
   STAFF_TRAINING_PER_LEVEL,
   STAFF_RESISTANCE_PER_LEVEL,
+  STAFF_ATTENDANCE_PER_LEVEL,
+  STAFF_FANS_DECAY_REDUCTION_PER_LEVEL,
+  STAFF_INJURY_REDUCTION_PER_LEVEL,
+  STAFF_INJURY_WEEKS_PER_2_LEVELS,
+  STAFF_INJURY_SKILL_LOSS_PER_LEVEL,
   type StaffRole,
   staffSalaryFor,
   staffSigningFee,
@@ -49,6 +54,20 @@ const STAFF_NAMES: Record<StaffRole, string[]> = {
     "Mestre Flexões",
     "Dra. Recuperação",
     "Sr. Alongamento",
+  ],
+  comunicacao: [
+    "Tó Megafone",
+    "Dona Bilhete",
+    "Zé Cartaz",
+    "Dra. Imprensa",
+    "Senhor Estrondo",
+  ],
+  medico: [
+    "Dr. Ossos",
+    "Enf. Pensos",
+    "Dr. Gelo",
+    "Dra. Radiografia",
+    "Prof. Milagre",
   ],
 };
 
@@ -100,6 +119,19 @@ export function staffEffectNumbers(role: string, level: number): Record<string, 
       restedForm: Math.floor(lvl / 2),
       resistance: Math.round(STAFF_RESISTANCE_PER_LEVEL * lvl * 10) / 10,
       decayPct: Math.round(0.08 * lvl * 100),
+    };
+  }
+  if (role === "comunicacao") {
+    return {
+      attendancePct: Math.round(STAFF_ATTENDANCE_PER_LEVEL * lvl * 100),
+      fansDecayPct: Math.round(STAFF_FANS_DECAY_REDUCTION_PER_LEVEL * lvl * 100),
+    };
+  }
+  if (role === "medico") {
+    return {
+      injuryPct: Math.round(STAFF_INJURY_REDUCTION_PER_LEVEL * lvl * 100),
+      weeksCut: Math.floor(lvl / 2) * STAFF_INJURY_WEEKS_PER_2_LEVELS,
+      skillSaved: lvl * STAFF_INJURY_SKILL_LOSS_PER_LEVEL,
     };
   }
   return {};

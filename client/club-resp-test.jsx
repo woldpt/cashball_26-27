@@ -35,11 +35,12 @@ const teamInfo = {
 
 const me = { id: "coach-1", teamId: 1, name: "Treinador Teste" };
 
-// Funcionários: pior caso do layout — 3 papéis (um deles sem catálogo no
-// cliente, a exercer o fallback), 1 contratado com nome comprido, lugares
-// livres e saldo para contratar (rótulo longo no botão).
+// Funcionários: pior caso do layout — os 4 papéis reais (com os efeitos
+// completos, incluindo o do médico, que é o texto mais comprido) mais um
+// papel sem catálogo no cliente (exercita o fallback), 1 contratado com nome
+// comprido, lugares livres e saldo para contratar (rótulo longo no botão).
 const staff = {
-  roles: ["auxiliar", "fisico", "medico"],
+  roles: ["auxiliar", "fisico", "comunicacao", "medico", "olheiro"],
   slots: 3,
   used: 1,
   maxLevel: 5,
@@ -56,6 +57,20 @@ const staff = {
       { restedForm: 1, resistance: 1.5, decayPct: 24 },
       { restedForm: 2, resistance: 2, decayPct: 32 },
       { restedForm: 2, resistance: 2.5, decayPct: 40 },
+    ],
+    comunicacao: [
+      { attendancePct: 2, fansDecayPct: 8 },
+      { attendancePct: 4, fansDecayPct: 16 },
+      { attendancePct: 6, fansDecayPct: 24 },
+      { attendancePct: 8, fansDecayPct: 32 },
+      { attendancePct: 10, fansDecayPct: 40 },
+    ],
+    medico: [
+      { injuryPct: 6, weeksCut: 0, skillSaved: 1 },
+      { injuryPct: 12, weeksCut: 1, skillSaved: 2 },
+      { injuryPct: 18, weeksCut: 1, skillSaved: 3 },
+      { injuryPct: 24, weeksCut: 2, skillSaved: 4 },
+      { injuryPct: 30, weeksCut: 2, skillSaved: 5 },
     ],
   },
   members: [

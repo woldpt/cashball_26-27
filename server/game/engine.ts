@@ -80,7 +80,14 @@ import {
 } from "./matchCalculations";
 import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
-import { recalcPlayerValue, MATCH_TUNING, MORALE_NEUTRAL } from "../gameConstants";
+import {
+  recalcPlayerValue,
+  MATCH_TUNING,
+  MORALE_NEUTRAL,
+  staffInjuryChanceMult,
+  staffInjuryWeeks,
+  staffInjurySkillLoss,
+} from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
 import { deriveBench } from "./bench";
 import { logMedicalNews } from "../coreHelpers";
@@ -1059,13 +1066,17 @@ async function applyInjuryEvent({
 
   const injuredPlayer = squad[Math.floor(rng() * squad.length)];
   const severityRoll = rng();
+  // Médico da equipa: encurta a lesão e poupa skill nas graves.
+  const medicLevel = Number(fixture._staffInjury?.[teamSide]) || 0;
   let injuryWeeks;
   let injuryLabel;
   if (severityRoll < MATCH_TUNING.injurySevereShare) {
     // Grave: 3–8 semanas, incomum
-    injuryWeeks =
+    injuryWeeks = staffInjuryWeeks(
+      medicLevel,
       MATCH_TUNING.injurySevereMinWeeks +
-      Math.floor(rng() * MATCH_TUNING.injurySevereExtraWeeks);
+        Math.floor(rng() * MATCH_TUNING.injurySevereExtraWeeks),
+    );
     injuryLabel = "grave";
   } else {
     // Leve: 1 semana (afasta da próxima convocatória), comum
@@ -1076,8 +1087,11 @@ async function applyInjuryEvent({
   const injuryUntil = currentMatchweek + injuryWeeks;
   const qualityLoss =
     injuryLabel === "grave"
-      ? MATCH_TUNING.injurySevereLossBase +
-        Math.floor(rng() * MATCH_TUNING.injurySevereLossExtra)
+      ? staffInjurySkillLoss(
+          medicLevel,
+          MATCH_TUNING.injurySevereLossBase +
+            Math.floor(rng() * MATCH_TUNING.injurySevereLossExtra),
+        )
       : 0;
   // ATENÇÃO: oldSkill vem do fullRoster (objetos reais da BD) e NUNCA de
   // injuredPlayer.skill — um clone de GR improvisado (convertToEmergencyGK) tem
@@ -1898,6 +1912,25 @@ export async function simulateMatchSegment(
       home: homeInjured > 0 ? MATCH_TUNING.injuryLoadSoftener : 1,
       away: awayInjured > 0 ? MATCH_TUNING.injuryLoadSoftener : 1,
     };
+  }
+
+  // Médico (funcionário) lido UMA vez por segmento e guardado no fixture, tal
+  // como a carga de lesões: um replay pós-crash do mesmo segmento tem de dar
+  // exatamente as mesmas lesões (a engine não lê a BD durante a simulação).
+  if (fixture._staffInjury === undefined) {
+    const medicLevel = (teamId: number) =>
+      dbGetAsync<{ level: number }>(
+        db,
+        "SELECT level FROM team_staff WHERE team_id = ? AND role = 'medico'",
+        [teamId],
+      )
+        .then((row) => Number(row?.level) || 0)
+        .catch(() => 0);
+    const [homeMedic, awayMedic] = await Promise.all([
+      medicLevel(fixture.homeTeamId),
+      medicLevel(fixture.awayTeamId),
+    ]);
+    fixture._staffInjury = { home: homeMedic, away: awayMedic };
   }
 
   if (!fixture.homeLineup || fixture.homeLineup.length === 0) {
@@ -2743,8 +2776,14 @@ export async function resolveInjuries(tick: MinuteTickContext, shared: MinuteSha
     MATCH_TUNING.injuryWeatherMult[fixture._weather ?? ""] ?? 1.0;
   const injuryBasePerSide =
     (MATCH_TUNING.injuryPerMinute * weatherInjuryMult) / 2;
-  const homeInjuryMult = fixture._injuryLoadMult?.home ?? 1;
-  const awayInjuryMult = fixture._injuryLoadMult?.away ?? 1;
+  // Carga de lesões (amortiza lesões consecutivas) × médico da equipa
+  // (funcionário: -6% de probabilidade por nível).
+  const homeInjuryMult =
+    (fixture._injuryLoadMult?.home ?? 1) *
+    staffInjuryChanceMult(fixture._staffInjury?.home ?? 0);
+  const awayInjuryMult =
+    (fixture._injuryLoadMult?.away ?? 1) *
+    staffInjuryChanceMult(fixture._staffInjury?.away ?? 0);
   const rollInjuryForSide = async (side: "home" | "away") => {
     const isHome = side === "home";
     const squad = isHome ? powers.home.squad : powers.away.squad;

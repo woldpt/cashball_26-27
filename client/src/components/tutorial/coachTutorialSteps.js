@@ -31,7 +31,7 @@ export const COACH_TUTORIAL_STEPS = [
     submenu: "gestao",
     targets: ['[data-tour="club-staff"]'],
     title: "Funcionários",
-    text: "Mister, o clube não se governa sozinho: aqui contratas quem trabalha para nós. O treinador auxiliar acelera o treino dos rapazes e o preparador físico recupera quem descansa. Só tens 3 lugares na equipa técnica — escolhe bem, que o salário sai todas as semanas.",
+    text: "Mister, o clube não se governa sozinho: aqui contratas quem trabalha para nós. O treinador auxiliar acelera o treino, o preparador físico recupera os rapazes, o médico encurta as lesões e a comunicação enche o estádio. Só tens 3 lugares na equipa técnica — escolhe bem, que o salário sai todas as semanas.",
   },
   {
     id: "jornal",

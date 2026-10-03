@@ -36,6 +36,8 @@
  *   U16 — resolveNearMiss com golo no minuto → zero eventos
  *   U17 — amigável: gates bloqueiam cartões/lesões em 90 min × 3 seeds
  *   U18 — processMatchMinute determinístico (ordem RNG estável)
+ *   U19 — médico (funcionário): corta a probabilidade de lesão, encurta as
+ *        semanas e poupa skill nas lesões graves (rng constante: resistência 1)
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -642,4 +644,62 @@ test("U18 — processMatchMinute determinístico (ordem RNG estável)", async ()
     return { events: logicOf(fixture.events), goals: [fixture.finalHomeGoals, fixture.finalAwayGoals] };
   };
   assert.deepEqual(await run(), await run());
+});
+
+// ── U19: funcionários (médico) na via das lesões ───────────────────────────
+// Com resistência 1 o teste de resistência nunca salva o jogador
+// (`skip = (1-1)*0.00653 = 0`), por isso um rng CONSTANTE decide tudo:
+// o gate da lesão, o jogador escolhido, a gravidade e as semanas.
+function medicTick(constant: number, medicLevel: number) {
+  const { tick, shared, fixture } = minuteTick(1);
+  const squad = tick.homeSquad.map((p) => ({ ...p, resistance: 1 }));
+  tick.homeSquad = squad;
+  tick.homeFullRoster = [...squad];
+  tick.homeLineupIds = new Set(squad.map((p) => p.id));
+  tick.powers.home = computeSidePower(squad, tick.homeTactic, 25, 0, 1);
+  tick.rng = () => constant;
+  fixture._injuryLoadMult = { home: 1, away: 1 };
+  fixture._staffInjury = { home: medicLevel, away: medicLevel };
+  return { tick, shared, fixture };
+}
+
+test("U19 — médico corta a probabilidade de lesão (gate entre as duas taxas)", async () => {
+  // Taxa base por lado = 0.0015 (0.003/min a dividir pelos 2 lados). Com médico
+  // nível 5 → 0.00105. O gate 0.0013 cai entre as duas: lesiona sem médico,
+  // não lesiona com ele.
+  const run = async (medicLevel: number) => {
+    const { tick, shared, fixture } = medicTick(0.0013, medicLevel);
+    for (let m = 1; m <= 10; m++) {
+      tick.minute = m;
+      fixture._minute = m;
+      await resolveInjuries(tick, shared);
+    }
+    return fixture.events.filter((e) => e.type === "injury").length;
+  };
+  const withoutMedic = await run(0);
+  const withMedic = await run(5);
+  assert.ok(withoutMedic > 0, `sem médico lesiona (${withoutMedic} lesões em 10 min)`);
+  assert.equal(withMedic, 0, "com médico nível 5 não lesiona no mesmo gate");
+});
+
+test("U19b — médico encurta a lesão grave e poupa skill", async () => {
+  // Gate 0.0001 < gravidade 0.1 → lesão GRAVE. Semanas = 3 + floor(0.0001*6) = 3;
+  // perda = 2 + floor(0.0001*4) = 2. O jogador escolhido é o índice 0 (GR, skill 30).
+  const run = async (medicLevel: number) => {
+    const { tick, shared, fixture } = medicTick(0.0001, medicLevel);
+    tick.minute = 1;
+    fixture._minute = 1;
+    await resolveInjuries(tick, shared);
+    const delta = fixture._deltas?.injuries?.get(1);
+    return { delta, events: fixture.events.filter((e) => e.type === "injury") };
+  };
+  const without = await run(0);
+  assert.equal(without.delta?.oldSkill, 30, "lesão grave sem médico parte do skill 30");
+  assert.equal(without.delta?.injuryUntil, 4, "sem médico: 3 semanas (jornada 1 + 3)");
+  assert.equal(without.delta?.newSkill, 28, "sem médico perde 2 de skill");
+  assert.equal(without.events[0]?.severity, "grave", "lesão classificada como grave");
+
+  const withMedic = await run(5);
+  assert.equal(withMedic.delta?.injuryUntil, 2, "médico nível 5: 3 semanas → 1 (nunca abaixo de 1)");
+  assert.equal(withMedic.delta?.newSkill, 30, "médico nível 5 poupa a perda de skill");
 });

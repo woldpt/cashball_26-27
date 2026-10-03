@@ -28,6 +28,7 @@ const staff = {
   members: [
     { role: "auxiliar", level: 5, name: "Prof. Cabrita", salaryWeekly: 48000, hiredSlot: 3, effect: { trainingPct: 40 }, severance: 96000 },
     { role: "fisico", level: 2, name: "Sargento Brás", salaryWeekly: 6000, hiredSlot: 4, effect: { restedForm: 1, resistance: 1, decayPct: 16 }, severance: 12000 },
+    { role: "medico", level: 3, name: "Dr. Ossos", salaryWeekly: 12000, hiredSlot: 5, effect: { injuryPct: 18, weeksCut: 1, skillSaved: 3 }, severance: 24000 },
   ],
 };
 

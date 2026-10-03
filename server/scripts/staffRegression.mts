@@ -35,11 +35,41 @@ const { hireStaff, fireStaff, buildStaffState, ensureNpcStaff, staffEffectNumber
     ensureNpcStaff: (game: any) => Promise<void>;
     staffEffectNumbers: (role: string, level: number) => Record<string, number>;
   };
+const {
+  staffInjuryChanceMult,
+  staffInjuryWeeks,
+  staffInjurySkillLoss,
+  staffAttendanceMult,
+  staffFansDecayMult,
+} = require("../gameConstants.ts") as {
+  staffInjuryChanceMult: (level: number) => number;
+  staffInjuryWeeks: (level: number, weeks: number) => number;
+  staffInjurySkillLoss: (level: number, loss: number) => number;
+  staffAttendanceMult: (level: number) => number;
+  staffFansDecayMult: (level: number) => number;
+};
 const { applyTrainingBonuses } = require("../trainingHelpers.ts") as {
   applyTrainingBonuses: (
     game: any,
     fixtures: any[],
     completedCalendarIndex: number,
+  ) => Promise<void>;
+};
+const { calculateMatchAttendance } = require("../coreHelpers.ts") as {
+  calculateMatchAttendance: (
+    db: unknown,
+    homeTeamId: number,
+    opponentTeamId?: number,
+    ctx?: unknown,
+  ) => Promise<number>;
+};
+const { applyPostMatchQualityEvolution } = require("../game/engine.ts") as {
+  applyPostMatchQualityEvolution: (
+    db: unknown,
+    fixtures: any[],
+    currentMatchweek: number,
+    season: number,
+    calendarIndex?: number,
   ) => Promise<void>;
 };
 
@@ -144,6 +174,27 @@ async function main() {
     "preparador físico nível 4 = +2 forma / +2.0 resistência / -32% decaimento",
   );
 
+  // ── Director de Comunicação e Médico ────────────────────────────────────
+  const comm5 = staffEffectNumbers("comunicacao", 5);
+  assert(
+    comm5.attendancePct === 10 && comm5.fansDecayPct === 40,
+    "comunicação nível 5 = +10% lotação / -40% queda de ânimo",
+  );
+  assertEq(staffAttendanceMult(3), 1.06, "lotação com comunicação nível 3 (+6%)");
+  assertEq(staffFansDecayMult(5), 0.6, "queda de ânimo travada a 60% no nível 5");
+  const medico5 = staffEffectNumbers("medico", 5);
+  assert(
+    medico5.injuryPct === 30 && medico5.weeksCut === 2 && medico5.skillSaved === 5,
+    "médico nível 5 = -30% lesões / -2 semanas / poupa 5 de skill",
+  );
+  assertEq(staffInjuryChanceMult(0), 1, "sem médico a probabilidade de lesão fica igual");
+  assertEq(staffInjuryChanceMult(5), 0.7, "médico nível 5 corta 30% da probabilidade");
+  assertEq(staffInjuryWeeks(0, 6), 6, "sem médico as semanas de lesão não mudam");
+  assertEq(staffInjuryWeeks(5, 6), 4, "médico nível 5 encurta 6 semanas para 4");
+  assertEq(staffInjuryWeeks(5, 1), 1, "lesão leve nunca desce de 1 semana");
+  assertEq(staffInjurySkillLoss(5, 4), 0, "médico nível 5 apaga a perda de skill de 4");
+  assertEq(staffInjurySkillLoss(2, 6), 4, "médico nível 2 poupa 2 de uma perda de 6");
+
   // ── B. Contratação e despedimento (dinheiro a sério) ────────────────────
   const dbMoney = openDb(MONEY_SCHEMA);
   await run(
@@ -182,6 +233,17 @@ async function main() {
   assertEq(state5.members[0].effect.trainingPct, 24, "efeito do nível 3 no estado (+24%)");
   assertEq(String(state5.salaries.join(",")), "3000,6000,12000,24000,48000", "tabela de preços no estado");
   assertEq(state5.slots, STAFF_SLOTS, "teto de lugares no estado");
+  assertEq(state5.roles.length, 4, "estado expõe os 4 papéis (auxiliar, físico, comunicação, médico)");
+  assertEq(
+    state5.previews.medico[4].injuryPct,
+    30,
+    "pré-visualização do médico nível 5 no estado (-30% lesões)",
+  );
+  assertEq(
+    state5.previews.comunicacao[0].attendancePct,
+    2,
+    "pré-visualização da comunicação nível 1 no estado (+2% lotação)",
+  );
 
   assertEq(
     (await hireStaff(moneyGame, 5, "auxiliar", 1)).error,
@@ -209,12 +271,16 @@ async function main() {
     "contratação falhada não mexe no orçamento",
   );
 
-  // Enche os lugares com um 3.º papel (a F1 só tem 2 papéis; a linha extra
-  // prova que o teto é contado sobre o que está na BD e que papéis
-  // desconhecidos não rebentam o estado).
-  await run(
-    dbMoney,
-    "INSERT INTO team_staff (team_id, role, level, name, salary_weekly) VALUES (5, 'fisico', 2, 'X', 6000), (5, 'medico', 1, 'Y', 3000)",
+  // Teto de lugares: 4 papéis para 3 lugares — o 4.º é recusado.
+  assertEq(
+    (await hireStaff(moneyGame, 5, "fisico", 1)).ok,
+    true,
+    "2.º papel contratado (preparador físico nível 1)",
+  );
+  assertEq(
+    (await hireStaff(moneyGame, 5, "medico", 1)).ok,
+    true,
+    "3.º papel contratado (médico nível 1)",
   );
   const fullState = await buildStaffState(moneyGame, 5);
   assertEq(
@@ -223,9 +289,14 @@ async function main() {
     "estado assinala a equipa técnica cheia (3/3)",
   );
   assertEq(
-    (await hireStaff(moneyGame, 5, "fisico", 1)).error,
+    (await hireStaff(moneyGame, 5, "comunicacao", 1)).error,
+    "no_slots",
+    "4.º papel recusado: sem lugares livres",
+  );
+  assertEq(
+    (await hireStaff(moneyGame, 5, "fisico", 3)).error,
     "role_taken",
-    "com os lugares cheios, qualquer papel válido é recusado",
+    "papel já ocupado continua a ser recusado antes do teto",
   );
 
   const fired = await fireStaff(moneyGame, 5, "auxiliar");
@@ -233,7 +304,7 @@ async function main() {
   assertEq(fired.severance, 24000, "indemnização de nível 3 = 2 semanas");
   assertEq(
     (await get(dbMoney, "SELECT budget FROM teams WHERE id = 5")).budget,
-    952000 - 24000,
+    928000 - 24000,
     "indemnização debitada",
   );
   assertEq(
@@ -300,8 +371,14 @@ async function main() {
   await ensureNpcStaff(moneyGame);
   assertEq(
     (await get(dbMoney, "SELECT COUNT(*) AS n FROM team_staff WHERE team_id = 10")).n,
-    2,
-    "sem papéis por preencher o NPC para de contratar",
+    3,
+    "NPC enche os 3 lugares (4 papéis para 3 lugares)",
+  );
+  await ensureNpcStaff(moneyGame);
+  assertEq(
+    (await get(dbMoney, "SELECT COUNT(*) AS n FROM team_staff WHERE team_id = 10")).n,
+    3,
+    "sem lugares livres o NPC para de contratar",
   );
 
   // ── D. Efeitos no treino ────────────────────────────────────────────────
@@ -374,11 +451,68 @@ async function main() {
   assertEq(p2.resistance, 25, "titular sem funcionário desgasta 1 ponto");
   assertEq(p2.training_resistance_progress, 0.08, "desgaste cheio no acumulador");
 
+  // ── E. Director de Comunicação: lotação ─────────────────────────────────
+  // Mesmo jogo (mesma seed de jitter), mesma equipa: só a linha do staff muda.
+  const dbAtt = openDb(`
+    CREATE TABLE teams (id INTEGER PRIMARY KEY, name TEXT, stadium_capacity INTEGER, division INTEGER, avg_attendance INTEGER, fans_mood INTEGER, ticket_price INTEGER, points INTEGER, goals_for INTEGER, goals_against INTEGER);
+    CREATE TABLE matches (id INTEGER PRIMARY KEY AUTOINCREMENT, matchweek INTEGER, home_team_id INTEGER, away_team_id INTEGER, home_score INTEGER, away_score INTEGER, played INTEGER);
+    CREATE TABLE players (id INTEGER PRIMARY KEY, team_id INTEGER, skill INTEGER);
+    CREATE TABLE team_staff (team_id INTEGER, role TEXT, level INTEGER);
+  `);
+  await run(
+    dbAtt,
+    "INSERT INTO teams (id, name, stadium_capacity, division, avg_attendance, fans_mood, ticket_price, points, goals_for, goals_against) VALUES (1, 'Casa', 60000, 1, 0, 22, 15, 10, 10, 8), (2, 'Fora', 60000, 1, 0, 22, 15, 8, 8, 10)",
+  );
+  await run(
+    dbAtt,
+    "INSERT INTO players (id, team_id, skill) VALUES (1, 1, 30), (2, 2, 30)",
+  );
+  const attBefore = await calculateMatchAttendance(dbAtt, 1, 2);
+  await run(dbAtt, "INSERT INTO team_staff (team_id, role, level) VALUES (1, 'comunicacao', 5)");
+  const attAfter = await calculateMatchAttendance(dbAtt, 1, 2);
+  assert(
+    attAfter > attBefore,
+    `director de comunicação enche mais o estádio (${attBefore} → ${attAfter})`,
+  );
+  assert(
+    attAfter - attBefore >= Math.floor(attBefore * 0.08),
+    `o ganho é da ordem dos +10% do nível 5 (${attAfter - attBefore} bilhetes)`,
+  );
+
+  // ── F. Director de Comunicação: decaimento do ânimo dos adeptos ─────────
+  // Par idêntico (div 4, mood 45 → base 25): sem staff −3 (42); com nível 5
+  // −1.8 sobre o total (43.2 → CAST 43). Os dois não jogam, logo não há delta
+  // de resultado a mascarar o efeito.
+  const dbFans = openDb(`
+    CREATE TABLE teams (id INTEGER PRIMARY KEY, morale INTEGER DEFAULT 50, fans_mood INTEGER, division INTEGER);
+    CREATE TABLE matches (id INTEGER PRIMARY KEY AUTOINCREMENT, season INTEGER, matchweek INTEGER, home_team_id INTEGER, away_team_id INTEGER, home_score INTEGER, away_score INTEGER);
+    CREATE TABLE players (id INTEGER PRIMARY KEY, team_id INTEGER, position TEXT, skill INTEGER, potential INTEGER, form INTEGER, games_played INTEGER, last_appearance_matchweek INTEGER, joined_matchweek INTEGER, injury_until_matchweek INTEGER, suspension_until_matchweek INTEGER);
+    CREATE TABLE team_staff (team_id INTEGER, role TEXT, level INTEGER);
+  `);
+  await run(
+    dbFans,
+    "INSERT INTO teams (id, morale, fans_mood, division) VALUES (1, 50, 30, 4), (2, 50, 30, 4), (7, 50, 45, 4), (8, 50, 45, 4)",
+  );
+  // Nota: `db.run` só executa a PRIMEIRA instrução — cada INSERT vai separado.
+  await run(
+    dbFans,
+    "INSERT INTO team_staff (team_id, role, level) VALUES (8, 'comunicacao', 5)",
+  );
+  await applyPostMatchQualityEvolution(
+    dbFans as never,
+    [{ homeTeamId: 1, awayTeamId: 2, finalHomeGoals: 1, finalAwayGoals: 1 }],
+    1,
+    1,
+  );
+  const mood7 = (await get(dbFans, "SELECT fans_mood FROM teams WHERE id = 7")).fans_mood;
+  const mood8 = (await get(dbFans, "SELECT fans_mood FROM teams WHERE id = 8")).fans_mood;
+  assertEq(mood7, 42, "sem comunicação o ânimo decai para a base (−3)");
+  assertEq(mood8, 43, "comunicação nível 5 trava o decaimento (−1.8 → −1)");
+
   console.log("\nAll assertions passed.");
   dbMoney.close();
   dbTrain.close();
 }
-
 main().catch((e) => {
   console.error(e);
   process.exit(1);
