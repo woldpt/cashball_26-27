@@ -9,6 +9,10 @@
 //       menu tem de continuar clicável (era o bug: o balão, com z maior,
 //       ficava por cima do fly-up e roubava-lhe os toques).
 //
+// A dica medida é o PIOR CASO do catálogo real (`assistantTips.js`): texto
+// mais longo + CTA mais longa. Um fixture à mão já ficou desactualizado uma
+// vez — o PASS passou a medir um balão mais pequeno do que a produção.
+//
 // Contract (read by client/scripts/mobileRespCheck.mjs):
 //   - render into #root
 //   - after ~2500 ms write "REPORT:<json>" into <pre id="report"> and set
@@ -16,16 +20,52 @@
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
-import { AssistantCoachView } from "./src/components/shared/AssistantCoach.jsx";
+// Módulo puro de propósito: importar `AssistantCoach.jsx` puxava o hook →
+// `socket.js` e o harness abria (e falhava) uma ligação socket.io por run.
+import { AssistantCoachView } from "./src/components/shared/AssistantCoachView.jsx";
+import {
+  ASSISTANT_TIP_IDS,
+  buildAssistantTips,
+} from "./src/utils/assistantTips.js";
 
-// Pior caso: texto mais longo das 6 dicas + CTA mais comprida.
-const tip = {
-  id: "redflag",
-  mood: "worried",
-  text: "Tens pendências no Jornal que bloqueiam o Pronto.",
-  tab: "jornal",
-  cta: "Ver Jornal",
+const squad = (n, extra = {}) =>
+  Array.from({ length: n }, (_, i) => ({
+    id: i + 1,
+    form: 32,
+    resistance: 26,
+    ...extra,
+  }));
+
+// Estado em que TODAS as 7 dicas disparam (foco em "Resistência": a palavra
+// mais longa do catálogo, logo o texto do teto também no pior caso). Plantel
+// no teto das DUAS escalas — senão a dica do teto não acende e a medição
+// deixa de ser o pior caso (é o `catalogueComplete` a travar isso).
+const worstCaseState = {
+  squad: [
+    ...squad(7, { form: 50, resistance: 50 }),
+    ...squad(3, { form: 44, injury_until_matchweek: 9 }),
+  ],
+  matchweek: 3,
+  hasRedFlag: true,
+  hasTraining: false,
+  focusName: "Resistência",
+  fansMood: 10,
+  currentBudget: 1000,
+  totalWeeklyWage: 200000,
+  isLineupComplete: false,
+  lineupEligible: true,
 };
+
+const allTips = buildAssistantTips(worstCaseState);
+const longest = (key) =>
+  allTips.reduce((a, b) => (b[key].length > a[key].length ? b : a));
+
+// Pior caso tem de trazer o catálogo inteiro: com uma dica por acender a
+// medição seria menor do que a produção (foi o que aconteceu ao fixture à mão).
+const catalogueComplete = allTips.length === ASSISTANT_TIP_IDS.length;
+
+// Limite superior: maior texto + maior CTA (podem vir de dicas diferentes).
+const tip = { ...longest("text"), cta: longest("cta").cta };
 
 /**
  * Quantos pontos do alvo têm o balão por cima (colisão).
@@ -91,14 +131,18 @@ function measure(pass, target, selector) {
 function merge(a, b) {
   const collisions = [...(a?.collisions || []), ...(b?.collisions || [])];
   const pageOverflowPx = Math.max(a?.pageOverflowPx ?? 0, b?.pageOverflowPx ?? 0);
+  const ok =
+    pageOverflowPx <= 0 && collisions.length === 0 && catalogueComplete;
   return {
     viewport: window.innerWidth,
     pageOverflowPx,
     clippedRows: [],
     clippingElements: b?.clippingElements || [],
     collisions,
+    tips: allTips.map((t) => t.id),
+    measure: { id: tip.id, text: tip.text.length, cta: tip.cta },
     passes: [a, b].filter(Boolean),
-    verdict: pageOverflowPx <= 0 && collisions.length === 0 ? "PASS" : "FAIL",
+    verdict: ok ? "PASS" : "FAIL",
   };
 }
 
@@ -122,6 +166,9 @@ function Harness() {
       el.setAttribute("data-status", "done");
       el.textContent =
         "REPORT:" + JSON.stringify(merge(passA.current, passB.current), null, 2);
+      // Fecha o menu após medir: o screenshot (tirado depois do report) fica
+      // no estado normal da app, com o balão visível.
+      setMenuOpen(false);
     }, 2100);
     return () => {
       clearTimeout(t1);
