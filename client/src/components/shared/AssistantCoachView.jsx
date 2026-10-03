@@ -17,8 +17,12 @@ import { Button } from "../shared/Button.jsx";
  * `mood` só muda o tratamento do retrato — "sad" dessatura e escurece.
  * @param {string} mood Expressão do adjunto ("worried" | "sad").
  * @param {boolean} [compact] Medalhão mais pequeno (tutorial no telemóvel).
+ * @param {boolean} [flipOnDesktop] Espelha em desktop. O retrato olha para a
+ *   direita; no balão da dica o texto fica-lhe à esquerda em desktop
+ *   (`lg:flex-row-reverse`), logo tem de ser espelhado para olhar para lá.
+ *   O tutorial não usa isto — tem o balão sempre à direita do retrato.
  */
-export function AssistantMascot({ mood, compact }) {
+export function AssistantMascot({ mood, compact, flipOnDesktop }) {
   const sad = mood === "sad";
   const reducedMotion = usePrefersReducedMotion();
   const [open, setOpen] = useState(false);
@@ -40,7 +44,7 @@ export function AssistantMascot({ mood, compact }) {
     <div
       role="img"
       aria-label="Treinador-adjunto"
-      className={`relative ${size} shrink-0`}
+      className={`relative ${size} shrink-0 ${flipOnDesktop ? "lg:scale-x-[-1]" : ""}`}
     >
       <img src="/coaches/jj-fechada.webp" alt="" className={imgClass} style={filter} />
       <img
@@ -91,7 +95,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen }) {
           exit={reducedMotion ? undefined : { y: "120%", transition: { delay: 0.15, duration: 0.25 } }}
           transition={{ duration: 0.3 }}
         >
-          <AssistantMascot mood={tip.mood} />
+          <AssistantMascot mood={tip.mood} flipOnDesktop />
         </motion.div>
         {/* O balão surge quando o boneco chega; ao dispensar desvanece primeiro. */}
         <motion.div
