@@ -1,3 +1,8 @@
+## Glow vermelho nos botões de contrato com pedido de renovação pendente (2026-10-03)
+- Pedido: destacar os 2 botões (Aceitar renovação / Enviar para leilão) do `PlayerHistoryModal` quando há pedido de renovação do agente pendente.
+- `PlayerHistoryModal.jsx`: ramo `hasPendingRequest` — `shadow-[0_0_14px_rgba(239,68,68,0.55)]` nos 2 botões (o `Button` já concatena `className`).
+- Checks: `lint` limpo no ficheiro (4 problemas pré-existentes noutros) · `check:types` OK · tweak de `className` → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Adjunto: busto cortado no peito e olhar para fora do ecrã (2026-10-03)
 - Pedido: verificar se o corpo do boneco estava a ser cortado no peito e para que lado estava virado.
 - Corte (medido, não a olho): o alfa chegava à última linha do canvas — 431 dos 512 px opacos em `jj-fechada`, 412 deles casaco — uma linha recta a meio do peito; e o tufo de cabelo tocava `y=0` (7-11 px). **Não era CSS** (nenhum `overflow-hidden` no caminho, asset quadrado em caixa quadrada): era o recorte «cabeça+ombros» do próprio ficheiro. O material com torso e braços cruzados estava em `docs/jj1.png`/`docs/jj2.png`.
