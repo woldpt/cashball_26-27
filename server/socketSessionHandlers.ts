@@ -1308,7 +1308,7 @@ export function registerSessionSocketHandlers(
 				);
 
 				// Always append current skill to ensure the chart shows latest value.
-				// buildSkillHistory preserves `season` (matchweek is per-season 1..14;
+				// buildSkillHistory preserves `season` (matchweek is the per-season calendar slot 1..20;
 				// without season, multi-season charts collapse all seasons onto the
 				// same X positions — latest records become invisible).
 				const playerRow = await runGet(
@@ -1323,7 +1323,7 @@ export function registerSessionSocketHandlers(
 				}> = [];
 				if (playerRow && playerRow.skill != null) {
 					skillHistory = buildSkillHistory(skillRows || [], {
-						matchweek: game.matchweek || 1,
+						matchweek: (game.calendarIndex ?? 0) + 1,
 						season: game.season || 1,
 						skill: playerRow.skill,
 					});

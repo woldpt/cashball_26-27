@@ -260,7 +260,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 										// Snapshot after season-end decay
 										game.db.run(
 											"INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
-											[upd.id, game.matchweek, season, upd.skill],
+											[upd.id, game.calendarIndex + 1, season, upd.skill],
 											done,
 										);
 									},

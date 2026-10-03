@@ -355,7 +355,7 @@ export async function applyTrainingBonuses(
                       if (upd.fields.skill != null) {
                         game.db.run(
                           `INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)`,
-                          [upd.playerId, completedCalendarIndex, game.season || 1, upd.fields.skill],
+                          [upd.playerId, completedCalendarIndex + 1, game.season || 1, upd.fields.skill],
                         );
                       }
                       finish();

@@ -1,55 +1,87 @@
+import { SEASON_CALENDAR } from "../constants/index.js";
+
 /**
- * Helpers para o gráfico de evolução da skill.
+ * Utilitários para o histórico de skill de um jogador.
  *
- * O `matchweek` nos snapshots é POR ÉPOCA (1..14 em cada época). Para ordenar
- * e posicionar cronologicamente pontos de várias épocas é preciso um epoch
- * global: `(season - 1) * MATCHWEEKS_PER_SEASON + matchweek` (só jogos de
- * liga). Não confundir com os contratos, que usam SEASON_WEEKS = 20 (slots
- * do relógio único) — ver `contractEpoch()` no servidor (gameConstants.ts).
+ * Cada ponto do histórico tem `{ matchweek, season, skill }`, onde `matchweek`
+ * é o slot de calendário 1-based (1..20: amigável, 14 jornadas, 5 rondas da Taça).
+ * O eixo X do gráfico usa uma escala contínua de épocas:
+ * `epoch = (season - 1) * 20 + slot`.
  */
 
-export const MATCHWEEKS_PER_SEASON = 14;
+const SLOTS_PER_SEASON = 20;
 
 /**
- * Converte (season, matchweek) num índice global cronológico.
- * @param {number|undefined} season - época (1-based; omissa ⇒ 1)
- * @param {number|undefined} matchweek - jornada dentro da época (1..14)
+ * Converte `{ matchweek, season }` em um índice contínuo de semanas (1-based).
+ *
+ * @param {{ matchweek: number, season: number }} point
  * @returns {number}
  */
-function skillEpoch(season, matchweek) {
-  const s = Math.max(1, Number(season) || 1);
-  const mw = Math.min(MATCHWEEKS_PER_SEASON, Math.max(1, Number(matchweek) || 1));
-  return (s - 1) * MATCHWEEKS_PER_SEASON + mw;
+export function skillEpoch(point) {
+  const slot = Math.max(1, Math.min(SLOTS_PER_SEASON, point.matchweek || 1));
+  const season = Math.max(1, point.season || 1);
+  return (season - 1) * SLOTS_PER_SEASON + slot;
 }
 
 /**
- * Ordena o histórico cronologicamente por epoch global e anexa os epochs
- * calculados. Pontos sem `season` são tratados como época 1 (dados antigos).
- * @param {Array<{matchweek?: number, season?: number, skill?: number}>} history
- * @returns {Array<{matchweek: number, season: number, skill: number, epoch: number}>}
- */
-export function buildSkillChartPoints(history) {
-  return (history || [])
-    .filter((p) => p.skill != null && p.matchweek != null)
-    .map((p) => ({
-      matchweek: Number(p.matchweek),
-      season: Math.max(1, Number(p.season) || 1),
-      skill: Number(p.skill),
-      epoch: skillEpoch(p.season, p.matchweek),
-    }))
-    .sort((a, b) => a.epoch - b.epoch);
-}
-
-/**
- * Rótulo de eixo X para um ponto. Com várias épocas mostra o ano civil
- * (2025 + época, convenção do servidor) para distinguir jornadas repetidas.
- * @param {{season?: number, matchweek?: number}} p
- * @param {boolean} multiSeason - se o histórico tem mais do que uma época
+ * Rótulo curto de um slot de calendário: "J4" (liga), "T2" (Taça), "Pré" (amigável).
+ *
+ * @param {number} slot slot 1-based (1..20)
  * @returns {string}
  */
-export function skillLabel(p, multiSeason) {
-  if (multiSeason) {
-    return `${2025 + Math.max(1, Number(p.season) || 1)}·J${p.matchweek}`;
+function slotShortLabel(slot) {
+  const entry = SEASON_CALENDAR[slot - 1];
+  if (!entry) return `S${slot}`;
+  if (entry.type === "league") return `J${entry.matchweek}`;
+  if (entry.type === "friendly") return "Pré";
+  return `T${entry.round}`;
+}
+
+/**
+ * Rótulo curto para um ponto do histórico.
+ *
+ * @param {{ matchweek: number, season: number }} point
+ * @param {number} currentSeason
+ * @returns {string}
+ */
+export function skillLabel(point, currentSeason) {
+  const short = slotShortLabel(point.matchweek || 1);
+  if ((point.season || 1) !== currentSeason) {
+    const year = 2026 + (point.season || 1) - 1;
+    return `${year}·${short}`;
   }
-  return `J${p.matchweek}`;
+  return short;
+}
+
+/**
+ * Constrói os pontos do gráfico de skill.
+ *
+ * @param {Array<{ matchweek: number, season: number, skill: number }>} history
+ * @param {number} currentSeason
+ * @param {number} weeks
+ * @returns {Array<{ x: number, y: number, label: string, skill: number }>}
+ */
+export function buildSkillChartPoints(history, currentSeason, weeks = SLOTS_PER_SEASON) {
+  const points = (history || []).map((p) => ({
+    epoch: skillEpoch(p),
+    skill: p.skill,
+    label: skillLabel(p, currentSeason),
+  }));
+
+  // Deduplicate by epoch, keeping the last entry (most recent).
+  const byEpoch = new Map();
+  for (const p of points) {
+    byEpoch.set(p.epoch, p);
+  }
+  const sorted = [...byEpoch.values()].sort((a, b) => a.epoch - b.epoch);
+
+  // Keep only the last `weeks` epochs.
+  const visible = sorted.slice(-weeks);
+
+  return visible.map((p) => ({
+    x: p.epoch,
+    y: p.skill,
+    label: p.label,
+    skill: p.skill,
+  }));
 }

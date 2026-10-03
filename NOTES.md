@@ -9,6 +9,13 @@
 - Nota: a auditoria/crash-test abrem DBs de sala e o SQLite faz checkpoint do WAL ao fechar (3 ficheiros de `server/saves/` apareceram modificados) — restaurados com `git checkout -- server/saves` antes do commit.
 - Custo assumido: 2 M€/época (+1,5 M€), mais 500k por cada empatado. `base.db` re-seeda (o `schema.sql` entra no template hash); salas nunca.
 
+## Gráfico de skill: escala de 20 semanas (slots de calendário) (2026-10-03)
+- Pedido: o gráfico de evolução de skill usava escala de 14 (jornadas de liga) mas os snapshots eram escritos em 3 escalas diferentes (slot de calendário 1..20 no `evolution.ts`, 0..19 no `trainingHelpers.ts`, jornada de liga no `cupFlowHelpers.ts`/ponto atual) → eixo X mal rotulado e comprimido. Decisão do utilizador: **escala de 20 semanas (slots de calendário), mostrar as últimas 20**.
+- Servidor (escala canónica = slot 1..20): `trainingHelpers.ts` passa a escrever `completedCalendarIndex + 1` (alinha com `evolution.ts`); `cupFlowHelpers.ts` (decaimento fim de época) e o ponto atual em `socketSessionHandlers.ts` passam a `game.calendarIndex + 1`.
+- Cliente: `skillHistory.js` — `SLOTS_PER_SEASON = 20`, `skillEpoch` clamp 1..20, janela = últimas 20, labels via `SEASON_CALENDAR` (`J4` liga, `T2` Taça, `Pré` amigável) em vez de `J{n}` genérico. `SkillLineChart`/modal usam o default (20) — sem prop `weeks`.
+- Dados antigos (épocas 1–6 em escala mista) ficam como estão — sem migração; a janela de 20 cobre sobretudo a época atual (escala correta).
+- Checks: server `typecheck` OK · client `lint` (4 problemas pré-existentes noutros) + `check:types` OK · simulação node do pipeline com BD real: 20 pontos, labels corretos (`Pré`, `J1`–`J14`, `T1`–`T5`), multi-época com prefixo de ano. Sem `test:mobile` (geometria do SVG inalterada).
+
 ## Glow vermelho nos botões de contrato com pedido de renovação pendente (2026-10-03)
 - Pedido: destacar os 2 botões (Aceitar renovação / Enviar para leilão) do `PlayerHistoryModal` quando há pedido de renovação do agente pendente.
 - `PlayerHistoryModal.jsx`: ramo `hasPendingRequest` — `shadow-[0_0_14px_rgba(239,68,68,0.55)]` nos 2 botões (o `Button` já concatena `className`).

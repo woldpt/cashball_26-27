@@ -133,7 +133,7 @@ export function isContractLocked(
  * Constrói o histórico de skill a partir dos snapshots (player_skill_snapshots)
  * e anexa o valor actual, preservando SEMPRE a época.
  *
- * O `matchweek` dos snapshots é por época (1..14 em cada época). Descartar a
+ * O `matchweek` dos snapshots é o slot de calendário por época (1..20). Descartar a
  * `season` fazia os pontos da época actual colidirem nos mesmos X da época 1
  * no gráfico (linha em zigzag / últimos registos invisíveis).
  */
