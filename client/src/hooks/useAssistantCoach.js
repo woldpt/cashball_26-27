@@ -2,47 +2,49 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { socket } from "../socket.js";
 import { useGame } from "../contexts/GameContext.jsx";
 import { useTactics } from "../contexts/TacticsContext.jsx";
-import { isPlayerAvailable } from "../utils/playerHelpers.js";
-import { trainingCapTip } from "../utils/trainingCapAdvice.js";
+import {
+  ASSISTANT_TIP_IDS,
+  pickAssistantTip,
+  seenKeyFor,
+} from "../utils/assistantTips.js";
 import { useIdle } from "./useIdle.js";
 
-const SEEN_BASE_KEY = "cashball_assistant";
 const TRAINING_BASE_KEY = "cashball_training_focus";
 
 /**
- * Chave de visto 1x por situação/semana: muda com o calendarIndex,
- * por isso a dica volta se a situação persistir na semana seguinte.
- * @param {string} [roomCode]
- * @param {number} [calendarIndex]
- * @param {string} [tipId]
- */
-function seenKey(roomCode, calendarIndex, tipId) {
-  return `${SEEN_BASE_KEY}:${roomCode ?? "?"}:${calendarIndex ?? 0}:${tipId}`;
-}
-
-/**
- * Dicas que dispensam uma vez por SALA, não por jornada. São as que exigem
- * trabalho recorrente (o 11 refaz-se toda a jornada) mas já têm o seu próprio
- * gate na UI que as resolve — a Tática bloqueia o Pronto com o motivo. Sem
- * isto, a dica do 11 repetia-se todas as semanas e tapava as outras.
- */
-/**
- * Onze incompleto só nagado após inatividade: aparecer logo no início da
+ * Onze incompleto só chateia após inatividade: aparecer logo no início da
  * semana torna-se maçador; surge só com a janela aberta e parada.
  */
 const LINEUP_IDLE_MS = 90_000;
 
-const ONCE_PER_ROOM_TIPS = new Set(["lineup"]);
-
 /**
+ * Dicas já vistas na sala/semana corrente (chaves em localStorage). Lido uma
+ * vez por sala/semana — o memo passa a depender de dados, não de localStorage
+ * lido em render.
  * @param {string} [roomCode]
  * @param {number} [calendarIndex]
- * @param {{id: string}} tip
+ * @returns {Set<string>}
  */
-function seenKeyFor(roomCode, calendarIndex, tip) {
-  return ONCE_PER_ROOM_TIPS.has(tip.id)
-    ? seenKey(roomCode, "sala", tip.id)
-    : seenKey(roomCode, calendarIndex, tip.id);
+function readSeenIds(roomCode, calendarIndex) {
+  const seen = new Set();
+  if (typeof window === "undefined") return seen;
+  for (const id of ASSISTANT_TIP_IDS) {
+    if (
+      window.localStorage.getItem(seenKeyFor(roomCode, calendarIndex, id)) === "1"
+    ) {
+      seen.add(id);
+    }
+  }
+  return seen;
+}
+
+/**
+ * Âmbito dos vistos: mudou (outra sala ou outra jornada) = reler.
+ * @param {string} [roomCode]
+ * @param {number} [calendarIndex]
+ */
+function seenScope(roomCode, calendarIndex) {
+  return `${roomCode ?? "?"}:${calendarIndex ?? 0}`;
 }
 
 /**
@@ -77,8 +79,10 @@ function fetchServerTrainingFocus(ms = 3000) {
 }
 
 /**
- * Totós do adjunto: regras fechadas v1, todas derivadas do estado que o
- * cliente já tem (zero backend). Prioridade: o que bloqueia o Pronto primeiro.
+ * Treinador-adjunto: decide se há dica e qual (as regras vivem em
+ * `utils/assistantTips.js`, puras e testadas). Aqui fica só o estado do
+ * cliente: foco de treino (localStorage + BD), gate de inatividade do onze
+ * e os vistos da semana.
  * @returns {{ tip: object|null, dismissTip: () => void, goTip: () => void }}
  */
 export function useAssistantCoach() {
@@ -100,8 +104,17 @@ export function useAssistantCoach() {
   } = useGame();
   const { isLineupComplete } = useTactics();
 
-  // Re-render ao dispensar: a chave de visto é sincrónica em localStorage.
-  const [dismissTick, setDismissTick] = useState(0);
+  // Vistos da semana em estado. Relido quando a sala/semana muda — ajuste
+  // durante o render (sem efeito), evita um flash da dica já dispensada.
+  const scope = seenScope(me?.roomCode, calendarIndex);
+  const [seen, setSeen] = useState(() => ({
+    scope,
+    ids: readSeenIds(me?.roomCode, calendarIndex),
+  }));
+  if (seen.scope !== scope) {
+    setSeen({ scope, ids: readSeenIds(me?.roomCode, calendarIndex) });
+  }
+
   // Onze por fechar: só após inatividade (janela aberta e parada) —
   // nunca logo no início da semana. Depois de aparecer 1x, trava até
   // dispensar/fechar (senão escondia-se ao ir clicar no CTA).
@@ -110,6 +123,7 @@ export function useAssistantCoach() {
   if (lineupGate.week !== calendarIndex || (isLineupComplete && lineupGate.shown)) {
     setLineupGate({ week: calendarIndex, shown: false });
   }
+
   // Foco vindo da BD, carimbado por semana: chave diferente = ainda a
   // perguntar (benefício da dúvida: não nagar); focus string = definido
   // (atual ou herdado); null = nunca houve treino.
@@ -146,8 +160,6 @@ export function useAssistantCoach() {
     if (isMatchInProgress || panelMode !== null) return null;
     if (dismissalModal || welcomeModal) return null;
 
-    const week = (calendarIndex ?? 0) + 1;
-
     // Herança silenciosa: foco atual ou herdado da BD conta como definido.
     // Chave de outra semana = ainda a perguntar — nunca nagar por dúvida.
     // ponytail: sem round-trip quando o localStorage chega; noutro
@@ -160,95 +172,28 @@ export function useAssistantCoach() {
     // sem dica de teto (não adivinhar).
     const focusName =
       localTraining ?? (typeof serverFocus === "string" ? serverFocus : null);
-    // Teto do atributo treinado (Forma/Resistência) já atingido pela maioria
-    // do plantel: no máximo o bónus semanal é zero, logo a semana é perdida.
-    const capTip = trainingCapTip(mySquad, focusName);
-    const unavailable = (mySquad || []).filter(
-      (p) => !isPlayerAvailable(p, week),
-    ).length;
-    const hasRedFlag =
-      (mySquad || []).some((p) => p?.contract_request_pending) ||
-      sponsorState?.pending === true ||
-      jobOfferModal != null;
-    const fansMood = teamInfo?.fans_mood ?? null;
 
-    /** @type {Array<{id: string, mood: string, text: string, tab: string, cta: string}>} */
-    const candidates = [
-      !hasRedFlag
-        ? null
-        : {
-            id: "redflag",
-            mood: "worried",
-            text: "Ó meus meninos! Tens o Jornal cheio de papéis. Isto não se ganha sozinho, bora despachar, tá bem?",
-            tab: "jornal",
-            cta: "Resolver já",
-          },
-      isLineupComplete || (!lineupIdle && !lineupGate.shown)
-        ? null
-        : {
-            id: "lineup",
-            mood: "worried",
-            text: "Olha, o onze não está fechado! Queres ir para o jogo coxo? Mete a carne toda no assador, bora!",
-            tab: "tactic",
-            cta: "Fechar o onze",
-          },
-      hasTraining
-        ? null
-        : {
-            id: "training",
-            mood: "worried",
-            text: "Esqueceste-te do treino! Quem não treina forte não ganha. O futebol é momento e o momento é agora!",
-            tab: "training",
-            cta: "Puxar treino",
-          },
-      capTip,
-      unavailable < 3
-        ? null
-        : {
-            id: "medical",
-            mood: "worried",
-            // `isPlayerAvailable` conta lesão, castigo e cooldown — dizer
-            // "enfermaria" era factualmente errado para quem está castigado.
-            text: "Tenho lesionados e castigados a mais! Revê os melões e escolhe só os que estão rijos.",
-            tab: "players",
-            cta: "Ver melões",
-          },
-      currentBudget >= (totalWeeklyWage || 0)
-        ? null
-        : {
-            id: "wage",
-            mood: "worried",
-            text: "O cofre não chega para os salários! A bola é redonda mas o dinheiro não estica. Despacha-te!",
-            tab: "finances",
-            cta: "Acertar contas",
-          },
-      fansMood == null || fansMood >= 23
-        ? null
-        : {
-            id: "fans",
-            mood: "sad",
-            text: "Os adeptos estão inquietos — precisam de uma vitória. Prepara o onze e vai buscá-la.",
-            tab: "tactic",
-            cta: "Ganhar já",
-          },
-    ].filter(Boolean);
-
-    // Anti-Clippy: 1x por situação (semana, ou sala nas dicas recorrentes)
-    // + nunca na tab que resolve.
-    return (
-      candidates.find(
-        (c) =>
-          c.tab !== activeTab &&
-          typeof window !== "undefined" &&
-          window.localStorage.getItem(
-            seenKeyFor(roomCode, calendarIndex, c),
-          ) !== "1",
-      ) || null
+    return pickAssistantTip(
+      {
+        squad: mySquad,
+        matchweek: (calendarIndex ?? 0) + 1,
+        hasRedFlag:
+          (mySquad || []).some((p) => p?.contract_request_pending) ||
+          sponsorState?.pending === true ||
+          jobOfferModal != null,
+        hasTraining,
+        focusName,
+        fansMood: teamInfo?.fans_mood ?? null,
+        currentBudget,
+        totalWeeklyWage,
+        isLineupComplete,
+        lineupEligible: !isLineupComplete && lineupIdle && !lineupGate.shown,
+      },
+      { activeTab, seenIds: seen.ids },
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- dismissTick força re-render após dispensar
   }, [
     me?.teamId,
-    me?.roomCode,
+    roomCode,
     isMatchInProgress,
     panelMode,
     dismissalModal,
@@ -258,7 +203,6 @@ export function useAssistantCoach() {
     sponsorState?.pending,
     jobOfferModal,
     teamInfo?.fans_mood,
-    teamInfo?.budget,
     totalWeeklyWage,
     currentBudget,
     isLineupComplete,
@@ -268,7 +212,7 @@ export function useAssistantCoach() {
     hasLocalTraining,
     localTraining,
     serverTraining,
-    dismissTick,
+    seen,
   ]);
 
   // Trava depois de aparecer: sem isto escondia-se ao ir clicar no CTA.
@@ -277,13 +221,14 @@ export function useAssistantCoach() {
   }
 
   const dismissTip = useCallback(() => {
-    if (tip && typeof window !== "undefined") {
+    if (!tip) return;
+    if (typeof window !== "undefined") {
       window.localStorage.setItem(
-        seenKeyFor(me?.roomCode, calendarIndex, tip),
+        seenKeyFor(me?.roomCode, calendarIndex, tip.id),
         "1",
       );
     }
-    setDismissTick((t) => t + 1);
+    setSeen((prev) => ({ ...prev, ids: new Set(prev.ids).add(tip.id) }));
   }, [tip, me?.roomCode, calendarIndex]);
 
   const goTip = useCallback(() => {

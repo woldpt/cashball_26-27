@@ -333,6 +333,13 @@ export const TRAINING_CAP_TARGETS = {
 };
 /** A partir de que fração do plantel no teto é que o adjunto avisa. */
 export const TRAINING_CAP_SQUAD_RATIO = 0.7;
+// ── TREINADOR-ADJUNTO (limiares das dicas) ──────────────────────────────
+/** Jogadores indisponíveis (lesão/castigo/cooldown) a partir dos quais avisa. */
+export const ASSISTANT_UNAVAILABLE_MIN = 3;
+/** Escala 1–50 da moral dos adeptos: abaixo de LOW as bancadas esvaziam,
+ *  a partir de HIGH enchem (`StadiumIllustration`). */
+export const FANS_MOOD_LOW = 23;
+export const FANS_MOOD_HIGH = 38;
 // ── MODAL Z-INDEX (camadas centralizadas) ────────────────────────────────
 export const MODAL_Z = {
 	teamSquad: 120,

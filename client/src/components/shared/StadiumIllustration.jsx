@@ -1,4 +1,5 @@
 import { memo, useId } from "react";
+import { FANS_MOOD_HIGH, FANS_MOOD_LOW } from "../../constants/index.js";
 
 /**
  * Ilustração paramétrica do estádio ("câmara de transmissão" baixa:
@@ -184,7 +185,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   // Banda de mood: low esvazia mesmo com casa cheia (decisão do treinador),
   // high enche ligeiramente; mid não mexe (custo zero, como antes).
   const moodBand =
-    mood == null ? "mid" : mood < 23 ? "low" : mood >= 38 ? "high" : "mid";
+    mood == null ? "mid" : mood < FANS_MOOD_LOW ? "low" : mood >= FANS_MOOD_HIGH ? "high" : "mid";
   const moodOcc =
     moodBand === "low" ? occ * 0.12 : moodBand === "high" ? Math.min(1, occ * 1.2 + 0.1) : occ;
   // O faroeste anoitece: é a leitura de "o estádio vai esvaziar" e dá à
