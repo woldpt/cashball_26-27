@@ -62,11 +62,15 @@ export function skillLabel(point, currentSeason) {
  * @returns {Array<{ x: number, y: number, label: string, skill: number }>}
  */
 export function buildSkillChartPoints(history, currentSeason, weeks = SLOTS_PER_SEASON) {
-  const points = (history || []).map((p) => ({
-    epoch: skillEpoch(p),
-    skill: p.skill,
-    label: skillLabel(p, currentSeason),
-  }));
+  const points = (history || [])
+    // Ponto sem skill ou sem slot não tem onde ser desenhado (`y` null dava
+    // NaN no caminho do SVG) — é descartado, como antes.
+    .filter((p) => p && p.skill != null && p.matchweek != null)
+    .map((p) => ({
+      epoch: skillEpoch(p),
+      skill: Number(p.skill),
+      label: skillLabel(p, currentSeason),
+    }));
 
   // Deduplicate by epoch, keeping the last entry (most recent).
   const byEpoch = new Map();
