@@ -11,6 +11,9 @@
  *    no progresso de skill; Preparador Físico +1 forma (quem descansa) a cada
  *    2 níveis, +0.5 de resistência treinada por nível e -8%/nível no
  *    decaimento da resistência.
+ * Os efeitos de adeptos/bilheteira vivem nos harnesses dos respetivos sistemas
+ * (`test:attendance` para a lotação, `test:fansmood` para o decaimento do mood).
+ *
  *  - NPCs contratam sozinhos (1 por semana, ao nível da divisão, com reserva
  *    de tesouraria); divisão 5 e equipas humanas ficam de fora.
  *
@@ -55,24 +58,6 @@ const { applyTrainingBonuses } = require("../trainingHelpers.ts") as {
     completedCalendarIndex: number,
   ) => Promise<void>;
 };
-const { calculateMatchAttendance } = require("../coreHelpers.ts") as {
-  calculateMatchAttendance: (
-    db: unknown,
-    homeTeamId: number,
-    opponentTeamId?: number,
-    ctx?: unknown,
-  ) => Promise<number>;
-};
-const { applyPostMatchQualityEvolution } = require("../game/engine.ts") as {
-  applyPostMatchQualityEvolution: (
-    db: unknown,
-    fixtures: any[],
-    currentMatchweek: number,
-    season: number,
-    calendarIndex?: number,
-  ) => Promise<void>;
-};
-
 function assert(cond: boolean, msg: string) {
   if (!cond) {
     console.error(`FAIL: ${msg}`);
@@ -450,64 +435,6 @@ async function main() {
   assertEq(p1.training_resistance_progress, 0.45, "desgaste travado (-40%) no acumulador");
   assertEq(p2.resistance, 25, "titular sem funcionário desgasta 1 ponto");
   assertEq(p2.training_resistance_progress, 0.08, "desgaste cheio no acumulador");
-
-  // ── E. Director de Comunicação: lotação ─────────────────────────────────
-  // Mesmo jogo (mesma seed de jitter), mesma equipa: só a linha do staff muda.
-  const dbAtt = openDb(`
-    CREATE TABLE teams (id INTEGER PRIMARY KEY, name TEXT, stadium_capacity INTEGER, division INTEGER, avg_attendance INTEGER, fans_mood INTEGER, ticket_price INTEGER, points INTEGER, goals_for INTEGER, goals_against INTEGER);
-    CREATE TABLE matches (id INTEGER PRIMARY KEY AUTOINCREMENT, matchweek INTEGER, home_team_id INTEGER, away_team_id INTEGER, home_score INTEGER, away_score INTEGER, played INTEGER);
-    CREATE TABLE players (id INTEGER PRIMARY KEY, team_id INTEGER, skill INTEGER);
-    CREATE TABLE team_staff (team_id INTEGER, role TEXT, level INTEGER);
-  `);
-  await run(
-    dbAtt,
-    "INSERT INTO teams (id, name, stadium_capacity, division, avg_attendance, fans_mood, ticket_price, points, goals_for, goals_against) VALUES (1, 'Casa', 60000, 1, 0, 22, 15, 10, 10, 8), (2, 'Fora', 60000, 1, 0, 22, 15, 8, 8, 10)",
-  );
-  await run(
-    dbAtt,
-    "INSERT INTO players (id, team_id, skill) VALUES (1, 1, 30), (2, 2, 30)",
-  );
-  const attBefore = await calculateMatchAttendance(dbAtt, 1, 2);
-  await run(dbAtt, "INSERT INTO team_staff (team_id, role, level) VALUES (1, 'comunicacao', 5)");
-  const attAfter = await calculateMatchAttendance(dbAtt, 1, 2);
-  assert(
-    attAfter > attBefore,
-    `director de comunicação enche mais o estádio (${attBefore} → ${attAfter})`,
-  );
-  assert(
-    attAfter - attBefore >= Math.floor(attBefore * 0.08),
-    `o ganho é da ordem dos +10% do nível 5 (${attAfter - attBefore} bilhetes)`,
-  );
-
-  // ── F. Director de Comunicação: decaimento do ânimo dos adeptos ─────────
-  // Par idêntico (div 4, mood 45 → base 25): sem staff −3 (42); com nível 5
-  // −1.8 sobre o total (43.2 → CAST 43). Os dois não jogam, logo não há delta
-  // de resultado a mascarar o efeito.
-  const dbFans = openDb(`
-    CREATE TABLE teams (id INTEGER PRIMARY KEY, morale INTEGER DEFAULT 50, fans_mood INTEGER, division INTEGER);
-    CREATE TABLE matches (id INTEGER PRIMARY KEY AUTOINCREMENT, season INTEGER, matchweek INTEGER, home_team_id INTEGER, away_team_id INTEGER, home_score INTEGER, away_score INTEGER);
-    CREATE TABLE players (id INTEGER PRIMARY KEY, team_id INTEGER, position TEXT, skill INTEGER, potential INTEGER, form INTEGER, games_played INTEGER, last_appearance_matchweek INTEGER, joined_matchweek INTEGER, injury_until_matchweek INTEGER, suspension_until_matchweek INTEGER);
-    CREATE TABLE team_staff (team_id INTEGER, role TEXT, level INTEGER);
-  `);
-  await run(
-    dbFans,
-    "INSERT INTO teams (id, morale, fans_mood, division) VALUES (1, 50, 30, 4), (2, 50, 30, 4), (7, 50, 45, 4), (8, 50, 45, 4)",
-  );
-  // Nota: `db.run` só executa a PRIMEIRA instrução — cada INSERT vai separado.
-  await run(
-    dbFans,
-    "INSERT INTO team_staff (team_id, role, level) VALUES (8, 'comunicacao', 5)",
-  );
-  await applyPostMatchQualityEvolution(
-    dbFans as never,
-    [{ homeTeamId: 1, awayTeamId: 2, finalHomeGoals: 1, finalAwayGoals: 1 }],
-    1,
-    1,
-  );
-  const mood7 = (await get(dbFans, "SELECT fans_mood FROM teams WHERE id = 7")).fans_mood;
-  const mood8 = (await get(dbFans, "SELECT fans_mood FROM teams WHERE id = 8")).fans_mood;
-  assertEq(mood7, 42, "sem comunicação o ânimo decai para a base (−3)");
-  assertEq(mood8, 43, "comunicação nível 5 trava o decaimento (−1.8 → −1)");
 
   console.log("\nAll assertions passed.");
   dbMoney.close();

@@ -57,6 +57,10 @@ async function setupDb(overrides: SetupOpts = {}) {
   await run(
     "CREATE TABLE players (id INTEGER PRIMARY KEY, team_id INTEGER, skill INTEGER)",
   );
+  // Funcionários (Director de Comunicação): a lotação leva o bónus do nível.
+  await run(
+    "CREATE TABLE team_staff (team_id INTEGER, role TEXT, level INTEGER)",
+  );
 
   const pts = overrides.points ?? [10, 10, 10, 10];
   const names = ["Casa", "Rival", "Meio", "Fundo"];
@@ -150,11 +154,25 @@ async function main() {
   }
 
   // ── 3. Bilhetes baratos puxam gente, caros afastam ───────────────────────
+  // Contexto neutro de propósito (adversário de outra divisão, fraco e sem ser
+  // líder): com dérbi + adversário de peso + visita do líder o bónus saturava a
+  // capacidade e os dois preços empatavam no teto — o teste não media nada.
   {
-    const cheap = await setupDb({ mood: 60, results: wins(2), ticket: 10 });
-    const pricey = await setupDb({ mood: 60, results: wins(2), ticket: 30 });
+    const ctx = {
+      mood: 25,
+      results: wins(2),
+      oppDivision: 2,
+      oppSkill: 20,
+      points: [6, 3, 15, 12] as [number, number, number, number],
+    };
+    const cheap = await setupDb({ ...ctx, ticket: 10 });
+    const pricey = await setupDb({ ...ctx, ticket: 30 });
     const aCheap = await calculateMatchAttendance(cheap, 1, 2);
     const aPricey = await calculateMatchAttendance(pricey, 1, 2);
+    assert(
+      aCheap < CAP && aPricey < CAP,
+      `o cenário do preço não satura a capacidade (${aCheap} e ${aPricey} < ${CAP})`,
+    );
     assert(
       aCheap > aPricey,
       `bilhete a 10€ (${aCheap}) enche mais que a 30€ (${aPricey})`,
@@ -196,9 +214,45 @@ async function main() {
     db.close();
   }
 
-  // ── 6. Taça: final enche mais que 16 avos ────────────────────────────────
+  // ── 6. Director de Comunicação (funcionário): +10% de lotação no nível 5 ─
+  // Mesma equipa e mesmo jogo (mesma semente de jitter): só a linha do staff
+  // muda, por isso a diferença é 100% do funcionário.
   {
-    const db = await setupDb({ mood: 50, oppSkill: 30 });
+    const db = await setupDb({
+      mood: 25,
+      oppDivision: 2,
+      oppSkill: 20,
+      points: [6, 3, 15, 12],
+    });
+    const before = await calculateMatchAttendance(db, 1, 2);
+    await new Promise<void>((resolve, reject) => {
+      db.run(
+        "INSERT INTO team_staff (team_id, role, level) VALUES (1, 'comunicacao', 5)",
+        (err: any) => (err ? reject(err) : resolve()),
+      );
+    });
+    const after = await calculateMatchAttendance(db, 1, 2);
+    assert(
+      after > before,
+      `comunicação nível 5 enche mais o estádio (${before} → ${after})`,
+    );
+    assert(
+      after - before >= Math.floor(before * 0.08),
+      `o ganho é da ordem dos +10% do nível 5 (${after - before} bilhetes)`,
+    );
+    db.close();
+  }
+
+  // ── 7. Taça: final enche mais que 16 avos ────────────────────────────────
+  // Contexto neutro (adversário de outra divisão e sem ser líder): o que se
+  // compara aqui é só o multiplicador da ronda, sem bónus a empurrar ao teto.
+  {
+    const db = await setupDb({
+      mood: 25,
+      oppDivision: 2,
+      oppSkill: 20,
+      points: [6, 3, 15, 12],
+    });
     const early = await calculateMatchAttendance(db, 1, 2, {
       competition: "cup",
       cupRound: 1,
@@ -218,7 +272,7 @@ async function main() {
     db.close();
   }
 
-  // ── 7. Limite de divisão mantém-se (divisão 5 → cap 4800) ────────────────
+  // ── 8. Limite de divisão mantém-se (divisão 5 → cap 4800) ────────────────
   {
     const db = new sqlite3.Database(":memory:");
     const run = (sql: string, params: any[] = []) =>

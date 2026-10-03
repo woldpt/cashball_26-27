@@ -21,15 +21,13 @@ import sqlite3 from "sqlite3";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { createTrainingHelpers } = require("../trainingHelpers.ts") as {
-  createTrainingHelpers: (deps: { io: any }) => {
-    applyTrainingBonuses: (
-      game: any,
-      fixtures: any[],
-      completedCalendarIndex: number,
-    ) => Promise<void>;
-    clearSeasonTrainingState: (game: any) => Promise<void>;
-  };
+const { applyTrainingBonuses, clearSeasonTrainingState } = require("../trainingHelpers.ts") as {
+  applyTrainingBonuses: (
+    game: any,
+    fixtures: any[],
+    completedCalendarIndex: number,
+  ) => Promise<void>;
+  clearSeasonTrainingState: (game: any) => Promise<void>;
 };
 const { createTrainingHandlers } = require("../socketTrainingHandlers.ts") as {
   createTrainingHandlers: (deps: { io: any }) => {
@@ -139,7 +137,6 @@ async function playEvents(
 
 async function main() {
   const db = await setupDb();
-  const { applyTrainingBonuses, clearSeasonTrainingState } = createTrainingHelpers({ io: {} });
   const { getTrainingHistory, getTrainingFocus } = createTrainingHandlers({ io: {} });
   const game: any = { db, roomCode: "TEST", season: 1, calendarIndex: 0, playersByName: {} };
 

@@ -111,6 +111,10 @@ async function main() {
     roomCode: "BARRIER-SMOKE",
     calendarIndex: 5,
     matchweek: 3,
+    // Assentos duráveis (roomStateHelpers): `isSeatPresent` lê-os em cada
+    // janela de ação (o fake game tem de os ter).
+    seats: {},
+    seatSeenAt: {},
     playersByName: Object.fromEntries(
       [t1, t2, t3, t4].map((teamId, i) => [
         `Coach${i}`,

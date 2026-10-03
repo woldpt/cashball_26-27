@@ -41,6 +41,7 @@ const { generateFixturesForDivision, applyPostMatchQualityEvolution } =
   require("../game/engine") as any;
 const { SEASON_CALENDAR, LOAN_INSTALLMENT_BY_DIVISION, STADIUM_UPKEEP_PER_SEAT_WEEK, STADIUM_UPKEEP_EXEMPT_SEATS } =
   require("../gameConstants") as any;
+const { setSeatIntent } = require("../roomStateHelpers") as any;
 
 // Espelho de applyWeeklyFinancesOnce (weeklyFlowHelpers.ts): o delta da 1ª
 // aplicação deve bater EXATAMENTE com esta fórmula — se derivar no server, o
@@ -413,6 +414,29 @@ async function main(): Promise<void> {
       }
     }
     game.lockedCoaches = new Set(coaches);
+    // Presença + prontidão dos assentos duráveis: `checkAllReady` decide pelo
+    // `seat.intent.ready` (não pelo `playersByName.ready` do socket) e congela
+    // a sala se um treinador da ronda estiver ausente. Sem isto o S4 dependia
+    // do estado dos assentos da sala copiada (passava na default, falhava em
+    // salas com assentos não-prontos, como a FGPQH6).
+    for (const seat of Object.values(game.seats) as any[]) {
+      if (seat?.status !== "member" || seat.teamId == null) continue;
+      setSeatIntent(game, seat.name, { ready: true }, { persist: false });
+      const present = game.playersByName[seat.name];
+      if (present) present.socketId = `test-${seat.name}`;
+    }
+    // Cadeiras sem equipa (espectadores) também contam para a presença.
+    for (const seat of Object.values(game.seats) as any[]) {
+      if (seat?.status !== "member" || seat.teamId != null) continue;
+      if (!game.playersByName[seat.name]) {
+        game.playersByName[seat.name] = {
+          name: seat.name,
+          socketId: `test-${seat.name}`,
+          ready: true,
+          teamId: null,
+        } as any;
+      }
+    }
     const Bpre4 = await sumBudget();
 
     await helpers.checkAllReady(game);

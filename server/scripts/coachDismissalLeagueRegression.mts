@@ -80,7 +80,9 @@ const SCHEMA = `CREATE TABLE teams (
     is_human INTEGER DEFAULT 0, reputation INTEGER DEFAULT 50
   );
   CREATE TABLE players (
-    id INTEGER PRIMARY KEY, team_id INTEGER, name TEXT, position TEXT, skill INTEGER DEFAULT 50
+    id INTEGER PRIMARY KEY, team_id INTEGER, name TEXT, position TEXT, skill INTEGER DEFAULT 50,
+    wage INTEGER DEFAULT 0, form INTEGER DEFAULT 32, morale INTEGER DEFAULT 25,
+    value INTEGER DEFAULT 0, age INTEGER DEFAULT 25, is_star INTEGER DEFAULT 0
   );
   CREATE TABLE matches (
     id INTEGER PRIMARY KEY, home_team_id INTEGER, away_team_id INTEGER,
@@ -167,8 +169,10 @@ function makeGame(db: any): any {
   const { io } = createMockIo();
   const game: any = {
     db, roomCode: "TEST", season: 1, matchweek: 6,
+    // Assentos duráveis (roomStateHelpers): sem eles `deleteSeat` rebenta.
+    seats: {}, seatSeenAt: {},
     playersByName: { Huma: { name: "Huma", teamId: 201, socketId: null, ready: false } },
-    pendingJobOffers: {}, negativeBudgetStreak: {}, boardBudgetWarned: {},
+    pendingJobOffers: {}, negativeBudgetStreak: {}, npcNegativeBudgetStreak: {}, boardBudgetWarned: {},
     coachMatchesManaged: {}, npcMatchesManaged: {}, dismissedCoachSince: {},
     dismissalsThisSeason: new Set<string>(), coachMarketEvents: [],
     lockedCoaches: new Set<string>(),
@@ -177,6 +181,10 @@ function makeGame(db: any): any {
     io, runAll, runGet,
     saveGameState: async () => {},
     getRoomCoaches: async () => [],
+    // Deps que o helper passou a pedir: avatares dos treinadores (notícia do
+    // despedimento) e corte salarial NPC (não usado nesta via).
+    getCoachAvatars: async () => ({}),
+    forceNpcWageCut: async () => 0,
   });
   return { game, helpers };
 }

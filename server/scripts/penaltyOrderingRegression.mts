@@ -134,6 +134,10 @@ async function runMatch(
     calendarIndex: 5,
     matchweek: 3,
     pendingMatchAction: null,
+    // Assentos duráveis (roomStateHelpers): `isSeatPresent` lê-os em cada
+    // janela de ação (o fake game tem de os ter).
+    seats: {},
+    seatSeenAt: {},
     playersByName: {
       CoachTeste: {
         name: "CoachTeste",

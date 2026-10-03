@@ -21,14 +21,12 @@ import { createRequire } from "node:module";
 // Load the REAL server helpers via CJS require to avoid tsx ESM/CJS interop
 // quirks when importing .ts modules from a .mts script.
 const require = createRequire(import.meta.url);
-const { createTrainingHelpers } = require("../trainingHelpers.ts") as {
-  createTrainingHelpers: (deps: { io: any }) => {
-    applyTrainingBonuses: (
-      game: any,
-      fixtures: any[],
-      completedCalendarIndex: number,
-    ) => Promise<void>;
-  };
+const { applyTrainingBonuses } = require("../trainingHelpers.ts") as {
+  applyTrainingBonuses: (
+    game: any,
+    fixtures: any[],
+    completedCalendarIndex: number,
+  ) => Promise<void>;
 };
 const { createTrainingHandlers } = require("../socketTrainingHandlers.ts") as {
   createTrainingHandlers: (deps: { io: any }) => {
@@ -111,7 +109,6 @@ async function main() {
     playersByName: {},
   };
 
-  const { applyTrainingBonuses } = createTrainingHelpers({ io: {} });
   const { getTrainingHistory } = createTrainingHandlers({ io: {} });
 
   const fixtures = [{ homeLineup: Array.from({ length: 11 }, (_, i) => ({ id: i + 1 })), awayLineup: [] }];

@@ -171,6 +171,10 @@ async function makeScenario(capPreused: boolean) {
     roomCode: "TEST",
     season: 2,
     matchweek: 1,
+    // Assentos duráveis (roomStateHelpers): o fake game tem de os ter, senão
+    // `deleteSeat`/`isSeatPresent` rebentam no despedimento.
+    seats: {},
+    seatSeenAt: {},
     playersByName: {
       CoachHumano: {
         name: "CoachHumano",
@@ -203,6 +207,10 @@ async function makeScenario(capPreused: boolean) {
     runGet,
     saveGameState: async () => {},
     getRoomCoaches: async () => [],
+    // Deps que o helper passou a pedir: avatares dos treinadores (para a
+    // notícia do despedimento) e corte salarial NPC (não usado nesta via).
+    getCoachAvatars: async () => ({}),
+    forceNpcWageCut: async () => 0,
   });
   return { db, game, emitted, helpers };
 }

@@ -105,21 +105,28 @@ assert(
 // Substituição de utilizador no último minuto regulamentar: o pedido é
 // consumido sem abrir a janela — e o banner de pausa dos outros treinadores
 // termina (senão ficaria à mostra até à próxima substituição).
+// Regex (e não o bloco literal): a indentação mudou quando o passo do minuto
+// foi extraído para `resolveUserSubs` e a guarda estava a medir espaços.
 assert(
-  engine.includes(
-    "if (isLastLeagueMinute) {\n          // Pedido consumido sem janela: termina o banner de pausa dos outros\n          // treinadores (senão ficava à mostra até à próxima substituição).\n          io.to(game.roomCode).emit(\"substitutionPauseEnded\", { teamId });\n          continue;\n        }",
+  /if \(shared\.isLastLeagueMinute\) \{[\s\S]{0,320}?emit\("substitutionPauseEnded", \{ teamId \}\);[\s\S]{0,80}?continue;/.test(
+    engine,
   ),
   "user_substitution: último minuto consome o pedido e termina a pausa",
 );
 
-// Substituição de utilizador no limite: consome o pedido sem abrir a janela,
-// avisa o treinador (substitutionCapReached) e termina o banner de pausa.
-// Distinto da lesão (emit → `const idx`): aqui vem `emit` → `continue`.
+// Substituição de utilizador no limite: avisa o treinador
+// (substitutionCapReached) mas NÃO fecha a janela — abre-a sem banco, para
+// ele ainda poder mexer na mentalidade (que não consome substituição).
+// Regex (e não o bloco literal): a indentação mudou quando o passo do minuto
+// foi extraído para `resolveUserSubs`.
 assert(
-  engine.includes(
-    "{\n          io.to(game.roomCode).emit(\"substitutionCapReached\", { teamId });\n          // O pedido foi consumido sem abrir a janela: termina o banner de pausa.\n          io.to(game.roomCode).emit(\"substitutionPauseEnded\", { teamId });\n          continue;",
-  ),
-  "user_substitution: esgotou subs — consome pedido e termina a pausa",
+  /const cappedForMentality = !canMakeSubstitution\(fixture, teamId\);[\s\S]{0,220}?emit\("substitutionCapReached", \{ teamId \}\)/.test(
+    engine,
+  ) &&
+    /cappedForMentality \? onPitch\.length > 0 : onPitch\.length > 0 && availableBench\.length > 0/.test(
+      engine,
+    ),
+  "user_substitution: esgotou subs — avisa e abre a janela só para a mentalidade",
 );
 
 // Intervalo: limita e conta substituições de segunda parte.
@@ -162,23 +169,46 @@ assert(
 );
 
 // ── 6. Toast quando o limite é atingido ao vivo ─────────────────────────────
-// O servidor avisa (uma vez por equipa) sempre que a equipa esgota as 3
-// substituições — seja na 4ª tentativa de mudança, seja numa lesão sem reposição.
+// O servidor avisa sempre que a equipa esgota as 3 substituições, em três vias
+// distintas (a guarda mede os três contextos, não a contagem total — um sítio
+// novo legítimo não deve chumbar o teste por aritmética):
+//   1. lesão sem reposição (a equipa joga com menos um);
+//   2. 4.ª tentativa de mudança (a janela abre só para a mentalidade);
+//   3. a meio de um lote de trocas (o cliente pode acumular várias na pausa).
 assert(
-  engine.match(/io\.to\(game\.roomCode\)\.emit\("substitutionCapReached"/g)
-    ?.length === 2,
-  "engine: emite substitutionCapReached (mudança + lesão)",
+  /if \(!canMakeSubstitution\(fixture, teamId\)\) \{[\s\S]{0,200}?emit\("substitutionCapReached"/.test(
+    engine,
+  ),
+  "engine: avisa na lesão sem reposição",
+);
+assert(
+  /cappedForMentality = !canMakeSubstitution\(fixture, teamId\);[\s\S]{0,220}?emit\("substitutionCapReached"/.test(
+    engine,
+  ),
+  "engine: avisa na mudança sem substituições (janela de mentalidade)",
+);
+assert(
+  /for \(const userChoice of batch\) \{[\s\S]{0,200}?emit\("substitutionCapReached"/.test(
+    engine,
+  ),
+  "engine: avisa a meio de um lote de trocas",
 );
 
-const listeners = readFileSync(
-  path.join(__dirname, "../../client/src/hooks/useSocketListeners.js"),
+// Frontend: o toast do limite foi removido de propósito em `d968a61f`
+// ("cap/expiry/copy toasts removed") — o aviso passou a ser inline na janela
+// de intervenção (hint junto ao botão de confirmar), que é o que se mede agora.
+// O evento do servidor continua a existir (os três emits acima).
+const intervencao = readFileSync(
+  path.join(
+    __dirname,
+    "../../client/src/components/match/tabs/IntervencaoView.jsx",
+  ),
   "utf8",
 );
 assert(
-  listeners.includes("\"substitutionCapReached\"") &&
-    listeners.includes("addToast") &&
-    listeners.includes("myTeamId !== teamId"),
-  "frontend: ouve substitutionCapReached e faz toast só da própria equipa",
+  intervencao.includes("Limite de substituições atingido.") &&
+    intervencao.includes("Sem suplentes disponíveis"),
+  "frontend: limite de substituições explicado inline (toast removido de propósito)",
 );
 
 console.log("\n✅ substitutionsRegression: all checks passed");

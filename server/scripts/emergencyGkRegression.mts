@@ -144,20 +144,25 @@ assert(
 );
 
 // ── 4. Frontend ───────────────────────────────────────────────────────────
-const listeners = readFileSync(
-  path.join(__dirname, "../../client/src/hooks/useSocketListeners.js"),
+// Os listeners saíram do compositor (`useSocketListeners.js`) para
+// `hooks/socket/match.js` — a guarda segue o código para o sítio novo: as
+// quatro janelas de ação (incl. emergency_gk) entram no countdown, que agora
+// vem do deadline do servidor com fallback de 60s.
+const matchListeners = readFileSync(
+  path.join(__dirname, "../../client/src/hooks/socket/match.js"),
   "utf8",
 );
 assert(
-  listeners.includes('normalizedAction.type === "injury"') &&
-    listeners.includes('normalizedAction.type === "user_substitution"') &&
-    listeners.includes('normalizedAction.type === "gk_red_card"') &&
-    listeners.includes('normalizedAction.type === "emergency_gk"') &&
-    listeners.includes('handlers.setInjuryCountdown(60)'),
-  "frontend: emergency_gk entra no countdown de 60s",
+  ["injury", "user_substitution", "gk_red_card", "emergency_gk"].every((t) =>
+    matchListeners.includes(`normalizedAction.type === "${t}"`),
+  ) &&
+    matchListeners.includes("typeof data?.expiresAt === \"number\"") &&
+    /:\s*60;/.test(matchListeners) &&
+    matchListeners.includes("handlers.setInjuryCountdown(remaining)"),
+  "frontend: emergency_gk entra no countdown (deadline do servidor, fallback 60s)",
 );
 assert(
-  listeners.includes('normalizedAction.type === "emergency_gk"'),
+  matchListeners.includes('normalizedAction.type === "emergency_gk"'),
   "frontend: emergency_gk é normalizado (candidatos em campo)",
 );
 
@@ -179,8 +184,8 @@ assert(
   "IntervencaoView: modo emergency_gk reconhecido",
 );
 assert(
-  intervencao.includes("Vai para a baliza"),
-  "IntervencaoView: botão/painel 'Vai para a baliza'",
+  intervencao.includes("vai para a baliza"),
+  "IntervencaoView: painel diz quem vai para a baliza",
 );
 
 const matchConstants = readFileSync(
