@@ -1,3 +1,8 @@
+## Confete das celebrações passa a futebol (2026-10-03)
+- Pedido: substituir os emojis de champanhe do confete por emojis mais soccer-friendly.
+- `CelebrationBurst.jsx` (componente partilhado por contratação, golo, vitória, diálogos): `PARTICLES` passa de 🍾/🥂/✨/🎉/💫/🎊 para ⚽ ×4, 🥅 ×3, 🏆 ×3, ✨ ×2, 🎉/🎊 ×1 (14 partículas, mesma contagem); as duas garrafas grandes dos cantos tornam-se ⚽; JSDoc "Explosão de champanhe" → "Explosão de futebol".
+- Checks: `lint` limpo no ficheiro (4 problemas pré-existentes noutros, provado com `git stash`) · `check:types` OK · só texto de emoji em spans existentes → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Balões do adjunto redesenhados + tamanho estável (2026-10-02)
 - Pedido: balões redesenhados; nascer já com o tamanho do texto completo em vez de crescer a cada linha da máquina de escrever. Decisões: banda desenhada polida, altura final desde o início, dica + tutorial, JJ intocado.
 - Dica (`AssistantCoach.jsx`) e tutorial (`CoachTutorial.jsx`): bordo 3px, `rounded-3xl`, sombra suave, respiro `p-4`, rabicho alinhado à nova espessura; parágrafo em duas camadas (texto integral invisível reserva a altura, digitado sobreposto em absoluto).

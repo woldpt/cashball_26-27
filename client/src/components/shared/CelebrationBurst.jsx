@@ -2,27 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
 const PARTICLES = [
-  "🍾",
-  "🥂",
+  "⚽",
+  "🥅",
   "✨",
   "🎉",
-  "💫",
+  "🏆",
   "🎊",
+  "⚽",
+  "🥅",
+  "⚽",
+  "🏆",
+  "🥅",
+  "⚽",
   "✨",
-  "🎉",
-  "🥂",
-  "💫",
-  "🎊",
-  "🍾",
-  "✨",
-  "🎉",
+  "🏆",
 ];
 
 /** Vida da festa: partículas extintas a ~2,15s (delay ≤0,25 + 1,9s). */
 const DISMOUNT_MS = 2300;
 
 /**
- * Explosão de champanhe e partículas de festejo — reutilizada pelos modais
+ * Explosão de futebol e partículas de festejo — reutilizada pelos modais
  * de celebração (contratação, vitória).
  *
  * Distribuição determinística (função do índice + seed) — mesmo seed,
@@ -137,7 +137,7 @@ export function CelebrationBurst({ seed, showChampagne = true, origin = null }) 
             animate={{ rotate: -55, y: [0, -14, 0], opacity: 1, scale: 1 }}
             transition={{ duration: 1.7, delay: 0.15 }}
           >
-            🍾
+            ⚽
           </motion.div>
           <motion.div
             className="absolute right-4 top-6 pointer-events-none select-none text-5xl"
@@ -146,7 +146,7 @@ export function CelebrationBurst({ seed, showChampagne = true, origin = null }) 
             animate={{ rotate: 55, y: [0, -14, 0], opacity: 1, scale: 1 }}
             transition={{ duration: 1.7, delay: 0.15 }}
           >
-            🍾
+            ⚽
           </motion.div>
         </>
       )}
