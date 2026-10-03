@@ -168,7 +168,6 @@ export interface MatchFixture {
   _extraTimeStartComment?: boolean;
   _finalEndComment?: boolean;
   _bettingIntroShown?: boolean;
-  _fatigue3Applied?: boolean;
   _winnerId?: number;
   [key: string]: unknown;
 }

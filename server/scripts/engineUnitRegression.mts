@@ -64,6 +64,7 @@ const {
   createMinuteBarrier,
   adoptLiveTactic,
   getPowerVersion,
+  applyMinuteFatigue,
 } = require("../game/engine.ts");
 const {
   computeSidePower,
@@ -702,4 +703,60 @@ test("U19b — médico encurta a lesão grave e poupa skill", async () => {
   const withMedic = await run(5);
   assert.equal(withMedic.delta?.injuryUntil, 2, "médico nível 5: 3 semanas → 1 (nunca abaixo de 1)");
   assert.equal(withMedic.delta?.newSkill, 30, "médico nível 5 poupa a perda de skill");
+});
+
+// ── U20: clima → fadiga (escudo: resistência) ─────────────────────────────
+test("U20 — clima adverso cansa mais e a resistência é o escudo", async () => {
+  const seed = 424242;
+  const mkPlayer = (id: number, teamId: number, res: number) => ({
+    id,
+    teamId,
+    position: "DF",
+    role: "DF",
+    skill: 70,
+    resistance: res,
+    _matchSkill: 70,
+    _fatigueLoss: 0,
+  });
+  const mkSquad = (base: number, teamId: number, res: number) =>
+    Array.from({ length: 11 }, (_, i) => mkPlayer(base + i, teamId, res));
+
+  // 90 minutos de applyMinuteFatigue com seed fixa → fadiga total (memória).
+  const runMatch = (weather: string, res: number) => {
+    const rng = createSeededRng(seed);
+    const homeSquad = mkSquad(1000, 1, res);
+    const awaySquad = mkSquad(2000, 2, res);
+    const fixture = { _weather: weather, _fatigueSnapshots: {}, _minutesPlayed: 0, _lastFatigueTick: 0 };
+    const homeLineupIds = new Set(homeSquad.map((p) => p.id));
+    const awayLineupIds = new Set(awaySquad.map((p) => p.id));
+    for (let m = 1; m <= 90; m++) {
+      applyMinuteFatigue({
+        fixture,
+        minute: m,
+        homeSquad,
+        awaySquad,
+        homeLineupIds,
+        awayLineupIds,
+        rng,
+      });
+    }
+    // A fadiga vive em fixture._fatigueLoss[side][id] (memória), não no player.
+    const fl = (fixture._fatigueLoss ?? { home: {}, away: {} }) as Record<
+      string,
+      Record<number, number>
+    >;
+    const sum = (m: Record<number, number>) =>
+      Object.values(m ?? {}).reduce((s, v) => s + v, 0);
+    return sum(fl.home) + sum(fl.away);
+  };
+
+  // (1) Clima adverso cansa mais que sol (mesma resistência).
+  const sol = runMatch("sol", 26);
+  const neve = runMatch("neve", 26);
+  assert(neve > sol, `neve (${neve}) deve > sol (${sol})`);
+
+  // (2) Em clima mau, resistência baixa cansa mais que resistência alta.
+  const resBaixa = runMatch("neve", 1);
+  const resAlta = runMatch("neve", 50);
+  assert(resBaixa > resAlta, `res baixa (${resBaixa}) deve > res alta (${resAlta})`);
 });

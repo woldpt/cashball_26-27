@@ -1499,28 +1499,6 @@ function fatigueSkipChance(p: PlayerRow): number {
   );
 }
 
-// Aplica um golpe de cansaço (-amount skill) aos jogadores no onze, com
-// probabilidade de escape baseada na resistência. Só mexe em memória —
-// nunca persiste na base de dados.
-function applyFatigue(
-  fixture: MatchFixture,
-  side: MatchSide,
-  squad: PlayerRow[],
-  lineupIds: Set<number>,
-  amount: number,
-  rng: Rng = Math.random,
-) {
-  for (const p of squad) {
-    if (!lineupIds.has(p.id)) continue;
-
-    if (rng() >= fatigueSkipChance(p)) {
-      applyFatigueToPlayer(fixture, side, p, amount, rng);
-    } else {
-      syncFatigueSnapshot(fixture, side, p.id, getEffectiveSkill(p));
-    }
-  }
-}
-
 // Cansaço progressivo por minutos jogados. Cada jogador em campo acumula
 // minutos no fixture (fixture._minutesPlayed) e, a cada intervalo de fadiga
 // (MATCH_TUNING.fatigueIntervalMinutes), rola contra a resistência para
@@ -2197,23 +2175,32 @@ function pushPhaseStartComments(tick: MinuteTickContext): void {
 /**
  * Passo do minuto: fadiga progressiva do XI + desgaste extra com frio/neve.
  */
-function applyMinuteFatigue(tick: MinuteTickContext): void {
-  const { fixture, minute, homeSquad, awaySquad, homeLineupIds, awayLineupIds, rng } = tick;
+export function applyMinuteFatigue(tick: MinuteTickContext): void {
+  const { fixture, homeSquad, awaySquad, homeLineupIds, awayLineupIds, rng } = tick;
 
   // Cansaço progressivo: cada intervalo de fadiga jogado, -1 skill efetiva,
   // com escape por resistência. Quem entra depois (subs) começa do zero.
   trackFatigue(fixture, "home", homeSquad, homeLineupIds, rng);
   trackFatigue(fixture, "away", awaySquad, awayLineupIds, rng);
 
-  // Condições climatéricas adversas aceleram o desgaste ao minuto 60
-  if (
-    minute === 60 &&
-    !fixture._fatigue3Applied &&
-    (fixture._weather === "neve" || fixture._weather === "frio")
-  ) {
-    applyFatigue(fixture, "home", homeSquad, homeLineupIds, 1, rng);
-    applyFatigue(fixture, "away", awaySquad, awayLineupIds, 1, rng);
-    fixture._fatigue3Applied = true;
+  // Clima adverso: golpe de fadiga EXTRA por minuto, gradual por condição
+  // (neve > frio > chuva forte > nevoeiro > vento > chuva; sol = 0), com
+  // escape pela resistência. O frio/neve cansam o jogo inteiro — não só um
+  // minuto. Subs em campo desde o minuto em que entram.
+  const wPerMin = MATCH_TUNING.weatherFatiguePerMinute[fixture._weather ?? ""];
+  if (wPerMin) {
+    for (const p of homeSquad) {
+      if (!homeLineupIds.has(p.id)) continue;
+      if (rng() < wPerMin && rng() >= fatigueSkipChance(p)) {
+        applyFatigueToPlayer(fixture, "home", p, 1, rng);
+      }
+    }
+    for (const p of awaySquad) {
+      if (!awayLineupIds.has(p.id)) continue;
+      if (rng() < wPerMin && rng() >= fatigueSkipChance(p)) {
+        applyFatigueToPlayer(fixture, "away", p, 1, rng);
+      }
+    }
   }
 }
 

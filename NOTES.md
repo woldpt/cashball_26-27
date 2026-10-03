@@ -1,3 +1,12 @@
+## Clima → fadiga: desgaste contínuo com a resistência como escudo (2026-10-03)
+- Pedido: ligar a meteorologia ao **desgaste** dos jogadores de forma **contínua** (antes o clima só dava 1 golpe de fadiga ao minuto 60, e só neve/frio), com a **Resistência** como escudo. Decisões do utilizador: **só fadiga** (não tocar em lesões/golos) · **todas as condições graduadas** · **sutil**.
+- `gameConstants.ts`: novo `MATCH_TUNING.weatherFatiguePerMinute` — probabilidade EXTRA por minuto de um golpe de fadiga, graduada por condição (`neve 0.02 · frio 0.015 · chuva_forte 0.01 · nevoeiro 0.008 · vento 0.005 · chuva 0.003`; `sol` ausente = 0). Sutil: neve ≈ +30% de desgaste no jogo, chuva ≈ +5%.
+- `engine.ts` `applyMinuteFatigue`: substitui o tick único do minuto 60 (neve/frio) por um **rolo contínuo por minuto** — para cada jogador do XI, `if (rng() < wPerMin && rng() >= fatigueSkipChance(p)) applyFatigueToPlayer(…, 1)`. Reaproveita a via de fadiga existente (`fatigueSkipChance` = resistência + bónus GR; `applyFatigueToPlayer` → `_matchSkill`/`_fatigueLoss`, só memória) — zero código novo de fadiga, só o gatilho de clima. Subs entram sujeitos ao rolo desde o minuto em que jogam. Exporta `applyMinuteFatigue` para o teste.
+- Removido: o guard `fixture._fatigue3Applied` (e o campo em `types.ts`) e a função `applyFatigue` (loop do onze inteiro — ficou morta com a remoção do tick 60).
+- Determinístico: usa o `tick.rng` (seeded) → replay pós-crash idêntico; só estado em memória, **sem escrita em BD**.
+- `engineUnitRegression.mts` **U20**: mesmo seed, `neve > sol` em fadiga total (lida em `fixture._fatigueLoss`, não no player); e em clima mau, resistência 1 > resistência 50.
+- Checks: server `typecheck` OK · `test:engine-unit` **28/28** · `audit:socketio` 0 erros/104 warnings (sem eventos novos). Sem `test:mobile` (backend puro); sem `audit:gamestate` (não toca em budgets/squad/fases).
+
 ## Consentimento: gates por clube, não por presença (2026-10-04)
 - Invariantes do utilizador: zero autorun — Pronto de 100% nos 2 gates (após a tática = todos os membros; intervalo/ET = só quem tem jogo); Taça sem humanos segue sem confirmação; admin kick é a saída do fugitivo.
 - Bug real: o auto-avanço do intervalo (Taça/amigável) e o gate do prolongamento decidiam por `socketId` ("quem está ligado"), não por "quem tem jogo" — treinador com jogo offline perdia o Pronto e a 2.ª parte/ET arrancavam sozinhos quando voltava. Novo `hasHumanTeamInFixtures` (assentos member) decide nos 3 sítios (inclui aplicar as subs do ET, que também se perdiam).

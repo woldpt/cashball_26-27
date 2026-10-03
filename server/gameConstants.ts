@@ -663,6 +663,17 @@ export const MATCH_TUNING = {
   // (soma-se ao skipChance) para quem joga como GR (posição "GR", incl. GR
   // improvisado). +0.50 ≈ metade do desgaste de um jogador de campo médio.
   fatigueGRSkipBonus: 0.5,
+  // Clima adverso: probabilidade EXTRA por minuto de um golpe de fadiga
+  // (escape pela resistência, como a fadiga progressiva). Sutil e graduado:
+  // neve ~+30% de desgaste no jogo, chuva ~+5%; sol ausente = 0.
+  weatherFatiguePerMinute: {
+    neve: 0.02,
+    frio: 0.015,
+    chuva_forte: 0.01,
+    nevoeiro: 0.008,
+    vento: 0.005,
+    chuva: 0.003,
+  } as Record<string, number>,
   // Moral de equipa (1–50, neutro 25): desvia o ataque ±10% e a defesa ±5%
   // em torno de 25. Deliberadamente pequeno — a forma ajusta, não decide.
   moraleAttackPerPoint: 0.004,
