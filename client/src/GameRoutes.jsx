@@ -436,6 +436,8 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         setCalFilter={setCalFilter}
                         matchweekCount={matchweekCount}
                         handleOpenTeamSquad={handleOpenTeamSquad}
+                        teamForms={teamForms}
+                        navigateTab={navigateTab}
                       />
                     )}
                     {activeTab === "club" && (

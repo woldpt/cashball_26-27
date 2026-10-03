@@ -890,9 +890,25 @@ export function registerSessionSocketHandlers(
 		try {
 			const leagueMatches = await runAll(
 				game.db,
-				"SELECT id, matchweek, home_team_id, away_team_id, home_score, away_score, attendance FROM matches WHERE played = 1 AND season = ? ORDER BY matchweek, id",
+				"SELECT id, matchweek, home_team_id, away_team_id, home_score, away_score, attendance, ticket_revenue FROM matches WHERE played = 1 AND season = ? ORDER BY matchweek, id",
 				[game.season],
 			);
+
+			// MOM por equipa/jogo (match_moms) — chave `${slot}:${teamId}`.
+			const leagueMomRows = await runAll(
+				game.db,
+				"SELECT matchweek, team_id, player_name FROM match_moms WHERE season = ? AND competition = 'League'",
+				[game.season],
+			);
+			const cupMomRows = await runAll(
+				game.db,
+				"SELECT round, team_id, player_name FROM match_moms WHERE season = ? AND competition = 'Cup'",
+				[game.season],
+			);
+			const leagueMoms = new Map<string, string>();
+			for (const r of leagueMomRows as any[]) leagueMoms.set(`${r.matchweek}:${r.team_id}`, r.player_name);
+			const cupMoms = new Map<string, string>();
+			for (const r of cupMomRows as any[]) cupMoms.set(`${r.round}:${r.team_id}`, r.player_name);
 
 			// Calendário magro: narrative/lineups nunca são consumidos do calendarData
 			const parsedLeagueMatches = leagueMatches.map((match: any) => ({
@@ -902,13 +918,19 @@ export function registerSessionSocketHandlers(
 				events: [],
 				homeLineup: [],
 				awayLineup: [],
+				home_mom: leagueMoms.get(`${match.matchweek}:${match.home_team_id}`) ?? null,
+				away_mom: leagueMoms.get(`${match.matchweek}:${match.away_team_id}`) ?? null,
 			}));
 
-			const cupMatches = await runAll(
+			const cupMatches = (await runAll(
 				game.db,
-				"SELECT id, round, home_team_id, away_team_id, home_score, away_score, home_et_score, away_et_score, home_penalties, away_penalties, winner_team_id, played FROM cup_matches WHERE season = ? ORDER BY round, id LIMIT 200",
+				"SELECT id, round, home_team_id, away_team_id, home_score, away_score, home_et_score, away_et_score, home_penalties, away_penalties, winner_team_id, ticket_revenue, played FROM cup_matches WHERE season = ? ORDER BY round, id LIMIT 200",
 				[game.season],
-			);
+			)) as any[];
+			for (const m of cupMatches) {
+				m.home_mom = cupMoms.get(`${m.round}:${m.home_team_id}`) ?? null;
+				m.away_mom = cupMoms.get(`${m.round}:${m.away_team_id}`) ?? null;
+			}
 			socket.emit("calendarData", {
 				calendarIndex: game.calendarIndex,
 				season: game.season,

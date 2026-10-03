@@ -1,3 +1,10 @@
+## Calendário: MOM, bilheteira e hero do próximo jogo (2026-10-03)
+- Pedido: 3 ideias para o `CalendarioTab` — MOM por jogo jogado, receita de bilheteira nos jogos em casa e um hero do próximo jogo (adversário + forma + estádio + atalho p/ tática). Dados já existiam na BD (`matches`/`cup_matches`.`ticket_revenue`, `match_moms` com `player_name` por equipa) — só faltava expô-los no payload `calendarData`.
+- Servidor (`socketSessionHandlers.ts` `requestCalendar`): `ticket_revenue` nos SELECTs de `leagueMatches` e `cupMatches`; query a `match_moms` (por época, `League`/`Cup`) anexa `home_mom`/`away_mom` (nome do jogador) a cada jogo.
+- Cliente (`CalendarioTab.jsx`): helpers `myMomOf`/`myTicketRevenueOf` (a minha parte da bilheteira = `total − floor(total×0.15)`, só em casa — mesma fórmula do servidor); linhas `MOM: <jogador>` e `Bilheteira: €X` no `ScoreBlock` dos jogos jogados. Novo `NextMatchHero` no topo da lista: adversário (crest + nome clicável), `FormDots` da forma, estádio/Casa-Fora e botão **Preparar tática** → `navigateTab("tactic")`; escondido se a época terminou ou o adversário ainda não foi sorteado.
+- `GameRoutes.jsx`: passa `teamForms` e `navigateTab` ao `CalendarioTab`.
+- Checks: server `typecheck` OK · client `lint` limpo nos ficheiros (4 problemas pré-existentes noutros) + `check:types` 0 erros · `test:mobile` **180/180** (nova estrutura de layout) · `audit:socketio` 0 erros (101 warnings, baseline — sem emits/handlers novos, só payload alargado).
+
 ## Skill do jogador: reparar o que o `46b3fd06` (20 slots) deixou partido (2026-10-03)
 - Sintoma: `playerhistory-resp-test` a falhar 5/5 (timeout) e **o `PlayerHistoryModal` a rebentar no browser** — `SyntaxError: does not provide an export named 'MATCHWEEKS_PER_SEASON'`. Pre-existente ao layout das classificações (confirmado com `git stash`).
 - Não era só o nome do export: o módulo foi reescrito (epoch com ponto, 20 slots, `{x,y,label}`) e os consumidores não acompanharam.

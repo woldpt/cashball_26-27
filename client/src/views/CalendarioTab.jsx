@@ -6,6 +6,8 @@ import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
+import { FormDots } from "../components/shared/FormDots.jsx";
+import { formatCurrency } from "../utils/formatters.js";
 import { staggerItemProps } from "../motion.js";
 
 // Rondas com significado especial — o SEASON_CALENDAR não as nomeia.
@@ -63,6 +65,20 @@ const splitScore = (playedMatch, myTeamId) => {
   };
 };
 
+// MOM da minha equipa + a minha parte da bilheteira (casa = total − 15% visitante).
+const myMomOf = (match, myTeamId) => {
+  if (!match) return null;
+  const imHome = homeIdOf(match) === myTeamId;
+  return imHome ? match.home_mom : match.away_mom;
+};
+const myTicketRevenueOf = (match, myTeamId) => {
+  const total = match?.ticket_revenue ?? 0;
+  if (!total) return null;
+  if (homeIdOf(match) !== myTeamId) return null; // só em casa
+  const away = Math.floor(total * 0.15);
+  return total - away;
+};
+
 const buildFriendlyItem = (entry, status, ctx) => {
   const { cal, teams, myTeam, myTeamId } = ctx;
   const fixtures =
@@ -88,6 +104,8 @@ const buildFriendlyItem = (entry, status, ctx) => {
       myScore != null && opScore != null ? myScore > opScore : null,
     drew:
       myScore != null && opScore != null ? myScore === opScore : null,
+    myMom: myMomOf(myMatch, myTeamId),
+    myTicketRevenue: myTicketRevenueOf(myMatch, myTeamId),
   };
 };
 
@@ -146,6 +164,8 @@ const buildCupItem = (entry, status, ctx) => {
     myPen,
     opPen,
     won: playedMatch ? playedMatch.winner_team_id === myTeamId : null,
+    myMom: myMomOf(playedMatch, myTeamId),
+    myTicketRevenue: myTicketRevenueOf(playedMatch, myTeamId),
   };
 };
 
@@ -190,6 +210,8 @@ const buildLeagueItem = (entry, status, ctx) => {
       ? myScore > opScore
       : null,
     drew: myFixture.result ? myScore === opScore : null,
+    myMom: myMomOf(myFixture.result, myTeamId),
+    myTicketRevenue: myTicketRevenueOf(myFixture.result, myTeamId),
   };
 };
 
@@ -243,6 +265,8 @@ function ScoreBlock({
   hasPen,
   myPen,
   opPen,
+  myMom,
+  myTicketRevenue,
 }) {
   if (status === "done" && myScore !== null) {
     const key = won ? "won" : drew ? "drew" : "lost";
@@ -265,6 +289,16 @@ function ScoreBlock({
           {won ? "Vitória" : drew ? "Empate" : "Derrota"}
           {type === "cup" && !won && !drew ? " · Eliminado" : ""}
         </Badge>
+        {myMom && (
+          <span className="text-[9px] text-on-surface-variant/70 max-w-[130px] truncate">
+            MOM: {myMom}
+          </span>
+        )}
+        {myTicketRevenue != null && (
+          <span className="text-[9px] text-emerald-400 font-bold tabular-nums">
+            Bilheteira: {formatCurrency(myTicketRevenue)}
+          </span>
+        )}
       </div>
     );
   }
@@ -293,6 +327,44 @@ function ScoreBlock({
   );
 }
 
+// Hero do próximo jogo — topo da lista. Adversário + forma + estádio + atalho p/ tática.
+function NextMatchHero({ item, teamForms, onOpenTeamSquad, onGoToTactics }) {
+  const { opponent, entry, type, stadiumTeam, venueLabel } = item;
+  if (!opponent) return null; // adversário ainda não sorteado
+  const form = teamForms?.[opponent.id] || "";
+  return (
+    <div className="rounded-md border border-primary/40 bg-primary/5 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <TeamCircle team={opponent} />
+        <div className="flex flex-col min-w-0">
+          <span className="text-[9px] font-black uppercase tracking-widest text-primary">
+            Próximo Jogo · {type === "league" ? `Jornada ${entry.matchweek}` : entry.roundName}
+          </span>
+          <button
+            className="text-base short:text-sm font-black text-on-surface text-left truncate hover:text-primary"
+            onClick={() => onOpenTeamSquad(opponent)}
+          >
+            {opponent.name}
+          </button>
+          <div className="flex items-center gap-2 mt-0.5">
+            <FormDots form={form} size="sm" />
+            <span className="text-[10px] text-on-surface-variant/70 truncate">
+              {stadiumTeam?.stadium_name ? stadiumTeam.stadium_name.toUpperCase() : venueLabel}
+            </span>
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={onGoToTactics}
+        className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary text-on-primary px-3 py-2 text-xs font-black uppercase tracking-wide hover:opacity-90 transition-opacity"
+      >
+        <span className="material-symbols-outlined text-[16px]">sports_esports</span>
+        Preparar tática
+      </button>
+    </div>
+  );
+}
+
 /**
  * @param {{
  *   calendarData: object|null,
@@ -302,9 +374,11 @@ function ScoreBlock({
  *   calFilter: string,
  *   setCalFilter: (f: string) => void,
  *   handleOpenTeamSquad: (team: object) => void,
+ *   teamForms: object,
+ *   navigateTab: (key: string) => void,
  * }} props
  */
-export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, setCalFilter, handleOpenTeamSquad }) {
+export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, setCalFilter, handleOpenTeamSquad, teamForms, navigateTab }) {
   const cal = calendarData;
   const curIdx = cal?.calendarIndex ?? 0;
   const calYear = cal?.year ?? seasonYear;
@@ -385,6 +459,12 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
 
   const entriesLabel = `${calEntries.length} ${calEntries.length === 1 ? "jogo" : "jogos"}`;
 
+  // Próximo jogo para o hero: o actual, senão o primeiro futuro com adversário.
+  const nextItem =
+    calEntries.find((e) => e.status === "current" && !e.eliminated && e.opponent) ??
+    calEntries.find((e) => e.status === "future" && !e.eliminated && e.opponent) ??
+    null;
+
   return (
     <div className="space-y-4 short:space-y-2">
       {/* ── PAGE HEADER ──────────────────────────────────── */}
@@ -434,6 +514,14 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
           />
         ) : (
           <div className="flex flex-col gap-1.5">
+            {nextItem && (
+              <NextMatchHero
+                item={nextItem}
+                teamForms={teamForms}
+                onOpenTeamSquad={handleOpenTeamSquad}
+                onGoToTactics={() => navigateTab("tactic")}
+              />
+            )}
             {calEntries.map((item, idx) => {
               const {
                 entry,
