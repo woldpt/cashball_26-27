@@ -1,3 +1,6 @@
+## Deploy v26.10.10 no rick (2026-10-03)
+- Funcionários completos (F1+F2+F3) com caricaturas SVG, clima no cartão do próximo jogo, gates por clube e não por presença, fadiga contínua com o clima; `backend Healthy`.
+
 ## Clima → fadiga: desgaste contínuo com a resistência como escudo (2026-10-03)
 - Pedido: ligar a meteorologia ao **desgaste** dos jogadores de forma **contínua** (antes o clima só dava 1 golpe de fadiga ao minuto 60, e só neve/frio), com a **Resistência** como escudo. Decisões do utilizador: **só fadiga** (não tocar em lesões/golos) · **todas as condições graduadas** · **sutil**.
 - `gameConstants.ts`: novo `MATCH_TUNING.weatherFatiguePerMinute` — probabilidade EXTRA por minuto de um golpe de fadiga, graduada por condição (`neve 0.02 · frio 0.015 · chuva_forte 0.01 · nevoeiro 0.008 · vento 0.005 · chuva 0.003`; `sol` ausente = 0). Sutil: neve ≈ +30% de desgaste no jogo, chuva ≈ +5%.
