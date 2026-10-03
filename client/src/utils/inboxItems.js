@@ -606,7 +606,7 @@ function leagueFinalArticle(n) {
   );
   const body =
     `A liga terminou e ${champion} sagrou-se campeão da ${divName}. ` +
-    `A tabela final fica registada nesta edição para consulta futura, mesmo depois do arranque da nova época.\n` +
+    `A tabela final fica registada nesta edição para consulta futura, mesmo depois do arranque da nova época.\n\n` +
     lines.join("\n");
   const champ = rows[0] ? { id: rows[0].id, label: rows[0].name } : null;
   return {

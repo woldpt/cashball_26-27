@@ -7,6 +7,11 @@
 - Em desktop a dica põe o balão à esquerda do retrato (`lg:flex-row-reverse`): o boneco ficava de costas para o balão e a olhar para fora do ecrã (visto no render 1440×900). Prop `flipOnDesktop` no `AssistantMascot`, usada **só na vista da dica** — o tutorial tem o balão sempre à direita e não se espelha.
 - Checks: `test:mobile` **175/175** (`resErr=0` no harness do adjunto) + screenshots 360 e 1440 lidos · `eslint` limpo nos ficheiros da tarefa (restam os 2 pré-existentes: `App.jsx`, `GameContext.jsx`) · `check:types` OK · `build` OK · sem server/jogo/sockets → sem `typecheck` nem audits. Nota: a passagem correu com `client/src/utils/inboxItems.js` modificado (trabalho em curso noutra sessão, fora destes commits e não tocado).
 
+## Classificação final: linhas saem do parágrafo de entrada (2026-10-03)
+- Pedido: verificar formatação/conteúdo da notícia de classificação final (`league_final`); as linhas da tabela no corpo corriam dentro do parágrafo de entrada (lead) — capitular + `text-lg` + `text-justify` — porque o corpo usava `\n` simples (não `\n\n`) entre as linhas.
+- Fix (`inboxItems.js` `leagueFinalArticle`): separar a intro das linhas da classificação com `\n\n`, de modo que as linhas fiquem num parágrafo não-lead (`text-base`, sem capitular). A tabela visual (`LeagueFinalTable` no `JournalTab`) já aparecia separada abaixo; as linhas do corpo são o texto pesquisável.
+- Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · regressão `journalDbNewsRegression` R8 8/8 (os 2 fails são de outros tipos de notícia, pré-existentes) · só texto num util → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Adjunto: balão deixa de tapar o chrome mobile, regras testáveis (2026-10-03)
 - Pedido: avaliação do módulo do Treinador-adjunto (código/conteúdo/layout) e plano de melhoria em 4 fases, aprovado.
 - **F1 layout:** o balão vivia a `bottom-16` com `z-110` — mesmo ancoradouro do fly-up do menu mobile (`z-39`) e do rodapé Notícias CM (`h-8`, 64–96px) — e tapava as últimas linhas do menu; como também está acima do overlay do fly-up, o toque dispensava a dica em vez de escolher o item. Cala-se com `mobileSubMenu` aberto (`invisible`, **sem desmontar**, para não reiniciar a máquina de escrever; `AssistantCoach` passa `menuOpen`) e sobe para `bottom-24` (folga exata sobre o rodapé).
