@@ -124,6 +124,8 @@ const { registerScoutSocketHandlers } =
 	require("./socketScoutHandlers") as typeof import("./socketScoutHandlers");
 const { registerNewsSocketHandlers } =
 	require("./socketNewsHandlers") as typeof import("./socketNewsHandlers");
+const { registerStaffSocketHandlers } =
+	require("./socketStaffHandlers") as typeof import("./socketStaffHandlers");
 const { createTrainingHandlers } =
 	require("./socketTrainingHandlers") as typeof import("./socketTrainingHandlers");
 const { applyTrainingBonuses, clearSeasonTrainingState } =
@@ -1312,6 +1314,13 @@ io.on("connection", (socket) => {
 	registerNewsSocketHandlers(socket, {
 		getGameBySocket,
 		runAll,
+	});
+
+	registerStaffSocketHandlers(socket, {
+		io,
+		getGameBySocket,
+		getPlayerBySocket,
+		isMatchInProgress,
 	});
 
 	registerAdminSocketHandlers(socket, {

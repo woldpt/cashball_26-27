@@ -1,6 +1,11 @@
 import type { ActiveGame } from "./types";
+import { fetchStaffLevels } from "./staffHelpers";
 import {
   recalcPlayerValue,
+  STAFF_TRAINING_PER_LEVEL,
+  STAFF_RESISTANCE_PER_LEVEL,
+  STAFF_RES_DECAY_REDUCTION_PER_LEVEL,
+  STAFF_RESTED_FORM_PER_2_LEVELS,
   FORM_NEUTRAL,
   FORM_MIN,
   FORM_MAX,
@@ -20,6 +25,11 @@ import {
  *    be a farming source; the potential ceiling still caps everyone.
  *  - Forma:        +6 form (direct, INTEGER column tolerates this)
  *  - Resistência:  +4.9 resistance (accumulator, 1.0 = 1 ponto)
+ *
+ * Funcionários (contratação em `staffHelpers`, secção «Funcionários» do Clube):
+ *  - Treinador Auxiliar: multiplica o progresso de skill (+8%/nível).
+ *  - Preparador Físico: forma de quem descansa (+1 a cada 2 níveis),
+ *    resistência treinada (+0.5/nível) e decaimento de resistência -8%/nível.
  *
  * Physical dynamics (per calendar event, whole squad, junior GRs excluded):
  *  - Rested players always recover +2 form (even when training Forma — only
@@ -94,6 +104,10 @@ export async function applyTrainingBonuses(
           return;
         }
 
+        // Funcionários das equipas em âmbito (Treinador Auxiliar / Preparador
+        // Físico). Ausência de linha = papel não contratado (nível 0).
+        const staffByTeam = await fetchStaffLevels(game, squadTeamIds);
+
         // Collect ids of players that appeared in a fixture (positive ids only,
         // junior GRs use negative ids) — these receive the training bonus.
         const playedPlayerIds = new Set<number>();
@@ -145,6 +159,12 @@ export async function applyTrainingBonuses(
               // Sem foco não há bónus, mas há decay (sem imunidade para quem
               // nunca treinou); o rótulo do histórico cai para "Nenhum".
               const focus = trainingByTeam.get(player.team_id) ?? "Nenhum";
+              // Equipa técnica da equipa do jogador (0 = papel por preencher).
+              const staff = staffByTeam.get(player.team_id) || {};
+              const auxLevel = Number(staff.auxiliar) || 0;
+              const fisicoLevel = Number(staff.fisico) || 0;
+              const restedFormBonus =
+                Math.floor(fisicoLevel / 2) * STAFF_RESTED_FORM_PER_2_LEVELS;
 
               const upd: PlayerUpdate = {
                 playerId: player.id,
@@ -173,7 +193,8 @@ export async function applyTrainingBonuses(
                 } else if (focus === "Resistência") {
                   const oldRes = player.resistance ?? RES_NEUTRAL;
                   const oldProg = player.resistance_progress ?? 0;
-                  let newProg = oldProg + 4.9;
+                  let newProg =
+                    oldProg + 4.9 + STAFF_RESISTANCE_PER_LEVEL * fisicoLevel;
                   let newRes = oldRes;
                   while (newProg >= 1.0 && newRes < RES_MAX) {
                     newRes += 1;
@@ -216,7 +237,12 @@ export async function applyTrainingBonuses(
                       Math.max(0.5, 0.5 + 0.5 * ((player.form ?? FORM_NEUTRAL) / FORM_NEUTRAL)),
                     );
                     const gainBase = humanTeamIds.has(player.team_id) ? 8 : 5;
-                    const gain = gainBase * potentialFactor * formFactor;
+                    // Treinador Auxiliar: +8% de progresso por nível.
+                    const gain =
+                      gainBase *
+                      (1 + STAFF_TRAINING_PER_LEVEL * auxLevel) *
+                      potentialFactor *
+                      formFactor;
                     // Quanto maior o skill, mais progresso é preciso por ponto.
                     const progressNeeded = Math.max(1, Math.ceil(oldSkill / 10));
 
@@ -252,9 +278,13 @@ export async function applyTrainingBonuses(
                 if (!played) {
                   // Descanso: quem não jogou recupera suavemente mesmo a
                   // treinar Forma (o +6 é só dos titulares) — rotação mantém
-                  // o plantel fresco.
+                  // o plantel fresco. O Preparador Físico acelera esta
+                  // recuperação (+1 por cada 2 níveis).
                   const oldForm = player.form ?? FORM_NEUTRAL;
-                  const newForm = Math.min(FORM_MAX, oldForm + 2);
+                  const newForm = Math.min(
+                    FORM_MAX,
+                    oldForm + 2 + restedFormBonus,
+                  );
                   if (newForm !== oldForm) {
                     upd.fields.form = newForm;
                     upd.history.push({
@@ -289,7 +319,10 @@ export async function applyTrainingBonuses(
                   // Quem jogou desgasta mais; quem descansa perde menos.
                   // Decaimento propositadamente lento para a resistência não
                   // minguar depressa sem treino (perdas a metade do ganho).
-                  const resLoss = played ? -0.92 : -0.3;
+                  // O Preparador Físico trava o decaimento (-8%/nível).
+                  const resLoss =
+                    (played ? -0.92 : -0.3) *
+                    (1 - STAFF_RES_DECAY_REDUCTION_PER_LEVEL * fisicoLevel);
                   let newProg = oldProg + resLoss;
                   let newRes = oldRes;
                   while (newProg < 0 && newRes > RES_MIN) {

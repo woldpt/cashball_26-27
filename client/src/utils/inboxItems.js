@@ -276,6 +276,8 @@ export function newsCategory(n) {
     t === "cost_cut" ||
     t === "postmatch" ||
     t === "job_offer" ||
+    t === "staff_hire" ||
+    t === "staff_fire" ||
     t === "board_warning"
   )
     return "club";
@@ -755,8 +757,58 @@ function medicalArticle(n) {
   };
 }
 
+/**
+ * Notícia de equipa técnica: contratação (`staff_hire`) ou despedimento
+ * (`staff_fire`) de um funcionário. O nome vem no título guardado pelo
+ * servidor ("Zé Traininho contratado"); o valor é a assinatura ou a
+ * indemnização.
+ * @param {object} n linha `staff_hire` / `staff_fire`
+ */
+function staffArticle(n) {
+  const owner = newsTeam(n?.team_id, n?.team_name);
+  const o = owner ? partTeam(owner) : partText(n?.team_name || "O clube");
+  const hired = String(n?.type || "") === "staff_hire";
+  const name =
+    String(n?.title || "")
+      .replace(/\s+(contratado|despedido)$/i, "")
+      .trim() || "O funcionário";
+  const amount = n?.amount ? formatCurrency(n.amount) : null;
+  const v = newsVariant(n, 3);
+  const titleParts = hired
+    ? v === 0
+      ? [partText("Reforço nos bastidores: "), o]
+      : v === 1
+        ? [partText("Equipa técnica de "), o, partText(" reforçada")]
+        : [o, partText(" contrata para os bastidores")]
+    : v === 0
+      ? [partText("Saída nos bastidores: "), o]
+      : v === 1
+        ? [partText("Equipa técnica de "), o, partText(" mexe")]
+        : [o, partText(" despede um funcionário")];
+  const bodyParts = hired
+    ? [
+        o,
+        partText(` contratou ${name} para a equipa técnica`),
+        partText(amount ? ` — ${amount} de assinatura. ` : ". "),
+        partText(
+          "O salário passa a sair todas as semanas e o trabalho faz-se nos bastidores: treino, recuperação física ou gestão do balneário, conforme o papel.",
+        ),
+      ]
+    : [
+        o,
+        partText(` despediu ${name}`),
+        partText(amount ? ` e pagou ${amount} de indemnização. ` : ". "),
+        partText(
+          "O lugar fica livre para outra aposta e a folha semanal alivia — resta saber se o clube não perde mais do que poupa.",
+        ),
+      ];
+  return makeArticle(titleParts, bodyParts, null, owner ? [owner] : [], null);
+}
+
 function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   if (String(n?.type || "") === "postmatch") return postmatchArticle(n);
+  if (String(n?.type || "") === "staff_hire" || String(n?.type || "") === "staff_fire")
+    return staffArticle(n);
   if (String(n?.type || "") === "contract_request") return contractRequestArticle(n);
   if (String(n?.type || "") === "job_offer") return jobOfferArticle(n);
   if (String(n?.type || "") === "board_warning") return boardWarningArticle(n);

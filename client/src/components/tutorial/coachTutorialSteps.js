@@ -26,6 +26,14 @@ export const COACH_TUTORIAL_STEPS = [
     text: "Mister, eu mostro-te a casa: aqui vês o emblema, a moral do plantel e o histórico do clube. É o nosso quartel-general — volta cá quando quiseres rever esta visita.",
   },
   {
+    id: "staff",
+    tab: "club",
+    submenu: "gestao",
+    targets: ['[data-tour="club-staff"]'],
+    title: "Funcionários",
+    text: "Mister, o clube não se governa sozinho: aqui contratas quem trabalha para nós. O treinador auxiliar acelera o treino dos rapazes e o preparador físico recupera quem descansa. Só tens 3 lugares na equipa técnica — escolhe bem, que o salário sai todas as semanas.",
+  },
+  {
     id: "jornal",
     tab: "jornal",
     submenu: null,

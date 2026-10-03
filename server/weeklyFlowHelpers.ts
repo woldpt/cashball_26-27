@@ -10,6 +10,7 @@ import {
   pickCmGoleada,
   cmGoleadaText,
 } from "./cmNews";
+import { ensureNpcStaff, fetchStaffSalaryTotals } from "./staffHelpers";
 import {
   SEASON_CALENDAR,
   DIVISION_NAMES,
@@ -117,25 +118,33 @@ function buildFullTimeFixtures(
  * humano), em JSON `v: 1` na coluna `description` — o padrão das notícias
  * da Taça/classificação final. `oldLoan` é a dívida ANTES da semana; os
  * restantes valores são idênticos aos do UPDATE de despesas (mesmas
- * fórmulas do SQL). O cliente renderiza o parágrafo + tabela; notícias
+ * fórmulas do SQL). `staff` é o salário semanal dos funcionários do clube
+ * (linha própria). O cliente renderiza o parágrafo + tabela; notícias
  * antigas (texto corrido) caem no fallback em `inboxItems`.
  */
 export function buildWeeklyFinanceFacts(p: {
   income: number;
   wages: number;
   upkeep: number;
+  staff?: number;
   interest: number;
   installment: number;
   oldLoan: number;
 }): string {
   const hasLoan = p.oldLoan > 0;
+  const staff = p.staff || 0;
   const net =
-    p.income - p.wages - p.upkeep - (hasLoan ? p.interest + p.installment : 0);
+    p.income -
+    p.wages -
+    p.upkeep -
+    staff -
+    (hasLoan ? p.interest + p.installment : 0);
   return JSON.stringify({
     v: 1,
     income: p.income,
     wages: p.wages,
     upkeep: p.upkeep,
+    staff,
     interest: hasLoan ? p.interest : 0,
     installment: hasLoan ? p.installment : 0,
     net,
@@ -1546,6 +1555,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   await processNpcTransferActivity(game);
                 } catch (_) {}
                 try {
+                  // Equipa técnica dos NPCs: uma contratação por semana ao
+                  // nível da divisão, com reserva de tesouraria (espelha o
+                  // foco de treino automático).
+                  await ensureNpcStaff(game);
+                } catch (_) {}
+                try {
                   // Direção investe excedente: NPCs ricos gastam (obra/academia)
                   // até ao limiar — esvazia pilhas sem árbitro central.
                   await processNpcInvestment(game);
@@ -1755,6 +1770,16 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         preSeats[r.id] = r.stadium_capacity || 0;
       }
 
+      // Funcionários: salário semanal por equipa (linha própria da folha).
+      // Falha de leitura → mapa vazio (as salas antigas sem a tabela não
+      // podem travar a semana).
+      const preStaff: Record<number, number> = {};
+      for (const [teamId, total] of await fetchStaffSalaryTotals(game).catch(
+        () => new Map<number, number>(),
+      )) {
+        preStaff[teamId] = total;
+      }
+
       // Deduct weekly wages + loan interest + principal installment (same for
       // cup and league weeks). The installment abates the loan principal so the
       // visible debt shrinks week over week, and scales with the division's
@@ -1769,6 +1794,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                     budget = budget
                       - CAST((loan_amount * 0.015) AS INTEGER)
                       - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
+                      - (SELECT COALESCE(SUM(salary_weekly), 0) FROM team_staff WHERE team_id = teams.id)
                       - CAST((MAX(0, COALESCE(stadium_capacity, 0) - ?) * ?) AS INTEGER)
                       - MIN((${LOAN_DIV_CASE}), loan_amount)`,
           [STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK],
@@ -1800,6 +1826,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             income,
             wages,
             upkeep,
+            staff: preStaff[id] || 0,
             interest,
             installment,
             oldLoan,

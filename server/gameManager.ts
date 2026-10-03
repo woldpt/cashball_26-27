@@ -932,6 +932,29 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
     },
   );
 
+  // Funcionários do clube (staff): um registo por equipa/papel. Criação
+  // idempotente por sala para salas já existentes antes desta feature.
+  db.run(
+    "CREATE TABLE IF NOT EXISTS team_staff (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      team_id INTEGER NOT NULL,\n      role TEXT NOT NULL,\n      level INTEGER NOT NULL DEFAULT 1,\n      name TEXT NOT NULL DEFAULT '',\n      salary_weekly INTEGER NOT NULL DEFAULT 0,\n      hired_slot INTEGER NOT NULL DEFAULT 0,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY(team_id) REFERENCES teams(id),\n      UNIQUE(team_id, role)\n    )",
+    (staffErr: Error | null) => {
+      if (staffErr)
+        console.error(
+          `[gameManager] Failed to create team_staff table for ${roomCode}:`,
+          staffErr.message,
+        );
+      db.run(
+        "CREATE INDEX IF NOT EXISTS idx_team_staff_team ON team_staff(team_id)",
+        (idxErr: Error | null) => {
+          if (idxErr)
+            console.warn(
+              `[gameManager] team_staff index failed for ${roomCode}:`,
+              idxErr.message,
+            );
+        },
+      );
+    },
+  );
+
   db.run(
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {

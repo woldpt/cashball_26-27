@@ -210,6 +210,26 @@ CREATE TABLE IF NOT EXISTS team_training (
   UNIQUE(team_id, matchweek)
 );
 
+-- Funcionários do clube: um registo por (equipa, papel). O nível 1..5 define
+-- o efeito (linear) e o salário semanal (dobra por nível); `salary_weekly` fica
+-- gravado para o histórico do contrato não mudar se a tabela de preços mudar.
+-- Um papel só admite um funcionário (UNIQUE) e o teto de lugares é aplicado
+-- na aplicação (STAFF_SLOTS).
+CREATE TABLE IF NOT EXISTS team_staff (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  team_id INTEGER NOT NULL,
+  role TEXT NOT NULL,
+  level INTEGER NOT NULL DEFAULT 1,
+  name TEXT NOT NULL DEFAULT '',
+  salary_weekly INTEGER NOT NULL DEFAULT 0,
+  hired_slot INTEGER NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(team_id) REFERENCES teams(id),
+  UNIQUE(team_id, role)
+);
+
+CREATE INDEX IF NOT EXISTS idx_team_staff_team ON team_staff(team_id);
+
 CREATE TABLE IF NOT EXISTS training_player_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   player_id INTEGER NOT NULL,

@@ -12,11 +12,30 @@ localStorage.setItem("cashball_training_focus", "Defesas");
 
 const me = { id: "coach-1", teamId: 1, name: "Treinador Teste" };
 
+// Equipa técnica contratada (pior caso do texto: nome de papel + efeito
+// compridos) — exercita a menção nova no card «Como funciona?».
+const staff = {
+  roles: ["auxiliar", "fisico"],
+  slots: 3,
+  used: 2,
+  maxLevel: 5,
+  salaries: [3000, 6000, 12000, 24000, 48000],
+  signingWeeks: 4,
+  severanceWeeks: 2,
+  budget: 1000000,
+  salaryWeekly: 60000,
+  previews: {},
+  members: [
+    { role: "auxiliar", level: 5, name: "Prof. Cabrita", salaryWeekly: 48000, hiredSlot: 3, effect: { trainingPct: 40 }, severance: 96000 },
+    { role: "fisico", level: 2, name: "Sargento Brás", salaryWeekly: 6000, hiredSlot: 4, effect: { restedForm: 1, resistance: 1, decayPct: 16 }, severance: 12000 },
+  ],
+};
+
 const root = createRoot(document.getElementById("root"));
 root.render(
   <div className="min-h-screen bg-surface text-on-surface">
     <div className="p-4">
-      <TrainingTab me={me} matchweek={7} />
+      <TrainingTab me={me} matchweek={7} staff={staff} />
     </div>
   </div>,
 );

@@ -43,7 +43,8 @@
     "test:newsslot": "tsx --test scripts/newsSlotRegression.mts",
     "test:ratings": "tsx scripts/ratingsRegression.mts",
     "test:topscorer": "tsx scripts/topScorerPrizeRegression.mts",
-    "test:sponsor": "tsx scripts/sponsorRegression.mts"
+    "test:sponsor": "tsx scripts/sponsorRegression.mts",
+    "test:staff": "tsx scripts/staffRegression.mts"
   },
   "keywords": [],
   "author": "",

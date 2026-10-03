@@ -23,6 +23,7 @@ import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { AuctionsTab } from "./views/AuctionsTab.jsx";
 import { ScoutView } from "./views/ScoutView.jsx";
 import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
+import { useStaffState } from "./hooks/useStaffState.js";
 import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
 
@@ -138,6 +139,17 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     setShowMatchDetail,
     setMatchDetailFixture,
   } = useGame();
+
+  // Equipa técnica (funcionários): estado do meu clube, partilhado pelo
+  // Clube (contratação) e pelo Treino (menção ao auxiliar). Vive aqui, e não
+  // dentro das views, para o Clube ser um componente puro (é o que os
+  // harnesses de layout renderizam).
+  const {
+    staff,
+    pending: staffPending,
+    hire: hireStaff,
+    fire: fireStaff,
+  } = useStaffState();
 
   // Jogo ao vivo que envolve pelo menos um coach humano (sala multiplayer).
   // Set memorizado: o sortHumanFirst corre O(n log n) comparações por render.
@@ -451,6 +463,10 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         palmaresTeamId={palmaresTeamId}
                         palmares={palmares}
                         clubNews={clubNews}
+                        staff={staff}
+                        staffPending={staffPending}
+                        onHireStaff={hireStaff}
+                        onFireStaff={fireStaff}
                       />
                     )}
 
@@ -558,7 +574,11 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                     )}
 
                     {activeTab === "training" && (
-                      <TrainingTab me={me} matchweek={currentJornada} />
+                      <TrainingTab
+                        me={me}
+                        matchweek={currentJornada}
+                        staff={staff}
+                      />
                     )}
 
                     {activeTab === "tactic" && <TacticsView />}

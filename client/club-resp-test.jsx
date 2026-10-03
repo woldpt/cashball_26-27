@@ -35,6 +35,42 @@ const teamInfo = {
 
 const me = { id: "coach-1", teamId: 1, name: "Treinador Teste" };
 
+// Funcionários: pior caso do layout — 3 papéis (um deles sem catálogo no
+// cliente, a exercer o fallback), 1 contratado com nome comprido, lugares
+// livres e saldo para contratar (rótulo longo no botão).
+const staff = {
+  roles: ["auxiliar", "fisico", "medico"],
+  slots: 3,
+  used: 1,
+  maxLevel: 5,
+  salaries: [3000, 6000, 12000, 24000, 48000],
+  signingWeeks: 4,
+  severanceWeeks: 2,
+  budget: 1000000,
+  salaryWeekly: 48000,
+  previews: {
+    auxiliar: [{ trainingPct: 8 }, { trainingPct: 16 }, { trainingPct: 24 }, { trainingPct: 32 }, { trainingPct: 40 }],
+    fisico: [
+      { restedForm: 0, resistance: 0.5, decayPct: 8 },
+      { restedForm: 1, resistance: 1, decayPct: 16 },
+      { restedForm: 1, resistance: 1.5, decayPct: 24 },
+      { restedForm: 2, resistance: 2, decayPct: 32 },
+      { restedForm: 2, resistance: 2.5, decayPct: 40 },
+    ],
+  },
+  members: [
+    {
+      role: "auxiliar",
+      level: 5,
+      name: "Prof. Doutor Joaquim Cabrita da Silva",
+      salaryWeekly: 48000,
+      hiredSlot: 3,
+      effect: { trainingPct: 40 },
+      severance: 96000,
+    },
+  ],
+};
+
 const palmares = {
   trophies: [
     {
@@ -93,10 +129,22 @@ root.render(
         palmaresTeamId={1}
         palmares={palmares}
         clubNews={clubNews}
+        staff={staff}
+        staffPending={false}
+        onHireStaff={() => {}}
+        onFireStaff={() => {}}
       />
     </div>
   </div>,
 );
+
+// Pior caso dos botões: sobe o nível do papel por preencher ao 5 (o rótulo
+// "Contratar · 192.000 €" é o mais comprido) antes de medir.
+setTimeout(() => {
+  const groups = [...document.querySelectorAll('[role="group"][aria-label^="Nível do"]')];
+  const buttons = groups[0]?.querySelectorAll("button");
+  buttons?.[buttons.length - 1]?.click();
+}, 800);
 
 function measure() {
   const vw = window.innerWidth;

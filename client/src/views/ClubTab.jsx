@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { DIVISION_NAMES, WAGE_CAP } from "../constants/index.js";
+import { staffRoleMeta, staffLevelStars } from "../constants/staff.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
@@ -8,6 +9,8 @@ import { TeamKit } from "../components/shared/TeamKit.jsx";
 import { TrophyCabinet } from "../components/shared/TrophyCabinet.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
+import { Button } from "../components/shared/Button.jsx";
+import { Badge } from "../components/shared/Badge.jsx";
 
 /**
  * Apresentação das notícias por tipo — mapa único.
@@ -34,6 +37,20 @@ const NEWS_TYPES = {
   ticket_revenue: { credit: true },
   loan_take: { credit: true },
   prize: { credit: true },
+  staff_hire: {
+    credit: false,
+    label: "Assinatura",
+    bg: "bg-primary/15",
+    text: "text-primary",
+    icon: "badge",
+  },
+  staff_fire: {
+    credit: false,
+    label: "Indemnização",
+    bg: "bg-error/15",
+    text: "text-error",
+    icon: "person_remove",
+  },
   default: {
     credit: false,
     bg: "bg-surface-container-high",
@@ -89,6 +106,166 @@ function NewsRow({ news }) {
 }
 
 /**
+ * Cartão de um papel da equipa técnica: mostra o funcionário contratado
+ * (nome, nível, efeito e despedimento) ou o formulário de contratação
+ * (nível, salário, assinatura e pré-visualização do efeito).
+ *
+ * Os números vêm todos do `board` (servidor) — incluindo a pré-visualização
+ * por nível (`board.previews`), para o cliente nunca repetir as fórmulas.
+ *
+ * @param {{
+ *   role: string,
+ *   board: object,
+ *   member: object|null,
+ *   pending: boolean,
+ *   onHire: (role: string, level: number) => void,
+ *   onFire: (role: string) => void,
+ * }} props
+ * @returns {JSX.Element}
+ */
+function StaffRoleCard({ role, board, member, pending, onHire, onFire }) {
+  const [level, setLevel] = useState(1);
+  const meta = staffRoleMeta(role);
+  const salaries = board?.salaries || [];
+  const salary = Number(salaries[level - 1]) || 0;
+  const fee = salary * (board?.signingWeeks || 0);
+  const budget = Number(board?.budget) || 0;
+  const noSlots = (board?.used ?? 0) >= (board?.slots ?? 0);
+  const noBudget = budget < fee;
+  const preview = board?.previews?.[role]?.[level - 1];
+  const hireLabel = noSlots
+    ? "Sem lugares livres"
+    : noBudget
+      ? "Sem saldo"
+      : `Contratar · ${formatCurrency(fee)}`;
+
+  return (
+    <div className="bg-surface-container-high/40 rounded-md border border-outline-variant/25 p-3 short:p-2 flex flex-col gap-2">
+      {/* Identificação do papel: ícone + nome + estado numa linha (o nome
+          fica com a largura toda antes do badge) e a descrição por baixo. */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className="material-symbols-outlined text-lg text-tertiary shrink-0"
+          >
+            {meta.icon}
+          </span>
+          <h3 className="font-headline font-black text-sm text-on-surface leading-tight flex-1 min-w-0">
+            {meta.label}
+          </h3>
+          {member ? (
+            <Badge variant="info" size="sm">
+              Nível {member.level}
+            </Badge>
+          ) : (
+            <Badge variant="neutral" size="sm">
+              Vazio
+            </Badge>
+          )}
+        </div>
+        <p className="text-[10px] text-on-surface-variant leading-tight">
+          {meta.description}
+        </p>
+      </div>
+
+      {member ? (
+        <div className="space-y-2">
+          <div className="bg-surface-container rounded border border-outline-variant/20 p-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-black text-on-surface truncate">
+                {member.name}
+              </span>
+              <span
+                className="text-[10px] text-amber-400 tracking-tight shrink-0"
+                title={`Nível ${member.level}`}
+              >
+                {staffLevelStars(member.level, board?.maxLevel || 5)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-2 mt-1">
+              <span className="text-[10px] font-black text-tertiary truncate">
+                {meta.effect(member.effect)}
+              </span>
+              <span className="text-[10px] text-on-surface-variant tabular-nums shrink-0">
+                {formatCurrency(member.salaryWeekly)}/sem
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="dangerSoft"
+            size="sm"
+            full
+            disabled={pending}
+            title={`Indemnização: ${formatCurrency(member.severance)}`}
+            onClick={() => onFire(role)}
+          >
+            Despedir · {formatCurrency(member.severance)}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {/* Escolha do nível (o preço aparece logo abaixo) */}
+          <div className="flex items-center gap-1" role="group" aria-label={`Nível do ${meta.label}`}>
+            {salaries.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setLevel(i + 1)}
+                aria-pressed={level === i + 1}
+                className={`flex-1 py-1.5 rounded text-[10px] font-black border transition-colors ${
+                  level === i + 1
+                    ? "bg-primary/20 border-primary/40 text-primary"
+                    : "bg-surface-container border-outline-variant/25 text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <div className="bg-surface-container rounded border border-outline-variant/20 p-2 text-[10px] space-y-1">
+            <div className="flex justify-between gap-2">
+              <span className="text-on-surface-variant">Efeito</span>
+              <span className="font-black text-tertiary text-right">
+                {preview ? meta.effect(preview) : "—"}
+              </span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-on-surface-variant">Salário</span>
+              <span className="font-black text-on-surface tabular-nums">
+                {formatCurrency(salary)}/sem
+              </span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-on-surface-variant">Assinatura</span>
+              <span className="font-black text-error tabular-nums">
+                {formatCurrency(fee)}
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            full
+            disabled={pending || noSlots || noBudget}
+            title={
+              noSlots
+                ? `Equipa técnica cheia (${board?.slots ?? 0} lugares)`
+                : noBudget
+                  ? "Saldo insuficiente para a assinatura"
+                  : undefined
+            }
+            onClick={() => onHire(role, level)}
+          >
+            {hireLabel}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * @param {{
  *   teamInfo: object,
  *   seasonYear: number,
@@ -99,6 +276,10 @@ function NewsRow({ news }) {
  *   palmaresTeamId: number|null,
  *   palmares: { trophies: Array },
  *   clubNews: Array,
+ *   staff?: object|null,
+ *   staffPending?: boolean,
+ *   onHireStaff?: (role: string, level: number) => void,
+ *   onFireStaff?: (role: string) => void,
  * }} props
  */
 export function ClubTab({
@@ -111,6 +292,10 @@ export function ClubTab({
   palmaresTeamId,
   palmares,
   clubNews,
+  staff = null,
+  staffPending = false,
+  onHireStaff,
+  onFireStaff,
 }) {
   // Guarda o URL que falhou (não um booleano) para o fallback fazer reset
   // sozinho quando o escudo mudar — sem useEffect dedicado.
@@ -121,6 +306,9 @@ export function ClubTab({
   const morale = teamInfo?.morale ?? 25;
   const moraleLabel = getMoraleLabel(morale).toUpperCase();
   const moraleTone = getMoraleClasses(morale);
+  // Massa salarial = plantel + equipa técnica (o painel dos Funcionários
+  // detalha a parte dos funcionários).
+  const wageBill = (Number(totalWeeklyWage) || 0) + (Number(staff?.salaryWeekly) || 0);
 
   // ── Agrupamento do histórico por ano ───────────────────────────────
   const groupedNews = useMemo(() => {
@@ -305,14 +493,14 @@ export function ClubTab({
             <div className="flex justify-between text-xs">
               <span className="text-on-surface-variant">Salários / jornada</span>
               <span className="tabular-nums font-black text-on-surface">
-                {formatCurrency(totalWeeklyWage)}
+                {formatCurrency(wageBill)}
               </span>
             </div>
             <div className="w-full bg-surface-container-high h-1 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${Math.min(100, (totalWeeklyWage / WAGE_CAP) * 100)}%`,
+                  width: `${Math.min(100, (wageBill / WAGE_CAP) * 100)}%`,
                   background: teamInfo?.color_primary || "#4ade80",
                 }}
               />
@@ -426,7 +614,53 @@ export function ClubTab({
         </div>
       </div>
 
-      {/* ── ROW 3: HISTÓRICO DO CLUBE (agregado por ano) ───────────── */}
+      {/* ── ROW 3: FUNCIONÁRIOS (equipa técnica) ──────────────────── */}
+      <div data-tour="club-staff">
+        <Panel
+          title="Funcionários"
+          icon="badge"
+          meta={
+            staff ? (
+              <>
+                {staff.used}/{staff.slots} lugares
+                {staff.salaryWeekly > 0 && (
+                  // Em telemóvel o salário total (e não o por funcionário, que
+                  // já aparece em cada cartão) empurrava o cabeçalho para 2 linhas.
+                  <span className="hidden sm:inline">
+                    {" · "}
+                    {formatCurrency(staff.salaryWeekly)}/semana
+                  </span>
+                )}
+              </>
+            ) : undefined
+          }
+          padded={false}
+        >
+          <div className="p-3 sm:p-4 short:p-2">
+            {staff ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 short:gap-2 items-start">
+                {staff.roles.map((role) => (
+                  <StaffRoleCard
+                    key={role}
+                    role={role}
+                    board={staff}
+                    member={(staff.members || []).find((m) => m.role === role) || null}
+                    pending={staffPending}
+                    onHire={onHireStaff}
+                    onFire={onFireStaff}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-on-surface-variant px-1 py-2">
+                A carregar a equipa técnica…
+              </p>
+            )}
+          </div>
+        </Panel>
+      </div>
+
+      {/* ── ROW 4: HISTÓRICO DO CLUBE (agregado por ano) ───────────── */}
       <Panel
         title="Histórico do Clube"
         icon="newspaper"

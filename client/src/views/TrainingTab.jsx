@@ -8,6 +8,7 @@ import {
   POSITION_BORDER_CLASS,
 } from "../constants/index.js";
 import { Badge } from "../components/shared/Badge.jsx";
+import { staffRoleMeta } from "../constants/staff.js";
 import { Panel } from "../components/shared/Panel.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -315,12 +316,47 @@ function PlayerReportRow({ player, position, highlightAttr, highlightClass }) {
 }
 
 /**
+ * Linha da equipa técnica no card «Como funciona?»: mostra quem está a ajudar
+ * este treino (o Treinador Auxiliar acelera o progresso de skill e o
+ * Preparador Físico mexe na forma/resistência). Sem funcionários, não aparece
+ * nada — a explicação base fica como estava.
+ *
+ * @param {{ staff: object|null }} props
+ * @returns {JSX.Element|null}
+ */
+function StaffTrainingNote({ staff }) {
+  const members = staff?.members || [];
+  if (members.length === 0) return null;
+  return (
+    <li className="flex items-start gap-2">
+      <span className="text-tertiary shrink-0">★</span>
+      <span>
+        {members.map((m, i) => {
+          const meta = staffRoleMeta(m.role);
+          return (
+            <span key={m.role}>
+              {i > 0 && " · "}
+              <span className="font-black text-on-surface">
+                {meta.label} (nível {m.level})
+              </span>
+              {" — "}
+              {meta.effect(m.effect)}
+            </span>
+          );
+        })}
+      </span>
+    </li>
+  );
+}
+
+/**
  * @param {{
  *   me: object,
  *   matchweek: number,
+ *   staff?: object|null,
  * }} props
  */
-export function TrainingTab({ me, matchweek }) {
+export function TrainingTab({ me, matchweek, staff = null }) {
   const [selectedTraining, setSelectedTraining] = useState(() => {
     return readStoredTrainingFocus(me?.roomCode);
   });
@@ -535,6 +571,7 @@ export function TrainingTab({ me, matchweek }) {
                       <span className="text-primary">→</span>
                       Atributos não treinados (forma/resistência) degradam-se com o tempo
                     </li>
+                    <StaffTrainingNote staff={staff} />
                   </ul>
                 </div>
               </div>

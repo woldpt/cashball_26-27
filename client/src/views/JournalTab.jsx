@@ -666,6 +666,9 @@ function WeeklyFinanceTable({ facts }) {
   const rows = [
     { label: "Rendimento base", value: facts.income },
     { label: "Salários", value: facts.wages, debit: true },
+    ...(Number(facts.staff) > 0
+      ? [{ label: "Funcionários", value: facts.staff, debit: true }]
+      : []),
     { label: "Manutenção do estádio", value: facts.upkeep, debit: true },
     ...(facts.hasLoan
       ? [

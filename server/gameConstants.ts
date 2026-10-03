@@ -267,6 +267,71 @@ export function loanInstallment(division: number): number {
   return LOAN_INSTALLMENT_BY_DIVISION[division] ?? 15000;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Funcionários do clube (staff).
+//
+// Regra central (herdada do Hattrick): o EFEITO é linear no nível e o SALÁRIO
+// dobra por nível — o nível 3 é o ponto doce e o 5 é luxo de clube grande.
+// É a própria curva salarial que faz o travão por divisão (um clube da D4
+// suporta o nível 3 numa categoria, não nas três): não há teto por divisão.
+//
+// Salários: 3k / 6k / 12k / 24k / 48k por semana. Assinatura = 4 semanas
+// (impede trocar de funcionário todas as semanas para otimizar) e despedimento
+// = 2 semanas de indemnização.
+// ─────────────────────────────────────────────────────────────────────────────
+export const STAFF_SLOTS = 3;
+export const STAFF_MAX_LEVEL = 5;
+/** Salário semanal do nível 1 (dobra a cada nível). */
+export const STAFF_BASE_SALARY = 3000;
+/** Semanas de salário cobradas na assinatura. */
+export const STAFF_SIGNING_WEEKS = 4;
+/** Semanas de salário pagas no despedimento. */
+export const STAFF_SEVERANCE_WEEKS = 2;
+
+/**
+ * Papéis disponíveis (ordem canónica da UI e do payload).
+ * `auxiliar` = Treinador Auxiliar (treino) · `fisico` = Preparador Físico
+ * (forma/resistência). O cliente tem os rótulos em `constants/staff.js` —
+ * daqui saem só os números.
+ */
+export const STAFF_ROLES = ["auxiliar", "fisico"] as const;
+export type StaffRole = (typeof STAFF_ROLES)[number];
+
+/** Nível de contratação automática dos NPCs, por divisão. */
+export const STAFF_NPC_LEVEL_BY_DIVISION: Record<number, number> = {
+  1: 3,
+  2: 2,
+  3: 2,
+  4: 1,
+  5: 1,
+};
+
+/** Salário semanal de um nível (1..5), clampado à tabela. */
+export function staffSalaryFor(level: number): number {
+  const l = Math.min(STAFF_MAX_LEVEL, Math.max(1, Math.floor(Number(level) || 1)));
+  return STAFF_BASE_SALARY * Math.pow(2, l - 1);
+}
+
+/** Custo de assinatura de um funcionário de nível `level`. */
+export function staffSigningFee(level: number): number {
+  return staffSalaryFor(level) * STAFF_SIGNING_WEEKS;
+}
+
+/** Indemnização de despedimento de um funcionário de nível `level`. */
+export function staffSeverance(level: number): number {
+  return staffSalaryFor(level) * STAFF_SEVERANCE_WEEKS;
+}
+
+// ── Efeitos (por nível; a soma cumulativa é o efeito do nível N) ────────────
+/** Treinador Auxiliar: +8% de progresso de treino de skill por nível. */
+export const STAFF_TRAINING_PER_LEVEL = 0.08;
+/** Preparador Físico: +1 forma (quem não jogou) a cada 2 níveis. */
+export const STAFF_RESTED_FORM_PER_2_LEVELS = 1;
+/** Preparador Físico: +0.5 de resistência treinada por nível. */
+export const STAFF_RESISTANCE_PER_LEVEL = 0.5;
+/** Preparador Físico: -8% no decaimento de resistência (sem foco) por nível. */
+export const STAFF_RES_DECAY_REDUCTION_PER_LEVEL = 0.08;
+
 /**
  * Lugares isentos da manutenção semanal do estádio: os primeiros 3000
  * lugares não pagam. Um estádio de 5 mil (divisões baixas) poupa ~90K€/época;
