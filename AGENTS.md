@@ -1,6 +1,7 @@
 # AGENTS.md — CashBall · Operações & Regras
 
 > **pt-PT (europeu) SEMPRE** — UI, mensagens, narração, comentários. "Auto-golo" (nunca "golo de contra"/"contra" — pt-BR); "marcador"/"resultado" (nunca "placar").
+> **Falar com o utilizador como se fosse não-programador:** sem jargão técnico, frases curtas, explicar por miúdos o que se passa e o que preciso de ti.
 > **Leia antes de trabalhar:** arranque de sessão → `NOTES.md` · backend/arquitetura → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/MySquadTab.jsx`.
 
 ## 🤝 Protocolo antes de editar (sempre)
