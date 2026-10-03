@@ -4,8 +4,8 @@ import { useGame } from "../../contexts/GameContext.jsx";
 import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
 
 // Velocidade de leitura da passagem única.
-const MS_PER_CHAR = 60;
-const MIN_PLAY_MS = 6000;
+const MS_PER_CHAR = 90;
+const MIN_PLAY_MS = 8000;
 // Pausa estática para quem prefere movimento reduzido (temporizador em CSS,
 // sem setState em efeitos — dispara o mesmo onAnimationEnd).
 const REDUCED_STILL_MS = 5000;
