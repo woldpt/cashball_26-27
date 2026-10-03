@@ -1,3 +1,8 @@
+## Ticker Notícias CM: fila 1-a-1, sem barra vazia, recorde persistente (2026-10-03)
+- Audit da barra (código 8, conteúdo 9, layout 9) → 3 fixes: (1) replay — notícia nova a meio da fornada remontava a tira e repetia tudo; agora a notícia ativa é derivada (`items.find` por id não visto) e a chave da tira é estável durante a passagem, novidades entram na fila sem reiniciar; (2) barra vazia — removido o `pl-[100%]`, o texto aparece já visível e sai a deslizar para a esquerda, `duration = max(8s, chars×90ms)` é agora tempo de leitura real; (3) "recorde da sala" — `_cmTopSale` em memória (morria no restart) trocado por `cmIsRecordSale` (1 query no `transfer_history`: >1 venda e nenhuma ≥ ao valor), persistente.
+- Keyframes `cmTickerPass`/`cmTickerStill` movidos do `<style>` inline para `index.css`; sombra superior na barra.
+- Checks: `eslint` limpo · `check:types` OK · `test:mobile` 175/175 · `typecheck` OK · `tsx` da `cmIsRecordSale` 5/5 (1.ª venda ≠ recorde, maior = recorde, empate ≠ recorde).
+
 ## Confete das celebrações passa a futebol (2026-10-03)
 - Pedido: substituir os emojis de champanhe do confete por emojis mais soccer-friendly.
 - `CelebrationBurst.jsx` (componente partilhado por contratação, golo, vitória, diálogos): `PARTICLES` passa de 🍾/🥂/✨/🎉/💫/🎊 para ⚽ ×4, 🥅 ×3, 🏆 ×3, ✨ ×2, 🎉/🎊 ×1 (14 partículas, mesma contagem); as duas garrafas grandes dos cantos tornam-se ⚽; JSDoc "Explosão de champanhe" → "Explosão de futebol".

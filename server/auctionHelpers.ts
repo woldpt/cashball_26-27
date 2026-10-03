@@ -13,7 +13,7 @@ import {
   serializeRoomTask,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
-import { emitCmNews, cmAuctionText, cmBombText } from "./cmNews";
+import { emitCmNews, cmAuctionText, cmBombText, cmIsRecordSale } from "./cmNews";
 import { upcomingMatchweek } from "./game/lineupReady";
 import { signingWage, AUCTION_BID_STEP, getAgentName, FORM_NEUTRAL, RES_NEUTRAL, CONTRACT_REQUEST_RESET_SQL } from "./gameConstants";
 
@@ -552,15 +552,17 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           buyerTeamName,
           finalBid,
         });
-        // Notícias CM: venda fechada; BOMBA se for recorde da sala.
-        // _cmTopSale vive em memória (reinicia com o servidor).
-        const cmTop = (game as any)._cmTopSale ?? 0;
-        if (finalBid > cmTop && cmTop > 0) {
-          emitCmNews(game, io, cmBombText(player.name, buyerTeamName, finalBid));
-        } else {
-          emitCmNews(game, io, cmAuctionText(player.name, buyerTeamName, finalBid));
-        }
-        (game as any)._cmTopSale = Math.max(cmTop, finalBid);
+        // Notícias CM: venda fechada; BOMBA se for recorde da sala
+        // (recorde persistente — a venda já está em transfer_history).
+        cmIsRecordSale(game.db, finalBid).then((isRecord) => {
+          emitCmNews(
+            game,
+            io,
+            isRecord
+              ? cmBombText(player.name, buyerTeamName, finalBid)
+              : cmAuctionText(player.name, buyerTeamName, finalBid),
+          );
+        });
       })
       .catch(() => {});
   };

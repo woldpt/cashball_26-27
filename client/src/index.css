@@ -430,6 +430,25 @@ body {
   }
 }
 
+/* Ticker Notícias CM: a tira aparece já visível e sai a deslizar para a
+   esquerda (1 iteração). "still" é um temporizador no-op para reduced-motion. */
+@keyframes cmTickerPass {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+@keyframes cmTickerStill {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 /* Heartbeat for JOGAR button */
 @keyframes heartbeat {
   0%,

@@ -105,6 +105,24 @@ function cmEuros(value: number): string {
   return `${new Intl.NumberFormat("pt-PT").format(value)}€`;
 }
 
+/**
+ * Verdadeiro se a venda (já persistida em `transfer_history`) é o recorde da
+ * sala: há outras vendas e nenhuma igualou/superou o valor. Persistente —
+ * sobrevive a restarts do servidor, ao contrário de um máximo em memória.
+ */
+export function cmIsRecordSale(db: any, amount: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    db.get(
+      "SELECT COUNT(*) AS total, SUM(amount >= ?) AS top FROM transfer_history",
+      [amount],
+      (err: any, row: any) => {
+        if (err || !row) return resolve(false);
+        resolve(row.total > 1 && row.top === 1);
+      },
+    );
+  });
+}
+
 export function cmAuctionText(playerName: string, buyerTeamName: string, finalBid: number): string {
   return `💰 MERCADO: ${playerName} reforça ${buyerTeamName} por ${cmEuros(finalBid)}!`;
 }

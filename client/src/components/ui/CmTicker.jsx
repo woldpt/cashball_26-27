@@ -12,10 +12,13 @@ const REDUCED_STILL_MS = 5000;
 
 /**
  * Notícias CM — rodapé breaking-news (estilo CNN): etiqueta vermelha fixa +
- * notícias da sala em passagem ÚNICA. Cada fornada toca uma vez e a barra
- * sai a deslizar para baixo; notícia nova fá-la regressar. Alimentado pelas
- * `systemMessage` com `cm: true`. Escondido em direto; no telemóvel vive por
- * cima da MobileNav, com etiqueta compacta.
+ * notícias da sala em passagem ÚNICA, uma de cada vez. A notícia ativa é
+ * derivada da fila (a primeira por mostrar): notícias novas entram na fila
+ * sem remontar a tira em curso. Quando a fila esvazia, a barra sai a
+ * deslizar para baixo. O texto aparece já visível e sai a deslizar para a
+ * esquerda — sem período de barra vazia. Alimentado pelas `systemMessage`
+ * com `cm: true`. Escondido em direto; no telemóvel vive por cima da
+ * MobileNav, com etiqueta compacta.
  *
  * @param {{ hidden?: boolean, sidebarCollapsed?: boolean }} props
  */
@@ -25,19 +28,16 @@ export function CmTicker({ hidden = false, sidebarCollapsed = false }) {
   const items = cmNews || [];
   const [shownIds, setShownIds] = useState(() => new Set());
 
-  // Pendentes desta fornada (derivado do estado, sem efeitos).
-  const pending = items.filter((it) => !shownIds.has(it.id));
-  const visible = !hidden && pending.length > 0;
-  const runKey = pending.map((it) => it.id).join("|");
+  // Ativa da fila (derivado, sem efeitos): chave estável durante a passagem,
+  // por isso novidades a meio não reiniciam a animação.
+  const active = items.find((it) => !shownIds.has(it.id)) ?? null;
+  const visible = !hidden && active !== null;
+  const duration = Math.max(MIN_PLAY_MS, (active?.text?.length || 0) * MS_PER_CHAR);
 
-  // Duração proporcional ao texto para velocidade de leitura constante.
-  const chars = pending.reduce((n, it) => n + (it.text?.length || 0), 0);
-  const duration = Math.max(MIN_PLAY_MS, chars * MS_PER_CHAR);
-
-  const finishRun = (played) => {
+  const finishRun = (id) => {
     setShownIds((prev) => {
       const next = new Set(prev);
-      for (const it of played) next.add(it.id);
+      next.add(id);
       return next;
     });
   };
@@ -53,39 +53,24 @@ export function CmTicker({ hidden = false, sidebarCollapsed = false }) {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: "100%", opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`fixed bottom-16 lg:bottom-0 right-0 z-30 h-8 flex items-stretch bg-black border-t border-red-900/60 overflow-hidden left-0 ${sidebarCollapsed ? "lg:left-[var(--sidebar-w-collapsed)]" : "lg:left-[var(--sidebar-w)]"}`}
+          className={`fixed bottom-16 lg:bottom-0 right-0 z-30 h-8 flex items-stretch bg-black border-t border-red-900/60 overflow-hidden shadow-[0_-4px_12px_rgba(0,0,0,0.5)] left-0 ${sidebarCollapsed ? "lg:left-[var(--sidebar-w-collapsed)]" : "lg:left-[var(--sidebar-w)]"}`}
         >
           <div className="shrink-0 bg-red-600 text-white text-[10px] lg:text-xs font-black px-2 lg:px-3 flex items-center uppercase tracking-widest select-none">
             Notícias CM
           </div>
           <div className="overflow-hidden flex-1 relative">
-            <style>{`
-              @keyframes cmTickerPass {
-                0%   { transform: translateX(0); }
-                100% { transform: translateX(-100%); }
-              }
-              @keyframes cmTickerStill {
-                0%   { opacity: 1; }
-                100% { opacity: 1; }
-              }
-            `}</style>
             <div
-              key={runKey}
-              onAnimationEnd={() => finishRun(pending)}
-              className="absolute whitespace-nowrap flex items-center h-full text-[10px] text-zinc-200 pl-[100%]"
+              key={active.id}
+              onAnimationEnd={() => finishRun(active.id)}
+              className="absolute left-0 top-0 h-full whitespace-nowrap pl-2 text-[10px] text-zinc-200"
               style={{
-                gap: "5rem",
                 animation: reduced
                   ? `cmTickerStill ${REDUCED_STILL_MS}ms linear 1`
                   : `cmTickerPass ${duration}ms linear 1`,
               }}
             >
-              {pending.map((item) => (
-                <span key={item.id} className="shrink-0">
-                  <span className="mr-2 text-red-500">◆</span>
-                  {item.text}
-                </span>
-              ))}
+              <span className="mr-2 text-red-500">◆</span>
+              {active.text}
             </div>
           </div>
         </motion.div>
