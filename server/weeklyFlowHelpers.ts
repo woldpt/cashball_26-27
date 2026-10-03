@@ -184,6 +184,7 @@ import {
   clearMatchCheckpoint,
   clearSeatPositions,
   computeAbsentees,
+  hasHumanTeamInFixtures,
   isSeatPresent,
   resetAllReady,
   logCalendarAdvance,
@@ -2026,17 +2027,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       return;
     }
 
-    // Auto-advance cup/friendly halftime when no human coach is in any fixture.
-    // (All eliminated — no substitutions screen needed, continue immediately.)
+    // Auto-advance cup/friendly halftime when no HUMAN team is in any fixture
+    // (all eliminated — no substitutions screen needed). Decide por assentos,
+    // não por `socketId`: um treinador com jogo que esteja offline no intervalo
+    // tem de continuar a mandar no seu Pronto — senão a 2.ª parte arrancava
+    // sozinha quando ele voltava (autorun).
     if (phaseNow === "match_halftime" && entry?.type !== "league") {
-      const humanInAnyFixture = game.currentFixtures.some((f) =>
-        (Object.values(game.playersByName) as PlayerSession[]).some(
-          (p) =>
-            p.socketId &&
-            (p.teamId === f.homeTeamId || p.teamId === f.awayTeamId),
-        ),
-      );
-      if (!humanInAnyFixture) {
+      if (!hasHumanTeamInFixtures(game, game.currentFixtures)) {
         console.log(
           `[${game.roomCode}] 🏆 No human in cup fixtures — auto-advancing to second half`,
         );

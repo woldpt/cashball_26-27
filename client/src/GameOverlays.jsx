@@ -362,8 +362,8 @@ export function GameOverlays() {
       </AnimatePresence>
 
       {/* Modal de espera multiplayer no intervalo */}
-      {/* Espectadores da Taça (sem fixture nesta ronda → !myMatch) são auto-ready
-          ao intervalo; permitir cancelar bloquearia o jogo sem razão. */}
+      {/* Espectadores da Taça (sem fixture nesta ronda → !myMatch) não têm
+          Pronto que dar ao intervalo; permitir cancelar só fabricaria estados. */}
       <WaitingCoachesModal
         players={players}
         visible={postMatchFlow.showWaiting}

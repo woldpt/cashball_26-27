@@ -405,6 +405,29 @@ export function computeAbsentees(game: ActiveGame): string[] {
   return absent.sort();
 }
 
+/**
+ * Existe treinador humano com clube em alguma destas fixtures?
+ *
+ * Para gates de consentimento (intervalo, prolongamento): decide por
+ * "quem TEM jogo", nunca por "quem está ligado agora". Um `socketId` a null
+ * (telemóvel em baixo) fazia o jogo saltar o Pronto do treinador — o
+ * auto-avanço disparava e a 2.ª parte/prolongamento arrancavam sem ele.
+ * O assento (`member` com equipa) é durável e sobrevive a quedas de rede;
+ * assentos libertados (leave/kick/despedida) contam como clube sem humano.
+ */
+export function hasHumanTeamInFixtures(
+  game: ActiveGame,
+  fixtures: Array<{ homeTeamId?: number | null; awayTeamId?: number | null }> | null | undefined,
+): boolean {
+  const memberTeams = new Set<number>();
+  for (const seat of Object.values(game.seats || {})) {
+    if (seat.status === "member" && seat.teamId != null) memberTeams.add(Number(seat.teamId));
+  }
+  return (fixtures || []).some(
+    (f) => memberTeams.has(Number(f?.homeTeamId)) || memberTeams.has(Number(f?.awayTeamId)),
+  );
+}
+
 function emitPause(game: ActiveGame, io: any, coaches: string[], since: number): void {
   io.to(game.roomCode).emit("roomPaused", {
     reason: "coach_absent",

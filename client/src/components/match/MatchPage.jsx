@@ -226,7 +226,19 @@ export function MatchPage({
 	const isFriendly =
 		currentCupRound === 0 || /amigável/i.test(cupMatchRoundName || "");
 	const isCupContext = isCupMatch || cupPreMatch;
-	const canContinue = !isCupContext || myTeamInCup;
+	// Quem tem de confirmar neste gate: no prolongamento só quem tem jogo
+	// EMPATADO (jogos sem humanos seguem sem confirmação). Sem resultados
+	// conhecidos falha para o botão — o consentimento nunca fica bloqueado
+	// por estado do cliente em falta.
+	const isEtGate = isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
+	const gateResults = matchResults?.results || [];
+	const myDrawnFixture = gateResults.some(
+		(fx) =>
+			(fx.homeTeamId === myTeamId || fx.awayTeamId === myTeamId) &&
+			fx.finalHomeGoals === fx.finalAwayGoals,
+	);
+	const canContinue =
+		!isCupContext || (isEtGate && gateResults.length > 0 ? myDrawnFixture : myTeamInCup);
 	// Jogos de clubes terceiros (nenhuma equipa é minha) → esconder badges de fadiga no pitch
 	const isThirdPartyMatch =
 		!!fixture &&

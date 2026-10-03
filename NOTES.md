@@ -1,3 +1,9 @@
+## Consentimento: gates por clube, não por presença (2026-10-04)
+- Invariantes do utilizador: zero autorun — Pronto de 100% nos 2 gates (após a tática = todos os membros; intervalo/ET = só quem tem jogo); Taça sem humanos segue sem confirmação; admin kick é a saída do fugitivo.
+- Bug real: o auto-avanço do intervalo (Taça/amigável) e o gate do prolongamento decidiam por `socketId` ("quem está ligado"), não por "quem tem jogo" — treinador com jogo offline perdia o Pronto e a 2.ª parte/ET arrancavam sozinhos quando voltava. Novo `hasHumanTeamInFixtures` (assentos member) decide nos 3 sítios (inclui aplicar as subs do ET, que também se perdiam).
+- Cliente: fora os 2 auto-ready dos observadores em `cup.js` (consentimento fabricado); `MatchPage`/`TacticsView` mostram estado de espera a quem não tem jogo no gate (o botão era uma ação que não fazia nada).
+- Verificação: `test:session-freeze` 12/12 (F12 novo) · `typecheck` OK · `lint` limpo nos ficheiros (4 pré-existentes) · `check:types` 0 · `audit:socketio` 0/104 · `audit:gamestate FGPQH6` 82/15 (baseline) · sem `test:mobile` (estados de botão, sem estrutura).
+
 ## Funcionários com cara: caricaturas SVG na linha do adjunto (2026-10-04)
 - **Pedido:** «os funcionários têm avatar?» — não tinham: o cartão mostrava um ícone Material (`school`/`fitness_center`/`campaign`/`medical_services`). Decisões: **SVG desenhado à mão** (não arte raster gerada) · **1 cara por papel + adereços por escalão** · **cabeçalho do cartão** · **busto com braços cruzados** (a pose do adjunto).
 - `client/src/components/shared/StaffAvatar.jsx` (novo): 4 personagens + 1 genérico de fallback, na linha do `docs/jj1.png` — traço fino escuro (`#151a24`, 1.6px num viewBox 120×120), cores planas sem gradientes, olhos ovais brancos enormes com pupila pequena, pálpebras carregadas, boca em ∩, busto de braços cruzados. **Sem RNG**: pele/cabelo/roupa fixos por papel (o médico é sempre o mesmo boneco), determinístico como o resto dos avatares.
@@ -184,9 +190,3 @@
 - Pedido: a label "Mostrar os meus à venda" passava a "Mostrar só os meus à venda" (a checkbox filtra, não adiciona — o "só" evita a leitura errada).
 - `TransferHub.jsx`: só 1 string; nota: o pedido indicava `MarketPanel.jsx`, mas o texto vive no `TransferHub.jsx:549` (o `MarketPanel` só tem Mercado 1X2 + Árbitro).
 - Checks: `eslint` limpo no ficheiro · `check:types` OK · só texto → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
-
-## Redesign do artigo do Jornal (2026-10-02)
-- Pedido: notícias feias, botões encostados à margem — polimento para todas, intensidade de redesign mantendo o registo de imprensa.
-- `JournalTab.jsx`: coluna de leitura centrada (`max-w-prose`, `px-4`/`sm:px-6`); links de entidades em pílula (`bg-primary/10` + `box-decoration-break:clone`, nunca colam às margens nem partem mal); tabelas centradas (`mx-auto`); manchete maior (`text-2xl`) com links em tinta simples (a pílula em corpo grande virava tijolo — visto em screenshot); zona de ações com mais respiro (`mt-5 pt-4`); cai o `lg:px-6` ad hoc do corpo.
-- Checks: `eslint` limpo no ficheiro · `check:types` OK · `test:mobile` só `journal-resp-test` PASS 5/5 + screenshot 390 verificado; sem lógica de jogo/sockets → sem audits.
-

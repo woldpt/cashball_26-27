@@ -186,3 +186,8 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Pedido: cada notícia passa uma vez; sem notícias a barra esconde-se com movimento bonito; etiqueta vermelha mais pequena no mobile.
 - Implementação: `CmTicker.jsx` reescrito — pendentes derivados de `shownIds` (estado, sem `ref` em render nem `setState` em efeitos: o `react-hooks/refs` e o `set-state-in-effect` chumbaram as 1.as versões); tira com `pl-[100%]` + `translateX(-100%)` de 1 iteração, duração ∝ carateres (60ms/car, mín. 6s); fim via `onAnimationEnd`; saída/entrada com slide do `AnimatePresence`; `reduced-motion` com keyframes estáticos de 5s (mesmo `animationend`, sem movimento); etiqueta `px-2 text-[10px]` no mobile.
 - Checks: `eslint` limpo · `check:types` OK · `test:mobile` 175/175 (uma 1.ª passagem com 3 falhas flake, dois reruns limpos).
+
+## Redesign do artigo do Jornal (2026-10-02)
+- Pedido: notícias feias, botões encostados à margem — polimento para todas, intensidade de redesign mantendo o registo de imprensa.
+- `JournalTab.jsx`: coluna de leitura centrada (`max-w-prose`, `px-4`/`sm:px-6`); links de entidades em pílula (`bg-primary/10` + `box-decoration-break:clone`, nunca colam às margens nem partem mal); tabelas centradas (`mx-auto`); manchete maior (`text-2xl`) com links em tinta simples (a pílula em corpo grande virava tijolo — visto em screenshot); zona de ações com mais respiro (`mt-5 pt-4`); cai o `lg:px-6` ad hoc do corpo.
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · `test:mobile` só `journal-resp-test` PASS 5/5 + screenshot 390 verificado; sem lógica de jogo/sockets → sem audits.

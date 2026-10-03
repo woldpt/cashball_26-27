@@ -36,6 +36,7 @@ import {
   clearMatchCheckpoint,
   clearSeatPositions,
   computeAbsentees,
+  hasHumanTeamInFixtures,
   logCalendarAdvance,
   resetAllReady,
   waitForPresence,
@@ -1473,14 +1474,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			(fx: any) => fx.finalHomeGoals === fx.finalAwayGoals,
 		);
 		const hasAnyET = drawnFixtures.length > 0;
-		const humanInAnyDraw = drawnFixtures.some((fixture: any) =>
-			(Object.values(game.playersByName) as PlayerSession[]).some(
-				(p) =>
-					p.socketId &&
-					(p.teamId === fixture.homeTeamId ||
-						p.teamId === fixture.awayTeamId),
-			),
-		);
+		// Decisão por assentos (quem TEM jogo), não por `socketId` (quem está
+		// ligado): um treinador com empate offline perdia o gate e o prolongamento
+		// arrancava sem o Pronto dele.
+		const humanInAnyDraw = hasHumanTeamInFixtures(game, drawnFixtures);
 
 		// ── Phase 2 (gate): extra time — all drawn fixtures batched ───────────────
 		// If a human coach is in a drawn fixture, pause for tactics (substitutions)
@@ -1594,14 +1591,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			);
 
 			// Only apply ET substitutions when a human coach is in a drawn fixture —
-			// NPC-only draws keep the original (no-sub) behavior.
-			const humanInAnyDraw = drawnSetups.some(({ fixture }) =>
-				(Object.values(game.playersByName) as PlayerSession[]).some(
-					(p) =>
-						p.socketId &&
-						(p.teamId === fixture.homeTeamId ||
-							p.teamId === fixture.awayTeamId),
-				),
+			// NPC-only draws keep the original (no-sub) behavior. Assentos, não
+			// `socketId`: as alterações de tática do gate são duráveis e um treinador
+			// que caía a seguir ao Pronto ficava sem as substituições do prolongamento.
+			const humanInAnyDraw = hasHumanTeamInFixtures(
+				game,
+				drawnSetups.map(({ fixture }) => fixture),
 			);
 
 			// Mark ET as running BEFORE applying substitutions — a failure here must

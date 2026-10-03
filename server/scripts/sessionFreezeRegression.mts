@@ -20,6 +20,10 @@
  *        obsoleto a `true` fazia a sala avançar sem ninguém clicar Pronto)
  *   F10 — kick a meio da ronda: libertar o assento resolve a espera pendente
  *        (é o contrato que o kickCoach usa fora do lobby para destravar)
+ *   F11 — lobby multiplayer: exige TODOS os membros (eliminados incluídos)
+ *   F12 — hasHumanTeamInFixtures: gates de consentimento decidem por quem tem
+ *        clube (assento), não por quem está ligado — um treinador com jogo
+ *        offline não perde o Pronto e rondas só-NPC seguem sem confirmação
  *
  * Run: cd server && npm run test:session-freeze
  */
@@ -42,6 +46,7 @@ const {
   releaseSeat,
   resetAllReady,
   ensureRoomStateTables,
+  hasHumanTeamInFixtures,
   PRESENCE_GRACE_MS,
 } = require("../roomStateHelpers.ts");
 
@@ -330,4 +335,40 @@ test("F11 — lobby multiplayer exige TODOS os membros (eliminados incluídos)",
   // o comportamento de sala de 1 (avanço com um clique) mantém-se.
   game.seats["B"].status = "left";
   assert.deepEqual(computeAbsentees(game), []);
+});
+
+// ── F12 ─────────────────────────────────────────────────────────────────────
+test("F12 — gates de consentimento decidem por quem tem clube, não por quem está ligado", () => {
+  // Treinador com jogo nas fixtures mas OFFLINE (sem socket): tem de continuar
+  // a mandar no seu Pronto — o auto-avanço do intervalo/prolongamento não pode
+  // disparar e arrancar sem ele quando ele voltar.
+  const offline = makeGame({
+    seats: { A: seat("A", HOME) },
+    playersByName: { A: { name: "A", teamId: HOME, socketId: null } },
+  });
+  assert.equal(hasHumanTeamInFixtures(offline, offline.currentFixtures), true);
+
+  // Presença é irrelevante: ligado dá o mesmo resultado que offline.
+  const online = makeGame({
+    seats: { A: seat("A", HOME) },
+    playersByName: { A: { name: "A", teamId: HOME, socketId: "s1" } },
+  });
+  assert.equal(hasHumanTeamInFixtures(online, online.currentFixtures), true);
+
+  // Ronda só-NPC (humano eliminado, clube noutra ronda): segue SEM confirmação.
+  const npcOnly = makeGame({
+    seats: { A: seat("A", 99) },
+    playersByName: { A: { name: "A", teamId: 99, socketId: "s1" } },
+  });
+  assert.equal(hasHumanTeamInFixtures(npcOnly, npcOnly.currentFixtures), false);
+
+  // Assento libertado (kick/leave/despedida): o clube conta como sem humano.
+  const kicked = makeGame({
+    seats: { A: seat("A", HOME, "kicked") },
+    playersByName: { A: { name: "A", teamId: HOME, socketId: null } },
+  });
+  assert.equal(hasHumanTeamInFixtures(kicked, kicked.currentFixtures), false);
+
+  // Fixtures vazias: nunca há gate humano.
+  assert.equal(hasHumanTeamInFixtures(online, []), false);
 });

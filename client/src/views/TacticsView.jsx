@@ -865,6 +865,7 @@ export function TacticsView() {
     boardWarning,
     dismissalModal,
     jobOfferModal,
+    matchResults,
   } = useGame();
 
   const myReady = players.find((p) => p.name === me?.name)?.ready;
@@ -872,6 +873,21 @@ export function TacticsView() {
   const isPreExtraTime = isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
   const isEliminatedCupSpectator =
     nextMatchSummary?.isCup && !nextMatchOpponent;
+  // Sem jogo neste gate (eliminado, ou fora do prolongamento por já ter ganho):
+  // não tem Pronto que dar — estado de espera, nunca uma ação que não faz nada.
+  // Sem resultados conhecidos assume-se que joga (fail-open para o consentimento).
+  const myTeamId = me?.teamId;
+  const myFixture = matchResults?.results?.find(
+    (fx) => fx.homeTeamId === myTeamId || fx.awayTeamId === myTeamId,
+  );
+  const myGateFixture =
+    isPreExtraTime &&
+    myFixture &&
+    myFixture.finalHomeGoals !== myFixture.finalAwayGoals
+      ? null
+      : myFixture;
+  const awaitingOthers = isHalftime && !!matchResults?.results && !myGateFixture;
+  const settled = myReady || awaitingOthers;
   // Fase 1 — Briefing. Saltado em situações de jogo ativo (intervalo, a jogar)
   // e para espectadores eliminados da Taça (só veem o cartão 🏆).
   const showBriefing =
@@ -886,16 +902,16 @@ export function TacticsView() {
     !isHalftime &&
     !isEliminatedCupSpectator &&
     !isPlayingMatch;
-  const playLabel = myReady
+  const playLabel = settled
     ? "⏳ A aguardar..."
-    : isEliminatedCupSpectator
-      ? "Avançar para Taça"
-      : isPreExtraTime
-        ? "Ir para prolongamento"
-        : isHalftime && isCupMatch
-          ? "2ª Parte — Taça"
-          : isHalftime
-            ? "2ª Parte"
+    : isPreExtraTime
+      ? "Ir para prolongamento"
+      : isHalftime && isCupMatch
+        ? "2ª Parte — Taça"
+        : isHalftime
+          ? "2ª Parte"
+          : isEliminatedCupSpectator
+            ? "Avançar para Taça"
             : "Jogar Jornada";
   const heartbeat = !isLineupComplete && !myReady;
 
@@ -1009,11 +1025,11 @@ export function TacticsView() {
               <div data-tour="tactic-play" className="xl:w-72.5 shrink-0 self-start">
                 <button
                   onClick={isHalftime ? handleHalftimeReady : handleReady}
-                  disabled={myReady || !canPlay}
-                  className={`w-full inline-flex items-center justify-center gap-2 text-center px-4 py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
-${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !canPlay ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
+                  disabled={settled || !canPlay}
+                  className={`w-full inline-flex items-center justify-center gap-2 text-center px-4 py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !settled ? "animate-heartbeat" : ""}
+${settled ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !canPlay ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
                   style={
-                    myReady || !canPlay
+                    settled || !canPlay
                       ? {}
                       : {
                           background:
@@ -1021,10 +1037,10 @@ ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !ca
                         }
                   }
                 >
-                  {!myReady && canPlay && (
+                  {!settled && canPlay && (
                     <span className="absolute inset-0 bg-linear-to-r from-white/10 to-transparent pointer-events-none" />
                   )}
-                  {!myReady && canPlay && (
+                  {!settled && canPlay && (
                     <span aria-hidden className="relative text-xs leading-none">▶</span>
                   )}
                   <span className="relative">{playLabel}</span>
@@ -1264,7 +1280,7 @@ ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !ca
         const fabHalftime = showHalftimePanel && !isPlayingMatch;
         const fabCupSpec = nextMatchSummary?.isCup && !nextMatchOpponent;
         if (showBriefing) return null;
-        if (myReady) return null;
+        if (settled) return null;
         if (activeTab !== "tactic") return null;
         if (mobileSubMenu) return null; // não sobrepor o fly-up do menu mobile
         if (!fabHalftime && !fabCupSpec && !isLineupComplete) return null;
@@ -1277,7 +1293,7 @@ ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !ca
           <button
             data-tour="tactic-play"
             onClick={fabHalftime ? handleHalftimeReady : handleReady}
-            className={`xl:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!myReady ? "animate-heartbeat" : ""}`}
+            className={`xl:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!settled ? "animate-heartbeat" : ""}`}
             style={{
               background:
                 "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3) 0%, transparent 70%), #22c55e",

@@ -1,4 +1,4 @@
-import { socket, queueEmit } from "../../socket.js";
+import { socket } from "../../socket.js";
 import { cupFlowLog } from "../../utils/cupFlowLog.js";
 
 /**
@@ -87,18 +87,6 @@ export function registerCupListeners(handlers, refs, ctx) {
 			handlers.setCupPreMatch(false);
 			handlers.setCurrentCupRound(data.round ?? null);
 			handlers.setCupExtraTimeBadge(false);
-
-			// Se o utilizador não está em nenhuma fixture desta ronda (eliminado),
-			// auto-ready para não bloquear o servidor que espera por todos.
-			const myId = refs.meRef.current?.teamId;
-			const userInMatch =
-				myId != null &&
-				fixtures.some(
-					(fx) => fx.homeTeam?.id == myId || fx.awayTeam?.id == myId,
-				);
-			if (!userInMatch) {
-				queueEmit("setReady", true);
-			}
 		} catch (err) {
 			console.error("Error handling cupHalfTimeResults:", err, "data:", data);
 		}
@@ -141,21 +129,9 @@ export function registerCupListeners(handlers, refs, ctx) {
 			handlers.setCurrentCupRound(data.round ?? null);
 			handlers.setCupExtraTimeBadge(false);
 
-			const myId = refs.meRef.current?.teamId;
-			// Only coaches whose team is in a DRAWN fixture must confirm tactics
-			// before extra time. Observers (no team in a drawn fixture) auto-ready
-			// so they never block the gate — including coaches whose team already
-			// won its tie this round.
-			const myDrawnFixture =
-				myId != null &&
-				fixtures.some(
-					(fx) =>
-						(fx.homeTeam?.id == myId || fx.awayTeam?.id == myId) &&
-						fx.homeGoals === fx.awayGoals,
-				);
-			if (!myDrawnFixture) {
-				queueEmit("setReady", true);
-			}
+			// Sem auto-ready: o Pronto é consentimento por fase e só quem tem jogo
+			// empatado o dá (o servidor não espera pelos observadores). Carregar
+			// por eles fabricava confirmações que ninguém deu.
 		} catch (err) {
 			console.error("Error handling cupETHalfTime:", err, "data:", data);
 		}
