@@ -61,6 +61,6 @@ Replay seguro pós-restart (`applied_weeks`, `recoverFinalizedSlot`), WAL e back
 ## 📌 Workflow
 
 - **Commit automático** após cada alteração verificada — skill `.pi/skills/auto-commit/SKILL.md`. Mensagem foca no **porquê** (ex. `fix: prevent duplicate NPC bids in auctions`). Nunca push sem pedido explícito.
-- **Memória:** ao fim de cada tarefa atualizar `NOTES.md` antes de commitar/terminar. Regra permanente → mover para os docs acima e remover de `NOTES.md`.
+- **Memória:** ao fim de cada tarefa atualizar `NOTES.md` antes de commitar/terminar. Regra permanente → mover para os docs acima e remover de `NOTES.md`. **Teto: 30 apontamentos** — passou disso, os mais antigos mudam para `NOTES_arquivo.md` (nada se apaga). Apontamento novo: máx. 5 linhas (o quê, porquê, como foi testado); deploys: 1 linha.
 - **Mudança estrutural de layout** (nova view/tab/modal, `GameLayout.jsx`, `index.css`, componente partilhado, grid/flex/larguras) → skill `mobile-resp-check` com as **duas** passagens antes de terminar/commitar. Tweaks (padding, cores, texto, `className` pontual) não disparam.
 - **Design:** seguir `STYLE.md`; referência: `client/src/views/MySquadTab.jsx`.
