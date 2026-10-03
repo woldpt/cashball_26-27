@@ -53,7 +53,7 @@ export function CmTicker({ hidden = false, sidebarCollapsed = false }) {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: "100%", opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`fixed bottom-16 lg:bottom-0 right-0 z-30 h-8 flex items-stretch bg-black border-t border-red-900/60 overflow-hidden left-0 ${sidebarCollapsed ? "lg:left-14" : "lg:left-64"}`}
+          className={`fixed bottom-16 lg:bottom-0 right-0 z-30 h-8 flex items-stretch bg-black border-t border-red-900/60 overflow-hidden left-0 ${sidebarCollapsed ? "lg:left-[var(--sidebar-w-collapsed)]" : "lg:left-[var(--sidebar-w)]"}`}
         >
           <div className="shrink-0 bg-red-600 text-white text-[10px] lg:text-xs font-black px-2 lg:px-3 flex items-center uppercase tracking-widest select-none">
             Notícias CM
