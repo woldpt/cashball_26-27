@@ -8,6 +8,12 @@
 - Verificação: `typecheck` OK · **26/26 harnesses do servidor PASS** (incl. `test:crash-recovery` com `CRASHTEST_ROOM=FGPQH6` e com a sala default) · o único ficheiro não meu na árvore é `client/src/views/TacticsView.jsx` (trabalho em curso noutra sessão — não tocado nem commitado).
 - Nota: os harnesses que carregam salas deixaram três diretórios `saves/Repro*/` (artefactos de teste) — apagados; `git checkout -- server/saves` repôs o WAL tocado pelas auditorias.
 
+## Tática: clima no cartão "Próximo jogo" sob o botão (2026-10-03)
+- Pedido: preencher o espaço vazio sob o botão "Jogar Jornada" (vista Tática, coluna direita em desktop) com info extra — escolhido o **clima**.
+- Descoberta: o clima **já existia e já chegava ao cliente** — `nextMatchSummary.weatherForecast` (`{condition, emoji}`) vem no resumo (liga **e** taça), é determinístico (`getWeatherForFixture`, a mesma semente alimenta a previsão do briefing e a simulação — o anunciado é sempre o jogado) e o briefing já o mostrava. Zero backend, zero componente novo.
+- `TacticsView.jsx`: import de `WEATHER_LABELS` (`matchConstants.js`, chaveado por `condition`) + uma linha `{emoji} {label}` no cartão "Próximo jogo", sob a linha estádio/árbitro, guardada por `weatherForecast &&`.
+- Checks: `eslint` limpo no ficheiro (4 problemas pré-existentes noutros) · `check:types` 0 erros. Tweak de texto/linha pontual → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Funcionários (F2+F3): comunicação, médico e o teto de 3 lugares a morder (2026-10-04)
 - Continuação do F1 (`806ba1fd`): entram os 2 papéis que faltavam, com efeitos em sistemas que já existiam — **Director de Comunicação** (adeptos/bilheteira) e **Médico** (lesões). O catálogo é data-driven: bastou acrescentar a entrada em `STAFF_ROLES` + rótulos no cliente, sem migração de BD.
 - **Comunicação** (por nível): +2% de lotação (nível 5 = +10%) lido em `coreHelpers.computeAttendance` (mais um fator na cadeia de multiplicadores + motivo «departamento de comunicação» no briefing) e −8% no decaimento do `fans_mood` (nível 5 trava a 60%), aplicado no UPDATE semanal do `game/evolution.ts`.

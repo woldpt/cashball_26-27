@@ -8,6 +8,7 @@ import { PrepStepper } from "../components/live/briefing/index.js";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket, queueEmit } from "../socket.js";
 import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
+import { WEATHER_LABELS } from "../components/match/matchConstants.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
 import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
@@ -1067,6 +1068,13 @@ ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !ca
                             ? ` · Árbitro ${nextMatchSummary.referee.name}`
                             : ""}
                         </p>
+                        {nextMatchSummary.weatherForecast && (
+                          <p className="text-[10px] text-gray-500 truncate">
+                            {nextMatchSummary.weatherForecast.emoji}{" "}
+                            {WEATHER_LABELS[nextMatchSummary.weatherForecast.condition] ??
+                              nextMatchSummary.weatherForecast.condition}
+                          </p>
+                        )}
                       </>
                     ) : (
                       <p className="text-[10px] text-gray-500 leading-snug">
