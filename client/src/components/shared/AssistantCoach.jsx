@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MODAL_Z } from "../../constants/index.js";
+import { useGame } from "../../contexts/GameContext.jsx";
 import { useAssistantCoach } from "../../hooks/useAssistantCoach.js";
 import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
 import { useTypewriter } from "../../hooks/useTypewriter.js";
@@ -55,15 +56,21 @@ export function AssistantMascot({ mood, compact }) {
  * @param {{id: string, mood: string, text: string, cta: string}} props.tip Dica ativa.
  * @param {() => void} props.onGo Navega para a tab que resolve.
  * @param {() => void} props.onDismiss Dispensa a dica (1x/semana).
+ * @param {boolean} [props.menuOpen] Fly-up do menu mobile aberto — o balão cala-se.
  * @returns {JSX.Element}
  */
-export function AssistantCoachView({ tip, onGo, onDismiss }) {
+export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen }) {
   const reducedMotion = usePrefersReducedMotion();
   const { shown, done, complete } = useTypewriter(tip.text);
 
   return (
     <div
-      className="fixed bottom-16 lg:bottom-6 left-0 right-0 pointer-events-none flex justify-center lg:justify-end px-3 lg:pr-6"
+      // `bottom-24` no mobile deixa folga exata sobre o rodapé Notícias CM
+      // (`bottom-16 h-8` = 64–96px); em desktop o rodapé vive a `bottom-0`.
+      // `invisible` (e não desmontar) com o fly-up aberto: o balão está no
+      // mesmo ancoradouro do menu e, com z maior, roubava-lhe os toques —
+      // escondido, o texto e o gate do onze ficam intactos.
+      className={`fixed bottom-24 lg:bottom-6 left-0 right-0 pointer-events-none flex justify-center lg:justify-end px-3 lg:pr-6 ${menuOpen ? "invisible" : ""}`}
       style={{ zIndex: MODAL_Z.assistant }}
       data-tour="assistant-coach"
     >
@@ -137,12 +144,19 @@ export function AssistantCoachView({ tip, onGo, onDismiss }) {
  * @returns {JSX.Element|null}
  */
 export function AssistantCoach() {
+  const { mobileSubMenu } = useGame();
   const { tip, dismissTip, goTip } = useAssistantCoach();
 
   return (
     <AnimatePresence>
       {tip && (
-        <AssistantCoachView key={tip.id} tip={tip} onGo={goTip} onDismiss={dismissTip} />
+        <AssistantCoachView
+          key={tip.id}
+          tip={tip}
+          menuOpen={mobileSubMenu != null}
+          onGo={goTip}
+          onDismiss={dismissTip}
+        />
       )}
     </AnimatePresence>
   );

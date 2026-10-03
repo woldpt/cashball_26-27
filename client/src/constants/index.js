@@ -342,6 +342,8 @@ export const MODAL_Z = {
 	penalty: 150,
 	coachMarket: 160,
 	signing: 190,
+	// Abaixo de todas as modais (nunca tapa um diálogo) mas acima da nav e do
+	// rodapé CM; o balão cala-se (`menuOpen`) com o fly-up do menu aberto.
 	assistant: 110,
 	postMatch: 210,
 	boardWarning: 220,

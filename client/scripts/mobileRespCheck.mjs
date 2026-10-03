@@ -247,6 +247,7 @@ async function runTask(browser, task) {
           squashedInputs: report.squashedInputs,
           filterInputWidths: report.filterInputWidths,
         },
+        collisions: report.collisions || [],
       };
     } catch (err) {
       entry.fail.push(`error: ${err.message.split("\n")[0]}`);
@@ -336,6 +337,10 @@ for (const harness of harnesses) {
     for (const c of d.clipping || [])
       console.log(
         `        · clipping: <${c.tag}${c.cls ? " " + c.cls : ""}> +${c.excess}px`,
+      );
+    for (const c of d.collisions || [])
+      console.log(
+        `        · colisão: balão cobre ${c.target} (${c.covered}/${c.samples} pontos)`,
       );
   }
   console.log("");
