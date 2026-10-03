@@ -28,7 +28,9 @@ export function trainingCapTip(squad, focusName) {
   return {
     id: "trainingcap",
     mood: "worried",
-    text: `A ${focusName} já está no teto — este treino não rende.`,
+    // Voz do adjunto como nas outras dicas — mas sem prometer o plantel
+    // inteiro: o gate é a maioria (TRAINING_CAP_SQUAD_RATIO).
+    text: `Foco na ${focusName}? Ó mister, a maioria dos meninos já está no teto — este treino não rende. Muda o foco!`,
     tab: "training",
     cta: "Mudar foco",
   };

@@ -28,7 +28,7 @@ const squad = (n, extra = {}) =>
     ...squad(3, { form: 44 }),
   ];
   assert.equal(trainingCapTip(at70, "Forma").id, "trainingcap");
-  assert.match(trainingCapTip(at70, "Forma").text, /^A Forma já está no teto/);
+  assert.match(trainingCapTip(at70, "Forma").text, /^Foco na Forma\?.*teto/);
 
   const at60 = [...squad(6, { form: 50 }), ...squad(4, { form: 44 })];
   assert.equal(trainingCapTip(at60, "Forma"), null);
@@ -42,7 +42,7 @@ const squad = (n, extra = {}) =>
   ];
   assert.match(
     trainingCapTip(res, "Resistência").text,
-    /^A Resistência já está no teto/,
+    /^Foco na Resistência\?.*teto/,
   );
   assert.equal(trainingCapTip([...squad(8, { form: 50 }), ...squad(2, {})], "Resistência"), null);
 }

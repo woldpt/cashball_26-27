@@ -181,14 +181,14 @@ export function useAssistantCoach() {
             mood: "worried",
             text: "Ó meus meninos! Tens o Jornal cheio de papéis. Isto não se ganha sozinho, bora despachar, tá bem?",
             tab: "jornal",
-            cta: "Despachar já",
+            cta: "Resolver já",
           },
       isLineupComplete || (!lineupIdle && !lineupGate.shown)
         ? null
         : {
             id: "lineup",
             mood: "worried",
-            text: "Olha, o onze não está fechado! Queres matar o jogo como? Mete a carne toda no assador, bora!",
+            text: "Olha, o onze não está fechado! Queres ir para o jogo coxo? Mete a carne toda no assador, bora!",
             tab: "tactic",
             cta: "Fechar o onze",
           },
@@ -207,7 +207,9 @@ export function useAssistantCoach() {
         : {
             id: "medical",
             mood: "worried",
-            text: "A enfermaria está cheia! Revê os teus melões e escolhe os que estão rijos, percebes?",
+            // `isPlayerAvailable` conta lesão, castigo e cooldown — dizer
+            // "enfermaria" era factualmente errado para quem está castigado.
+            text: "Tenho lesionados e castigados a mais! Revê os melões e escolhe só os que estão rijos.",
             tab: "players",
             cta: "Ver melões",
           },
