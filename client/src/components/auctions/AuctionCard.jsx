@@ -158,7 +158,8 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               src={sellerCrest}
               alt={sellerName || teamLabel}
               onError={(e) => { e.currentTarget.style.display = "none"; }}
-              className="w-6 h-6 object-contain bg-white rounded-sm p-0.5 shrink-0 border border-outline-variant/20"
+              className="w-6 h-6 object-contain rounded-sm p-0.5 shrink-0 border border-outline-variant/20 shadow-md"
+              style={{ backgroundColor: sellerTeam?.color_primary || "#333" }}
               loading="lazy"
               title={sellerName || teamLabel}
             />

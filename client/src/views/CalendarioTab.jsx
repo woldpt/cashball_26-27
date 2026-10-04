@@ -228,7 +228,8 @@ const TeamCircle = memo(function TeamCircle({ team, size = "lg" }) {
           src={team.crest}
           alt={team?.name || "crest"}
           onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
-          className={`${sz} rounded-full object-contain bg-white p-1 shrink-0 border border-white/10`}
+          className={`${sz} rounded-full object-contain p-1 shrink-0 border border-white/10 shadow-md`}
+          style={{ backgroundColor: team?.color_primary || "#333" }}
           loading="lazy"
         />
         <div

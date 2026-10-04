@@ -37,7 +37,8 @@ export function TeamCrest({
         src={team.crest}
         alt={team?.name || "brasão"}
         onError={() => setFailedCrest(team.crest)}
-        className={`${circle} object-contain bg-white p-1`}
+        className={`${circle} object-contain p-1 shadow-md`}
+        style={{ backgroundColor: team?.color_primary || "#333" }}
         loading="lazy"
       />
     );

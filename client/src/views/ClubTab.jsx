@@ -396,9 +396,10 @@ export function ClubTab({
                 src={teamInfo.crest}
                 alt={teamInfo?.name || "crest"}
                 onError={() => setFailedCrest(teamInfo.crest)}
-                className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg object-contain bg-white p-1.5 short:p-1 shrink-0 border border-white/10 ${
+                className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg object-contain p-1.5 short:p-1 shrink-0 border border-white/10 shadow-md ${
                   crestFailed ? "hidden" : "inline"
                 }`}
+                style={{ backgroundColor: teamInfo?.color_primary || "#333" }}
                 loading="lazy"
               />
             ) : null}
