@@ -229,7 +229,10 @@ export function registerSessionListeners(handlers, refs, ctx) {
 	});
 
 	// BUG-15 FIX: Track socket connection state
+	let disconnectedAt = 0;
 	const onConnect = () => {
+		const downMs = disconnectedAt ? Date.now() - disconnectedAt : 0;
+		disconnectedAt = 0;
 		handlers.setDisconnected(false);
 		handlers.setJoining(false);
 		// Re-join on reconnect using the meRef to avoid stale closure.
@@ -246,7 +249,9 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		) {
 			// Feedback imediato: o rejoin + flush se dão no gameState/
 			// teamAssigned que se seguem.
-			handlers.flashReconnect();
+			// Só se o utilizador chegou a ver o OfflineBanner (>1,5s offline);
+			// um flape curto reconecta em silêncio.
+			if (downMs > 1500) handlers.flashReconnect();
 			// Nova rajada a caminho: rearmar a rede de segurança pós-join.
 			refs.joinStateSeenRef.current = false;
 			socket.emit("joinGame", {
@@ -257,7 +262,10 @@ export function registerSessionListeners(handlers, refs, ctx) {
 			});
 		}
 	};
-	const onDisconnect = () => handlers.setDisconnected(true);
+	const onDisconnect = () => {
+		disconnectedAt = Date.now();
+		handlers.setDisconnected(true);
+	};
 
 	socket.on("connect", onConnect);
 	socket.on("disconnect", onDisconnect);

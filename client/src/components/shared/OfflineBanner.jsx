@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { socket, subscribeOutbox, getOutboxPending } from "../../socket.js";
 import { ModalShell } from "./ModalShell.jsx";
 
+const SHOW_DELAY_MS = 1500;
+
 /**
  * Popup global quando a app está offline ou o socket desligou.
  * Subscribes to navigator online/offline events and socket connect/disconnect.
@@ -34,7 +36,18 @@ export function OfflineBanner() {
     };
   }, []);
 
-  const showPopup = !browserOnline || !socketConnected;
+  // Só mostra o popup se a falha persistir: ao voltar ao foreground no
+  // telemóvel a ligação regressa em <1s e o popup só piscava.
+  const down = !browserOnline || !socketConnected;
+  const [showPopup, setShowPopup] = useState(false);
+  useEffect(() => {
+    if (!down) {
+      setShowPopup(false);
+      return;
+    }
+    const t = setTimeout(() => setShowPopup(true), SHOW_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [down]);
   const isBrowserOffline = !browserOnline;
   const pendingLabel = pending > 0 ? ` · ${pending} em fila` : "";
 
