@@ -1,10 +1,10 @@
 // CashBall service worker — offline fallback para a SPA.
-// URL VERSIONADO (sw.vN.js): ao alterar este ficheiro, renomear (v7->v8)
+// URL VERSIONADO (sw.vN.js): ao alterar este ficheiro, renomear (v8->v9)
 // e atualizar o register() em main.jsx. O URL novo fura caches HTTP
 // envenenadas e substitui o registo velho no próximo carregamento.
 // Bump VERSION on any client change so activate() clears the stale cache
 // and the user picks up new hashed bundles.
-const VERSION = 'v7';
+const VERSION = 'v8';
 const CACHE = `cashball-${VERSION}`;
 const CORE_URLS = ['/', '/index.html'];
 
@@ -99,7 +99,9 @@ self.addEventListener('push', (event) => {
       body: data.body || 'Há novidades na tua sala.',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
-      tag: 'cashball-ready',
+      // tag por tipo (ex. 'waiting:ABCD'): um aviso novo da mesma sala
+      // substitui o anterior em vez de empilhar no centro de notificações.
+      tag: data.tag || 'cashball-ready',
       renotify: true,
       data: { url: data.url || '/' },
     })
@@ -109,14 +111,25 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || '/';
+  const target = new URL(url, self.location.origin).href;
   event.waitUntil(
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then((list) => {
         for (const c of list) {
-          if ('focus' in c) return c.focus();
+          if (!('focus' in c)) continue;
+          const focused = c.focus();
+          // A janela pode estar noutro sítio (outra sala, lobby): navegar
+          // para o deep link do aviso antes de a trazer à frente.
+          if (c.url !== target && 'navigate' in c) {
+            return c.navigate(target).then((client) => {
+              const cl = client || c;
+              return 'focus' in cl ? cl.focus() : focused;
+            }).catch(() => focused);
+          }
+          return focused;
         }
-        return self.clients.openWindow(url);
+        return self.clients.openWindow(target);
       })
   );
 });

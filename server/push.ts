@@ -16,7 +16,12 @@ export interface PushPayload {
   title: string;
   body: string;
   url?: string;
+  /** Agrupador do aviso no SO: mesma tag substitui em vez de empilhar. */
+  tag?: string;
 }
+
+// Tag dos avisos sem tag própria (compatibilidade com clientes antigos).
+const DEFAULT_TAG = "cashball-ready";
 
 export function isPushEnabled(): boolean {
   return process.env.ENABLE_PUSH === "true";
@@ -72,21 +77,28 @@ function isDeadSubscription(err: any): boolean {
   );
 }
 
-/** Envia a todos os browsers subscritos; subscrição morta/expirada é apagada. */
+/**
+ * Envia a todos os browsers subscritos; subscrição morta/expirada é apagada.
+ * Devolve quantos browsers receberam (0 = nada entregue, o chamador não deve
+ * gastar o cooldown por uma tentativa falhada).
+ */
 export async function notifyUser(
   coachName: string,
   payload: PushPayload,
-): Promise<void> {
+  preloadedSubs?: Array<{ endpoint: string; keys: string }>,
+): Promise<number> {
   try {
-    if (!ensureVapid()) return;
+    if (!ensureVapid()) return 0;
     const subs: Array<{ endpoint: string; keys: string }> =
-      await auth.getPushSubscriptions(coachName);
-    if (!subs || subs.length === 0) return;
+      preloadedSubs || (await auth.getPushSubscriptions(coachName));
+    if (!subs || subs.length === 0) return 0;
     const body = JSON.stringify({
       title: payload.title,
       body: payload.body,
       url: payload.url || "/",
+      tag: payload.tag || DEFAULT_TAG,
     });
+    let sent = 0;
     await Promise.all(
       subs.map(async (sub) => {
         try {
@@ -98,6 +110,7 @@ export async function notifyUser(
             // depois, fora de contexto.
             { urgency: "high", TTL: 2 * 60 * 60 },
           );
+          sent += 1;
         } catch (err: any) {
           if (err?.statusCode === 410 || isDeadSubscription(err)) {
             await auth.removePushSubscription(coachName, sub.endpoint);
@@ -114,8 +127,10 @@ export async function notifyUser(
         }
       }),
     );
+    return sent;
   } catch (err: any) {
     console.error("[push] notifyUser:", err?.message || err);
+    return 0;
   }
 }
 
@@ -123,6 +138,13 @@ export async function notifyUser(
 // memória — um restart limpa, aceitável enquanto não há repetição).
 const lastPushAt = new Map<string, number>();
 const PUSH_COOLDOWN_MS = 5 * 60 * 1000;
+
+/** Poda as entradas já fora do cooldown (inúteis) — o mapa não cresce sem fim. */
+function pruneLastPushAt(now: number): void {
+  for (const [key, at] of lastPushAt) {
+    if (now - at >= PUSH_COOLDOWN_MS) lastPushAt.delete(key);
+  }
+}
 
 /**
  * Gatilho do Passo 2: se no lobby faltar exatamente um treinador, avisa-o.
@@ -148,13 +170,20 @@ async function doMaybeNotify(game: ActiveGame): Promise<void> {
   if (missing.length !== 1) return;
   const name = missing[0].name;
   const key = name.toLowerCase();
-  if (Date.now() - (lastPushAt.get(key) || 0) < PUSH_COOLDOWN_MS) return;
+  const now = Date.now();
+  if (now - (lastPushAt.get(key) || 0) < PUSH_COOLDOWN_MS) return;
+  pruneLastPushAt(now);
   const subs = await auth.getPushSubscriptions(name);
   if (!subs || subs.length === 0) return;
-  lastPushAt.set(key, Date.now());
-  await notifyUser(name, {
-    title: "CashBall",
-    body: "Todos prontos. Falta a tua tática!",
-    url: "/",
-  });
+  const sent = await notifyUser(
+    name,
+    {
+      title: "CashBall",
+      body: "Todos prontos. Falta a tua tática!",
+      url: "/",
+    },
+    subs,
+  );
+  // Só depois de entregar: uma falha de rede não pode calar os próximos 5 min.
+  if (sent > 0) lastPushAt.set(key, Date.now());
 }
