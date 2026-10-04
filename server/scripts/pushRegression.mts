@@ -12,6 +12,8 @@
  *   P4 — as subscrições são lidas UMA vez por aviso (não duas)
  *   P5 — maybeNotifyLastMissing: dispara com exactamente 1 em falta, fica
  *        quieto com 0 ou ≥2, e ignora espectadores/sem-equipa
+ *   P6 — tag e deep link: derivam do tipo + sala (avisos de salas diferentes
+ *        não se substituem entre si)
  *
  * Run: cd server && npm run test:push
  */
@@ -70,7 +72,7 @@ process.env.VAPID_PUBLIC = "test-public";
 process.env.VAPID_PRIVATE = "test-private";
 process.env.VAPID_SUBJECT = "mailto:test@example.com";
 
-const { notifyUser, maybeNotifyLastMissing } = require("../push.ts");
+const { notifyUser, maybeNotifyLastMissing, pushTag, pushUrl } = require("../push.ts");
 
 const SUB = (endpoint: string) => ({
   endpoint,
@@ -119,7 +121,7 @@ function makeLobby(
 test("P1 — flag desligada: nada toca na rede", async () => {
   reset();
   process.env.ENABLE_PUSH = "false";
-  const n = await notifyUser("Ana", { title: "x", body: "y" });
+  const n = await notifyUser("Ana", { type: "waiting", title: "x", body: "y" });
   process.env.ENABLE_PUSH = "true";
   assert.equal(n, 0);
   assert.equal(sent.length, 0);
@@ -152,7 +154,7 @@ test("P2 — subscrição morta é apagada; falha transitória não", async () =
   for (const c of cases) {
     reset();
     nextError = c.err;
-    const n = await notifyUser("Ana", { title: "x", body: "y" });
+    const n = await notifyUser("Ana", { type: "waiting", title: "x", body: "y" });
     assert.equal(n, 0, `${c.label}: nada entregue`);
     assert.equal(
       removed.length,
@@ -181,10 +183,12 @@ test("P3/P4 — o cooldown só é gasto depois de entregar, e as subs lêem-se u
   assert.equal(sent.length, 1, "uma falha não pode calar os 5 minutos seguintes");
   assert.equal(queries, 2, "uma leitura de subscrições por aviso");
   assert.deepEqual(sent[0].body, {
+    type: "waiting",
     title: "CashBall",
-    body: "Todos prontos. Falta a tua tática!",
-    url: "/",
-    tag: "cashball-ready",
+    body: "Sala ABCD · Falta a tua tática!",
+    url: "/?room=ABCD",
+    tag: "waiting:ABCD",
+    roomCode: "ABCD",
   });
   assert.equal(sent[0].opts.urgency, "high");
 
@@ -244,4 +248,13 @@ test("P5 — dispara com 1 em falta, cala-se com 0 ou ≥2, ignora espectadores"
   );
   await flush();
   assert.equal(sent.length, 0);
+});
+
+test("P6 — tag e deep link derivam do tipo e da sala", () => {
+  assert.equal(pushTag("waiting", "ABCD"), "waiting:ABCD");
+  assert.equal(pushTag("waiting"), "waiting");
+  assert.equal(pushUrl("ABCD"), "/?room=ABCD");
+  assert.equal(pushUrl(), "/");
+  // Salas diferentes não partilham tag: um aviso não substitui o outro.
+  assert.notEqual(pushTag("auction", "ABCD"), pushTag("auction", "EFGH"));
 });

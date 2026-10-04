@@ -12,16 +12,38 @@ const auth = require("./auth");
 import { requiredTeamIds } from "./roomStateHelpers";
 import type { ActiveGame } from "./types";
 
+export type PushType = "waiting" | "auction" | "matchday" | "invite";
+
 export interface PushPayload {
+  type: PushType;
   title: string;
   body: string;
   url?: string;
   /** Agrupador do aviso no SO: mesma tag substitui em vez de empilhar. */
   tag?: string;
+  roomCode?: string;
 }
 
 // Tag dos avisos sem tag própria (compatibilidade com clientes antigos).
 const DEFAULT_TAG = "cashball-ready";
+
+/**
+ * Agrupador do aviso: avisos do mesmo tipo e sala substituem-se em vez de
+ * empilhar no centro de notificações (o antigo `cashball-ready` fixo fazia
+ * um aviso de cada sala ficar todos lado a lado).
+ */
+export function pushTag(type: PushType, roomCode?: string): string {
+  return roomCode ? `${type}:${roomCode}` : type;
+}
+
+/**
+ * Deep link do aviso: o App semeia o formulário com o código da sala
+ * (`?room=`) antes de limpar o query string — sem isto o toque no aviso
+ * abria a app no ecrã inicial sem saber de que sala se tratava.
+ */
+export function pushUrl(roomCode?: string): string {
+  return roomCode ? `/?room=${encodeURIComponent(roomCode)}` : "/";
+}
 
 export function isPushEnabled(): boolean {
   return process.env.ENABLE_PUSH === "true";
@@ -93,10 +115,12 @@ export async function notifyUser(
       preloadedSubs || (await auth.getPushSubscriptions(coachName));
     if (!subs || subs.length === 0) return 0;
     const body = JSON.stringify({
+      type: payload.type,
       title: payload.title,
       body: payload.body,
       url: payload.url || "/",
       tag: payload.tag || DEFAULT_TAG,
+      roomCode: payload.roomCode,
     });
     let sent = 0;
     await Promise.all(
@@ -132,6 +156,31 @@ export async function notifyUser(
     console.error("[push] notifyUser:", err?.message || err);
     return 0;
   }
+}
+
+/**
+ * Um aviso a um treinador: subs, tag e deep link derivados do tipo + sala.
+ * Devolve quantos browsers receberam (0 = nada entregue). Nunca rebenta.
+ */
+export async function sendToCoach(
+  coachName: string,
+  opts: { type: PushType; title: string; body: string; roomCode?: string },
+): Promise<number> {
+  const subs: Array<{ endpoint: string; keys: string }> =
+    await auth.getPushSubscriptions(coachName);
+  if (!subs || subs.length === 0) return 0;
+  return notifyUser(
+    coachName,
+    {
+      type: opts.type,
+      title: opts.title,
+      body: opts.body,
+      roomCode: opts.roomCode,
+      tag: pushTag(opts.type, opts.roomCode),
+      url: pushUrl(opts.roomCode),
+    },
+    subs,
+  );
 }
 
 // Último aviso por treinador (throttle Fase 2: 1 a cada 5 minutos; em
@@ -173,17 +222,12 @@ async function doMaybeNotify(game: ActiveGame): Promise<void> {
   const now = Date.now();
   if (now - (lastPushAt.get(key) || 0) < PUSH_COOLDOWN_MS) return;
   pruneLastPushAt(now);
-  const subs = await auth.getPushSubscriptions(name);
-  if (!subs || subs.length === 0) return;
-  const sent = await notifyUser(
-    name,
-    {
-      title: "CashBall",
-      body: "Todos prontos. Falta a tua tática!",
-      url: "/",
-    },
-    subs,
-  );
+  const sent = await sendToCoach(name, {
+    type: "waiting",
+    title: "CashBall",
+    body: `Sala ${game.roomCode} · Falta a tua tática!`,
+    roomCode: game.roomCode,
+  });
   // Só depois de entregar: uma falha de rede não pode calar os próximos 5 min.
   if (sent > 0) lastPushAt.set(key, Date.now());
 }

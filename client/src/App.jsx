@@ -13,6 +13,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import { fade } from "./motion.js";
 import { RotateOverlay } from "./components/shared/RotateOverlay.jsx";
 
+// Deep link dos avisos push (`/?room=CODIGO`): semeia o formulário com o
+// código da sala antes de limpar o query string — sem isto o toque no aviso
+// abria a app sem saber de que sala se tratava (nem qual a carta a destacar).
+const deepLinkRoom = (() => {
+	try {
+		return (new URLSearchParams(window.location.search).get("room") || "").toUpperCase();
+	} catch {
+		return "";
+	}
+})();
+
 if (window.location.search) {
 	window.history.replaceState({}, "", window.location.pathname);
 }
@@ -36,7 +47,7 @@ function App() {
 
 	// Texto do formulário de sala: vive aqui porque os dois hooks o usam
 	// (o auth edita e escolhe o default; o join confirma no sucesso).
-	const [roomCode, setRoomCode] = useState("");
+	const [roomCode, setRoomCode] = useState(deepLinkRoom);
 
 	const backendUrl =
 		(typeof import.meta !== "undefined" && import.meta.env?.VITE_BACKEND_URL) ||
