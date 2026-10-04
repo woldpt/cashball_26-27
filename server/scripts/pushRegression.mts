@@ -14,6 +14,8 @@
  *        quieto com 0 ou ≥2, e ignora espectadores/sem-equipa
  *   P6 — tag e deep link: derivam do tipo + sala (avisos de salas diferentes
  *        não se substituem entre si)
+ *   P7 — throttle por (treinador, tipo, sala): um aviso de uma sala não cala
+ *        o da outra, e um aviso travado nem chega a ler as subscrições
  *
  * Run: cd server && npm run test:push
  */
@@ -27,6 +29,8 @@ const require = createRequire(import.meta.url);
 type Sent = { endpoint: string; body: any; opts: any };
 const sent: Sent[] = [];
 const removed: string[] = [];
+// `${treinador}|${tipo}|${sala}` → quando foi entregue (só deste teste).
+const throttle = new Map<string, number>();
 let queries = 0;
 let nextError: any = null;
 let subsFor: () => Array<{ endpoint: string; keys: string }> = () => [];
@@ -55,6 +59,29 @@ const authMock = {
   async savePushSubscription() {
     return true;
   },
+  // Throttle falso em memória (a chave é a mesma da tabela real).
+  async getPushThrottle(name: string) {
+    const out: Array<{ type: string; roomCode: string; sentAt: number }> = [];
+    for (const [key, sentAt] of throttle) {
+      const [coach, type, room] = key.split("|");
+      if (coach === name.toLowerCase()) out.push({ type, roomCode: room, sentAt });
+    }
+    return out;
+  },
+  async markPushSent(name: string, type: string, roomCode: string) {
+    throttle.set(`${name.toLowerCase()}|${type}|${roomCode}`, Date.now());
+    return true;
+  },
+  async purgePushThrottle(before: number) {
+    let n = 0;
+    for (const [key, sentAt] of throttle) {
+      if (sentAt < before) {
+        throttle.delete(key);
+        n += 1;
+      }
+    }
+    return n;
+  },
 };
 
 const Module = require("module");
@@ -72,7 +99,8 @@ process.env.VAPID_PUBLIC = "test-public";
 process.env.VAPID_PRIVATE = "test-private";
 process.env.VAPID_SUBJECT = "mailto:test@example.com";
 
-const { notifyUser, maybeNotifyLastMissing, pushTag, pushUrl } = require("../push.ts");
+const { notifyUser, maybeNotifyLastMissing, sendToCoach, pushTag, pushUrl } =
+  require("../push.ts");
 
 const SUB = (endpoint: string) => ({
   endpoint,
@@ -257,4 +285,35 @@ test("P6 — tag e deep link derivam do tipo e da sala", () => {
   assert.equal(pushUrl(), "/");
   // Salas diferentes não partilham tag: um aviso não substitui o outro.
   assert.notEqual(pushTag("auction", "ABCD"), pushTag("auction", "EFGH"));
+});
+
+test("P7 — o cooldown é por (treinador, tipo, sala)", async () => {
+  const coach = "Hugo";
+  const opts = { title: "t", body: "b" } as const;
+
+  reset();
+  assert.equal(
+    await sendToCoach(coach, { ...opts, type: "waiting", roomCode: "ABCD" }),
+    1,
+  );
+  assert.equal(queries, 1, "uma leitura de subscrições por aviso entregue");
+
+  // Mesmo tipo, mesma sala: calado — e sem chegar a tocar na BD de subs.
+  assert.equal(
+    await sendToCoach(coach, { ...opts, type: "waiting", roomCode: "ABCD" }),
+    0,
+  );
+  assert.equal(queries, 1, "travado pelo cooldown: nem lê as subscrições");
+
+  // Outra sala: passa (o aviso de uma sala não cala o da outra).
+  assert.equal(
+    await sendToCoach(coach, { ...opts, type: "waiting", roomCode: "EFGH" }),
+    1,
+  );
+  // Outro tipo na mesma sala: passa.
+  assert.equal(
+    await sendToCoach(coach, { ...opts, type: "auction", roomCode: "ABCD" }),
+    1,
+  );
+  assert.equal(sent.length, 3);
 });

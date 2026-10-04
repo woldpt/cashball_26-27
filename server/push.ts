@@ -166,10 +166,12 @@ export async function sendToCoach(
   coachName: string,
   opts: { type: PushType; title: string; body: string; roomCode?: string },
 ): Promise<number> {
+  const roomCode = opts.roomCode || "";
+  if (!(await throttleAllows(coachName, opts.type, roomCode))) return 0;
   const subs: Array<{ endpoint: string; keys: string }> =
     await auth.getPushSubscriptions(coachName);
   if (!subs || subs.length === 0) return 0;
-  return notifyUser(
+  const sent = await notifyUser(
     coachName,
     {
       type: opts.type,
@@ -181,18 +183,56 @@ export async function sendToCoach(
     },
     subs,
   );
+  // Só depois de entregar: uma falha de rede não pode calar o cooldown todo.
+  if (sent > 0) await auth.markPushSent(coachName, opts.type, roomCode, Date.now());
+  return sent;
 }
 
-// Último aviso por treinador (throttle Fase 2: 1 a cada 5 minutos; em
-// memória — um restart limpa, aceitável enquanto não há repetição).
-const lastPushAt = new Map<string, number>();
+// Throttle por (treinador, tipo, sala) na BD: sobrevive a restart e a mais do
+// que um processo (o Map antigo era por treinador — um aviso de uma sala calava
+// o da outra — e perdia-se no restart).
 const PUSH_COOLDOWN_MS = 5 * 60 * 1000;
+// Retenção do throttle: mais velho que isto nunca decide nada.
+const PUSH_THROTTLE_RETENTION_MS = 24 * 60 * 60 * 1000;
 
-/** Poda as entradas já fora do cooldown (inúteis) — o mapa não cresce sem fim. */
-function pruneLastPushAt(now: number): void {
-  for (const [key, at] of lastPushAt) {
-    if (now - at >= PUSH_COOLDOWN_MS) lastPushAt.delete(key);
+/**
+ * O cooldown deste (tipo, sala) já passou? Sem leitura da BD (avaria) deixa
+ * passar — o pior caso é um duplicado, nunca um aviso perdido.
+ */
+async function throttleAllows(
+  coachName: string,
+  type: PushType,
+  roomCode: string,
+): Promise<boolean> {
+  const rows: Array<{ type: string; roomCode: string; sentAt: number }> =
+    await auth.getPushThrottle(coachName);
+  const row = rows.find(
+    (r) => r.type === type && (r.roomCode || "") === roomCode,
+  );
+  return !row || Date.now() - row.sentAt >= PUSH_COOLDOWN_MS;
+}
+
+/**
+ * Arranque: poda o throttle (linhas > 24h já não decidem nada) e diz no log
+ * se a infraestrutura está pronta — a flag ligada com VAPID em falta era um
+ * silêncio difícil de diagnosticar em produção.
+ */
+export function initPush(): void {
+  if (!isPushEnabled()) {
+    console.log("[push] desligado (ENABLE_PUSH != true)");
+    return;
   }
+  if (!ensureVapid()) {
+    console.warn(
+      "[push] ENABLE_PUSH=true mas VAPID_PUBLIC/VAPID_PRIVATE/VAPID_SUBJECT em falta — avisos desligados",
+    );
+  }
+  auth
+    .purgePushThrottle(Date.now() - PUSH_THROTTLE_RETENTION_MS)
+    .then((removed: number) =>
+      console.log(`[push] pronto (throttle podado: ${removed || 0} linhas)`),
+    )
+    .catch((err: any) => console.error("[push] initPush:", err?.message || err));
 }
 
 /**
@@ -218,16 +258,10 @@ async function doMaybeNotify(game: ActiveGame): Promise<void> {
   const missing = waiting.filter((s) => !s.intent.ready);
   if (missing.length !== 1) return;
   const name = missing[0].name;
-  const key = name.toLowerCase();
-  const now = Date.now();
-  if (now - (lastPushAt.get(key) || 0) < PUSH_COOLDOWN_MS) return;
-  pruneLastPushAt(now);
-  const sent = await sendToCoach(name, {
+  await sendToCoach(name, {
     type: "waiting",
     title: "CashBall",
     body: `Sala ${game.roomCode} · Falta a tua tática!`,
     roomCode: game.roomCode,
   });
-  // Só depois de entregar: uma falha de rede não pode calar os próximos 5 min.
-  if (sent > 0) lastPushAt.set(key, Date.now());
 }

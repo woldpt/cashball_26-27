@@ -83,6 +83,7 @@ const {
 	saveSubscription: savePushSubscription,
 	removeSubscription: removePushSubscription,
 	isPushEnabled,
+	initPush,
 } = require("./push") as typeof import("./push");
 const {
 	getSeasonEndMatchweek,
@@ -1413,6 +1414,9 @@ function validateEnvVars() {
 	}
 }
 validateEnvVars();
+// Web Push: poda o throttle antigo e diz no log se está pronto (inerte com
+// ENABLE_PUSH desligada). Fire-and-forget — o arranque não espera pelo push.
+initPush();
 
 // Migration: ensure resistance column exists for all players
 const db = require("./db/database.js");

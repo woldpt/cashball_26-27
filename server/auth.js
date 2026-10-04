@@ -232,6 +232,18 @@ db.serialize(() => {
       PRIMARY KEY (coach_name, endpoint)
     )
   `);
+	// Throttle durável do Web Push: última entrega por (treinador, tipo, sala).
+	// Fica na BD (e não num Map) para sobreviver a restart e a mais do que um
+	// processo; as linhas fora de prazo são podadas no arranque (initPush).
+	db.run(`
+    CREATE TABLE IF NOT EXISTS push_throttle (
+      coach_name TEXT NOT NULL COLLATE NOCASE,
+      type       TEXT NOT NULL,
+      room_code  TEXT NOT NULL DEFAULT '',
+      sent_at    INTEGER NOT NULL,
+      PRIMARY KEY (coach_name, type, room_code)
+    )
+  `);
 });
 
 /**
@@ -1640,6 +1652,67 @@ function getPushSubscriptions(name) {
 	});
 }
 
+/** Última entrega por (tipo, sala) deste treinador — a base do cooldown. */
+function getPushThrottle(name) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve([]);
+	return new Promise((resolve) => {
+		db.all(
+			"SELECT type, room_code, sent_at FROM push_throttle WHERE coach_name = ? COLLATE NOCASE",
+			[normalizedName],
+			(err, rows) => {
+				if (err) {
+					console.error("[auth] getPushThrottle error:", err.message);
+					// Falha aberta: sem leitura deixa-se passar o aviso (o pior caso
+					// é um duplicado, não um aviso perdido).
+					return resolve([]);
+				}
+				resolve(
+					(rows || []).map((r) => ({
+						type: r.type,
+						roomCode: r.room_code,
+						sentAt: r.sent_at,
+					})),
+				);
+			},
+		);
+	});
+}
+
+/** Marca uma entrega feita — o cooldown só conta depois de ≥1 browser receber. */
+function markPushSent(name, type, roomCode, sentAt) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName || !type) return Promise.resolve(false);
+	return new Promise((resolve) => {
+		db.run(
+			`INSERT INTO push_throttle (coach_name, type, room_code, sent_at)
+			 VALUES (?, ?, ?, ?)
+			 ON CONFLICT(coach_name, type, room_code) DO UPDATE SET sent_at = excluded.sent_at`,
+			[normalizedName, type, roomCode || "", sentAt || Date.now()],
+			(err) => {
+				if (err) {
+					console.error("[auth] markPushSent error:", err.message);
+					return resolve(false);
+				}
+				resolve(true);
+			},
+		);
+	});
+}
+
+/** Poda linhas de throttle anteriores a `before`; devolve quantas apagou. */
+function purgePushThrottle(before) {
+	return new Promise((resolve) => {
+		db.run("DELETE FROM push_throttle WHERE sent_at < ?", [before], function (err) {
+			if (err) {
+				console.error("[auth] purgePushThrottle error:", err.message);
+				return resolve(0);
+			}
+			resolve(this?.changes || 0);
+		});
+	});
+}
+
 module.exports = {
 	verifyOrCreateManager,
 	verifyManager,
@@ -1670,6 +1743,10 @@ module.exports = {
 	savePushSubscription,
 	removePushSubscription,
 	getPushSubscriptions,
+	// Web Push throttle (Fase 2)
+	getPushThrottle,
+	markPushSent,
+	purgePushThrottle,
 	// Admin functions
 	adminListUsers,
 	adminChangePassword,
