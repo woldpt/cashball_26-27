@@ -23,6 +23,8 @@
  *   P11 — convite: chega a quem está offline (o socket não chega lá)
  *   P12 — preferências por tipo: tipo desligado não envia (e volta a enviar
  *        quando é ligado); tipo desconhecido é rejeitado
+ *   P13 — retry: uma falha transitória (500, 429) repete uma vez; um 4xx não
+ *        repete e um 500 repetido desiste — com os contadores a bater certo
  *
  * Run: cd server && npm run test:push
  */
@@ -41,17 +43,17 @@ const throttle = new Map<string, number>();
 // `${treinador}|${tipo}` → ligado/desligado (só deste teste).
 const prefs = new Map<string, boolean>();
 let queries = 0;
+// `nextError` falha sempre até ser limpo; `failPlan` falha por ordem (uma
+// entrada por tentativa) — é assim que se testa o retry.
 let nextError: any = null;
+let failPlan: any[] = [];
 let subsFor: () => Array<{ endpoint: string; keys: string }> = () => [];
 
 const webpushMock = {
   setVapidDetails() {},
   async sendNotification(sub: any, body: string, opts: any) {
-    if (nextError) {
-      const err = nextError;
-      nextError = null;
-      throw err;
-    }
+    const err = failPlan.length ? failPlan.shift() : nextError;
+    if (err) throw err;
     sent.push({ endpoint: sub.endpoint, body: JSON.parse(body), opts });
   },
 };
@@ -117,6 +119,8 @@ Module._load = function (request: string, parent: any, ...rest: any[]) {
 };
 
 process.env.ENABLE_PUSH = "true";
+// Sem espera real entre tentativas (o retry é testado, o sleep não).
+process.env.PUSH_RETRY_DELAY_MS = "1";
 process.env.VAPID_PUBLIC = "test-public";
 process.env.VAPID_PRIVATE = "test-private";
 process.env.VAPID_SUBJECT = "mailto:test@example.com";
@@ -131,6 +135,7 @@ const {
   sendToCoach,
   getPushPrefsFor,
   setPushPrefFor,
+  getPushStats,
   pushTag,
   pushUrl,
 } = require("../push.ts");
@@ -145,6 +150,7 @@ function reset(): void {
   removed.length = 0;
   queries = 0;
   nextError = null;
+  failPlan = [];
   subsFor = () => [SUB("https://push.example/one")];
 }
 
@@ -208,6 +214,8 @@ test("P1 — flag desligada: nada toca na rede", async () => {
   process.env.ENABLE_PUSH = "false";
   const n = await notifyUser("Ana", { type: "waiting", title: "x", body: "y" });
   process.env.ENABLE_PUSH = "true";
+// Sem espera real entre tentativas (o retry é testado, o sleep não).
+process.env.PUSH_RETRY_DELAY_MS = "1";
   assert.equal(n, 0);
   assert.equal(sent.length, 0);
   assert.equal(queries, 0, "nem as subscrições foram lidas");
@@ -256,13 +264,16 @@ test("P3/P4 — o cooldown só é gasto depois de entregar, e as subs lêem-se u
     { name: "Beto", teamId: 20, ready: false },
   ]);
 
-  // 1.ª tentativa: o FCM devolve 500 → nada entregue.
+  // 1.ª tentativa: o FCM devolve 500 (nas duas tentativas do retry) → nada
+  // entregue.
   nextError = { statusCode: 500 };
   maybeNotifyLastMissing(game);
   await flush();
   assert.equal(sent.length, 0);
 
-  // Sem cooldown gasto, a tentativa seguinte volta a sair (e agora entrega).
+  // Sem cooldown gasto, a tentativa seguinte volta a sair (e agora entrega —
+  // a rede voltou).
+  nextError = null;
   maybeNotifyLastMissing(game);
   await flush();
   assert.equal(sent.length, 1, "uma falha não pode calar os 5 minutos seguintes");
@@ -506,4 +517,36 @@ test("P12 — preferências por tipo desligam o aviso", async () => {
   // Tipo desconhecido (corpo do cliente): rejeitado, sem gravar nada.
   assert.equal(await setPushPrefFor(coach, "hack", true), false);
   assert.equal(prefs.has(`${coach.toLowerCase()}|hack`), false);
+});
+
+test("P13 — retry só para falhas transitórias", async () => {
+  const opts = { type: "waiting", title: "t", body: "b" } as const;
+
+  // 500 e depois sucesso: entregue à 2.ª tentativa (e contabilizado).
+  reset();
+  const before = getPushStats();
+  failPlan = [{ statusCode: 500 }];
+  assert.equal(await notifyUser("Ana", opts), 1);
+  assert.equal(sent.length, 1);
+  const after = getPushStats();
+  assert.equal(Number(after.sent) - Number(before.sent), 1);
+  assert.equal(Number(after.retried) - Number(before.retried), 1);
+
+  // 429 com Retry-After: também repete.
+  reset();
+  failPlan = [{ statusCode: 429, headers: { "retry-after": "0" } }];
+  assert.equal(await notifyUser("Ana", opts), 1);
+
+  // 400 (definitivo): não repete — a 2.ª tentativa nem é gasta.
+  reset();
+  failPlan = [{ statusCode: 400 }, { statusCode: 400 }];
+  assert.equal(await notifyUser("Ana", opts), 0);
+  // Uma entrada por tentativa: sobra uma → não houve 2.ª tentativa.
+  assert.equal(failPlan.length, 1, "um 4xx não consome a 2.ª tentativa");
+
+  // 500 duas vezes: desiste (não fica a repetir para sempre).
+  reset();
+  failPlan = [{ statusCode: 500 }, { statusCode: 500 }];
+  assert.equal(await notifyUser("Ana", opts), 0);
+  assert.equal(failPlan.length, 0);
 });

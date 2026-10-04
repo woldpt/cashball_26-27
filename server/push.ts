@@ -120,6 +120,64 @@ function isDeadSubscription(err: any): boolean {
   );
 }
 
+// ── Robustez de envio (Fase 5) ───────────────────────────────────────────────
+
+// Contadores desde o arranque do processo (expostos em /health): dizem se o
+// push está saudável sem ter de esperar por um relatório de erros.
+const counters = { sent: 0, failed: 0, removed: 0, retried: 0 };
+
+export function getPushStats(): Record<string, number | boolean> {
+  return { enabled: isPushEnabled(), ...counters };
+}
+
+// Atraso da 2.ª tentativa (PUSH_RETRY_DELAY_MS existe para os testes correrem
+// sem esperar 1,5 s por caso).
+const RETRY_DELAY_MS = Number(process.env.PUSH_RETRY_DELAY_MS) || 1500;
+const RETRY_DELAY_MAX_MS = 5000;
+
+/** Falha que vale a pena repetir: rede, 429 ou 5xx (um 4xx é definitivo). */
+function isTransient(err: any): boolean {
+  const status = Number(err?.statusCode);
+  if (!Number.isFinite(status) || status === 0) return true;
+  return status === 429 || status >= 500;
+}
+
+/** Respeita o Retry-After (segundos) quando existe, com tecto curto. */
+function retryDelayMs(err: any): number {
+  const retryAfter = Number(err?.headers?.["retry-after"]);
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Math.min(retryAfter * 1000, RETRY_DELAY_MAX_MS);
+  }
+  return RETRY_DELAY_MS;
+}
+
+/**
+ * Uma tentativa extra (curta) para falhas transitórias. Nunca para 4xx: uma
+ * subscrição inválida ou um payload recusado não melhoram por repetir.
+ */
+async function sendWithRetry(
+  sub: { endpoint: string; keys: string },
+  body: string,
+): Promise<{ ok: boolean; err?: any }> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: JSON.parse(sub.keys || "{}") },
+        body,
+        // Nudge sensível ao tempo: sem urgência o FCM adia com o ecrã
+        // apagado; sem TTL curto um «falta a tua tática» chegava horas
+        // depois, fora de contexto.
+        { urgency: "high", TTL: 2 * 60 * 60 },
+      );
+      return { ok: true };
+    } catch (err: any) {
+      if (attempt >= 2 || !isTransient(err)) return { ok: false, err };
+      counters.retried += 1;
+      await new Promise((r) => setTimeout(r, retryDelayMs(err)));
+    }
+  }
+}
+
 /**
  * Envia a todos os browsers subscritos; subscrição morta/expirada é apagada.
  * Devolve quantos browsers receberam (0 = nada entregue, o chamador não deve
@@ -146,29 +204,25 @@ export async function notifyUser(
     let sent = 0;
     await Promise.all(
       subs.map(async (sub) => {
-        try {
-          await webpush.sendNotification(
-            { endpoint: sub.endpoint, keys: JSON.parse(sub.keys || "{}") },
-            body,
-            // Nudge sensível ao tempo: sem urgência o FCM adia com o ecrã
-            // apagado; sem TTL curto um «falta a tua tática» chegava horas
-            // depois, fora de contexto.
-            { urgency: "high", TTL: 2 * 60 * 60 },
-          );
+        const { ok, err } = await sendWithRetry(sub, body);
+        if (ok) {
           sent += 1;
-        } catch (err: any) {
-          if (err?.statusCode === 410 || isDeadSubscription(err)) {
-            await auth().removePushSubscription(coachName, sub.endpoint);
-          } else {
-            console.error(
-              "[push] Falha ao notificar",
-              coachName + ":",
-              "status=" + err?.statusCode,
-              (typeof err?.body === "string" && err.body.slice(0, 160)) ||
-                err?.message ||
-                err,
-            );
-          }
+          counters.sent += 1;
+          return;
+        }
+        counters.failed += 1;
+        if (err?.statusCode === 410 || isDeadSubscription(err)) {
+          counters.removed += 1;
+          await auth().removePushSubscription(coachName, sub.endpoint);
+        } else {
+          console.error(
+            "[push] Falha ao notificar",
+            coachName + ":",
+            "status=" + err?.statusCode,
+            (typeof err?.body === "string" && err.body.slice(0, 160)) ||
+              err?.message ||
+              err,
+          );
         }
       }),
     );
@@ -216,6 +270,9 @@ export async function sendToCoach(
 const PUSH_COOLDOWN_MS = 5 * 60 * 1000;
 // Retenção do throttle: mais velho que isto nunca decide nada.
 const PUSH_THROTTLE_RETENTION_MS = 24 * 60 * 60 * 1000;
+// Retenção das subscrições: o cliente re-regista a cada arranque da app, logo
+// uma linha tão velha é de um browser que já não volta.
+const PUSH_SUB_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
 
 /**
  * Preferências do treinador com os defaults preenchidos (para a API e a UI).
@@ -288,8 +345,13 @@ export function initPush(): void {
   }
   auth()
     .purgePushThrottle(Date.now() - PUSH_THROTTLE_RETENTION_MS)
-    .then((removed: number) =>
-      console.log(`[push] pronto (throttle podado: ${removed || 0} linhas)`),
+    .then((throttleRows: number) =>
+      auth().purgePushSubscriptions(Date.now() - PUSH_SUB_RETENTION_MS).then(
+        (subRows: number) =>
+          console.log(
+            `[push] pronto (podado: ${throttleRows || 0} linhas de throttle, ${subRows || 0} subscrições antigas) — contadores em /health`,
+          ),
+      ),
     )
     .catch((err: any) => console.error("[push] initPush:", err?.message || err));
 }

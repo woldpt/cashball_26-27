@@ -1601,7 +1601,11 @@ function adminSetCoachTeam(roomCode, coachName, teamId, activeGames) {
  * Subscrições Web Push (Fase 1, inertes atrás de ENABLE_PUSH — a flag
  * vive nas rotas de index.ts, aqui só se guarda/apaga/lista).
  * Uma linha por browser: (coach_name, endpoint); re-subscrever faz upsert.
+ * Tecto por treinador: uma reinstalação do browser cria uma subscrição nova e
+ * as antigas ficariam para sempre — as mais antigas caem ao guardar a 11.ª.
  */
+const MAX_PUSH_SUBSCRIPTIONS = 10;
+
 function savePushSubscription(name, endpoint, keys) {
 	const normalizedName = typeof name === "string" ? name.trim() : "";
 	if (!normalizedName || typeof endpoint !== "string" || !endpoint) {
@@ -1618,7 +1622,43 @@ function savePushSubscription(name, endpoint, keys) {
 					console.error("[auth] savePushSubscription error:", err.message);
 					return resolve(false);
 				}
-				resolve(true);
+				db.run(
+					`DELETE FROM push_subscriptions
+					 WHERE coach_name = ? COLLATE NOCASE
+					   AND endpoint NOT IN (
+					     SELECT endpoint FROM push_subscriptions
+					      WHERE coach_name = ? COLLATE NOCASE
+					      ORDER BY created_at DESC LIMIT ?
+					   )`,
+					[normalizedName, normalizedName, MAX_PUSH_SUBSCRIPTIONS],
+					(trimErr) => {
+						if (trimErr) {
+							console.error("[auth] trim push_subscriptions:", trimErr.message);
+						}
+						resolve(true);
+					},
+				);
+			},
+		);
+	});
+}
+
+/**
+ * Apaga subscrições que nunca foram renovadas desde `before`. O cliente
+ * re-regista-se a cada arranque da app, por isso uma linha assim tão velha é
+ * de um browser que já não volta (reinstalação, PWA apagada).
+ */
+function purgePushSubscriptions(before) {
+	return new Promise((resolve) => {
+		db.run(
+			"DELETE FROM push_subscriptions WHERE created_at < ?",
+			[before],
+			function (err) {
+				if (err) {
+					console.error("[auth] purgePushSubscriptions error:", err.message);
+					return resolve(0);
+				}
+				resolve(this?.changes || 0);
 			},
 		);
 	});
@@ -1794,6 +1834,7 @@ module.exports = {
 	savePushSubscription,
 	removePushSubscription,
 	getPushSubscriptions,
+	purgePushSubscriptions,
 	// Web Push throttle (Fase 2)
 	getPushThrottle,
 	markPushSent,

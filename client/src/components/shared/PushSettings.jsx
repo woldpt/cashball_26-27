@@ -1,19 +1,7 @@
 import { useEffect, useState } from "react";
 import { Panel } from "./Panel.jsx";
 import { Button } from "./Button.jsx";
-
-/**
- * Converte a chave pública VAPID (base64url) para o formato do PushManager.
- * @param {string} base64 Chave pública em base64url.
- * @returns {Uint8Array} Chave como bytes.
- */
-function urlBase64ToUint8Array(base64) {
-	const padding = "=".repeat((4 - (base64.length % 4)) % 4);
-	const raw = window.atob(base64.replace(/-/g, "+").replace(/_/g, "/") + padding);
-	const out = new Uint8Array(raw.length);
-	for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-	return out;
-}
+import { urlBase64ToUint8Array } from "../../services/pushNotifications.js";
 
 /**
  * Painel "Avisos" das definições: activar/desactivar notificações push

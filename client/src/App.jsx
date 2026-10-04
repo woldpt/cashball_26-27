@@ -8,7 +8,10 @@ import { useAuth } from "./hooks/useAuth.js";
 import { useJoinSession } from "./hooks/useJoinSession.js";
 import { loadSavedSession } from "./utils/localStorage.js";
 import { checkCacheVersion } from "./utils/cacheVersion.js";
-import { initPushNotifications } from "./services/pushNotifications.js";
+import {
+	initPushNotifications,
+	resubscribeWebPush,
+} from "./services/pushNotifications.js";
 import { AnimatePresence, motion } from "framer-motion";
 import { fade } from "./motion.js";
 import { RotateOverlay } from "./components/shared/RotateOverlay.jsx";
@@ -60,6 +63,28 @@ function App() {
 	});
 
 	const { me, joining, joinError } = join;
+
+	// ── Web Push: manter a subscrição viva ────────────────────────────────
+	// O servidor pode ter perdido a linha e o browser pode ter renovado a
+	// subscrição sozinho (`pushsubscriptionchange` no service worker, que
+	// avisa as janelas abertas). Só corre com a permissão já dada.
+	useEffect(() => {
+		if (!cacheReady || !me?.name || !me?.token) return;
+		const reregister = () =>
+			resubscribeWebPush({
+				backendUrl,
+				name: me.name,
+				token: me.token,
+			});
+		reregister();
+		const onMessage = (event) => {
+			if (event.data?.type === "push-resubscribe") reregister();
+		};
+		navigator.serviceWorker?.addEventListener?.("message", onMessage);
+		return () => {
+			navigator.serviceWorker?.removeEventListener?.("message", onMessage);
+		};
+	}, [cacheReady, me?.name, me?.token, backendUrl]);
 
 	// ── Repor sessão guardada após o gate de cache ─────────────────────────
 	useEffect(() => {

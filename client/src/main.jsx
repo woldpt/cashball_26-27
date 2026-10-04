@@ -8,7 +8,7 @@ import App from './App.jsx'
 // sw.vN.js): renomear o ficheiro a cada mudança para furar caches velhas.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.v8.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.v9.js').catch(() => {});
   });
 }
 

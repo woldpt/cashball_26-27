@@ -87,6 +87,7 @@ const {
 	isKnownPushType,
 	getPushPrefsFor,
 	setPushPrefFor,
+	getPushStats,
 } = require("./push") as typeof import("./push");
 const {
 	getSeasonEndMatchweek,
@@ -446,7 +447,7 @@ async function getSessionNameFromReq(req: any): Promise<string | null> {
 }
 
 app.get("/health", (req, res) => {
-	res.json({ status: "ok", uptime: process.uptime() });
+	res.json({ status: "ok", uptime: process.uptime(), push: getPushStats() });
 });
 
 app.get("/api/cache-version", (_req, res) => {

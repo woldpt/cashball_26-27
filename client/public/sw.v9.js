@@ -1,10 +1,10 @@
 // CashBall service worker — offline fallback para a SPA.
-// URL VERSIONADO (sw.vN.js): ao alterar este ficheiro, renomear (v8->v9)
+// URL VERSIONADO (sw.vN.js): ao alterar este ficheiro, renomear (v9->v10)
 // e atualizar o register() em main.jsx. O URL novo fura caches HTTP
 // envenenadas e substitui o registo velho no próximo carregamento.
 // Bump VERSION on any client change so activate() clears the stale cache
 // and the user picks up new hashed bundles.
-const VERSION = 'v8';
+const VERSION = 'v9';
 const CACHE = `cashball-${VERSION}`;
 const CORE_URLS = ['/', '/index.html'];
 
@@ -131,5 +131,26 @@ self.addEventListener('notificationclick', (event) => {
         }
         return self.clients.openWindow(target);
       })
+  );
+});
+
+// O browser renovou ou expirou a subscrição sozinho. Re-subscreve localmente
+// (para o endpoint continuar vivo) e pede às janelas abertas que a registem
+// no servidor — o servidor exige sessão, que só a app tem.
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: event.oldSubscription?.options?.applicationServerKey,
+      })
+      .then(() =>
+        self.clients
+          .matchAll({ type: 'window', includeUncontrolled: true })
+          .then((list) => {
+            for (const c of list) c.postMessage({ type: 'push-resubscribe' });
+          })
+      )
+      .catch(() => undefined)
   );
 });
