@@ -21,6 +21,7 @@
 | Mobile portrait (mudança estrutural de layout, obrigatório) | `cd client && npm run test:mobile` |
 | Audit socket.io · audit de sala · audit de sessão | `cd server && npm run audit:socketio` · `npm run audit:gamestate <ROOM_CODE>` · `npm run audit:session <ROOM_CODE>` |
 | Congelamento/presença (assentos) | `cd server && npm run test:session-freeze` |
+| Regressão do push (web-push/auth mockados) | `cd server && npm run test:push` |
 | Smoke de ligação (handlers registados) | `cd server && npm run test:connect-smoke` |
 | Repair job offer | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
 | Crash-restart E2E (clona p/ `game_CRASHT.db`, limpa ao fim) | `cd server && npm run test:crash-recovery` (origem: `CRASHTEST_ROOM=XXXX`) |

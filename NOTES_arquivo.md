@@ -2,6 +2,11 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Filtro «Cabe no saldo» passa ao servidor (2026-10-02)
+- Bug: com 200+ resultados, o filtro dizia que nada cabia no saldo. Causa: o servidor limita a 200 (ordenados dos mais cotados para baixo) e o filtro só-cliente escondia tudo o que via — os acessíveis nem chegavam ao cliente.
+- `socketScoutHandlers.ts`: novo `onlyAffordable` — saldo lido da BD (`teams.budget`, nunca do cliente) com `preço-aquisição <= saldo` no SQL (mesmo preço dos filtros mín/máx); leilões com lance ao vivo acima do saldo caem após o enriquecimento (total pode contar mais 1 ou 2 nesses casos raros).
+- `ScoutView.jsx`: envia `onlyAffordable`; clicar na checkbox com pesquisa feita repesquisa logo; `meta` volta ao total do servidor; refinamento cá fora fica só para os lances ao vivo.
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros (101 warnings, baseline) · `eslint` limpo no ficheiro · `check:types` OK · mesma linha de checkboxes → sem `test:mobile`.
 ## Sorteio da Taça com parágrafo antes da tabela (2026-10-02)
 - Pedido: no detalhe da notícia do sorteio, um parágrafo a dizer o que nos calhou, só depois a tabela completa (antes era só a tabela seca).
 - `JournalTab.jsx`: novo `CupDrawIntro` antes do `CupDrawTable` — ronda (`facts.roundName` ou título), adversário clicável + casa/fora, em jogo o lugar na próxima eliminatória (final, nas meias) e uma linha de favoritismo pela divisão (`teams` já traz `division`); sem jogo próprio (eliminado), genérico da ronda. Só frontend, corpo/snippet inalterados.

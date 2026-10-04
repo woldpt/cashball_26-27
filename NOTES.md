@@ -1,3 +1,9 @@
+## Push: avisos com contexto, duráveis e com interruptor (2026-10-11)
+- `push.ts` ganha tipos (`waiting|auction|matchday|invite`), sempre só para ausentes, cooldown de 5 min por `(treinador, tipo, sala)` na BD (`push_throttle`), preferências em `push_prefs` (rotas `/api/push/prefs`, nome pela sessão/Bearer), 1 retry em falha transitória (respeita `Retry-After`), tecto de 10 subscrições por treinador + purga aos 180 dias, contadores em `/health`.
+- Gatilhos novos: sala parada à tua espera (`maybeNotifyWaiting` no `checkAllReady`, na barreira dos minutos, no intervalo, no prolongamento e no `waitForMatchAction`), ultrapassado num leilão, fim de jornada com resultado + posição, e convite para quem está offline (antes o socket falhava com «já não está online»).
+- Cliente: `sw.v9.js` (tag `<tipo>:<sala>`, navega para o deep link `/?room=`, `pushsubscriptionchange`), re-registo da subscrição no arranque, interruptores por tipo no painel Avisos; o painel passa a mudar o texto-base (antes só falava do lobby).
+- Verificação: `test:push` 12 testes · server `typecheck` + `test:connect-smoke` + `test:session-freeze` + `test:engine-unit` + `test:segment-barrier` + `cupLobbyAdvanceRegression` + `audit:socketio` 0 erros · client `lint` + `check:types` · `test:mobile` 185/185 + screenshots do painel · `audit:gamestate` sem sala viva fica para a próxima.
+
 ## Tutorial do adjunto: anel no sítio certo e balão que não tapa o alvo (2026-10-11)
 - Bug real (reproduzido em harness antes de mexer): o anel media o alvo a meio das animações e congelava (desalinhado 14–26px, anel fora do viewport) e o balão, fixo ao centro, tapava o próprio destaque em `club-staff`, `player-skills`, `tactic-titulares` e `tactic-play`.
 - Novo `client/src/hooks/useTargetRect.js`: escolhe a primeira instância do alvo dentro do viewport (senão a primeira, trazida com `scrollIntoView` instantâneo), re-mede por frame até o rect assentar (com teto) e fica preso a `ResizeObserver`/`scroll`/`resize`/`visualViewport`; o rect publicado leva o passo consigo, por isso um publish atrasado do passo anterior nunca pinta o anel errado.
@@ -189,8 +195,3 @@
 - `JournalTab.jsx` (`WeeklyFinanceTable`): Salários, Manutenção, Juros e Capital marcados como `debit` — valor com sinal negativo (`-X €`, guarda contra `-0 €`) e `text-error`; Rendimento e Saldo como estavam (Saldo já pintava negativo/positivo).
 - Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · só `className`/texto → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
 
-## Filtro «Cabe no saldo» passa ao servidor (2026-10-02)
-- Bug: com 200+ resultados, o filtro dizia que nada cabia no saldo. Causa: o servidor limita a 200 (ordenados dos mais cotados para baixo) e o filtro só-cliente escondia tudo o que via — os acessíveis nem chegavam ao cliente.
-- `socketScoutHandlers.ts`: novo `onlyAffordable` — saldo lido da BD (`teams.budget`, nunca do cliente) com `preço-aquisição <= saldo` no SQL (mesmo preço dos filtros mín/máx); leilões com lance ao vivo acima do saldo caem após o enriquecimento (total pode contar mais 1 ou 2 nesses casos raros).
-- `ScoutView.jsx`: envia `onlyAffordable`; clicar na checkbox com pesquisa feita repesquisa logo; `meta` volta ao total do servidor; refinamento cá fora fica só para os lances ao vivo.
-- Checks: server `typecheck` OK · `audit:socketio` 0 erros (101 warnings, baseline) · `eslint` limpo no ficheiro · `check:types` OK · mesma linha de checkboxes → sem `test:mobile`.

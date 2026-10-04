@@ -37,6 +37,7 @@
 - **Adeptos:** `teams.fans_mood` + `coreHelpers.computeAttendance/explainAttendance` (mood, preço, meteo).
 - **Barreira do 11:** `game/lineupReady.ts` valida 11 + banco antes do pontapé de saída.
 - **Presença:** canal `__presence__` + convites de sala (`presenceHelpers.ts`, `InviteRoomModal.jsx`).
+- **Push:** `push.ts` — 4 tipos (`waiting`/`auction`/`matchday`/`invite`), só a ausentes, cooldown de 5 min por `(treinador,tipo,sala)` em `push_throttle`, preferências em `push_prefs`; service worker `client/public/sw.vN.js` (subir a versão a cada mudança).
 
 ## 🏭 Padrões de backend
 
