@@ -49,7 +49,6 @@ const ROLE_LOOK = {
     hair: HAIR.black,
     cloth: { base: "#c96a22", dark: "#a04f14", light: "#e08434" },
     collar: "crew",
-    beard: "stubble",
   },
   comunicacao: {
     bg: "#16202f",
@@ -64,7 +63,7 @@ const ROLE_LOOK = {
     accent: "#4fb3c4",
     skin: SKIN.dark,
     hair: HAIR.curly,
-    cloth: { base: "#eef2f7", dark: "#c6d1dd", light: "#ffffff" },
+    cloth: { base: "#eef2f7", dark: "#dbe3ec", light: "#ffffff" },
     collar: "coat",
     scrub: "#2b7f8e",
     beard: "short",
@@ -91,6 +90,9 @@ function staffTier(level) {
   if (n >= 3) return 2;
   return 1;
 }
+
+const RING_WIDTH = { 1: 1.4, 2: 2.8, 3: 4.2 };
+const RING_OPACITY = { 1: 0.4, 2: 0.8, 3: 1 };
 
 /* ── Cabeça e cara (iguais em todos os papéis; muda pele, cabelo e barba) ── */
 
@@ -127,21 +129,21 @@ function Face({ skin, hair }) {
       {/* Olhos: dois ovais brancos enormes com pupila pequena */}
       <ellipse cx="49.5" cy="36.5" rx="8" ry="9.2" fill="#fdfdfd" stroke={OUTLINE} strokeWidth={OW} />
       <ellipse cx="70.5" cy="36.5" rx="8" ry="9.2" fill="#fdfdfd" stroke={OUTLINE} strokeWidth={OW} />
-      <circle cx="50.7" cy="39" r="2.3" fill={OUTLINE} />
-      <circle cx="69.3" cy="39" r="2.3" fill={OUTLINE} />
+      <circle cx="50.9" cy="38.6" r="3.3" fill={OUTLINE} />
+      <circle cx="69.1" cy="38.6" r="3.3" fill={OUTLINE} />
       {/* Pálpebras carregadas (a marca do estilo) */}
       <path
-        d="M42 30.4 C45.6 27.2 52.6 26.4 56.6 28.8"
+        d="M42 32 C45.6 29.2 52.6 28.6 56.6 30.8"
         fill="none"
         stroke={OUTLINE}
-        strokeWidth="3"
+        strokeWidth="2.6"
         strokeLinecap="round"
       />
       <path
-        d="M78 30.4 C74.4 27.2 67.4 26.4 63.4 28.8"
+        d="M78 32 C74.4 29.2 67.4 28.6 63.4 30.8"
         fill="none"
         stroke={OUTLINE}
-        strokeWidth="3"
+        strokeWidth="2.6"
         strokeLinecap="round"
       />
       {/* Olheiras */}
@@ -189,20 +191,20 @@ function Face({ skin, hair }) {
       />
       {/* Sulcos do nariz para a boca (cara de mau) */}
       <path
-        d="M47.8 50.4 C46.8 55.6 48.2 60 50.8 62.6"
+        d="M48.4 52 C47.6 56 48.6 59.4 50.6 61.6"
         fill="none"
         stroke={skin.shadow}
         strokeWidth="1.1"
       />
       <path
-        d="M72.2 50.4 C73.2 55.6 71.8 60 69.2 62.6"
+        d="M71.6 52 C72.4 56 71.4 59.4 69.4 61.6"
         fill="none"
         stroke={skin.shadow}
         strokeWidth="1.1"
       />
-      {/* Boca (∩ = carranca) */}
+      {/* Boca: traço neutro com ligeiro sorriso (os olhos grandes já dão o drama) */}
       <path
-        d="M50.4 64.4 C55 60.8 65 60.8 69.6 64.4"
+        d="M51 62.6 C55 65.2 65 65.2 69 62.6"
         fill="none"
         stroke={OUTLINE}
         strokeWidth="1.9"
@@ -349,38 +351,20 @@ function Hair({ look }) {
 /* ── Barba ──────────────────────────────────────────────────────────────── */
 
 function Beard({ look }) {
-  const { hair } = look;
   if (look.beard === "short") {
-    // Barba curta: faixa ao longo do maxilar (mais clara que o cabelo, para
-    // não tapar a boca nem o queixo) + bigode fino por cima da boca.
+    // Barba curta: meia-lua preenchida no maxilar/queixo (fica por baixo da
+    // boca, não risca a cara) + bigode fino.
     return (
       <g>
         <path
-          d="M48.6 48 C47 58 53 66 60 66 C67 66 73 58 71.4 48"
-          fill="none"
-          stroke="#3d2c26"
-          strokeWidth="5"
-          strokeLinecap="round"
+          d="M37.6 52 C39 63 48 72 60 72 C72 72 81 63 82.4 52 C79 60.6 71 66.4 60 66.4 C49 66.4 41 60.6 37.6 52 Z"
+          fill="#3d2c26"
         />
         <path
-          d="M53.6 57.4 C56 55.8 64 55.8 66.4 57.4 C64 59.2 56 59.2 53.6 57.4 Z"
+          d="M52.6 59.4 C55.6 57.4 64.4 57.4 67.4 59.4 C64.4 60.4 55.6 60.4 52.6 59.4 Z"
           fill="#3d2c26"
-          stroke={OUTLINE}
-          strokeWidth="0.9"
         />
       </g>
-    );
-  }
-  if (look.beard === "stubble") {
-    return (
-      <path
-        d="M48 47 C46 58 52 67 60 67 C68 67 74 58 72 47"
-        fill="none"
-        stroke={hair.base}
-        strokeWidth="4.4"
-        strokeLinecap="round"
-        opacity="0.2"
-      />
     );
   }
   return null;
@@ -389,7 +373,7 @@ function Beard({ look }) {
 /* ── Tronco, gola e roupa ───────────────────────────────────────────────── */
 
 const TORSO =
-  "M50 66 C38 70 24 77 18 87 C14 94 12 102 12 121 L108 121 C108 102 106 94 102 87 C96 77 82 70 70 66 Z";
+  "M50 66 C38 70 24 77 18 87 C14 94 12 102 12 135 L108 135 C108 102 106 94 102 87 C96 77 82 70 70 66 Z";
 
 function Clothing({ look, tier }) {
   const { cloth, collar, skin } = look;
@@ -404,7 +388,7 @@ function Clothing({ look, tier }) {
             stroke={OUTLINE}
             strokeWidth={OW}
           />
-          <path d="M60 83 L60 121" fill="none" stroke={OUTLINE} strokeWidth="1.3" />
+          <path d="M60 83 L60 135" fill="none" stroke={OUTLINE} strokeWidth="1.3" />
           <rect
             x="57.6"
             y="85"
@@ -441,7 +425,7 @@ function Clothing({ look, tier }) {
             stroke={OUTLINE}
             strokeWidth="1.2"
           />
-          <path d="M60 82 L60 121" fill="none" stroke={OUTLINE} strokeWidth="1" opacity="0.45" />
+          <path d="M60 82 L60 135" fill="none" stroke={OUTLINE} strokeWidth="1" opacity="0.45" />
         </g>
       )}
       {collar === "polo" && (
@@ -449,17 +433,19 @@ function Clothing({ look, tier }) {
           <path d="M50 65 L60 77 L70 65 L74 70 L60 83 L46 70 Z" fill={cloth.dark} stroke={OUTLINE} strokeWidth="1.2" />
         </g>
       )}
-      {/* Colete do preparador físico (escalão 3) — por baixo dos braços */}
+      {/* Colete do preparador físico (escalão 3) — por baixo dos braços; as
+          riscas refletoras sobem pelos ombros para se verem acima do cruzamento. */}
       {look.collar === "crew" && tier >= 3 && (
         <g>
           <path
-            d="M44 68 L39 121 L81 121 L76 68 C70 77 50 77 44 68 Z"
-            fill="#2f3a46"
+            d="M42 67 L33 135 L87 135 L78 67 C70 77 50 77 42 67 Z"
+            fill="#46576a"
             stroke={OUTLINE}
             strokeWidth={OW}
           />
-          <path d="M44 68 C50 77 70 77 76 68" fill="none" stroke="#c8d2dd" strokeWidth="1.4" />
-          <path d="M41 92 L79 92" fill="none" stroke="#c8d2dd" strokeWidth="3" opacity="0.7" />
+          <path d="M42 67 C50 77 70 77 78 67" fill="none" stroke="#e4ebf2" strokeWidth="2" />
+          <path d="M45.4 73 L41.4 94 M74.6 73 L78.6 94" fill="none" stroke="#e4ebf2" strokeWidth="3.6" strokeLinecap="round" />
+          <path d="M39 118 L81 118" fill="none" stroke="#e4ebf2" strokeWidth="3.6" opacity="0.9" />
         </g>
       )}
       {/* Toalha ao pescoço (preparador físico, escalão 2+) — fica SOB os braços
@@ -509,6 +495,14 @@ function CrossedArms({ look }) {
         strokeWidth={OW}
         transform="rotate(4 72 102)"
       />
+      <path
+        d="M14 98 C30 95 60 97 86 103"
+        fill="none"
+        stroke={cloth.light}
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
       {/* Sombra do braço da frente: sem ela o cruzamento desaparece em roupa
           clara (bata do médico) — as duas barras ficam do mesmo branco. */}
       <rect
@@ -541,18 +535,18 @@ function CrossedArms({ look }) {
 function Whistle() {
   return (
     <g>
-      <path d="M50 66 C54 78 66 78 70 66" fill="none" stroke="#2a2f38" strokeWidth="1.6" />
+      <path d="M50 66 C54 78 66 78 70 66" fill="none" stroke="#2a2f38" strokeWidth="2.2" />
       <rect
-        x="55.6"
-        y="81"
-        width="11"
-        height="7.4"
-        rx="3.4"
+        x="53.6"
+        y="79"
+        width="15"
+        height="10"
+        rx="4.6"
         fill="#e8b73c"
         stroke={OUTLINE}
-        strokeWidth="1.3"
+        strokeWidth="1.5"
       />
-      <circle cx="59.6" cy="84.7" r="1.3" fill={OUTLINE} />
+      <circle cx="59.2" cy="84" r="1.8" fill={OUTLINE} />
     </g>
   );
 }
@@ -570,8 +564,8 @@ function Clipboard() {
 function Glasses() {
   return (
     <g>
-      <rect x="41" y="25.6" width="17.4" height="21.4" rx="8.6" fill="none" stroke={OUTLINE} strokeWidth="1.7" />
-      <rect x="61.6" y="25.6" width="17.4" height="21.4" rx="8.6" fill="none" stroke={OUTLINE} strokeWidth="1.7" />
+      <rect x="41" y="25.6" width="17.4" height="21.4" rx="8.6" fill="none" stroke={OUTLINE} strokeWidth="2.4" />
+      <rect x="61.6" y="25.6" width="17.4" height="21.4" rx="8.6" fill="none" stroke={OUTLINE} strokeWidth="2.4" />
       <path d="M58.4 34 H61.6" fill="none" stroke={OUTLINE} strokeWidth="1.6" />
       <path d="M41 34 L37 32" fill="none" stroke={OUTLINE} strokeWidth="1.5" />
       <path d="M79 34 L83 32" fill="none" stroke={OUTLINE} strokeWidth="1.5" />
@@ -593,10 +587,10 @@ function Megaphone() {
 function PressBadge() {
   return (
     <g>
-      <path d="M52 66 C54 76 66 76 68 66" fill="none" stroke="#2a2f38" strokeWidth="1.4" />
-      <rect x="56" y="79" width="9" height="12.4" rx="1.6" fill="#f2f4f7" stroke={OUTLINE} strokeWidth="1.2" />
-      <circle cx="60.5" cy="83" r="2.1" fill="#9aa3ad" stroke={OUTLINE} strokeWidth="0.9" />
-      <path d="M57.6 88.4 H63.4" fill="none" stroke="#8b939c" strokeWidth="1.2" />
+      <path d="M51 66 C53 78 67 78 69 66" fill="none" stroke="#2a2f38" strokeWidth="2.2" />
+      <rect x="53.6" y="78" width="13.6" height="18" rx="2.2" fill="#f2f4f7" stroke={OUTLINE} strokeWidth="1.5" />
+      <circle cx="60.4" cy="84.6" r="3.2" fill="#9aa3ad" stroke={OUTLINE} strokeWidth="1.1" />
+      <path d="M56.4 91.6 H64.4" fill="none" stroke="#6f7882" strokeWidth="1.8" />
     </g>
   );
 }
@@ -605,21 +599,26 @@ function Stethoscope() {
   return (
     <g>
       <path
-        d="M50 66 C48 79 54 87 60 91 C66 87 72 79 70 66"
+        d="M45 74 C44 86 52 93 60 95 C68 93 76 86 75 74"
         fill="none"
         stroke="#39424e"
-        strokeWidth="2.6"
+        strokeWidth="3"
         strokeLinecap="round"
       />
-      <path
-        d="M50 66 L48.6 62.4 M70 66 L71.4 62.4"
-        fill="none"
-        stroke="#39424e"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path d="M60 91 L66 94" fill="none" stroke="#39424e" strokeWidth="2.2" />
-      <circle cx="68.4" cy="95.4" r="4.6" fill="#b9c2cc" stroke={OUTLINE} strokeWidth="1.3" />
+      <path d="M60 95 L67 97" fill="none" stroke="#39424e" strokeWidth="2.6" />
+      <circle cx="69.6" cy="98" r="5.4" fill="#b9c2cc" stroke={OUTLINE} strokeWidth="1.5" />
+    </g>
+  );
+}
+
+/** Cronómetro ao pescoço do preparador físico (adereço de base, todos os escalões). */
+function Stopwatch() {
+  return (
+    <g>
+      <path d="M49 66 C52 80 68 80 71 66" fill="none" stroke="#2a2f38" strokeWidth="2.2" />
+      <rect x="57.4" y="78.4" width="5.2" height="3.4" rx="1" fill="#98a0aa" stroke={OUTLINE} strokeWidth="1.1" />
+      <circle cx="60" cy="87" r="6" fill="#f2f4f7" stroke={OUTLINE} strokeWidth="1.5" />
+      <path d="M60 87 L60 83.4 M60 87 L62.6 88.6" fill="none" stroke={OUTLINE} strokeWidth="1.3" strokeLinecap="round" />
     </g>
   );
 }
@@ -627,9 +626,9 @@ function Stethoscope() {
 function MedCase() {
   return (
     <g>
-      <path d="M66 101 C66 97 70 95 74 95 C78 95 82 97 82 101" fill="none" stroke={OUTLINE} strokeWidth="1.6" />
-      <rect x="62" y="100" width="30" height="21" rx="3.4" fill="#c2362f" stroke={OUTLINE} strokeWidth={OW} />
-      <path d="M77 104 L77 116 M71 110 L83 110" fill="none" stroke="#f5f7fa" strokeWidth="3.4" />
+      <path d="M66 99 C66 95 70 93 77 93 C84 93 88 95 88 99" fill="none" stroke={OUTLINE} strokeWidth="1.6" />
+      <rect x="60" y="98" width="34" height="23" rx="3.4" fill="#c2362f" stroke={OUTLINE} strokeWidth={OW} />
+      <path d="M77 102 L77 116 M70.6 109 L83.4 109" fill="none" stroke="#f5f7fa" strokeWidth="3.4" />
     </g>
   );
 }
@@ -645,7 +644,7 @@ function Extras({ role, tier }) {
     );
   }
   if (role === "fisico") {
-    return null;
+    return <Stopwatch />;
   }
   if (role === "comunicacao") {
     return (
@@ -691,21 +690,25 @@ function StaffAvatarInner({ role, level = 1, size = "md", className = "" }) {
       aria-label={role}
     >
       <circle cx="60" cy="60" r="56" fill={look.bg} />
+      {/* O anel engrossa e acende com o escalão: lê-se mesmo quando os
+          adereços já são demasiado pequenos (24-32 px). */}
       <circle
         cx="60"
         cy="60"
-        r="52"
+        r={tier >= 3 ? 50.6 : 52}
         fill="none"
         stroke={look.accent}
-        strokeWidth="1.4"
-        opacity="0.4"
+        strokeWidth={RING_WIDTH[tier]}
+        opacity={RING_OPACITY[tier]}
       />
-      <Clothing look={look} tier={tier} />
-      <CrossedArms look={look} />
-      <Face skin={look.skin} hair={look.hair} />
-      <Beard look={look} />
-      <Hair look={look} />
-      <Extras role={role} tier={tier} />
+      <g transform="translate(6 7) scale(0.9)">
+        <Clothing look={look} tier={tier} />
+        <CrossedArms look={look} />
+        <Face skin={look.skin} hair={look.hair} />
+        <Beard look={look} />
+        <Hair look={look} />
+        <Extras role={role} tier={tier} />
+      </g>
     </svg>
   );
 }
