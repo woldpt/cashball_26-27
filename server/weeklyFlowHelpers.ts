@@ -1,5 +1,9 @@
 import type { ActiveGame, PlayerSession, Tactic } from "./types";
-import { maybeNotifyLastMissing } from "./push";
+import {
+  maybeNotifyLastMissing,
+  maybeNotifyMatchday,
+  maybeNotifyWaiting,
+} from "./push";
 import type { CalendarEntry } from "./gameConstants";
 import { SPONSOR_SECOND_TRANCHE_SLOT, sponsorById } from "./game/sponsors";
 import {
@@ -935,6 +939,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         // Congelamento: enquanto faltar um treinador com equipa em jogo, a
         // sala não anda um minuto sequer. Espera aqui (rendezvous de todos os
         // jogos) e retoma exatamente neste minuto quando ele voltar.
+        maybeNotifyWaiting(game);
         await waitForPresence(game, io);
         // Sala apagada a meio do jogo: abortar a barreira. Sem isto o
         // `return` nu saltava o sleep e os minutos corriam fantasma até
@@ -1124,6 +1129,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     }
     // Congelamento: a segunda parte não começa com um treinador da ronda ausente.
     if (computeAbsentees(game).length > 0) {
+      maybeNotifyWaiting(game);
       void waitForPresence(game, io).then(() => {
         advanceFromHalftime(game).catch((err) =>
           console.error(`[${game.roomCode}] advanceFromHalftime (pós-pausa):`, err),
@@ -1367,6 +1373,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
           resetAllReady(game);
           clearSeatPositions(game);
+          // Web Push: resultado + posição a quem não viu o jogo (fire-and-forget,
+          // antes de currentFixtures ser limpo — é daí que saem as equipas).
+          maybeNotifyMatchday(game, fixtures, completedMatchweek);
 
           // Advance state
           game.calendarIndex += 1;
@@ -2105,6 +2114,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // os ligados) e o jogo avançava sem ele — a jornada seguinte chegava-lhe
     // já jogada. Agora espera-se, e re-despacha-se quando ele voltar.
     if (computeAbsentees(game).length > 0) {
+      maybeNotifyWaiting(game);
       waitForPresence(game, io).then(() => {
         checkAllReady(game).catch((err) =>
           console.error(`[${game.roomCode}] checkAllReady (pós-pausa):`, err),

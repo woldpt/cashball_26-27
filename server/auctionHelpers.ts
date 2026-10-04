@@ -15,6 +15,7 @@ import {
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { emitCmNews, cmAuctionText, cmBombText, cmIsRecordSale } from "./cmNews";
 import { upcomingMatchweek } from "./game/lineupReady";
+import { maybeNotifyOutbid } from "./push";
 import { signingWage, AUCTION_BID_STEP, getAgentName, FORM_NEUTRAL, RES_NEUTRAL, CONTRACT_REQUEST_RESET_SQL } from "./gameConstants";
 
 interface AuctionDeps {
@@ -591,6 +592,9 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         if (!game.auctionTimers) game.auctionTimers = {};
         game.auctions[player.id] = {
           playerId: player.id,
+          // Nome guardado para o aviso de «ultrapassaram-te» (a BD não o dá
+          // sem query e o leilão é de curta duração).
+          playerName: player.name,
           sellerTeamId: player.team_id,
           isExClub,
           startingPrice,
@@ -791,6 +795,15 @@ export function createAuctionHelpers(deps: AuctionDeps) {
             currentHighBidTeamId: newHighBidTeamId,
             bidHistory,
           });
+
+          // Push a quem acabou de perder a liderança (NPC não conta; quem
+          // está a ver a app já viu o aviso no ecrã).
+          maybeNotifyOutbid(
+            game,
+            prevLeaderTeamId,
+            auction.playerName,
+            newHighBid,
+          );
 
           const humanTeamIds = new Set(
             Object.values(game.playersByName).map((p) => p.teamId).filter(Boolean),

@@ -31,6 +31,7 @@ import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
 import { computeMoms } from "./game/mom";
 import { computeMatchRatings, persistLastRatings } from "./game/ratings";
+import { maybeNotifyWaiting } from "./push";
 import {
   appendRoomEvent,
   clearMatchCheckpoint,
@@ -2331,6 +2332,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		// empatadas ausente.
 		if (computeAbsentees(game).length > 0) {
 			game._etGateRunning = false;
+			maybeNotifyWaiting(game);
 			void waitForPresence(game, io).then(() => {
 				continueFromEtGate(game).catch((err: any) =>
 					console.error(`[${game.roomCode}] continueFromEtGate (pós-pausa):`, err),

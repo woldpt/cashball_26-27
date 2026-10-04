@@ -16,6 +16,11 @@
  *        não se substituem entre si)
  *   P7 — throttle por (treinador, tipo, sala): um aviso de uma sala não cala
  *        o da outra, e um aviso travado nem chega a ler as subscrições
+ *   P8 — sala parada: avisa todos os ausentes com equipa em jogo, nada no
+ *        lobby e nada a quem está presente
+ *   P9 — leilão: avisa quem foi ultrapassado, nunca NPCs nem quem está a ver
+ *   P10 — fim de jornada: resultado + posição na tabela, só a ausentes
+ *   P11 — convite: chega a quem está offline (o socket não chega lá)
  *
  * Run: cd server && npm run test:push
  */
@@ -99,8 +104,17 @@ process.env.VAPID_PUBLIC = "test-public";
 process.env.VAPID_PRIVATE = "test-private";
 process.env.VAPID_SUBJECT = "mailto:test@example.com";
 
-const { notifyUser, maybeNotifyLastMissing, sendToCoach, pushTag, pushUrl } =
-  require("../push.ts");
+const {
+  notifyUser,
+  maybeNotifyLastMissing,
+  maybeNotifyWaiting,
+  maybeNotifyOutbid,
+  maybeNotifyMatchday,
+  notifyRoomInvite,
+  sendToCoach,
+  pushTag,
+  pushUrl,
+} = require("../push.ts");
 
 const SUB = (endpoint: string) => ({
   endpoint,
@@ -120,30 +134,54 @@ async function flush(): Promise<void> {
   for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
 }
 
-function makeLobby(
-  seats: Array<{ name: string; teamId: number | null; ready: boolean; status?: string }>,
+function makeGame(
+  phase: string,
+  seats: Array<{
+    name: string;
+    teamId: number | null;
+    ready?: boolean;
+    status?: string;
+    present?: boolean;
+  }>,
+  fixtures: Array<{
+    homeTeamId: number;
+    awayTeamId: number;
+    finalHomeGoals?: number;
+    finalAwayGoals?: number;
+  }> = [],
 ) {
   const map: any = {};
+  const players: any = {};
   for (const s of seats) {
     map[s.name] = {
       name: s.name,
       teamId: s.teamId,
       status: s.status || "member",
-      intent: { ready: s.ready },
+      intent: { ready: !!s.ready },
       seatEpoch: 0,
       deviceId: null,
       lastSeenAt: 0,
     };
+    if (s.present) {
+      players[s.name] = { name: s.name, teamId: s.teamId, socketId: `socket-${s.name}` };
+    }
   }
   return {
     roomCode: "ABCD",
-    gamePhase: "lobby",
+    gamePhase: phase,
     seats: map,
-    playersByName: {},
+    playersByName: players,
+    seatSeenAt: {},
     lockedCoaches: new Set<string>(),
-    currentFixtures: [],
+    currentFixtures: fixtures,
     db: null,
   } as any;
+}
+
+function makeLobby(
+  seats: Array<{ name: string; teamId: number | null; ready: boolean; status?: string }>,
+) {
+  return makeGame("lobby", seats);
 }
 
 test("P1 — flag desligada: nada toca na rede", async () => {
@@ -316,4 +354,100 @@ test("P7 — o cooldown é por (treinador, tipo, sala)", async () => {
     1,
   );
   assert.equal(sent.length, 3);
+});
+
+test("P8 — sala parada: avisa todos os ausentes com equipa em jogo", async () => {
+  const seats = [
+    { name: "Ivo", teamId: 10 },
+    { name: "Joana", teamId: 20, present: true },
+    { name: "Kiko", teamId: 30 }, // sem jogo nesta ronda
+  ];
+  const fixtures = [{ homeTeamId: 10, awayTeamId: 20 }];
+
+  reset();
+  maybeNotifyWaiting(makeGame("match_first_half", seats, fixtures));
+  await flush();
+  assert.equal(sent.length, 1, "só o ausente com equipa em jogo");
+  assert.match(sent[0].body.body, /Sala ABCD · A sala está parada à tua espera/);
+
+  // No lobby quem fala é o maybeNotifyLastMissing: aqui, silêncio.
+  reset();
+  maybeNotifyWaiting(makeGame("lobby", seats, fixtures));
+  await flush();
+  assert.equal(sent.length, 0);
+
+  // Toda a gente presente: nada a dizer.
+  reset();
+  maybeNotifyWaiting(
+    makeGame("match_first_half", [
+      { name: "Ivo", teamId: 10, present: true },
+      { name: "Joana", teamId: 20, present: true },
+    ], fixtures),
+  );
+  await flush();
+  assert.equal(sent.length, 0);
+});
+
+test("P9 — leilão: avisa quem foi ultrapassado, não NPCs nem presentes", async () => {
+  const seats = [
+    { name: "Lena", teamId: 10 },
+    { name: "Marco", teamId: 20, present: true },
+  ];
+
+  // Ultrapassado e ausente: aviso com nome e valor.
+  reset();
+  maybeNotifyOutbid(makeGame("match_second_half", seats), 10, "Ronaldo", 500000);
+  await flush();
+  assert.equal(sent.length, 1);
+  assert.equal(
+    sent[0].body.body,
+    "Sala ABCD · Ultrapassaram-te no leilão de Ronaldo (€500000)",
+  );
+
+  // Está a ver a app: já viu no ecrã.
+  reset();
+  maybeNotifyOutbid(makeGame("match_second_half", seats), 20, "Ronaldo", 500000);
+  await flush();
+  assert.equal(sent.length, 0);
+
+  // Equipa NPC (sem assento): nunca tem a quem avisar.
+  reset();
+  maybeNotifyOutbid(makeGame("match_second_half", seats), 99, "Ronaldo", 500000);
+  await flush();
+  assert.equal(sent.length, 0);
+});
+
+test("P10 — fim de jornada: resultado + posição, só a ausentes", async () => {
+  const seats = [
+    { name: "Nuno", teamId: 10 },
+    { name: "Olga", teamId: 20, present: true },
+  ];
+  const fixtures = [
+    { homeTeamId: 10, awayTeamId: 20, finalHomeGoals: 2, finalAwayGoals: 1 },
+  ];
+
+  reset();
+  const game = makeGame("match_second_half", seats, fixtures);
+  game.db = {
+    all: (_sql: string, cb: any) =>
+      cb(null, [
+        { id: 10, division: 1, name: "A", points: 9, goals_for: 5, goals_against: 2 },
+        { id: 20, division: 1, name: "B", points: 6, goals_for: 4, goals_against: 3 },
+      ]),
+  };
+  maybeNotifyMatchday(game, fixtures, 4);
+  await flush();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].body.body, "Sala ABCD · Jornada 4: 2-1 · 1.º lugar");
+  assert.equal(sent[0].body.tag, "matchday:ABCD");
+});
+
+test("P11 — convite chega a quem está offline", async () => {
+  reset();
+  notifyRoomInvite("Rita", "Ana", "ABCD");
+  await flush();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].body.body, "Ana convidou-te para a sala ABCD");
+  assert.equal(sent[0].body.url, "/?room=ABCD");
+  assert.equal(sent[0].body.type, "invite");
 });

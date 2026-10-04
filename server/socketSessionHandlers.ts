@@ -10,6 +10,7 @@ import {
   listTeamMatchActions,
 } from "./game/engine";
 import { serializeActiveAuctions } from "./auctionHelpers";
+import { notifyRoomInvite } from "./push";
 import {
   claimSeat,
   deleteSeat,
@@ -1459,7 +1460,11 @@ export function registerSessionSocketHandlers(
 		}
 		const target = findOnlineCoachSocket(toCoach);
 		if (!target) {
-			return reply({ ok: false, error: `${toCoach} já não está online.` });
+			// Offline: o socket não chega lá — o convite segue por push (o toque
+			// abre a app na sala certa, pelo deep link). Sem convite pendente:
+			// não há socket para o aceitar.
+			notifyRoomInvite(toCoach, session.name, roomCode);
+			return reply({ ok: true, toCoach, pushed: true });
 		}
 		if (target.roomCode === roomCode) {
 			return reply({ ok: false, error: `${toCoach} já está nesta sala.` });

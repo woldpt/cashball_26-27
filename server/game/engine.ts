@@ -23,6 +23,7 @@ import {
   isSeatPresent,
   waitForPresence,
 } from "../roomStateHelpers";
+import { maybeNotifyWaiting } from "../push";
 
 // Re-export so external files can still import from "./game/engine"
 export {
@@ -538,6 +539,7 @@ async function waitForMatchAction({
       text: `⏸ Sala em pausa — à espera de ${humanCoach.name}.`,
       broadcast: true,
     });
+    maybeNotifyWaiting(game);
     await waitForPresence(game, io);
   }
 
@@ -580,6 +582,7 @@ async function waitForMatchAction({
             type,
             absent: computeAbsentees(game),
           });
+          maybeNotifyWaiting(game);
           await waitForPresence(game, io);
           const entry = getPendingMatchActions(game).get(actionId);
           if (!entry) return; // foi consumida entretanto (leave/kick)

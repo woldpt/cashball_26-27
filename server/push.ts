@@ -8,8 +8,17 @@
  */
 
 const webpush = require("web-push");
-const auth = require("./auth");
-import { requiredTeamIds } from "./roomStateHelpers";
+// `auth` carrega-se à primeira utilização (não no import): meia dúzia de
+// módulos de jogo importam este ficheiro, e o auth abre a accounts.db no
+// load — não vale a pena abrir a BD a quem nunca chega a avisar ninguém
+// (testes, audits, salas sem push ligado).
+const auth = () => require("./auth");
+import {
+  computeAbsentees,
+  isSeatPresent,
+  requiredTeamIds,
+} from "./roomStateHelpers";
+import { getStandingsRows } from "./coreHelpers";
 import type { ActiveGame } from "./types";
 
 export type PushType = "waiting" | "auction" | "matchday" | "invite";
@@ -75,14 +84,14 @@ export async function saveSubscription(
   keys: unknown,
 ): Promise<boolean> {
   if (!isPushEnabled()) return false;
-  return auth.savePushSubscription(coachName, endpoint, keys);
+  return auth().savePushSubscription(coachName, endpoint, keys);
 }
 
 export async function removeSubscription(
   coachName: string,
   endpoint: string,
 ): Promise<boolean> {
-  return auth.removePushSubscription(coachName, endpoint);
+  return auth().removePushSubscription(coachName, endpoint);
 }
 
 /**
@@ -112,7 +121,7 @@ export async function notifyUser(
   try {
     if (!ensureVapid()) return 0;
     const subs: Array<{ endpoint: string; keys: string }> =
-      preloadedSubs || (await auth.getPushSubscriptions(coachName));
+      preloadedSubs || (await auth().getPushSubscriptions(coachName));
     if (!subs || subs.length === 0) return 0;
     const body = JSON.stringify({
       type: payload.type,
@@ -137,7 +146,7 @@ export async function notifyUser(
           sent += 1;
         } catch (err: any) {
           if (err?.statusCode === 410 || isDeadSubscription(err)) {
-            await auth.removePushSubscription(coachName, sub.endpoint);
+            await auth().removePushSubscription(coachName, sub.endpoint);
           } else {
             console.error(
               "[push] Falha ao notificar",
@@ -169,7 +178,7 @@ export async function sendToCoach(
   const roomCode = opts.roomCode || "";
   if (!(await throttleAllows(coachName, opts.type, roomCode))) return 0;
   const subs: Array<{ endpoint: string; keys: string }> =
-    await auth.getPushSubscriptions(coachName);
+    await auth().getPushSubscriptions(coachName);
   if (!subs || subs.length === 0) return 0;
   const sent = await notifyUser(
     coachName,
@@ -184,7 +193,7 @@ export async function sendToCoach(
     subs,
   );
   // Só depois de entregar: uma falha de rede não pode calar o cooldown todo.
-  if (sent > 0) await auth.markPushSent(coachName, opts.type, roomCode, Date.now());
+  if (sent > 0) await auth().markPushSent(coachName, opts.type, roomCode, Date.now());
   return sent;
 }
 
@@ -205,7 +214,7 @@ async function throttleAllows(
   roomCode: string,
 ): Promise<boolean> {
   const rows: Array<{ type: string; roomCode: string; sentAt: number }> =
-    await auth.getPushThrottle(coachName);
+    await auth().getPushThrottle(coachName);
   const row = rows.find(
     (r) => r.type === type && (r.roomCode || "") === roomCode,
   );
@@ -227,7 +236,7 @@ export function initPush(): void {
       "[push] ENABLE_PUSH=true mas VAPID_PUBLIC/VAPID_PRIVATE/VAPID_SUBJECT em falta — avisos desligados",
     );
   }
-  auth
+  auth()
     .purgePushThrottle(Date.now() - PUSH_THROTTLE_RETENTION_MS)
     .then((removed: number) =>
       console.log(`[push] pronto (throttle podado: ${removed || 0} linhas)`),
@@ -242,9 +251,22 @@ export function initPush(): void {
  * fechado). Nunca bloqueia nem rebenta o avanço do jogo.
  */
 export function maybeNotifyLastMissing(game: ActiveGame): void {
-  void doMaybeNotify(game).catch((err: any) =>
-    console.error("[push] maybeNotify:", err?.message || err),
+  fireAndForget("maybeNotify", doMaybeNotify(game));
+}
+
+/** Fire-and-forget com rede de segurança: o push nunca rebenta o jogo. */
+function fireAndForget(label: string, p: Promise<unknown>): void {
+  void p.catch((err: any) =>
+    console.error(`[push] ${label}:`, err?.message || err),
   );
+}
+
+/** Treinador com equipa neste id (assento durável, mesmo desligado). */
+function coachNameForTeam(game: ActiveGame, teamId: number): string | null {
+  for (const seat of Object.values(game.seats || {})) {
+    if (seat.status === "member" && seat.teamId === teamId) return seat.name;
+  }
+  return null;
 }
 
 async function doMaybeNotify(game: ActiveGame): Promise<void> {
@@ -264,4 +286,145 @@ async function doMaybeNotify(game: ActiveGame): Promise<void> {
     body: `Sala ${game.roomCode} · Falta a tua tática!`,
     roomCode: game.roomCode,
   });
+}
+
+/**
+ * Sala parada à espera de quem falta (meio de jogo: lesão, intervalo, decisão
+ * pendente, substituição). Sem isto o treinador ausente só descobre que a sala
+ * está congelada quando abre a app — e os outros esperam por ele.
+ *
+ * No lobby quem fala é o `maybeNotifyLastMissing` (só quando falta um): ali a
+ * sala ainda não está a andar e avisar todos os ausentes seria ruído.
+ */
+export function maybeNotifyWaiting(game: ActiveGame): void {
+  if (!isPushEnabled()) return;
+  if (game.gamePhase === "lobby") return;
+  const absent = computeAbsentees(game);
+  if (absent.length === 0) return;
+  for (const name of absent) {
+    fireAndForget(
+      "waiting",
+      sendToCoach(name, {
+        type: "waiting",
+        title: "CashBall",
+        body: `Sala ${game.roomCode} · A sala está parada à tua espera`,
+        roomCode: game.roomCode,
+      }),
+    );
+  }
+}
+
+/**
+ * Ultrapassaram-no num leilão. Só a quem não está a ver a app (um treinador com
+ * a janela aberta já viu o aviso no ecrã) e nunca a NPCs.
+ */
+export function maybeNotifyOutbid(
+  game: ActiveGame,
+  outbidTeamId: number | null,
+  playerName: string | undefined,
+  amount: number,
+): void {
+  if (!isPushEnabled()) return;
+  if (outbidTeamId == null) return;
+  const coach = coachNameForTeam(game, outbidTeamId);
+  if (!coach || isSeatPresent(game, coach)) return;
+  fireAndForget(
+    "outbid",
+    sendToCoach(coach, {
+      type: "auction",
+      title: "CashBall",
+      body: `Sala ${game.roomCode} · Ultrapassaram-te no leilão de ${playerName || "um jogador"} (€${amount})`,
+      roomCode: game.roomCode,
+    }),
+  );
+}
+
+/** Convite de sala a quem está offline (o socket só chega a quem está ligado). */
+export function notifyRoomInvite(
+  toCoach: string,
+  fromName: string,
+  roomCode: string,
+): void {
+  if (!isPushEnabled()) return;
+  fireAndForget(
+    "invite",
+    sendToCoach(toCoach, {
+      type: "invite",
+      title: "CashBall",
+      body: `${fromName} convidou-te para a sala ${roomCode}`,
+      roomCode,
+    }),
+  );
+}
+
+/**
+ * Fim de jornada: resultado do próprio jogo + posição na tabela, só a quem não
+ * estava a ver (os outros viram o ecrã de resultados ao vivo).
+ */
+export function maybeNotifyMatchday(
+  game: ActiveGame,
+  fixtures: any[],
+  matchweek: number,
+): void {
+  if (!isPushEnabled()) return;
+  const absent = computeAbsentees(game);
+  if (absent.length === 0) return;
+  fireAndForget(
+    "matchday",
+    sendMatchdayPushes(game, fixtures, matchweek, absent),
+  );
+}
+
+async function sendMatchdayPushes(
+  game: ActiveGame,
+  fixtures: any[],
+  matchweek: number,
+  absent: string[],
+): Promise<void> {
+  const position = await standingsPositionByTeam(game.db);
+  for (const name of absent) {
+    const seat = game.seats[name];
+    const fixture = fixtures.find(
+      (f) => f.homeTeamId === seat?.teamId || f.awayTeamId === seat?.teamId,
+    );
+    if (!fixture || seat?.teamId == null) continue;
+    const home = fixture.homeTeamId === seat.teamId;
+    const goalsFor = home ? fixture.finalHomeGoals : fixture.finalAwayGoals;
+    const goalsAgainst = home ? fixture.finalAwayGoals : fixture.finalHomeGoals;
+    const pos = position.get(seat.teamId);
+    fireAndForget(
+      "matchday",
+      sendToCoach(name, {
+        type: "matchday",
+        title: "CashBall",
+        body:
+          `Sala ${game.roomCode} · Jornada ${matchweek}: ${goalsFor}-${goalsAgainst}` +
+          (pos ? ` · ${pos}.º lugar` : ""),
+        roomCode: game.roomCode,
+      }),
+    );
+  }
+}
+
+/** Posição na própria divisão (mesma ordenação da tabela do Jornal). */
+async function standingsPositionByTeam(db: any): Promise<Map<number, number>> {
+  const rows: any[] = await new Promise((resolve) => {
+    db.all(
+      "SELECT id, division, name, points, goals_for, goals_against FROM teams",
+      (err: any, list: any[]) => resolve(err || !list ? [] : list),
+    );
+  });
+  const byDivision = new Map<number, any[]>();
+  for (const row of rows) {
+    const list = byDivision.get(row.division) || [];
+    list.push(row);
+    byDivision.set(row.division, list);
+  }
+  const position = new Map<number, number>();
+  for (const list of byDivision.values()) {
+    getStandingsRows(list).forEach((team, index) =>
+      position.set(team.id, index + 1),
+    );
+  }
+  return position;
 }
