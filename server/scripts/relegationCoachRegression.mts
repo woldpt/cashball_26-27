@@ -194,7 +194,7 @@ async function makeScenario(capPreused: boolean) {
     boardBudgetWarned: {},
     coachMatchesManaged: {},
     npcMatchesManaged: {},
-    dismissedCoachSince: {},
+    dismissedCoachSince: {}, dismissalOptions: {},
     dismissalsThisSeason: new Set<string>(
       capPreused ? ["CoachHumano"] : [],
     ),

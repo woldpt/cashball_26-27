@@ -803,6 +803,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
     coachMatchesManaged: {},
     npcMatchesManaged: {},
     dismissedCoachSince: {},
+    dismissalOptions: {},
     dismissalsThisSeason: new Set<string>(),
     kickedCoaches: new Set<string>(),
 

@@ -373,7 +373,11 @@ export function GameOverlays() {
 
       <DismissalModal
         dismissalModal={postMatchFlow.showDismissal ? dismissalModal : null}
-        onContinue={() => setDismissalModal(null)}
+        onContinue={() => {
+          queueEmit("confirmDismissalClub");
+          setDismissalModal(null);
+        }}
+        onSwap={(teamId) => queueEmit("swapDismissalClub", teamId)}
       />
 
 

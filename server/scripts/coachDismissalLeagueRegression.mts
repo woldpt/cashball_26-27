@@ -27,6 +27,8 @@ const require = createRequire(import.meta.url);
 const { createCoachDismissalHelpers } = require("../coachDismissalHelpers.ts") as {
   createCoachDismissalHelpers: (deps: any) => {
     processCoachEvents: (game: any) => Promise<void>;
+    handleSwapDismissalClub: (game: any, coachName: string, toTeamId: number) => Promise<void>;
+    handleConfirmDismissalClub: (game: any, coachName: string) => void;
   };
 };
 
@@ -174,7 +176,7 @@ function makeGame(db: any): any {
     playersByName: { Huma: { name: "Huma", teamId: 201, socketId: null, ready: false } },
     pendingJobOffers: {}, negativeBudgetStreak: {}, npcNegativeBudgetStreak: {}, boardBudgetWarned: {},
     coachMatchesManaged: {}, npcMatchesManaged: {}, dismissedCoachSince: {},
-    dismissalsThisSeason: new Set<string>(), coachMarketEvents: [],
+    dismissalOptions: {}, dismissalsThisSeason: new Set<string>(), coachMarketEvents: [],
     lockedCoaches: new Set<string>(),
   };
   const helpers = createCoachDismissalHelpers({
@@ -287,6 +289,39 @@ async function main() {
   const newTeamD = await teamRow(db, playerD.teamId);
   assert(newTeamD.division === 4, `D: sem últimos-4 livres na div 3, desceu para div ${newTeamD.division}`);
   assert(DIV4_BOTTOM4_NAMES.includes(newTeamD.name), `D: clube da div 4 atribuído está entre os últimos 4 classificados — obtido "${newTeamD.name}"`);
+
+  // ---------- Cenário E: troca imediata (despedimento + escolha, nunca sem clube) ----------
+  db = await setupDb();
+  ({ game, helpers } = makeGame(db));
+  await primeBudgetDismissal(game, 201);
+  try {
+    await helpers.processCoachEvents(game);
+  } finally {
+    restoreRandom();
+  }
+  const playerE = game.playersByName["Huma"];
+  const firstTeamId = playerE.teamId;
+  assert(firstTeamId != null && firstTeamId !== 201, "E: despedido fica logo com clube (nunca sem clube)");
+  const optsE: number[] = game.dismissalOptions["Huma"];
+  assert(Array.isArray(optsE) && optsE.length === 3 && optsE[0] === firstTeamId, "E: 3 clubes à escolha, o atribuído em primeiro");
+  const altId = optsE[1];
+  await helpers.handleSwapDismissalClub(game, "Huma", 999999);
+  assert(playerE.teamId === firstTeamId, "E: clube fora das opções é ignorado");
+  await helpers.handleSwapDismissalClub(game, "Huma", altId);
+  assert(playerE.teamId === altId, "E: troca para a alternativa escolhida");
+  assert((await teamRow(db, altId)).manager_id != null, "E: clube escolhido ficou com o humano");
+  assert((await teamRow(db, firstTeamId)).manager_id != null, "E: clube largado voltou a ter treinador (NPC)");
+  assert(
+    game.dismissalOptions["Huma"].includes(firstTeamId) && !game.dismissalOptions["Huma"].includes(altId),
+    "E: o clube largado passa a alternativa (dá para voltar atrás)",
+  );
+  game.gamePhase = "match_first_half";
+  await helpers.handleSwapDismissalClub(game, "Huma", firstTeamId);
+  assert(playerE.teamId === altId, "E: troca recusada a meio do jogo");
+  game.gamePhase = "lobby";
+  helpers.handleConfirmDismissalClub(game, "Huma");
+  await helpers.handleSwapDismissalClub(game, "Huma", firstTeamId);
+  assert(playerE.teamId === altId, "E: depois de assumir o comando já não há troca");
 
   console.log("\nPASS coachDismissalLeagueRegression");
 }

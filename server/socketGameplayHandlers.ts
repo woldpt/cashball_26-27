@@ -37,6 +37,8 @@ interface GameplayHandlerDeps {
   saveGameState: (game: ActiveGame) => void;
   handleAcceptJobOffer: (game: ActiveGame, coachName: string) => Promise<void>;
   handleDeclineJobOffer: (game: ActiveGame, coachName: string) => void;
+  handleConfirmDismissalClub: (game: ActiveGame, coachName: string) => void;
+  handleSwapDismissalClub: (game: ActiveGame, coachName: string, toTeamId: number) => Promise<void>;
   emitGlobalPlayerUpdate?: () => void;
   purgeEmptyRoom: (roomCode: string) => Promise<EmptyRoomPurgeResult>;
 }
@@ -57,6 +59,8 @@ export function registerGameplaySocketHandlers(
     saveGameState,
     handleAcceptJobOffer,
     handleDeclineJobOffer,
+    handleConfirmDismissalClub,
+    handleSwapDismissalClub,
     emitGlobalPlayerUpdate,
     purgeEmptyRoom,
   } = deps;
@@ -496,5 +500,21 @@ export function registerGameplaySocketHandlers(
     const name = game.socketToName[socket.id];
     if (!name) return;
     handleDeclineJobOffer(game, name);
+  });
+
+  socket.on("confirmDismissalClub", () => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const name = game.socketToName[socket.id];
+    if (!name) return;
+    handleConfirmDismissalClub(game, name);
+  });
+
+  socket.on("swapDismissalClub", async (teamId) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const name = game.socketToName[socket.id];
+    if (!name || !Number.isInteger(teamId)) return;
+    await handleSwapDismissalClub(game, name, teamId);
   });
 }

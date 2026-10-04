@@ -12,10 +12,15 @@ export const REASON_TEXT = {
 };
 
 /**
- * @param {{ dismissalModal: {reason: string, teamName: string, detail: string, newTeam: object}|null, onContinue: function }} props
+ * @param {Object} props
+ * @param {{reason: string, teamName: string, detail: string, newTeam: object}|null} props.dismissalModal Despedimento + clube atribuído (`newTeam.dismissalOptions`: alternativas).
+ * @param {function(): void} props.onContinue Confirma o clube atual e fecha.
+ * @param {function(number): void} props.onSwap Troca o clube atual por uma alternativa (teamId).
+ * @returns {JSX.Element}
  */
-export function DismissalModal({ dismissalModal, onContinue }) {
+export function DismissalModal({ dismissalModal, onContinue, onSwap }) {
 	const newTeam = dismissalModal?.newTeam;
+	const options = newTeam?.dismissalOptions ?? [];
 	const colorPrimary = newTeam?.colorPrimary || "#95d4b3";
 	const colorSecondary = newTeam?.colorSecondary || "#003824";
 
@@ -132,6 +137,41 @@ export function DismissalModal({ dismissalModal, onContinue }) {
 							>
 								Assumir o comando
 							</button>
+
+							{options.length > 0 && (
+								<div className="w-full border-t border-zinc-800 pt-4">
+									<p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 text-center">
+										Ou escolhe outro clube
+									</p>
+									<ul className="flex flex-col gap-2">
+										{options.map((o) => (
+											<li key={o.teamId}>
+												<button
+													onClick={() => onSwap(o.teamId)}
+													className="w-full flex items-center gap-3 rounded-lg border border-zinc-700/40 bg-zinc-800/50 px-3 py-2 text-left transition-all hover:bg-zinc-800 active:scale-[0.98]"
+												>
+													<span
+														aria-hidden
+														className="w-7 h-7 shrink-0 rounded-md border border-white/20"
+														style={{ backgroundColor: o.colorPrimary }}
+													/>
+													<span className="min-w-0 flex-1">
+														<span className="block truncate text-sm font-bold text-white">
+															{o.teamName}
+														</span>
+														<span className="block text-[10px] text-zinc-400">
+															{DIVISION_NAMES[o.division] || `Divisão ${o.division}`} · {o.wins}V {o.draws}E {o.losses}D · {formatCurrency(o.budget)}
+														</span>
+													</span>
+													<span aria-hidden className="material-symbols-outlined text-zinc-500" style={{ fontSize: "1.1rem" }}>
+														swap_horiz
+													</span>
+												</button>
+											</li>
+										))}
+									</ul>
+								</div>
+							)}
 						</div>
 					)}
 				</>

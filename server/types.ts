@@ -338,6 +338,7 @@ export interface ActiveGame {
       detail?: string;
     }
   >; // coachName → info de despedimento
+  dismissalOptions: Record<string, number[]>; // coachName → clubes (atual + alternativas) da troca imediata pós-despedimento (transitório)
   dismissalsThisSeason: Set<string>; // coaches despedidos na época actual (máx 1 por época)
 
   // ── Coaches expulso da sala pelo Admin (ban permanente, persistido) ──

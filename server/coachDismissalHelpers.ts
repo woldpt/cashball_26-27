@@ -79,6 +79,21 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
+  /** Cartão de um clube oferecido na troca pós-despedimento (só o que o modal mostra). */
+  const toClubOption = (t: AnyRow) => ({
+    teamId: t.id,
+    teamName: t.name,
+    division: t.division,
+    budget: t.budget ?? 0,
+    points: t.points ?? 0,
+    wins: t.wins ?? 0,
+    draws: t.draws ?? 0,
+    losses: t.losses ?? 0,
+    colorPrimary: t.color_primary ?? "#888888",
+    colorSecondary: t.color_secondary ?? "#ffffff",
+    crest: t.crest ?? null,
+  });
+
   /**
    * Regista um evento do mercado de treinadores para o resumo semanal
    * (modal "Mercado de Treinadores" emitido após cada jornada).
@@ -125,6 +140,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     coachName: string,
     team: AnyRow,
     isNew: boolean,
+    dismissalOptions?: AnyRow[],
   ): Promise<void> {
     const player = game.playersByName[coachName];
     if (!player?.socketId) return;
@@ -153,6 +169,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
           coaches,
           coachAvatars,
           isNew,
+          ...(dismissalOptions && dismissalOptions.length > 0
+            ? { dismissalOptions: dismissalOptions.map(toClubOption) }
+            : {}),
         });
       });
 
@@ -587,6 +606,38 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     return true;
   }
 
+  /**
+   * Põe o treinador humano num clube: DB, assento durável, carência e streaks
+   * a zero, notícias do clube limpas (era NPC). Não emite nada ao cliente.
+   */
+  async function assignCoachToTeam(
+    game: ActiveGame,
+    coachName: string,
+    managerId: number,
+    team: AnyRow,
+  ): Promise<void> {
+    const player = game.playersByName[coachName];
+    if (!player) return;
+    await execQuiet(game, "UPDATE teams SET manager_id = ? WHERE id = ?", [
+      managerId,
+      team.id,
+    ]);
+    player.teamId = team.id;
+    // Recriar o assento (apagado no despedimento) com o novo clube: sem isto
+    // a sala não congela na ausência dele e um restart perde-lhe a equipa.
+    setSeatTeamId(game, coachName, team.id);
+
+    // Reiniciar carência, streak de orçamento e aviso da direcção: o treinador
+    // herda um clube novo, não deve ser avaliado pelos resultados/contas do antecessor.
+    game.coachMatchesManaged[coachName] = 0;
+    game.negativeBudgetStreak[team.id] = 0;
+    game.boardBudgetWarned[team.id] = 0;
+
+    // Era NPC: limpar as notícias acumuladas antes de entregar o clube —
+    // sem isto o treinador herdava a caixa cheia como não lida.
+    await execQuiet(game, "DELETE FROM club_news WHERE team_id = ?", [team.id]);
+  }
+
   async function autoAssignDismissedCoach(
     game: ActiveGame,
     coachName: string,
@@ -612,44 +663,45 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       fromDivision <= 4
         ? await runAll<AnyRow>(
             game.db,
-            "SELECT id, name, division, budget, color_primary, color_secondary, " +
-              "points, wins, draws, losses, goals_for, goals_against, " +
-              "stadium_capacity, stadium_name FROM teams WHERE division BETWEEN ? AND 4",
+            "SELECT * FROM teams WHERE division BETWEEN ? AND 4",
             [fromDivision],
           )
         : [];
 
-    let team: AnyRow | undefined;
-    for (let div = fromDivision; div <= 4 && !team; div++) {
+    const shuffle = <T,>(arr: T[]): T[] =>
+      arr
+        .map((v) => [Math.random(), v] as const)
+        .sort((a, b) => a[0] - b[0])
+        .map(([, v]) => v);
+    const free = (t: AnyRow) => t.id !== oldTeamId && !takenSet.has(t.id);
+
+    // Ordem de preferência: por divisão, primeiro os últimos N classificados
+    // (sorteados entre si). Quem sobra de cada divisão fica para o fim — assim
+    // nunca falta clube quando os últimos lugares estão todos ocupados por
+    // outros humanos.
+    const preferred: AnyRow[] = [];
+    const spare: AnyRow[] = [];
+    for (let div = fromDivision; div <= 4; div++) {
       const divisionTeams = allCandidates.filter((t) => t.division === div);
       if (divisionTeams.length === 0) continue;
-      const bottomPlaces = getStandingsRows(divisionTeams).slice(
-        -REASSIGN_BOTTOM_PLACES,
+      const bottomIds = new Set(
+        getStandingsRows(divisionTeams)
+          .slice(-REASSIGN_BOTTOM_PLACES)
+          .map((t) => t.id),
       );
-      const candidates = bottomPlaces.filter(
-        (t) => t.id !== oldTeamId && !takenSet.has(t.id),
+      preferred.push(
+        ...shuffle(divisionTeams.filter((t) => bottomIds.has(t.id) && free(t))),
       );
-      if (candidates.length > 0) {
-        team = candidates[Math.floor(Math.random() * candidates.length)];
-        break;
-      }
+      spare.push(
+        ...shuffle(divisionTeams.filter((t) => !bottomIds.has(t.id) && free(t))),
+      );
     }
-
-    // Fallback: os últimos N lugares de TODAS as divisões elegíveis estão
-    // ocupados por outros humanos — relaxar para qualquer clube disponível na
-    // mesma ordem de divisões, para nunca ficar o treinador sem clube.
-    if (!team) {
-      for (let div = fromDivision; div <= 4 && !team; div++) {
-        const pool = allCandidates.filter(
-          (t) => t.division === div && t.id !== oldTeamId && !takenSet.has(t.id),
-        );
-        if (pool.length > 0) {
-          console.warn(
-            `[${game.roomCode}] autoAssignDismissedCoach: bottom-${REASSIGN_BOTTOM_PLACES} places unavailable for ${coachName}; assigning any available club in div ${div}`,
-          );
-          team = pool[Math.floor(Math.random() * pool.length)];
-        }
-      }
+    const ordered = [...preferred, ...spare];
+    const team: AnyRow | undefined = ordered[0];
+    if (team && preferred.length === 0) {
+      console.warn(
+        `[${game.roomCode}] autoAssignDismissedCoach: bottom-${REASSIGN_BOTTOM_PLACES} places unavailable for ${coachName}; assigning any available club`,
+      );
     }
 
     if (!team) {
@@ -671,29 +723,20 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       return;
     }
 
-    // Assign in DB and state
-    await execQuiet(game, "UPDATE teams SET manager_id = ? WHERE id = ?", [
-      mgr.id,
-      team.id,
-    ]);
-    player.teamId = team.id;
-    // Recriar o assento (apagado no despedimento) com o novo clube: sem isto
-    // a sala não congela na ausência dele e um restart perde-lhe a equipa.
-    setSeatTeamId(game, coachName, team.id);
+    await assignCoachToTeam(game, coachName, mgr.id, team);
     delete game.dismissedCoachSince[coachName];
 
-    // Reiniciar carência, streak de orçamento e aviso da direcção: o treinador
-    // herda um clube novo, não deve ser avaliado pelos resultados/contas do antecessor.
-    game.coachMatchesManaged[coachName] = 0;
-    game.negativeBudgetStreak[team.id] = 0;
-    game.boardBudgetWarned[team.id] = 0;
-
-    // Era NPC: limpar as notícias acumuladas antes de entregar o clube —
-    // sem isto o treinador herdava a caixa cheia como não lida.
-    await execQuiet(game, "DELETE FROM club_news WHERE team_id = ?", [team.id]);
+    // Troca imediata: o treinador já tem o clube (nunca fica sem ele); o modal
+    // oferece-lhe mais 2 como alternativa até confirmar ou o jogo recomeçar.
+    const alternatives = ordered.slice(1, 3);
+    if (alternatives.length > 0) {
+      game.dismissalOptions[coachName] = [team, ...alternatives].map((t) => t.id);
+    } else {
+      delete game.dismissalOptions[coachName];
+    }
 
     // Notify coach
-    await emitTeamAssigned(game, coachName, team, true);
+    await emitTeamAssigned(game, coachName, team, true, alternatives);
 
     await recordMarketEvent(game, {
       type: "hiring",
@@ -783,6 +826,8 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
   const processCoachEvents = async (game: ActiveGame): Promise<void> => {
     // Resumo semanal do mercado de treinadores (limpo após emissão do report)
     game.coachMarketEvents = [];
+    // A janela de troca pós-despedimento fecha com a jornada seguinte.
+    game.dismissalOptions = {};
 
     // 1. Carregar equipas e forms
     const allTeams = await runAll<AnyRow>(game.db, "SELECT * FROM teams");
@@ -1159,11 +1204,95 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     delete game.pendingJobOffers[coachName];
   };
 
+  // ── TROCA IMEDIATA PÓS-DESPEDIMENTO ───────────────────────────────────────
+
+  const MATCH_RUNNING_PHASES = new Set([
+    "match_first_half",
+    "match_halftime",
+    "match_second_half",
+    "match_et_gate",
+    "match_extra_time",
+  ]);
+
+  /** «Assumir o comando»: fecha a janela de troca (o clube atual fica). */
+  const handleConfirmDismissalClub = (game: ActiveGame, coachName: string): void => {
+    delete game.dismissalOptions[coachName];
+  };
+
+  /**
+   * Troca o clube atribuído no despedimento por uma das alternativas oferecidas.
+   * O treinador nunca fica sem clube: o novo é atribuído e só depois o antigo
+   * é devolvido a um treinador NPC. A janela é a mesma enquanto não confirmar
+   * (o clube que largou volta a ser alternativa) e fecha com a jornada seguinte.
+   */
+  const handleSwapDismissalClub = async (
+    game: ActiveGame,
+    coachName: string,
+    toTeamId: number,
+  ): Promise<void> => {
+    const player = game.playersByName[coachName];
+    const options = game.dismissalOptions[coachName];
+    if (!player || player.teamId == null || !options) return;
+    if (!options.includes(toTeamId) || toTeamId === player.teamId) return;
+    // A meio do jogo a equipa nova entraria na ronda sem tática nem 11 validados.
+    if (MATCH_RUNNING_PHASES.has(game.gamePhase)) return;
+
+    const fromTeamId = player.teamId;
+    const taken = Object.values(game.playersByName).some(
+      (p) => p.name !== coachName && p.teamId === toTeamId,
+    );
+    const [toTeam, fromTeam, mgr] = await Promise.all([
+      runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [toTeamId]),
+      runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [fromTeamId]),
+      runGet<{ id: number }>(
+        game.db,
+        "SELECT id FROM managers WHERE name = ?",
+        [coachName],
+      ),
+    ]);
+    if (taken || !toTeam || !fromTeam || !mgr) {
+      // Outro humano ficou com o clube entretanto: tira-o das alternativas.
+      game.dismissalOptions[coachName] = options.filter((id) => id !== toTeamId);
+      return;
+    }
+
+    await assignCoachToTeam(game, coachName, mgr.id, toTeam);
+    // O clube largado volta a ter treinador NPC (e fica como alternativa).
+    await execQuiet(
+      game,
+      "UPDATE teams SET manager_id = NULL WHERE id = ?",
+      [fromTeamId],
+    );
+    await hireNpcManager(game, fromTeam, coachName);
+
+    game.dismissalOptions[coachName] = options.map((id) =>
+      id === toTeamId ? fromTeamId : id,
+    );
+    const alternatives = (
+      await Promise.all(
+        game.dismissalOptions[coachName]
+          .filter((id) => id !== toTeamId)
+          .map((id) => runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [id])),
+      )
+    ).filter((t): t is AnyRow => !!t);
+
+    await emitTeamAssigned(game, coachName, toTeam, true, alternatives);
+    io.to(game.roomCode).emit("systemMessage", {
+      text: `${coachName} passou de ${fromTeam.name} para ${toTeam.name}.`,
+      broadcast: true,
+      cm: true,
+    });
+    broadcastTeamsData(game);
+    saveGameState(game);
+  };
+
   return {
     processCoachEvents,
     processRelegatedHumanCoaches,
     handleAcceptJobOffer,
     handleDeclineJobOffer,
+    handleConfirmDismissalClub,
+    handleSwapDismissalClub,
     resendPendingJobOffer,
     resendBoardWarning,
   };
