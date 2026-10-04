@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
  *
  * Selo transitório sobre o hero do MEU jogo quando o árbitro apita (só
  * aparece enquanto `whistle` está definido — o GameContext limpa-o ao fim
- * de 4,5 s). O apito é igual para todos os resultados; a frase é que muda
+ * de 5 s). O apito é igual para todos os resultados; a frase é que muda
  * com o desfecho, na perspetiva da minha equipa.
  */
 
@@ -47,14 +47,14 @@ export function FinalWhistleStamp({ whistle, hColor = "#3b82f6", aColor = "#f43f
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: -8 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="animate-heartbeat px-5 py-2 rounded-full border bg-surface-container-high/85 backdrop-blur-sm"
+          className="animate-heartbeat px-8 py-4 rounded-full border-2 bg-surface-container-high/90 backdrop-blur-sm"
           style={{
-            borderColor: `${hColor}55`,
-            boxShadow: `0 0 26px ${hColor}30, 0 0 10px ${aColor}25`,
+            borderColor: `${hColor}aa`,
+            boxShadow: `0 0 60px ${hColor}55, 0 0 24px ${aColor}45`,
           }}
         >
-          <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-on-surface">
-            <span aria-hidden="true">📯</span>
+          <span className="flex items-center gap-3 text-lg sm:text-2xl font-black uppercase tracking-[0.2em] text-on-surface">
+            <span aria-hidden="true" className="text-3xl sm:text-4xl">📯</span>
             <span>Apito final · {whistle.myGoals}–{whistle.oppGoals}</span>
           </span>
         </motion.div>
@@ -63,7 +63,7 @@ export function FinalWhistleStamp({ whistle, hColor = "#3b82f6", aColor = "#f43f
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="text-xs font-bold text-on-surface-variant text-center px-4"
+          className="text-sm font-bold text-on-surface text-center px-4"
         >
           {phrase}
         </motion.p>

@@ -810,7 +810,7 @@ year: seasonYear,
 	// marcador final presente E relógio parado nos 90'/120'. As chaves e os
 	// formatos espelham o humor pós-jogo (incluindo a guarda `mom` na liga);
 	// na taça sem `winnerId` ainda há prolongamento/penáltis — o apito espera.
-	// Apito igual para V/E/D; o selo limpa-se sozinho ao fim de 4,5 s.
+	// Apito igual para V/E/D; o selo limpa-se sozinho ao fim de 5 s (= atraso do landing no GameOverlays).
 	useEffect(() => {
 		if (isPlayingMatch || liveMinute < 90) return;
 		const w = computeFinalWhistle({
@@ -823,7 +823,7 @@ year: seasonYear,
 		whistledKeysRef.current[w.competition] = w.key;
 		playWhistleSound();
 		setFinalWhistle({ key: w.key, outcome: w.outcome, myGoals: w.myGoals, oppGoals: w.oppGoals });
-		const t = setTimeout(() => setFinalWhistle(null), 4500);
+		const t = setTimeout(() => setFinalWhistle(null), 5000);
 		return () => clearTimeout(t);
 	}, [matchResults, cupRoundResults, isPlayingMatch, liveMinute, me?.teamId, season]);
 
