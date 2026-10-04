@@ -157,7 +157,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                 {revealed && (
                   <CelebrationBurst
                     seed={`season-${displayYear}`}
-                    showChampagne={false}
+                    showBalls={false}
                   />
                 )}
                 <motion.span

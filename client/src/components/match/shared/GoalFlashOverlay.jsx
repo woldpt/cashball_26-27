@@ -31,7 +31,7 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  * Variante `card` (cards de jogos com treinador humano no `LiveFixtureRow`):
  * a mesma fila, mas renderizada inline (`absolute inset-0`, sem portal) e em
  * ponto pequeno — wash + carimbo "GOLO!" quando marca o lado do humano,
- * variante vermelha quando marca o NPC. Confete compacto (`showChampagne`
+ * variante vermelha quando marca o NPC. Confete compacto (`showBalls`
  * false) só no golo do lado do humano; o do NPC leva só o carimbo vermelho.
  * ─────────────────────────────────────────────────────────────────────────
  *
@@ -163,7 +163,7 @@ export function GoalFlashOverlay({
         <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
           <CelebrationBurst
             seed={`${moment.side}-${moment.ts}-${moment.seq}`}
-            showChampagne={false}
+            showBalls={false}
             origin={origin}
           />
         </div>,
