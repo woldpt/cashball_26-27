@@ -1,3 +1,9 @@
+## Skills: diagnóstico de bugs e retrospetiva (2026-10-04)
+- Avaliado o repo `mattpocock/skills` (40+ skills para Claude Code/Codex, assumem issue tracker e sub-agentes). Importadas **só 2**, escritas de raiz em pt-PT em vez de copiadas.
+- `.pi/skills/diagnosing-bugs/SKILL.md` (dispara sozinha): **loop vermelho primeiro** com o catálogo de reprodutores cá (`audit:gamestate <ROOM_CODE>`, `audit:session`, `test:crash-recovery`, `test:session-freeze`, `test:connect-smoke`, `test:engine-unit`, harnesses mobile) → minimizar → 3–5 hipóteses falsificáveis → uma variável por vez (`[DEBUG-xxxx]`) → regressão no seam correto (sem seam = achado) → limpeza + hipótese no commit. Embutida a regra "jamais fixar por hipótese".
+- `.pi/skills/retro/SKILL.md` (só `/skill:retro`): candidatos por categoria (navegação, checks que faltam, regra mecânica → check em vez de prosa, teto do `AGENTS.md`/`NOTES.md`, economia de ferramentas, no-ops, acesso a informação), ordenados por gravidade, aplicados só com OK.
+- Verificação: frontmatter dos 2 SKILL.md parseado com o `yaml` do pi (nomes válidos; descrições 236 e 151 chars ≤1024) — markdown não leva `typecheck`/`lint`/`test:mobile`.
+
 ## Deploy v26.10.10 no rick (2026-10-03)
 - Funcionários completos (F1+F2+F3) com caricaturas SVG, clima no cartão do próximo jogo, gates por clube e não por presença, fadiga contínua com o clima; `backend Healthy`.
 
