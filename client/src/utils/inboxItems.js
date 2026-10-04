@@ -596,8 +596,9 @@ function cupDrawArticle(n, viewerTeamId) {
  * A tabela secca desenha-se no detalhe do Jornal; aqui ficam título, corpo
  * pesquisável e o campeão clicável.
  * @param {object} n linha `league_final`
+ * @param {number|string|null} viewerTeamId equipa do treinador (só cliente)
  */
-function leagueFinalArticle(n) {
+function leagueFinalArticle(n, viewerTeamId = null) {
   const facts = parseNewsFacts(n) || {};
   const rows = Array.isArray(facts.rows) ? facts.rows : [];
   const divName = facts.divName || "liga";
@@ -621,7 +622,7 @@ function leagueFinalArticle(n) {
     ),
     title,
     body,
-    facts,
+    facts: { ...facts, viewerTeamId },
   };
 }
 /**
@@ -814,7 +815,7 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   if (String(n?.type || "") === "board_warning") return boardWarningArticle(n);
   if (String(n?.type || "") === "cup_draw") return cupDrawArticle(n, viewerTeamId);
   if (String(n?.type || "") === "sponsor_offer") return sponsorOfferArticle(n);
-  if (String(n?.type || "") === "league_final") return leagueFinalArticle(n);
+  if (String(n?.type || "") === "league_final") return leagueFinalArticle(n, viewerTeamId);
   if (String(n?.type || "") === "weekly_finance") return weeklyFinanceArticle(n);
   if (String(n?.type || "") === "injury" || String(n?.type || "") === "suspension")
     return medicalArticle(n);

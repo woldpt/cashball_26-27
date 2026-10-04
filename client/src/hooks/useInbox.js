@@ -49,6 +49,7 @@ import {
  *   redFlags: number,
  *   selected: object|null,
  *   select: (id: string) => void,
+ *   preview: (id: string) => void,
  *   selectNextUnread: () => void,
  *   hasNextUnread: boolean,
  *   markAllRead: () => void,
@@ -529,6 +530,12 @@ export function useInbox() {
     [markRead],
   );
 
+  // Pré-visualização sem marcar como lida (setas na lista, coerência de
+  // filtro/pesquisa): só os cliques marcam leitura.
+  const preview = useCallback((id) => {
+    setSelectedId(id);
+  }, []);
+
   // A seleção automática (primeira abertura) materializa-se via `select`
   // para ficar marcada como lida — senão mostrava selecionada no detalhe
   // mas continuava nova e o contador não mexia. Só corre sem seleção
@@ -605,6 +612,7 @@ export function useInbox() {
     selected,
     isUnread,
     select,
+    preview,
     selectNextUnread,
     hasNextUnread: Boolean(nextUnread),
     markAllRead,
