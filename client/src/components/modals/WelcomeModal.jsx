@@ -38,7 +38,8 @@ function Crest({ crest, teamName, accent }) {
       <img
         src={crest}
         alt={`Emblema do ${teamName}`}
-        className="relative w-20 h-20 sm:w-24 sm:h-24 short:w-16 short:h-16 object-contain drop-shadow-xl bg-white rounded-xl p-1.5 border-2 border-white/20"
+        className="relative w-20 h-20 sm:w-24 sm:h-24 short:w-16 short:h-16 object-contain drop-shadow-xl rounded-xl p-1.5 border-2 border-white/20 shadow-md"
+        style={{ backgroundColor: accent }}
         onError={() => setFailed(true)}
       />
     );

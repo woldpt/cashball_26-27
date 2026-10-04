@@ -22,7 +22,8 @@ function TeamMark({ team, name }) {
         src={team.crest}
         alt={label}
         onError={(e) => { e.currentTarget.style.display = "none"; }}
-        className="w-4 h-4 object-contain bg-white rounded-sm p-px shrink-0 border border-outline-variant/20"
+        className="w-4 h-4 object-contain rounded-sm p-px shrink-0 border border-outline-variant/20 shadow-md"
+        style={{ backgroundColor: team?.color_primary || "#333" }}
         loading="lazy"
       />
     );

@@ -39,7 +39,8 @@ export function TeamCrest({ team, isMine = false, coach = null, size = "md", rot
           alt={team.name || "crest"}
           onError={() => setImgFailed(true)}
           style={mediaStyle}
-          className={`${dims} object-contain bg-white p-1.5 border-2 ${isMine ? "border-primary" : "border-outline-variant/20"}`}
+          className={`${dims} object-contain p-1.5 border-2 shadow-md ${isMine ? "border-primary" : "border-outline-variant/20"}`}
+          style={{ backgroundColor: team?.color_primary || "#333" }}
           loading="lazy"
         />
       ) : (
