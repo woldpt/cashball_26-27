@@ -286,6 +286,8 @@ export function LiveMatchHero({
                 odds={odds}
                 hColor={hInfo?.color_primary}
                 aColor={aInfo?.color_primary}
+                hName={hInfo?.name}
+                aName={aInfo?.name}
               />
             )}
           </div>

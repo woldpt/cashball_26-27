@@ -182,6 +182,7 @@ import {
 } from "./game/engine";
 import { generateAITactic } from "./game/matchCalculations";
 import { halftimeSubPhrase } from "./game/commentary";
+import { loadSquadRatings } from "./game/oddsSquad";
 import { computeMoms } from "./game/mom";
 import {
   appendRoomEvent,
@@ -848,6 +849,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           },
         );
       });
+      const squadByTeamId = await loadSquadRatings(game.db);
       const positionByTeamId = new Map<number, number>();
       const divisionByTeamId = new Map<number, number>();
       const byDivision = new Map<number, any[]>();
@@ -875,12 +877,16 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             divisionByTeamId.get(fixture.homeTeamId) ?? 4;
           (fixture.homeTeam as any).position =
             positionByTeamId.get(fixture.homeTeamId) ?? null;
+          (fixture.homeTeam as any).squad =
+            squadByTeamId.get(fixture.homeTeamId) ?? null;
         }
         if (fixture.awayTeam) {
           (fixture.awayTeam as any).division =
             divisionByTeamId.get(fixture.awayTeamId) ?? 4;
           (fixture.awayTeam as any).position =
             positionByTeamId.get(fixture.awayTeamId) ?? null;
+          (fixture.awayTeam as any).squad =
+            squadByTeamId.get(fixture.awayTeamId) ?? null;
         }
         const { t1, t2 } = fixtureTactics[fi];
         generateIntroEvents(fixture, t1, t2);

@@ -1636,10 +1636,12 @@ export function generateIntroEvents(
       {
         division: homeTeam?.division ?? 4,
         position: homeTeam?.position ?? null,
+        squad: homeTeam?.squad ?? null,
       },
       {
         division: awayTeam?.division ?? 4,
         position: awayTeam?.position ?? null,
+        squad: awayTeam?.squad ?? null,
       },
     );
     fixture.events.push({

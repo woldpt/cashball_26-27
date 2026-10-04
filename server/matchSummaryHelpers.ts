@@ -4,6 +4,7 @@ import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { persistMoms } from "./momHelpers";
 import { computeMatchRatings, persistLastRatings } from "./game/ratings";
 import { computeMatchOdds } from "./game/commentary";
+import { loadSquadRatings } from "./game/oddsSquad";
 import { getWeatherForFixture } from "./game/matchCalculations";
 import { explainAttendance, logMatchMedicalNews, logPostMatchRecap } from "./coreHelpers";
 import {
@@ -853,9 +854,18 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         opponent.id,
       );
 
+      const squads = await loadSquadRatings(game.db);
       const odds = computeMatchOdds(
-        { division: isHome ? team.division : opponent.division, position: null },
-        { division: isHome ? opponent.division : team.division, position: null },
+        {
+          division: isHome ? team.division : opponent.division,
+          position: null,
+          squad: squads.get(isHome ? team.id : opponent.id) ?? null,
+        },
+        {
+          division: isHome ? opponent.division : team.division,
+          position: null,
+          squad: squads.get(isHome ? opponent.id : team.id) ?? null,
+        },
       );
 
       const venue =
@@ -978,14 +988,17 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       opponent.id,
     );
 
+    const squads = await loadSquadRatings(game.db);
     const odds = computeMatchOdds(
       {
+        squad: squads.get(isHome ? team.id : opponent.id) ?? null,
         division: isHome ? team.division : opponent.division,
         position: isHome
           ? standingsIndex.get(team.id) || null
           : standingsIndex.get(opponent.id) || null,
       },
       {
+        squad: squads.get(isHome ? opponent.id : team.id) ?? null,
         division: isHome ? opponent.division : team.division,
         position: isHome
           ? standingsIndex.get(opponent.id) || null

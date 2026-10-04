@@ -1128,6 +1128,9 @@ function tacticStartPhrase(
 // minuto 1 usam esta mesma função, garantindo odds idênticas no TacticsView
 // e durante o jogo. Sem seed — o resultado depende apenas das equipas.
 //
+// O plantel (squad, ver oddsSquad.ts) ajusta a força pelo desvio à média da
+// divisão: vender/comprar craques, lesões e suspensões mexem nas odds.
+//
 // A força combina a divisão (gap estrutural: uma equipa da 1ª divisão é muito
 // mais forte que uma da 4ª) com a posição dentro da divisão. Em jogos da Taça
 // a posição é desconhecida (null) → usa-se apenas a divisão.
@@ -1141,16 +1144,26 @@ const ODDS_DRAW_BASE = 0.09; // empate improvável no gigante vs fraco (~9% → 
 const ODDS_DRAW_CLOSE = 0.21; // +proximidade → ~30% no jogo igual (odd ~3,4)
 const ODDS_MARGIN = 1.05;
 
+// Média típica de skill (top 14) por divisão — o plantel só move a força pelo
+// desvio a esta média, para não contar a divisão duas vezes.
+const ODDS_SQUAD_TYPICAL = [47, 32, 22, 12, 12];
+const ODDS_SQUAD_WEIGHT = 0.8;
+
 interface OddsTeam {
   division?: number | null;
   position?: number | null;
+  squad?: number | null;
 }
 
 function oddsStrength(team: OddsTeam): number {
   const division = Math.max(1, Math.min(5, Math.round(team?.division ?? 4)));
   const base = ODDS_DIVISION_BASE[division - 1] ?? 15;
   const position = team?.position ?? (ODDS_TEAM_COUNT + 1) / 2;
-  return base + ((ODDS_TEAM_COUNT + 1) / 2 - position) * 3;
+  const squadAdj =
+    team?.squad != null
+      ? (team.squad - ODDS_SQUAD_TYPICAL[division - 1]) * ODDS_SQUAD_WEIGHT
+      : 0;
+  return base + ((ODDS_TEAM_COUNT + 1) / 2 - position) * 3 + squadAdj;
 }
 
 export function computeMatchOdds(
