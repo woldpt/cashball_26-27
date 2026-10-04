@@ -1,5 +1,6 @@
 export { PitchFormation, PlayerMarker, PlayerRow } from "./PitchFormation.jsx";
 export { MatchPitch } from "./MatchPitch.jsx";
+export { WeatherOverlay } from "./WeatherOverlay.jsx";
 export { MatchScoreboard } from "./MatchScoreboard.jsx";
 export { PreMatchIntro, KickoffBadge } from "./PreMatchIntro.jsx";
 export { FinalWhistleStamp } from "./FinalWhistleStamp.jsx";

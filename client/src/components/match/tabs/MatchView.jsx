@@ -103,7 +103,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
             {/* Pitch */}
             <div className="relative w-full max-w-[280px] mx-auto rounded-md overflow-hidden border border-white/10 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)] md:w-auto md:h-full md:max-w-full">
               {hasLineups ? (
-                <MatchPitch rows={rows} posColors={posColors} showFatigue={showFatigue} events={evts} liveMinute={liveMinute} teamColor={(pitchSide === "home" ? hInfo : aInfo)?.color_primary} />
+                <MatchPitch rows={rows} posColors={posColors} showFatigue={showFatigue} events={evts} liveMinute={liveMinute} teamColor={(pitchSide === "home" ? hInfo : aInfo)?.color_primary} weatherEmoji={weatherEvent?.emoji} />
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 gap-2 px-4">
                   <p className="text-on-surface-variant/60 text-xs font-bold uppercase tracking-wider text-center">Sem escalação disponível</p>

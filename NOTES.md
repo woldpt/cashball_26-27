@@ -1,3 +1,7 @@
+## Clima no relvado do jogo (2026-10-04)
+- O relvado do `MatchView` mostra o clima do jogo: novo `WeatherOverlay.jsx` (chuva/neve/vento/nevoeiro/frio com partículas só em CSS, posições determinísticas) ligado ao emoji do evento `weather` que já existia; sem clima não pinta nada. Com movimento reduzido fica parado nas tintas estáticas.
+- Checks: `eslint` limpo nos 4 ficheiros · `check:types` 0 · `test:mobile` **185/185** + `match-spectate` 5/5 com captura 390 vista (relvado inteiro, sem overflow).
+
 ## Briefing: relvado do adversário visível em mobile (2026-10-11)
 - Bug: no Briefing pré-jogo (<`lg`) o cartão «Confronto tático em campo» só mostrava o cabeçalho — o wrapper do `OpponentFormation` só tinha `min-h` e o `PitchFormation` é `h-full` com conteúdo `absolute` (colapsava a 0px; em `lg` o cartão é flex column e `flex-1` dava altura).
 - Fix (plano `docs/plans/briefing-pitch-mobile.md`): wrapper passa a `h-80 short:h-56` em mobile e `lg:h-auto lg:flex-1` em desktop — altura definida → `h-full` do filho resolve. `PitchFormation` e `MatchBriefing` intactos.
@@ -191,12 +195,4 @@
 - Bug: a checkbox "Mostrar só os meus à venda" nunca filtrava — o predicado (`team_id !== mine || (show && fixed)`) com a caixa marcada ADICIONAVA os meus aos dos outros em vez de mostrar só os meus (a renomeação para "só" expôs a divergência).
 - Fix (`GameContext.jsx` `filteredMarketPlayers` + `TransferHub.jsx` `posCounts`, mesmo ternário nos dois): marcada → só os meus; desmarcada → esconde os meus (comportamento anterior).
 - Checks: prova de semântica em node (marcada só meus, desmarcada só outros) · `check:types` OK · `eslint` só o erro pré-existente `react-refresh` no `GameContext.jsx` (provado no HEAD) · só predicados, sem layout → sem `test:mobile`; sem sockets/jogo → sem audits.
-
-## Deploy v26.10.7 no rick (2026-10-02)
-- Redesign artigo do Jornal, resync pós-join, filtros «só os meus»/«cabe no saldo», débitos a negativo/vermelho, estádio sem zoom; `backend Healthy`.
-
-## Débitos da semana a negativo e vermelho (2026-10-02)
-- Pedido: na notícia das contas da semana, os valores de Débito a negativo e vermelho.
-- `JournalTab.jsx` (`WeeklyFinanceTable`): Salários, Manutenção, Juros e Capital marcados como `debit` — valor com sinal negativo (`-X €`, guarda contra `-0 €`) e `text-error`; Rendimento e Saldo como estavam (Saldo já pintava negativo/positivo).
-- Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · só `className`/texto → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
 

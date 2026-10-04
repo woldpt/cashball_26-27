@@ -712,3 +712,88 @@ body {
     animation: shimmer 1.8s linear infinite;
   }
 }
+
+/* ── Meteorologia sobre o relvado (WeatherOverlay) ─────────────────────
+   Tintas estáticas sempre visíveis; partículas animadas só sem
+   prefers-reduced-motion (sem animação ficam como pontos estáticos). */
+.wx-sol {
+  background: radial-gradient(ellipse at 85% 0%, rgba(255, 224, 130, 0.28), transparent 60%);
+}
+.wx-chuva { background: rgba(30, 50, 80, 0.12); }
+.wx-chuva_forte { background: rgba(10, 20, 45, 0.3); }
+.wx-neve { background: rgba(220, 235, 255, 0.1); }
+.wx-frio {
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(150, 200, 255, 0.22));
+}
+.wx-nevoeiro { background: rgba(200, 210, 220, 0.14); }
+
+.wx-rain {
+  position: absolute;
+  width: 1px;
+  height: calc(14px * var(--wx-size, 1));
+  background: linear-gradient(to bottom, transparent, rgba(190, 215, 255, 0.65));
+  transform: rotate(12deg);
+}
+.wx-rain-heavy { width: 1.5px; height: calc(20px * var(--wx-size, 1)); }
+.wx-snow {
+  position: absolute;
+  width: calc(4px * var(--wx-size, 1));
+  height: calc(4px * var(--wx-size, 1));
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+}
+.wx-snow-sparse { opacity: 0.55; }
+.wx-gust {
+  position: absolute;
+  width: calc(36px * var(--wx-size, 1));
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+}
+.wx-fog {
+  position: absolute;
+  left: -30%;
+  width: 160%;
+  height: 28%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(225, 232, 240, 0.35), transparent 70%);
+}
+
+@keyframes wx-fall { to { transform: translateY(120vh) rotate(12deg); } }
+@keyframes wx-drift {
+  0% { transform: translate(0, -10px); }
+  50% { transform: translate(14px, 60vh); }
+  100% { transform: translate(-6px, 120vh); }
+}
+@keyframes wx-blow { to { transform: translateX(160%); } }
+@keyframes wx-fog-drift {
+  0%, 100% { transform: translateX(-6%); }
+  50% { transform: translateX(6%); }
+}
+@keyframes wx-flash {
+  0%, 92%, 96%, 100% { opacity: 0; }
+  93%, 97% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wx-rain {
+    top: -20px !important;
+    animation: wx-fall calc(var(--wx-dur) * 1s) linear infinite;
+  }
+  .wx-snow {
+    top: -10px !important;
+    animation: wx-drift calc(var(--wx-dur) * 9s) linear infinite;
+  }
+  .wx-gust {
+    left: -40px !important;
+    animation: wx-blow calc(var(--wx-dur) * 2.2s) linear infinite;
+  }
+  .wx-fog { animation: wx-fog-drift 14s ease-in-out infinite; }
+  .wx-chuva_forte::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(220, 230, 255, 0.6);
+    opacity: 0;
+    animation: wx-flash 9s linear infinite;
+  }
+}

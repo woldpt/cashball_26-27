@@ -1,4 +1,5 @@
 import { PitchFormation } from "./PitchFormation.jsx";
+import { WeatherOverlay } from "./WeatherOverlay.jsx";
 
 /* ── MatchPitch — Fit-to-parent pitch box (9:16, never overflows) ──────
  *
@@ -10,7 +11,7 @@ import { PitchFormation } from "./PitchFormation.jsx";
  *   - O SVG usa preserveAspectRatio="none", por isso linhas e jogadores
  *     mantêm-se alinhados mesmo quando a caixa é clampada por max-w-full.
  */
-export function MatchPitch({ rows, posColors, starColor, events, liveMinute, teamColor, emptyLabel, className = "", showFatigue = true, onPlayerClick = null, selectedId = null, previewId = null }) {
+export function MatchPitch({ rows, posColors, starColor, events, liveMinute, teamColor, emptyLabel, className = "", showFatigue = true, onPlayerClick = null, selectedId = null, previewId = null, weatherEmoji = null }) {
   const isEmpty =
     !rows || Object.values(rows).every((arr) => !arr || arr.length === 0);
 
@@ -28,6 +29,7 @@ export function MatchPitch({ rows, posColors, starColor, events, liveMinute, tea
       ) : (
         <PitchFormation rows={rows} posColors={posColors} starColor={starColor} events={events} liveMinute={liveMinute} teamColor={teamColor} showFatigue={showFatigue} onPlayerClick={onPlayerClick} selectedId={selectedId} previewId={previewId} />
       )}
+      {weatherEmoji && <WeatherOverlay emoji={weatherEmoji} />}
     </div>
   );
 }
