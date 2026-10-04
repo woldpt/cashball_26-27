@@ -23,6 +23,18 @@ import type { ActiveGame } from "./types";
 
 export type PushType = "waiting" | "auction" | "matchday" | "invite";
 
+// Fonte única dos tipos: validação das rotas e defaults das preferências.
+export const PUSH_TYPES: PushType[] = [
+  "waiting",
+  "auction",
+  "matchday",
+  "invite",
+];
+
+export function isKnownPushType(value: unknown): value is PushType {
+  return PUSH_TYPES.includes(value as PushType);
+}
+
 export interface PushPayload {
   type: PushType;
   title: string;
@@ -175,6 +187,7 @@ export async function sendToCoach(
   coachName: string,
   opts: { type: PushType; title: string; body: string; roomCode?: string },
 ): Promise<number> {
+  if (!(await typeEnabled(coachName, opts.type))) return 0;
   const roomCode = opts.roomCode || "";
   if (!(await throttleAllows(coachName, opts.type, roomCode))) return 0;
   const subs: Array<{ endpoint: string; keys: string }> =
@@ -203,6 +216,43 @@ export async function sendToCoach(
 const PUSH_COOLDOWN_MS = 5 * 60 * 1000;
 // Retenção do throttle: mais velho que isto nunca decide nada.
 const PUSH_THROTTLE_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Preferências do treinador com os defaults preenchidos (para a API e a UI).
+ * Todos os tipos nascem ligados: o cooldown já limita cada um a 1 aviso a cada
+ * 5 minutos por sala, por isso o interruptor é para quem quer silenciar um tipo
+ * em concreto, não um escape de ruído por omissão.
+ */
+export async function getPushPrefsFor(
+  coachName: string,
+): Promise<Record<PushType, boolean>> {
+  const rows: Array<{ type: string; enabled: number }> =
+    await auth().getPushPrefs(coachName);
+  const prefs = {} as Record<PushType, boolean>;
+  for (const type of PUSH_TYPES) prefs[type] = true;
+  for (const row of rows) {
+    if (isKnownPushType(row.type)) prefs[row.type] = !!row.enabled;
+  }
+  return prefs;
+}
+
+/** Grava um interruptor (tipo fora da lista conhecida é rejeitado). */
+export async function setPushPrefFor(
+  coachName: string,
+  type: unknown,
+  enabled: unknown,
+): Promise<boolean> {
+  if (!isKnownPushType(type)) return false;
+  return auth().setPushPref(coachName, type, !!enabled);
+}
+
+/** Este tipo está ligado para este treinador? Sem linha, está. */
+async function typeEnabled(coachName: string, type: PushType): Promise<boolean> {
+  const rows: Array<{ type: string; enabled: number }> =
+    await auth().getPushPrefs(coachName);
+  const row = rows.find((r) => r.type === type);
+  return row ? !!row.enabled : true;
+}
 
 /**
  * O cooldown deste (tipo, sala) já passou? Sem leitura da BD (avaria) deixa

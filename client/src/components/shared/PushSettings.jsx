@@ -23,9 +23,36 @@ function urlBase64ToUint8Array(base64) {
  * @param {string} props.backendUrl Base do backend (ex. http://localhost:3000).
  * @returns {JSX.Element} Painel de avisos push.
  */
+// Avisos por tipo: o interruptor geral é deste browser; estes são do treinador
+// (valem em todos os dispositivos) e vivem no servidor.
+const PUSH_PREF_ITEMS = [
+	{
+		type: "waiting",
+		label: "Sala à espera de ti",
+		hint: "A ronda só anda quando voltares (tática, lesão, decisão pendente).",
+	},
+	{
+		type: "auction",
+		label: "Leilões",
+		hint: "Quando alguém te ultrapassa num leilão.",
+	},
+	{
+		type: "matchday",
+		label: "Fim de jornada",
+		hint: "Resultado e posição na tabela quando não vês o jogo.",
+	},
+	{
+		type: "invite",
+		label: "Convites de sala",
+		hint: "Quando um colega te convida e estás offline.",
+	},
+];
+
 export function PushSettings({ me, backendUrl }) {
 	const [status, setStatus] = useState("unknown");
 	const [msg, setMsg] = useState(null);
+	const [prefs, setPrefs] = useState(null);
+	const [prefsMsg, setPrefsMsg] = useState(null);
 
 	const supported =
 		typeof window !== "undefined" &&
@@ -135,11 +162,63 @@ export function PushSettings({ me, backendUrl }) {
 		}
 	}
 
+	/**
+	 * Carrega as preferências por tipo (só fazem sentido com os avisos ligados
+	 * neste browser; o nome vem da sessão, não do corpo).
+	 * @returns {void}
+	 */
+	useEffect(() => {
+		if (status !== "on" || !me?.token) return;
+		let dead = false;
+		(async () => {
+			try {
+				const res = await fetch(`${backendUrl}/api/push/prefs`, {
+					headers: { Authorization: `Bearer ${me.token}` },
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (!dead && data?.prefs) setPrefs(data.prefs);
+			} catch {
+				// Sem prefs os interruptores não aparecem: o servidor envia tudo.
+			}
+		})();
+		return () => {
+			dead = true;
+		};
+	}, [status, me?.token, backendUrl]);
+
+	/**
+	 * Liga/desliga um tipo de aviso (optimista: volta atrás se o servidor falhar).
+	 * @param {string} type Tipo de aviso.
+	 * @param {boolean} enabled Novo estado.
+	 * @returns {Promise<void>}
+	 */
+	async function togglePref(type, enabled) {
+		setPrefs((prev) => ({ ...prev, [type]: enabled }));
+		setPrefsMsg(null);
+		try {
+			const res = await fetch(`${backendUrl}/api/push/prefs`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${me?.token}`,
+				},
+				body: JSON.stringify({ type, enabled }),
+			});
+			if (!res.ok) throw new Error("save");
+			const data = await res.json();
+			if (data?.prefs) setPrefs(data.prefs);
+		} catch {
+			setPrefs((prev) => ({ ...prev, [type]: !enabled }));
+			setPrefsMsg("Não foi possível guardar. Tenta novamente.");
+		}
+	}
+
 	return (
 		<Panel title="Avisos" icon="notifications" meta={status === "on" ? "Ligados" : "Desligados"}>
 			<div className="p-3 md:p-4 short:p-2 space-y-3">
 				<p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
-					Avisa-te quando fores o último em falta no lobby.
+					No telemóvel, quando não estás a ver o jogo.
 				</p>
 				{status === "unsupported" || !supported ? (
 					<p role="status" className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
@@ -168,6 +247,39 @@ export function PushSettings({ me, backendUrl }) {
 					<p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
 						No iPhone: Partilhar › Adicionar ao ecrã inicial — só aí chegam avisos.
 					</p>
+				)}
+				{status === "on" && prefs && (
+					<div className="space-y-0.5 border-t border-outline-variant/20 pt-3">
+						<p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
+							Que avisos queres receber
+						</p>
+						{PUSH_PREF_ITEMS.map((item) => (
+							<label
+								key={item.type}
+								className="flex items-start gap-2 py-1.5 cursor-pointer select-none"
+							>
+								<input
+									type="checkbox"
+									checked={prefs[item.type] !== false}
+									onChange={(e) => togglePref(item.type, e.target.checked)}
+									className="mt-0.5 w-4 h-4 accent-emerald-500"
+								/>
+								<span className="min-w-0">
+									<span className="block text-[11px] font-bold text-on-surface">
+										{item.label}
+									</span>
+									<span className="block text-[10px] text-on-surface-variant/70">
+										{item.hint}
+									</span>
+								</span>
+							</label>
+						))}
+						{prefsMsg && (
+							<p role="status" className="text-[10px] text-error font-bold uppercase tracking-widest">
+								{prefsMsg}
+							</p>
+						)}
+					</div>
 				)}
 				{msg && (
 					<p role="status" className="text-[10px] text-error font-bold uppercase tracking-widest">

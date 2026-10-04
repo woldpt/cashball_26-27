@@ -7,6 +7,38 @@ import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { UserSettingsPage } from "./src/pages/UserSettingsPage.jsx";
 
+// Estado "avisos ligados": sem isto o painel Avisos só mostra o botão
+// Activar e os interruptores por tipo nunca renderizam (é o que este harness
+// precisa de medir). Stubs mínimos das APIs do browser + da rota de prefs.
+window.PushManager = window.PushManager || function PushManager() {};
+Object.defineProperty(navigator, "serviceWorker", {
+  configurable: true,
+  value: {
+    ready: Promise.resolve({
+      pushManager: {
+        getSubscription: async () => ({
+          toJSON: () => ({ endpoint: "https://push.example/x", keys: {} }),
+        }),
+      },
+    }),
+  },
+});
+const realFetch = window.fetch.bind(window);
+window.fetch = (input, init) => {
+  const url = typeof input === "string" ? input : input?.url || "";
+  if (url.includes("/api/push/prefs")) {
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          prefs: { waiting: true, auction: false, matchday: true, invite: true },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+  }
+  return realFetch(input, init);
+};
+
 const noop = () => {};
 
 // Edge cases: longest realistic name, long room name, trophy with a very

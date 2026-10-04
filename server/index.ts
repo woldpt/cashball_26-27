@@ -84,6 +84,9 @@ const {
 	removeSubscription: removePushSubscription,
 	isPushEnabled,
 	initPush,
+	isKnownPushType,
+	getPushPrefsFor,
+	setPushPrefFor,
 } = require("./push") as typeof import("./push");
 const {
 	getSeasonEndMatchweek,
@@ -921,6 +924,37 @@ app.post("/api/push/unsubscribe", apiLimiter, async (req, res) => {
 		return res.json({ ok: true });
 	} catch (error) {
 		console.error("[/api/push/unsubscribe] Error:", error.message);
+		return res.status(500).json({ error: "Erro interno." });
+	}
+});
+
+// Preferências por tipo (quais os avisos que este treinador quer receber).
+// O nome vem da sessão (Bearer), nunca do corpo — ninguém muda as prefs de outro.
+app.get("/api/push/prefs", apiLimiter, async (req, res) => {
+	if (!isPushEnabled()) return pushDisabled(res);
+	try {
+		const name = await getSessionNameFromReq(req);
+		if (!name) return res.status(401).json({ error: "Sessão inválida." });
+		return res.json({ prefs: await getPushPrefsFor(name) });
+	} catch (error) {
+		console.error("[/api/push/prefs] Error:", error.message);
+		return res.status(500).json({ error: "Erro interno." });
+	}
+});
+
+app.post("/api/push/prefs", apiLimiter, async (req, res) => {
+	if (!isPushEnabled()) return pushDisabled(res);
+	try {
+		const name = await getSessionNameFromReq(req);
+		if (!name) return res.status(401).json({ error: "Sessão inválida." });
+		const type = req.body?.type;
+		if (!isKnownPushType(type))
+			return res.status(400).json({ error: "Tipo de aviso inválido." });
+		const ok = await setPushPrefFor(name, type, req.body?.enabled);
+		if (!ok) return res.status(500).json({ error: "Erro ao guardar." });
+		return res.json({ ok: true, prefs: await getPushPrefsFor(name) });
+	} catch (error) {
+		console.error("[/api/push/prefs] Error:", error.message);
 		return res.status(500).json({ error: "Erro interno." });
 	}
 });

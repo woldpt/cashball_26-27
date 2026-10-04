@@ -244,6 +244,16 @@ db.serialize(() => {
       PRIMARY KEY (coach_name, type, room_code)
     )
   `);
+	// Preferências de avisos por treinador e tipo. Sem linha = ligado (o
+	// interruptor só existe para quem quer silenciar um tipo em concreto).
+	db.run(`
+    CREATE TABLE IF NOT EXISTS push_prefs (
+      coach_name TEXT NOT NULL COLLATE NOCASE,
+      type       TEXT NOT NULL,
+      enabled    INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (coach_name, type)
+    )
+  `);
 });
 
 /**
@@ -1713,6 +1723,47 @@ function purgePushThrottle(before) {
 	});
 }
 
+/** Preferências de avisos por tipo (sem linha = ligado por omissão). */
+function getPushPrefs(name) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve([]);
+	return new Promise((resolve) => {
+		db.all(
+			"SELECT type, enabled FROM push_prefs WHERE coach_name = ? COLLATE NOCASE",
+			[normalizedName],
+			(err, rows) => {
+				if (err) {
+					console.error("[auth] getPushPrefs error:", err.message);
+					// Falha aberta: sem leitura, os tipos ficam ligados (nunca silencia
+					// um aviso por causa de uma avaria da BD).
+					return resolve([]);
+				}
+				resolve(rows || []);
+			},
+		);
+	});
+}
+
+function setPushPref(name, type, enabled) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName || !type) return Promise.resolve(false);
+	return new Promise((resolve) => {
+		db.run(
+			`INSERT INTO push_prefs (coach_name, type, enabled)
+			 VALUES (?, ?, ?)
+			 ON CONFLICT(coach_name, type) DO UPDATE SET enabled = excluded.enabled`,
+			[normalizedName, type, enabled ? 1 : 0],
+			(err) => {
+				if (err) {
+					console.error("[auth] setPushPref error:", err.message);
+					return resolve(false);
+				}
+				resolve(true);
+			},
+		);
+	});
+}
+
 module.exports = {
 	verifyOrCreateManager,
 	verifyManager,
@@ -1747,6 +1798,9 @@ module.exports = {
 	getPushThrottle,
 	markPushSent,
 	purgePushThrottle,
+	// Web Push prefs (Fase 4)
+	getPushPrefs,
+	setPushPref,
 	// Admin functions
 	adminListUsers,
 	adminChangePassword,

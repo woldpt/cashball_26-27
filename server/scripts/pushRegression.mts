@@ -21,6 +21,8 @@
  *   P9 — leilão: avisa quem foi ultrapassado, nunca NPCs nem quem está a ver
  *   P10 — fim de jornada: resultado + posição na tabela, só a ausentes
  *   P11 — convite: chega a quem está offline (o socket não chega lá)
+ *   P12 — preferências por tipo: tipo desligado não envia (e volta a enviar
+ *        quando é ligado); tipo desconhecido é rejeitado
  *
  * Run: cd server && npm run test:push
  */
@@ -36,6 +38,8 @@ const sent: Sent[] = [];
 const removed: string[] = [];
 // `${treinador}|${tipo}|${sala}` → quando foi entregue (só deste teste).
 const throttle = new Map<string, number>();
+// `${treinador}|${tipo}` → ligado/desligado (só deste teste).
+const prefs = new Map<string, boolean>();
 let queries = 0;
 let nextError: any = null;
 let subsFor: () => Array<{ endpoint: string; keys: string }> = () => [];
@@ -62,6 +66,19 @@ const authMock = {
     return true;
   },
   async savePushSubscription() {
+    return true;
+  },
+  // Preferências falsas em memória (sem linha = ligado).
+  async getPushPrefs(name: string) {
+    const out: Array<{ type: string; enabled: number }> = [];
+    for (const [key, enabled] of prefs) {
+      const [coach, type] = key.split("|");
+      if (coach === name.toLowerCase()) out.push({ type, enabled: enabled ? 1 : 0 });
+    }
+    return out;
+  },
+  async setPushPref(name: string, type: string, enabled: boolean) {
+    prefs.set(`${name.toLowerCase()}|${type}`, enabled);
     return true;
   },
   // Throttle falso em memória (a chave é a mesma da tabela real).
@@ -112,6 +129,8 @@ const {
   maybeNotifyMatchday,
   notifyRoomInvite,
   sendToCoach,
+  getPushPrefsFor,
+  setPushPrefFor,
   pushTag,
   pushUrl,
 } = require("../push.ts");
@@ -450,4 +469,41 @@ test("P11 — convite chega a quem está offline", async () => {
   assert.equal(sent[0].body.body, "Ana convidou-te para a sala ABCD");
   assert.equal(sent[0].body.url, "/?room=ABCD");
   assert.equal(sent[0].body.type, "invite");
+});
+
+test("P12 — preferências por tipo desligam o aviso", async () => {
+  const coach = "Sofia";
+  const opts = { title: "t", body: "b", roomCode: "ABCD" } as const;
+
+  // Por omissão, tudo ligado.
+  assert.deepEqual(await getPushPrefsFor(coach), {
+    waiting: true,
+    auction: true,
+    matchday: true,
+    invite: true,
+  });
+
+  // Desligar um tipo: não envia (nem lê subscrições)…
+  assert.equal(await setPushPrefFor(coach, "auction", false), true);
+  reset();
+  assert.equal(await sendToCoach(coach, { ...opts, type: "auction" }), 0);
+  assert.equal(sent.length, 0);
+  assert.equal(queries, 0, "tipo desligado não chega a ler as subscrições");
+
+  // …e os outros tipos continuam a chegar.
+  assert.equal(await sendToCoach(coach, { ...opts, type: "waiting" }), 1);
+
+  // Voltar a ligar: volta a enviar.
+  assert.equal(await setPushPrefFor(coach, "auction", true), true);
+  assert.equal(await sendToCoach(coach, { ...opts, type: "auction" }), 1);
+  assert.deepEqual(await getPushPrefsFor(coach), {
+    waiting: true,
+    auction: true,
+    matchday: true,
+    invite: true,
+  });
+
+  // Tipo desconhecido (corpo do cliente): rejeitado, sem gravar nada.
+  assert.equal(await setPushPrefFor(coach, "hack", true), false);
+  assert.equal(prefs.has(`${coach.toLowerCase()}|hack`), false);
 });
