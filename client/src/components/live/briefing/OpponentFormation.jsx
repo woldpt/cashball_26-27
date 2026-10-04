@@ -46,7 +46,7 @@ export const OpponentFormation = memo(function OpponentFormation({
         </span>
       </div>
       {placed > 0 ? (
-        <div className="relative w-full flex-1 min-h-80 short:min-h-56 lg:min-h-[360px] short:lg:min-h-[240px]">
+        <div className="relative w-full flex-1 h-80 short:h-56 lg:h-auto lg:min-h-[360px] short:lg:min-h-[240px]">
           <PitchFormation
             rows={rows}
             posColors={PITCH_POS_COLORS}
