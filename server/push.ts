@@ -1,10 +1,12 @@
 /**
- * Web Push — Fase 1: infraestrutura inerte atrás de ENABLE_PUSH.
+ * Web Push — avisos no telemóvel de quem não está a ver o jogo.
  *
- * Com a flag desligada (`false`/ausente) nada faz: as rotas de index.ts
+ * Quatro tipos (`PushType`), sempre só para treinadores ausentes, com cooldown
+ * de 5 min por (treinador, tipo, sala) na BD e preferências por tipo. Com a
+ * flag `ENABLE_PUSH` desligada (`false`/ausente) nada faz: as rotas de index.ts
  * devolvem 404 antes de cá chegar e o `notifyUser` sai sem tocar na rede.
- * O `notifyUser` nunca rebenta — qualquer falha é log e segue (o jogo
- * continua mesmo com o push partido).
+ * Nada aqui rebenta ou bloqueia o jogo — qualquer falha é log e segue, e todos
+ * os gatilhos são fire-and-forget.
  */
 
 const webpush = require("web-push");
@@ -50,8 +52,8 @@ const DEFAULT_TAG = "cashball-ready";
 
 /**
  * Agrupador do aviso: avisos do mesmo tipo e sala substituem-se em vez de
- * empilhar no centro de notificações (o antigo `cashball-ready` fixo fazia
- * um aviso de cada sala ficar todos lado a lado).
+ * empilhar no centro de notificações (o antigo `cashball-ready` fixo deixava
+ * os avisos de salas diferentes todos lado a lado).
  */
 export function pushTag(type: PushType, roomCode?: string): string {
   return roomCode ? `${type}:${roomCode}` : type;
