@@ -660,8 +660,8 @@ body {
   80% { transform: translateX(-1px); }
 }
 @keyframes liveclock-urgent {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgb(251 191 36 / 0)); }
+  50% { transform: scale(1.14); filter: drop-shadow(0 0 8px rgb(251 191 36 / 0.85)); }
 }
 @keyframes flag-pulse {
   0%, 100% { opacity: 1; }
@@ -700,7 +700,7 @@ body {
     animation: goal-shake 0.45s ease-out;
   }
   .liveclock-urgent {
-    animation: liveclock-urgent 1.2s ease-in-out infinite;
+    animation: liveclock-urgent 0.9s ease-in-out infinite;
   }
   .flag-pulse {
     animation: flag-pulse 1.6s ease-in-out infinite;

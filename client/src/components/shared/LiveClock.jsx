@@ -82,11 +82,11 @@ export function LiveClock({
       <span
         role="timer"
         aria-label={ariaLabel}
-        className={`flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border max-w-full ${urgent ? "border-amber-400/60" : "border-outline-variant/50"}`}
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-full border max-w-full ${urgent ? "border-amber-400 bg-amber-950" : "bg-surface border-outline-variant/50"}`}
       >
         <span
           aria-hidden
-          className="text-sm font-headline font-black tabular-nums leading-none text-on-surface shrink-0"
+          className={`text-sm font-headline font-black tabular-nums leading-none ${urgent ? "text-amber-400" : "text-on-surface"} shrink-0`}
         >
           {time}
         </span>
