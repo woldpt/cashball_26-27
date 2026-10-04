@@ -16,6 +16,7 @@
 :root {
   --header-h: calc(3.5rem + env(safe-area-inset-top, 0px)); /* header fixo no topo (h-14: desktop e portrait) + notch em PWA */
   --rail-w: 4rem; /* reserva lateral esquerda (w-16, apenas landscape) */
+  --mobile-nav-h: 4rem; /* MobileNav portrait (h-16) */
   --sidebar-w: 14rem; /* sidebar desktop expandida (w-56) */
   --sidebar-w-collapsed: 3.5rem; /* sidebar desktop encolhida (w-14, só ícones) */
 }
@@ -431,7 +432,9 @@ body {
 }
 
 /* Ticker Notícias CM: a tira aparece já visível e sai a deslizar para a
-   esquerda (1 iteração). "still" é um temporizador no-op para reduced-motion. */
+   esquerda (1 iteração). Duração em --cm-dur (definida pelo componente).
+   Em hover/foco da barra a passagem pausa para dar tempo de leitura.
+   "still" é um temporizador no-op para reduced-motion. */
 @keyframes cmTickerPass {
   0% {
     transform: translateX(0);
@@ -447,6 +450,18 @@ body {
   100% {
     opacity: 1;
   }
+}
+.cm-ticker-pass {
+  animation: cmTickerPass var(--cm-dur) linear 1;
+}
+.cm-ticker-still {
+  animation: cmTickerStill var(--cm-dur) linear 1;
+}
+.cm-ticker-hit:hover .cm-ticker-pass,
+.cm-ticker-hit:focus-visible .cm-ticker-pass,
+.cm-ticker-hit:hover .cm-ticker-still,
+.cm-ticker-hit:focus-visible .cm-ticker-still {
+  animation-play-state: paused;
 }
 
 /* Heartbeat for JOGAR button */
