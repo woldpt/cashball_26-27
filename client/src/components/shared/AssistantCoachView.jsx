@@ -16,13 +16,12 @@ import { Button } from "../shared/Button.jsx";
  * `prefers-reduced-motion` fica parado em boca fechada.
  * `mood` só muda o tratamento do retrato — "sad" dessatura e escurece.
  * @param {string} mood Expressão do adjunto ("worried" | "sad").
- * @param {boolean} [compact] Medalhão mais pequeno (tutorial no telemóvel).
  * @param {boolean} [flipOnDesktop] Espelha em desktop. O retrato olha para a
  *   direita; no balão da dica o texto fica-lhe à esquerda em desktop
  *   (`lg:flex-row-reverse`), logo tem de ser espelhado para olhar para lá.
  *   O tutorial não usa isto — tem o balão sempre à direita do retrato.
  */
-export function AssistantMascot({ mood, compact, flipOnDesktop }) {
+export function AssistantMascot({ mood, flipOnDesktop }) {
   const sad = mood === "sad";
   const reducedMotion = usePrefersReducedMotion();
   const [open, setOpen] = useState(false);
@@ -34,9 +33,7 @@ export function AssistantMascot({ mood, compact, flipOnDesktop }) {
   // Caixa com o MESMO aspecto dos assets (336×512 = 0.656): o `<img>` usa
   // `object-fit: fill`, logo qualquer diferença de aspecto entorta o boneco.
   // 128px de altura mantém o tamanho da cabeça que a caixa quadrada dava.
-  const size = compact
-    ? "h-[76px] w-[50px]"
-    : "h-[128px] w-[84px] lg:h-[156px] lg:w-[102px]";
+  const size = "h-[128px] w-[84px] lg:h-[156px] lg:w-[102px]";
   const imgClass = "h-full w-full";
   const shadow = "drop-shadow(0 6px 10px rgba(0,0,0,0.45))";
   const filter = sad ? { filter: `saturate(0.45) brightness(0.82) ${shadow}` } : { filter: shadow };

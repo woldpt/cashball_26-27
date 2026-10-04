@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>CashBall tutorial-resp-test</title>
+    <!-- Sem transições CSS: o anel salta para cada rect publicado (em vez de
+         interpolar 200ms) e o harness mede a posição real, não a animação.
+         As animações do stub são do framer (JS) e continuam a correr. -->
+    <style>
+      *,
+      *::before,
+      *::after {
+        transition: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <pre id="report" data-status="pending">PENDING</pre>
+    <script type="module" src="/tutorial-resp-test.jsx"></script>
+  </body>
+</html>

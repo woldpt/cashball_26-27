@@ -247,6 +247,7 @@ async function runTask(browser, task) {
           squashedInputs: report.squashedInputs,
           filterInputWidths: report.filterInputWidths,
         },
+        stepFailures: (report.steps || []).filter((s) => s.fail?.length),
         collisions: report.collisions || [],
       };
     } catch (err) {
@@ -341,6 +342,10 @@ for (const harness of harnesses) {
     for (const c of d.collisions || [])
       console.log(
         `        · colisão: balão cobre ${c.target} (${c.covered}/${c.samples} pontos)`,
+      );
+    for (const s of d.stepFailures || [])
+      console.log(
+        `        · passo ${s.id}: ${s.fail.join("; ")} (delta ${s.delta}px)`,
       );
   }
   console.log("");

@@ -93,7 +93,7 @@ export const COACH_TUTORIAL_STEPS = [
     id: "tactic-play",
     tab: "tactic",
     submenu: null,
-    targets: ['[data-tour="tactic-play"]', '[data-tour="tactic-titulares"]'],
+    targets: ['[data-tour="tactic-play"]', '[data-tour="tactic-play-fab"]', '[data-tour="tactic-titulares"]'],
     title: "Confirma a jornada",
     text: "Com o 11 fechado, aparece o botão de jogar — prime-o e eu confirmo a jornada por ti. Em salas com amigos, só avança quando todos confirmarem."
   },

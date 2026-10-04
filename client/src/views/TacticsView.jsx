@@ -1291,7 +1291,7 @@ ${settled ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !ca
             : "play_arrow";
         return (
           <button
-            data-tour="tactic-play"
+            data-tour="tactic-play-fab"
             onClick={fabHalftime ? handleHalftimeReady : handleReady}
             className={`xl:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!settled ? "animate-heartbeat" : ""}`}
             style={{

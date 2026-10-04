@@ -191,3 +191,29 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Pedido: notícias feias, botões encostados à margem — polimento para todas, intensidade de redesign mantendo o registo de imprensa.
 - `JournalTab.jsx`: coluna de leitura centrada (`max-w-prose`, `px-4`/`sm:px-6`); links de entidades em pílula (`bg-primary/10` + `box-decoration-break:clone`, nunca colam às margens nem partem mal); tabelas centradas (`mx-auto`); manchete maior (`text-2xl`) com links em tinta simples (a pílula em corpo grande virava tijolo — visto em screenshot); zona de ações com mais respiro (`mt-5 pt-4`); cai o `lg:px-6` ad hoc do corpo.
 - Checks: `eslint` limpo no ficheiro · `check:types` OK · `test:mobile` só `journal-resp-test` PASS 5/5 + screenshot 390 verificado; sem lógica de jogo/sockets → sem audits.
+
+## Filtro «Cabe no saldo» na Scout (2026-10-02)
+- Pedido: terceira checkbox ao lado de «Só craques» e «Disponível p/ compra» para filtrar só os jogadores que o saldo cobre.
+- Decisões do utilizador: filtro só no cliente (instantâneo, sem nova pesquisa) e nos leilões compara com o lance mínimo atual (igual ao botão Licitar/Sem saldo).
+- `ScoutView.jsx`: estado `onlyAffordable` + `filteredResults` (`useMemo`, mesma regra dos botões: `fixed` → preço de lista, `auction` → lance mínimo atual, resto → cláusula `valor × 1.35`); `meta` mostra «N de M» com o filtro ligado e vazio dedicado («Nenhum cabe no teu saldo…»). Só frontend, servidor intocado.
+- Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · mesma linha `flex-wrap` existente → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
+## Resync de segurança pós-join contra S1 fantasma (2026-10-02)
+- Bug (sala X4Z1BI, após reboot/deploy): entrada manual mostrou Semana 1 com plantel vazio e tática morta, estando a sala em S5; refresh curou. Vilão: a rajada do join (`mySquad` → `gameState`) chegou antes da montagem tardia do `GameProvider` (transição `mode="wait"`), perdeu-se sem listeners, e o `teamAssigned` (cadeia lenta) chegou depois, abriu o jogo e cancelou o retry de 10 s — preso nos defaults (`matchweekCount 0` bloqueia o briefing).
+- Fix só-cliente: `joinStateSeenRef` (falso por join: reset em mudança de `me.roomCode` e no rejoin do `onConnect`); `gameState` marca visto; `teamAssigned`/`coachDismissed` emitem `requestResync` (handler de servidor existente, sem loop: a resposta traz `gameState` e o sinal seguinte já não reemite). Toca `GameContext.jsx` + `socket/session.js` + `socket/coach.js` (+32 linhas).
+- Checks: `eslint` só os 3 erros pré-existentes · `check:types` OK · `audit:socketio` 0 erros (101 warnings, contagem igual) · sem layout → sem `test:mobile`; sem lógica de jogo → sem `audit:gamestate`.
+
+## Zoom do estádio removido (2026-10-02)
+- Pedido: estádio via-se cortado no hero do `StadiumTab`; retirar o zoom.
+- `StadiumTab.jsx`: removida a prop `shot="close"` (volta ao `wide` por defeito, sem zoom/crop da bancada).
+- Checks: `eslint` limpo nos ficheiros tocados · `check:types` OK · só enquadramento da ilustração → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
+## Filtro "só os meus" nos leilões (2026-10-02)
+- Pedido: checkbox como a do mercado no `AuctionsTab` — "os meus" = vendo ou licito (inclui licitações superadas), em curso + recentes.
+- `AuctionsTab.jsx`: estado local `showOwnOnly` (como o `positionFilter`); `matchesOwn` via `sellerTeamId`, `auction_bid_history` e `result.buyerTeamId` (recentes não trazem histórico, só o comprador); widgets contam totais, painéis filtram; empty-state sugere desmarcar o filtro.
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · 1 controlo na zona de filtros existente → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
+## Label do filtro "só os meus" no mercado (2026-10-02)
+- Pedido: a label "Mostrar os meus à venda" passava a "Mostrar só os meus à venda" (a checkbox filtra, não adiciona — o "só" evita a leitura errada).
+- `TransferHub.jsx`: só 1 string; nota: o pedido indicava `MarketPanel.jsx`, mas o texto vive no `TransferHub.jsx:549` (o `MarketPanel` só tem Mercado 1X2 + Árbitro).
+- Checks: `eslint` limpo no ficheiro · `check:types` OK · só texto → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.

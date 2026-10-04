@@ -4,7 +4,7 @@ import { useAssistantCoach } from "../../hooks/useAssistantCoach.js";
 import { AssistantCoachView, AssistantMascot } from "./AssistantCoachView.jsx";
 
 // A vista pura vive em `AssistantCoachView.jsx` (sem contextos, sem socket);
-// fica reexportada daqui porque o tutorial importa o medalhão deste módulo.
+// o tutorial importa o medalhão directamente de lá (mantém-se fora do socket).
 export { AssistantCoachView, AssistantMascot };
 
 /**
