@@ -38,6 +38,7 @@
     "test:engine-unit": "tsx --test scripts/engineUnitRegression.mts",
     "test:segment-barrier": "tsx scripts/segmentBarrierSmoke.mts",
     "test:session-freeze": "tsx --test scripts/sessionFreezeRegression.mts",
+    "test:push": "tsx --test scripts/pushRegression.mts",
     "test:connect-smoke": "tsx scripts/connectSmoke.mts",
     "test:finalize": "tsx scripts/finalizeRepro.mts",
     "test:newsslot": "tsx --test scripts/newsSlotRegression.mts",
