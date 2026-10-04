@@ -77,7 +77,7 @@ async function main() {
   // t1..t4: neutro 25 · t5: quase no teto · t6: quase no fundo · t7/t8 não jogam (só decaimento)
   await exec(
     `INSERT INTO teams (id, morale) VALUES
-       (1, 25), (2, 25), (3, 25), (4, 25), (5, 45), (6, 5), (7, 40), (8, 10);`,
+       (1, 25), (2, 25), (3, 25), (4, 25), (5, 45), (6, 5), (7, 40), (8, 10), (9, 20);`,
   );
 
   // ── Evento 1: deltas por resultado + decaimento ────────────────────────
@@ -89,8 +89,9 @@ async function main() {
   assertEq(await getMorale(4), 27, "E: 25 +2 = 27");
   assertEq(await getMorale(5), 50, "V com clamp: 45→43 (decaim.) +12 → 50");
   assertEq(await getMorale(6), 1, "D com clamp: 5→7 (decaim.) -10 → 1");
-  assertEq(await getMorale(7), 38, "sem jogo: 40 decai para 38");
-  assertEq(await getMorale(8), 11, "sem jogo: 10 decai para 11 (rumo a 25)");
+  assertEq(await getMorale(7), 39, "sem jogo: 40 decai para 39 (38,5 arredonda)");
+  assertEq(await getMorale(8), 12, "sem jogo: 10 decai para 12 (rumo a 25)");
+  assertEq(await getMorale(9), 21, "sem jogo: 20 sobe para 21 (antes truncava e ficava preso)");
 
   // ── Evento 2: decaimento continua entre jornadas (t1 agora só decai) ───
   await applyPostMatchQualityEvolution(
@@ -100,10 +101,10 @@ async function main() {
     1,
   );
 
-  assertEq(await getMorale(1), 35, "sem jogo: 37 decai para 35");
-  assertEq(await getMorale(7), 36, "sem jogo: 38 decai para 36");
-  assertEq(await getMorale(8), 12, "sem jogo: 11 decai para 12");
-  assertEq(await getMorale(3), 28, "E: 27→26 (decaim.) +2 = 28");
+  assertEq(await getMorale(1), 36, "sem jogo: 37 decai para 36");
+  assertEq(await getMorale(7), 38, "sem jogo: 39 decai para 38");
+  assertEq(await getMorale(8), 13, "sem jogo: 12 sobe para 13");
+  assertEq(await getMorale(3), 29, "E: 27→27 (decaim.) +2 = 29");
 
   db.close();
   console.log("\nPASS — todos os casos de moral OK");

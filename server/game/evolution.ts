@@ -45,7 +45,7 @@ export async function applyPostMatchQualityEvolution(
     // Depois o delta do resultado — tudo com await (antes era fire-and-forget
     // com race entre o decaimento global e os updates por equipa).
     await dbRun(
-      `UPDATE teams SET morale = MAX(1, MIN(50, CAST(morale + (25 - morale) * ${MATCH_TUNING.moraleDecayRate} AS INTEGER)))`,
+      `UPDATE teams SET morale = MAX(1, MIN(50, CAST(ROUND(morale + (25 - morale) * ${MATCH_TUNING.moraleDecayRate}) AS INTEGER)))`,
     );
 
     const moraleUpdates: Array<{ teamId: number; delta: number }> = [];
