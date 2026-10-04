@@ -52,20 +52,20 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@clack/prompts": "^1.7.0",
+    "@clack/prompts": "^1.8.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
+    "dotenv": "^18.0.5",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.3.1",
-    "socket.io": "^4.8.3",
+    "express-rate-limit": "^8.7.0",
+    "socket.io": "^4.8.4",
     "sqlite3": "^6.0.1",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/node": "^22.15.32",
-    "tsx": "^4.20.3",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }
