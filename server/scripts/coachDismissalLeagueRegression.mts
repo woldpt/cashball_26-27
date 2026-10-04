@@ -232,6 +232,7 @@ async function main() {
   assert(newTeam.division === 3, `A: realocação na mesma divisão (div ${newTeam.division})`);
   assert(DIV3_BOTTOM4_NAMES.includes(newTeam.name), `A: clube atribuído está entre os últimos 4 classificados da Liga 3 — obtido "${newTeam.name}"`);
   assert((await teamRow(db, player.teamId)).manager_id != null, "A: clube atribuído ficou com treinador");
+  assert((await teamRow(db, 201)).manager_id != null, "A: clube de onde foi despedido recebeu treinador NPC (não fica órfão)");
 
   // ---------- Cenário B: promoção → despedição ⇒ realocação na div 2 ----------
   db = await setupDb();

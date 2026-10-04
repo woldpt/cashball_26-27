@@ -324,6 +324,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     });
 
     await autoAssignDismissedCoach(game, coachName, oldTeamId);
+    await backfillVacatedClub(game, oldTeamId, coachName);
   }
 
   /**
@@ -400,6 +401,24 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
     broadcastTeamsData(game);
     return manager.name;
+  }
+
+  /**
+   * Clube que ficou sem treinador porque o humano saiu (despedido ou a aceitar
+   * convite): entra um NPC. Distritais (div 5) são pool interno e ficam de fora.
+   */
+  async function backfillVacatedClub(
+    game: ActiveGame,
+    teamId: number,
+    exceptName: string,
+  ): Promise<void> {
+    const team = await runGet<AnyRow>(
+      game.db,
+      "SELECT * FROM teams WHERE id = ? AND manager_id IS NULL",
+      [teamId],
+    );
+    if (!team || team.division === 5) return;
+    await hireNpcManager(game, team, exceptName);
   }
 
   async function dismissNpcManager(
@@ -1133,6 +1152,8 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       "UPDATE teams SET manager_id = NULL WHERE id = ?",
       [fromTeamId],
     );
+
+    await backfillVacatedClub(game, fromTeamId, coachName);
 
     // Update in-memory state
     player.teamId = toTeamId;
