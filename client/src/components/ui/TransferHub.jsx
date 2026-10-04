@@ -50,16 +50,20 @@ function TeamMark({ team, name }) {
   const label = name || "—";
   if (team?.crest) {
     return (
-      <img
-        src={team.crest}
-        alt={label}
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-        className="w-4 h-4 object-contain rounded-sm p-px shrink-0 border border-outline-variant/20 shadow-md"
+      <span
+        className="w-4 h-4 rounded-sm shrink-0 border border-outline-variant/20 shadow-md"
         style={{ backgroundColor: team?.color_primary || "#333" }}
-        loading="lazy"
-      />
+      >
+        <img
+          src={team.crest}
+          alt={label}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+          className="crest-shadow w-full h-full object-contain p-px"
+          loading="lazy"
+        />
+      </span>
     );
   }
   return (

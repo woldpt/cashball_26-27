@@ -32,15 +32,21 @@ export function TeamCrest({
   }
 
   if (team?.crest && !failed) {
+    // Fundo colorido no wrapper: a `crest-shadow` (drop-shadow) segue o
+    // logótipo, não o quadrado/círculo do tile.
     return (
-      <img
-        src={team.crest}
-        alt={team?.name || "brasão"}
-        onError={() => setFailedCrest(team.crest)}
-        className={`${circle} object-contain p-1 shadow-md`}
+      <span
+        className={`${circle} inline-flex shadow-md`}
         style={{ backgroundColor: team?.color_primary || "#333" }}
-        loading="lazy"
-      />
+      >
+        <img
+          src={team.crest}
+          alt={team?.name || "brasão"}
+          onError={() => setFailedCrest(team.crest)}
+          className="crest-shadow w-full h-full object-contain p-1"
+          loading="lazy"
+        />
+      </span>
     );
   }
 

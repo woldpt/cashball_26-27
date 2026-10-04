@@ -392,16 +392,20 @@ export function ClubTab({
           <div className="relative p-3 sm:p-4 short:p-2 short:gap-2 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
             {/* Badge — crest com fallback para inicial */}
             {teamInfo?.crest ? (
-              <img
-                src={teamInfo.crest}
-                alt={teamInfo?.name || "crest"}
-                onError={() => setFailedCrest(teamInfo.crest)}
-                className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg object-contain p-1.5 short:p-1 shrink-0 border border-white/10 shadow-md ${
-                  crestFailed ? "hidden" : "inline"
+              <span
+                className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg shrink-0 border border-white/10 shadow-md ${
+                  crestFailed ? "hidden" : "inline-flex"
                 }`}
                 style={{ backgroundColor: teamInfo?.color_primary || "#333" }}
-                loading="lazy"
-              />
+              >
+                <img
+                  src={teamInfo.crest}
+                  alt={teamInfo?.name || "crest"}
+                  onError={() => setFailedCrest(teamInfo.crest)}
+                  className="crest-shadow w-full h-full object-contain p-1.5 short:p-1"
+                  loading="lazy"
+                />
+              </span>
             ) : null}
             <div
               className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg flex items-center justify-center text-xl sm:text-2xl short:text-base font-black shrink-0 border border-white/10 ${

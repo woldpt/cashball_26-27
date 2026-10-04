@@ -230,3 +230,8 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Pedido: na notícia das contas da semana, os valores de Débito a negativo e vermelho.
 - `JournalTab.jsx` (`WeeklyFinanceTable`): Salários, Manutenção, Juros e Capital marcados como `debit` — valor com sinal negativo (`-X €`, guarda contra `-0 €`) e `text-error`; Rendimento e Saldo como estavam (Saldo já pintava negativo/positivo).
 - Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · só `className`/texto → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
+## Checkbox do Mercado passa a filtrar "só os meus" (2026-10-02)
+- Bug: a checkbox "Mostrar só os meus à venda" nunca filtrava — o predicado (`team_id !== mine || (show && fixed)`) com a caixa marcada ADICIONAVA os meus aos dos outros em vez de mostrar só os meus (a renomeação para "só" expôs a divergência).
+- Fix (`GameContext.jsx` `filteredMarketPlayers` + `TransferHub.jsx` `posCounts`, mesmo ternário nos dois): marcada → só os meus; desmarcada → esconde os meus (comportamento anterior).
+- Checks: prova de semântica em node (marcada só meus, desmarcada só outros) · `check:types` OK · `eslint` só o erro pré-existente `react-refresh` no `GameContext.jsx` (provado no HEAD) · só predicados, sem layout → sem `test:mobile`; sem sockets/jogo → sem audits.

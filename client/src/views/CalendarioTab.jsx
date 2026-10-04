@@ -224,14 +224,18 @@ const TeamCircle = memo(function TeamCircle({ team, size = "lg" }) {
   if (team?.crest) {
     return (
       <>
-        <img
-          src={team.crest}
-          alt={team?.name || "crest"}
-          onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
-          className={`${sz} rounded-full object-contain p-1 shrink-0 border border-white/10 shadow-md`}
+        <span
+          className={`${sz} rounded-full shrink-0 border border-white/10 shadow-md`}
           style={{ backgroundColor: team?.color_primary || "#333" }}
-          loading="lazy"
-        />
+        >
+          <img
+            src={team.crest}
+            alt={team?.name || "crest"}
+            onError={(e) => { e.currentTarget.parentElement.style.display = "none"; const fb = e.currentTarget.parentElement.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+            className="crest-shadow w-full h-full object-contain p-1"
+            loading="lazy"
+          />
+        </span>
         <div
           className={`${sz} rounded-full hidden items-center justify-center font-black shrink-0 border border-white/10`}
           style={{ background: team?.color_primary || "#333", color: team?.color_secondary || "#fff" }}

@@ -209,7 +209,8 @@ export function LiveMatchHero({
           onError={(e) => { e.currentTarget.style.display = "none"; }}
           className="absolute -left-8 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
           style={{
-            filter: "brightness(0.75) saturate(1)",
+            /* crest-shadow mesclado: o `filter` inline anula a classe */
+            filter: "brightness(0.75) saturate(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.45)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.25))",
             maskImage: "linear-gradient(to right, black 55%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, black 55%, transparent 100%)",
           }}
@@ -224,7 +225,7 @@ export function LiveMatchHero({
           onError={(e) => { e.currentTarget.style.display = "none"; }}
           className="absolute -right-8 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
           style={{
-            filter: "brightness(0.75) saturate(1)",
+            filter: "brightness(0.75) saturate(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.45)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.25))",
             maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
           }}

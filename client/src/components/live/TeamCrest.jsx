@@ -34,15 +34,24 @@ export function TeamCrest({ team, isMine = false, coach = null, size = "md", rot
   return (
     <div className="relative shrink-0">
       {showImg ? (
-        <img
-          src={team.crest}
-          alt={team.name || "crest"}
-          onError={() => setImgFailed(true)}
-          style={mediaStyle}
-          className={`${dims} object-contain p-1.5 border-2 shadow-md ${isMine ? "border-primary" : "border-outline-variant/20"}`}
-          style={{ backgroundColor: team?.color_primary || "#333" }}
-          loading="lazy"
-        />
+        // Fundo colorido + rotação no wrapper: a `crest-shadow` segue o
+        // logótipo, não o quadrado do tile. (Antes o 2.º `style` do <img>
+        // anulava o `mediaStyle` — bug latente resolvido com a mudança.)
+        <span
+          className={`${dims} flex border-2 shadow-md ${isMine ? "border-primary" : "border-outline-variant/20"}`}
+          style={{
+            backgroundColor: team?.color_primary || "#333",
+            ...mediaStyle,
+          }}
+        >
+          <img
+            src={team.crest}
+            alt={team.name || "crest"}
+            onError={() => setImgFailed(true)}
+            className="crest-shadow w-full h-full object-contain p-1.5"
+            loading="lazy"
+          />
+        </span>
       ) : (
         <span
           className={`${dims} flex items-center justify-center font-black border-2 ${

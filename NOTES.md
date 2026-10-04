@@ -1,3 +1,10 @@
+## Sombra subtil nos logotipos dos crests (2026-10-05)
+- Plano `docs/plans/2026-10-05-sombra-logotipos-crests.md`: a sombra desenhava-se à volta do tile, não do logótipo — o fundo colorido saiu do `<img>` para um wrapper `<span>` e o `<img>` ganhou `crest-shadow` (novo `@utility` em `index.css`, 2 `drop-shadow` curtos).
+- Fase 1: `shared/TeamCrest` e `live/TeamCrest` (no live o `mediaStyle` de rotação passou para o wrapper — resolvido o bug latente dos dois atributos `style`, o 2.º anulava o 1.º).
+- Fase 2: 9 sítios com `<img>` direto (PlayerHistoryModal, WelcomeModal, TransferHub, AuctionResultRow, CupFinalStage, LiveMatchHero, DuelHero, ClubTab, CalendarioTab) com o mesmo wrapper local; as 6 marcas de água têm `filter` inline (anula a classe) → drop-shadow mesclado no `filter`.
+- Fallback de iniciais/⚽ intacto; `shadow-md` do tile mantido nos wrappers.
+- Checks: `lint` limpo nos 12 ficheiros (3 pré-existentes noutros) · `check:types` 0 · `build` OK · `test:mobile` **185/185** + screenshots 360 lidos (Clube, Welcome, Classificações, Live, Briefing, Taça Final). Fica para o utilizador: ver no browser o crest real (logótipo escuro sobre cor escura), claro/escuro.
+
 ## Clima no relvado do jogo (2026-10-04)
 - O relvado do `MatchView` mostra o clima do jogo: novo `WeatherOverlay.jsx` (chuva/neve/vento/nevoeiro/frio com partículas só em CSS, posições determinísticas) ligado ao emoji do evento `weather` que já existia; sem clima não pinta nada. Com movimento reduzido fica parado nas tintas estáticas.
 - Checks: `eslint` limpo nos 4 ficheiros · `check:types` 0 · `test:mobile` **185/185** + `match-spectate` 5/5 com captura 390 vista (relvado inteiro, sem overflow).
@@ -191,8 +198,4 @@
 - Saltado de propósito: tática (arrasto já tem escala/opacidade) e transições globais (`GameLayout` já tem `AnimatePresence` + `MotionConfig reducedMotion="user"`). Sem lógica de jogo/sockets → sem audits; `audit:gamestate` sem sala viva fica para a próxima.
 - Checks: `eslint` limpo nos ficheiros · `check:types` OK · `test:mobile` PASS 175/175 (a regressão do troféu foi provada minha via worktree no HEAD: 10/10 PASS) + capturas 390 verificadas (hero, leilões, finanças, estádio).
 
-## Checkbox do Mercado passa a filtrar "só os meus" (2026-10-02)
-- Bug: a checkbox "Mostrar só os meus à venda" nunca filtrava — o predicado (`team_id !== mine || (show && fixed)`) com a caixa marcada ADICIONAVA os meus aos dos outros em vez de mostrar só os meus (a renomeação para "só" expôs a divergência).
-- Fix (`GameContext.jsx` `filteredMarketPlayers` + `TransferHub.jsx` `posCounts`, mesmo ternário nos dois): marcada → só os meus; desmarcada → esconde os meus (comportamento anterior).
-- Checks: prova de semântica em node (marcada só meus, desmarcada só outros) · `check:types` OK · `eslint` só o erro pré-existente `react-refresh` no `GameContext.jsx` (provado no HEAD) · só predicados, sem layout → sem `test:mobile`; sem sockets/jogo → sem audits.
 

@@ -105,6 +105,13 @@ body {
   user-select: none;
 }
 
+/* Sombra subtil que segue o logótipo (não o fundo do tile): aplicada ao
+   <img> do crest, cujo fundo colorido vive num wrapper (ver TeamCrest).
+   Duas camadas curtas = sombra suave sem "mancha"; afinar num só sítio. */
+@utility crest-shadow {
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.45)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.25));
+}
+
 /* Hide scrollbar utility */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
