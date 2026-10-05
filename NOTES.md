@@ -1,3 +1,7 @@
+## Deploy v26.10.19 no rick (2026-10-05)
+- Campo em perspetiva no mobile com o tempo ao fundo; pausa pré-jogo de 7s com a análise de volta e anúncio de fase animado no placar.
+- Casaco do adjunto na cor do clube; staff contratado com nome, papel e nível à medida da tesouraria; mentalidade em 3 botões no mobile; `backend Healthy`.
+
 ## Deploy v26.10.18 no rick (2026-10-05)
 - Barra de notícias junta as pendentes numa só tira; pill «AO VIVO» e o espaço reservado saem do mobile.
 - Indicador do separador ativo passa para baixo no mobile; parcelas de patrocínio só no resumo financeiro semanal; `backend Healthy`.
@@ -175,13 +179,5 @@
 - `PlayerHistoryModal.jsx`: ramo `hasPendingRequest` — `shadow-[0_0_14px_rgba(239,68,68,0.55)]` nos 2 botões (o `Button` já concatena `className`).
 - Checks: `lint` limpo no ficheiro (4 problemas pré-existentes noutros) · `check:types` OK · tweak de `className` → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
 
-## Adjunto: busto cortado no peito e olhar para fora do ecrã (2026-10-03)
-- Pedido: verificar se o corpo do boneco estava a ser cortado no peito e para que lado estava virado.
-- Corte (medido, não a olho): o alfa chegava à última linha do canvas — 431 dos 512 px opacos em `jj-fechada`, 412 deles casaco — uma linha recta a meio do peito; e o tufo de cabelo tocava `y=0` (7-11 px). **Não era CSS** (nenhum `overflow-hidden` no caminho, asset quadrado em caixa quadrada): era o recorte «cabeça+ombros» do próprio ficheiro. O material com torso e braços cruzados estava em `docs/jj1.png`/`docs/jj2.png`.
-- Regenerado a partir dessas metades: alinhamento pelo alfa (98.7%, dx=0), canvas 336×512 com 12px de folga no topo e 5px nas laterais. O corte passa a ser nos antebraços — é onde o desenho original acaba. 27KB por asset (eram 39KB).
-- Caixa com o **aspecto do asset** (o `img` usa `object-fit: fill`): `h-[128px] w-[84px]`, desktop `lg:h-[156px] lg:w-[102px]`, medalhão do tutorial `h-[76px] w-[50px]` — mantém a altura de cabeça em ecrã que a caixa quadrada dava. Tutorial não tem harness: verificado por aritmética do aspecto (0.658 vs 0.656).
-- **Direcção do olhar:** a fonte já olhava à direita (desvio da pupila em fracção da largura do globo **+0.30**, igual ao asset de produção). A minha 1.ª versão espelhou-a e ficou a olhar à esquerda (−0.30) — corrigida sem espelho. Método com prova de sanidade (espelhar inverte o sinal); a olho, nestes assets, engana (li a pupila nos dois sentidos a olho).
-- Em desktop a dica põe o balão à esquerda do retrato (`lg:flex-row-reverse`): o boneco ficava de costas para o balão e a olhar para fora do ecrã (visto no render 1440×900). Prop `flipOnDesktop` no `AssistantMascot`, usada **só na vista da dica** — o tutorial tem o balão sempre à direita e não se espelha.
-- Checks: `test:mobile` **175/175** (`resErr=0` no harness do adjunto) + screenshots 360 e 1440 lidos · `eslint` limpo nos ficheiros da tarefa (restam os 2 pré-existentes: `App.jsx`, `GameContext.jsx`) · `check:types` OK · `build` OK · sem server/jogo/sockets → sem `typecheck` nem audits. Nota: a passagem correu com `client/src/utils/inboxItems.js` modificado (trabalho em curso noutra sessão, fora destes commits e não tocado).
 
 
