@@ -2,7 +2,7 @@ import { socket } from "../../socket.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { TeamCrest } from "../shared/TeamCrest.jsx";
 import { Button } from "../shared/Button.jsx";
-import { MODAL_Z } from "../../constants/index.js";
+import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 import { isDarkColor } from "../live/liveHelpers.js";
 
 /**
@@ -115,6 +115,11 @@ export function CupDrawPopup({
                   >
                     {homeRevealed ? fixture.homeTeam?.name || "?" : "·····"}
                   </span>
+                  {homeRevealed && fixture.homeTeam?.division != null && (
+                    <span className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wide truncate">
+                      {DIVISION_NAMES[fixture.homeTeam.division] || `Div ${fixture.homeTeam.division}`}
+                    </span>
+                  )}
                   {homeCoach && (
                     <span className="block text-[9px] text-amber-400 font-bold truncate">
                       {homeCoach}
@@ -149,6 +154,11 @@ export function CupDrawPopup({
                   >
                     {awayRevealed ? fixture.awayTeam?.name || "?" : "·····"}
                   </span>
+                  {awayRevealed && fixture.awayTeam?.division != null && (
+                    <span className="block text-[9px] text-zinc-500 font-bold uppercase tracking-wide truncate">
+                      {DIVISION_NAMES[fixture.awayTeam.division] || `Div ${fixture.awayTeam.division}`}
+                    </span>
+                  )}
                   {awayCoach && (
                     <span className="block text-[9px] text-amber-400 font-bold truncate">
                       {awayCoach}

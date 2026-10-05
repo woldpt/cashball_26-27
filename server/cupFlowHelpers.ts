@@ -1135,12 +1135,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	async function enrichFixturePair(game: ActiveGame, homeTeamId: number, awayTeamId: number, round: number) {
 		const home = await runGet(
 			game.db,
-			"SELECT id, name, color_primary, color_secondary, crest FROM teams WHERE id = ?",
+			"SELECT id, name, color_primary, color_secondary, crest, division FROM teams WHERE id = ?",
 			[homeTeamId],
 		);
 		const away = await runGet(
 			game.db,
-			"SELECT id, name, color_primary, color_secondary, crest FROM teams WHERE id = ?",
+			"SELECT id, name, color_primary, color_secondary, crest, division FROM teams WHERE id = ?",
 			[awayTeamId],
 		);
 		return {
