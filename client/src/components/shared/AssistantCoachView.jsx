@@ -72,12 +72,12 @@ export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen }) {
 
   return (
     <div
-      // `bottom-24` no mobile deixa folga exata sobre o rodapé Notícias CM
-      // (`bottom-16 h-8` = 64–96px); em desktop o rodapé vive a `bottom-0`.
+      // Notícias CM nunca coexistem com o adjunto (a barra espera), logo
+      // basta folgar a MobileNav em portrait; em landscape a nav é rail.
       // `invisible` (e não desmontar) com o fly-up aberto: o balão está no
       // mesmo ancoradouro do menu e, com z maior, roubava-lhe os toques —
       // escondido, o texto e o gate do onze ficam intactos.
-      className={`fixed bottom-24 lg:bottom-6 left-0 right-0 pointer-events-none flex justify-center lg:justify-end px-3 lg:pr-6 ${menuOpen ? "invisible" : ""}`}
+      className={`fixed bottom-[calc(var(--mobile-nav-h)+0.5rem)] max-lg:landscape:bottom-2 lg:bottom-6 left-0 right-0 pointer-events-none flex justify-center lg:justify-end px-3 lg:pr-6 ${menuOpen ? "invisible" : ""}`}
       style={{ zIndex: MODAL_Z.assistant }}
       data-tour="assistant-coach"
     >
