@@ -1,3 +1,7 @@
+## Deploy v26.10.18 no rick (2026-10-05)
+- Barra de notícias junta as pendentes numa só tira; pill «AO VIVO» e o espaço reservado saem do mobile.
+- Indicador do separador ativo passa para baixo no mobile; parcelas de patrocínio só no resumo financeiro semanal; `backend Healthy`.
+
 ## Deploy v26.10.17 no rick (2026-10-05)
 - Direto com suspense no penálti (popup animado em paralelo com o festejo), golo novo substitui o festejo em curso, meteorologia em ecrã inteiro com vento novo; ritmo de golos afinado (sem golo de bola corrida no minuto após golo).
 - Barra de notícias entra pela direita e mais baixa no mobile, sem contador nem dispensar; convite de clube pendente sobrevive ao restart; amigáveis pedem confirmação acima de 3 substituições; `backend Healthy`.
@@ -180,8 +184,4 @@
 - Em desktop a dica põe o balão à esquerda do retrato (`lg:flex-row-reverse`): o boneco ficava de costas para o balão e a olhar para fora do ecrã (visto no render 1440×900). Prop `flipOnDesktop` no `AssistantMascot`, usada **só na vista da dica** — o tutorial tem o balão sempre à direita e não se espelha.
 - Checks: `test:mobile` **175/175** (`resErr=0` no harness do adjunto) + screenshots 360 e 1440 lidos · `eslint` limpo nos ficheiros da tarefa (restam os 2 pré-existentes: `App.jsx`, `GameContext.jsx`) · `check:types` OK · `build` OK · sem server/jogo/sockets → sem `typecheck` nem audits. Nota: a passagem correu com `client/src/utils/inboxItems.js` modificado (trabalho em curso noutra sessão, fora destes commits e não tocado).
 
-## Classificação final: linhas saem do parágrafo de entrada (2026-10-03)
-- Pedido: verificar formatação/conteúdo da notícia de classificação final (`league_final`); as linhas da tabela no corpo corriam dentro do parágrafo de entrada (lead) — capitular + `text-lg` + `text-justify` — porque o corpo usava `\n` simples (não `\n\n`) entre as linhas.
-- Fix (`inboxItems.js` `leagueFinalArticle`): separar a intro das linhas da classificação com `\n\n`, de modo que as linhas fiquem num parágrafo não-lead (`text-base`, sem capitular). A tabela visual (`LeagueFinalTable` no `JournalTab`) já aparecia separada abaixo; as linhas do corpo são o texto pesquisável.
-- Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · regressão `journalDbNewsRegression` R8 8/8 (os 2 fails são de outros tipos de notícia, pré-existentes) · só texto num util → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
 

@@ -275,4 +275,9 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Checks: `test:assistant` 8/8 · `test:trainingcap` 5/5 · `eslint` limpo nos ficheiros da tarefa (restam 2 pré-existentes: warning do `App.jsx`, erro do `GameContext.jsx`) · `check:types` OK (227 ficheiros) · `npm run build` OK · `test:mobile` **175/175** (passagem completa: ficheiro partilhado) + screenshots 320/390 revistos · nada em `server/` nem lógica de jogo/sockets → sem `typecheck` nem audits.
 - Fica em aberto (cosmético, 1 token): em desktop o balão (`lg:bottom-6`) ainda cobre os 8px de topo do rodapé CM — padding vazio e barra não interativa; `lg:bottom-10` fecharia. Não entrou porque a posição em desktop não estava no plano aprovado.
 
+## Classificação final: linhas saem do parágrafo de entrada (2026-10-03)
+- Pedido: verificar formatação/conteúdo da notícia de classificação final (`league_final`); as linhas da tabela no corpo corriam dentro do parágrafo de entrada (lead) — capitular + `text-lg` + `text-justify` — porque o corpo usava `\n` simples (não `\n\n`) entre as linhas.
+- Fix (`inboxItems.js` `leagueFinalArticle`): separar a intro das linhas da classificação com `\n\n`, de modo que as linhas fiquem num parágrafo não-lead (`text-base`, sem capitular). A tabela visual (`LeagueFinalTable` no `JournalTab`) já aparecia separada abaixo; as linhas do corpo são o texto pesquisável.
+- Checks: `eslint` limpo no ficheiro (3 erros pré-existentes noutros) · `check:types` OK · regressão `journalDbNewsRegression` R8 8/8 (os 2 fails são de outros tipos de notícia, pré-existentes) · só texto num util → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 
