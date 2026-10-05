@@ -20,8 +20,10 @@ import { Button } from "../shared/Button.jsx";
  *   direita; no balão da dica o texto fica-lhe à esquerda em desktop
  *   (`lg:flex-row-reverse`), logo tem de ser espelhado para olhar para lá.
  *   O tutorial não usa isto — tem o balão sempre à direita do retrato.
+ * @param {string|null} [color] Cor do clube para o casaco (máscara
+ *   `/coaches/jj-casaco-mask.webp`); sem ela fica o azul-marinho original.
  */
-export function AssistantMascot({ mood, flipOnDesktop }) {
+export function AssistantMascot({ mood, flipOnDesktop, color }) {
   const sad = mood === "sad";
   const reducedMotion = usePrefersReducedMotion();
   const [open, setOpen] = useState(false);
@@ -53,6 +55,13 @@ export function AssistantMascot({ mood, flipOnDesktop }) {
         aria-hidden
         className={`${imgClass} absolute inset-0 m-auto transition-opacity duration-100 ${open ? "opacity-100" : "opacity-0"}`}
       />
+      {color && (
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{ backgroundColor: color, mask: "url(/coaches/jj-casaco-mask.webp) 0 0 / 100% 100%" }}
+        />
+      )}
     </div>
   );
 }
@@ -64,9 +73,10 @@ export function AssistantMascot({ mood, flipOnDesktop }) {
  * @param {() => void} props.onGo Navega para a tab que resolve.
  * @param {() => void} props.onDismiss Dispensa a dica (1x/semana).
  * @param {boolean} [props.menuOpen] Fly-up do menu mobile aberto — o balão cala-se.
+ * @param {string|null} [props.color] Cor do clube (casaco do adjunto).
  * @returns {JSX.Element}
  */
-export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen }) {
+export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen, color }) {
   const reducedMotion = usePrefersReducedMotion();
   const { shown, done, complete } = useTypewriter(tip.text);
 
@@ -94,7 +104,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen }) {
           exit={reducedMotion ? undefined : { y: "120%", transition: { delay: 0.15, duration: 0.25 } }}
           transition={{ duration: 0.3 }}
         >
-          <AssistantMascot mood={tip.mood} flipOnDesktop />
+          <AssistantMascot mood={tip.mood} flipOnDesktop color={color} />
         </motion.div>
         {/* O balão surge quando o boneco chega; ao dispensar desvanece primeiro. */}
         <motion.div

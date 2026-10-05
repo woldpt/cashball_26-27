@@ -38,9 +38,10 @@ function clampBox(rect, viewport) {
  * @param {function} props.onNext
  * @param {function} props.onBack
  * @param {function} props.onSkip - saltar (marca concluído)
+ * @param {string|null} [props.color] - cor do clube (casaco do adjunto)
  * @returns {JSX.Element}
  */
-export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip }) {
+export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip, color }) {
 	const step = COACH_TUTORIAL_STEPS[stepIndex] ?? COACH_TUTORIAL_STEPS[0];
 	const total = COACH_TUTORIAL_STEPS.length;
 	const isLast = stepIndex >= total - 1;
@@ -119,7 +120,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
 					exit={reducedMotion ? undefined : { y: 120 }}
 					transition={{ duration: 0.3 }}
 				>
-					<AssistantMascot mood="worried" />
+					<AssistantMascot mood="worried" color={color} />
 					<div className="relative flex-1 min-w-0 bg-white border-[3px] border-zinc-900 rounded-3xl p-4 text-zinc-900 shadow-[0_18px_50px_rgba(0,0,0,0.45)]">
 						{/* Rabicho para o retrato (fica sempre à esquerda do balão) */}
 						<span

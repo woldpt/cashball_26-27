@@ -39,6 +39,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     sidebarCollapsed,
     // Auth
     me,
+    teams,
     // Handlers
     navigateTab,
     // Derived
@@ -198,6 +199,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         {tutorial.active && !isMatchInProgress && !welcomeModal && (
           <CoachTutorial
           stepIndex={tutorial.index}
+          color={teams.find((t) => Number(t.id) === Number(me?.teamId))?.color_primary}
           onNavigate={handleTutorialNavigate}
           onNext={() => {
             if (tutorial.index >= COACH_TUTORIAL_STEPS.length - 1) {

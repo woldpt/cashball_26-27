@@ -18,7 +18,8 @@ export { AssistantCoachView, AssistantMascot };
  * @returns {JSX.Element}
  */
 export function AssistantCoach({ tip, dismissTip, goTip }) {
-  const { mobileSubMenu } = useGame();
+  const { mobileSubMenu, me, teams } = useGame();
+  const color = teams.find((t) => Number(t.id) === Number(me?.teamId))?.color_primary;
 
   return (
     <AnimatePresence>
@@ -29,6 +30,7 @@ export function AssistantCoach({ tip, dismissTip, goTip }) {
           menuOpen={mobileSubMenu != null}
           onGo={goTip}
           onDismiss={dismissTip}
+          color={color}
         />
       )}
     </AnimatePresence>
