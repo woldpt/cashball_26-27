@@ -213,7 +213,7 @@ export function TacticsProvider({ children }) {
   const handleConfirmSub = useCallback(() => {
     const srcId = typeof swapSource === "object" && swapSource !== null ? swapSource.id : swapSource;
     const tgtId = typeof swapTarget === "object" && swapTarget !== null ? swapTarget.id : swapTarget;
-    if (!srcId || !tgtId || subsMade >= 3) return;
+    if (!srcId || !tgtId || subsMade >= MAX_BENCH_SIZE) return;
     // Re-entrada é impossível: quem já saiu (nesta pausa ou antes) não pode
     // voltar a entrar, nem um jogador que já entrou noutra troca pendente.
     if (
