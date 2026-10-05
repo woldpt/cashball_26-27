@@ -15,6 +15,8 @@ const TINT = {
 
 /**
  * Faixa decorativa (só mobile): relvado em perspetiva tingido pela meteorologia.
+ * Fixa no fundo do ecrã, no lugar da MobileNav (escondida durante o jogo);
+ * o espaçador evita que tape o fim da lista.
  * @param {Object} props
  * @param {string} [props.emoji] Emoji do evento `weather`.
  * @returns {JSX.Element}
@@ -23,9 +25,11 @@ export function LivePitchStrip({ emoji }) {
   const t = TINT[EMOJI_TO_CONDITION[emoji]] || TINT.default;
   const line = "rgba(255,255,255,0.55)";
   return (
+    <>
+    <div aria-hidden="true" className="lg:hidden h-16" />
     <div
       aria-hidden="true"
-      className="md:hidden relative h-16 mt-3 overflow-hidden rounded-md pointer-events-none"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 h-[calc(4rem+env(safe-area-inset-bottom))] overflow-hidden border-t border-outline-variant/30 pointer-events-none"
       style={{ perspective: "220px", background: `linear-gradient(${t.sky}, ${t.g1} 45%)` }}
     >
       <svg
@@ -51,5 +55,6 @@ export function LivePitchStrip({ emoji }) {
       <div className="absolute inset-0" style={{ background: t.veil, boxShadow: "inset 0 10px 18px rgba(0,0,0,0.35)" }} />
       <WeatherOverlay emoji={emoji} />
     </div>
+    </>
   );
 }
