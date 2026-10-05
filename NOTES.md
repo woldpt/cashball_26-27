@@ -1,3 +1,6 @@
+## Deploy v26.10.13 no rick (2026-10-05)
+- LandingPage com props agrupadas em `form`/`room` + fallback de auth explícito para login; `backend Healthy`.
+
 ## LandingPage: props agrupadas em form/room (2026-10-05)
 - Plano `docs/plans/2026-10-05-landing-page-melhorias.md` executado F1–F3 em 3 commits (`84cfc937`, `68bf231f`, `121a8b9e`): fallback de auth explícito para login, JSDoc no padrão do `CLAUDE.md`, `landingProps` com grupos `form`/`room` + topo de 7 (o plano dizia 6, mas o `createAccount` limpa o `joinError` — esse ficou no topo; `setAvailableSaves` manteve `{Function}` porque recebe updater). `RoomSelectScreen` intacto.
 - Achado: `disconnected` nunca chega à landing (vive no `GameContext`, em jogo) — passa sempre `undefined`, antes e depois; documentado no JSDoc em vez de inventar valor.
