@@ -127,6 +127,10 @@ function unavailableMark(player, calendarIndex, matchweekCount) {
   return { emoji: isSusp ? "🟥" : "🩹", left: (isSusp ? susp : inj) - nowIdx };
 }
 
+/** Meteo dura (resistência pesa mais) e limiar de "resistência muito baixa" (escala 1–50). */
+const HARSH_WEATHER = new Set(["chuva", "vento", "chuva_forte", "frio", "neve"]);
+const LOW_RESISTANCE = 15;
+
 /** Selo inline de indisponibilidade (versão PlayerRow, com jornadas restantes). */
 function UnavailableMark({ player, calendarIndex, matchweekCount }) {
   const mark = unavailableMark(player, calendarIndex, matchweekCount);
@@ -285,6 +289,9 @@ function PlayerRow({
   children,
 }) {
   const pos = POS_COLORS[player.position] || { soft: "rgba(107,114,128,0.08)" };
+  const weather = useTactics().nextMatchSummary?.weatherForecast?.condition;
+  const weatherRisk =
+    HARSH_WEATHER.has(weather) && (player.resistance ?? 99) <= LOW_RESISTANCE;
   return (
     <div
       draggable={draggable}
@@ -314,6 +321,14 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           (player.position === "MED" || player.position === "ATA") && (
             <span className="text-amber-400 text-[9px] ml-0.5">★</span>
           )}
+        {weatherRisk && (
+          <span
+            title={`Resistência baixa para ${WEATHER_LABELS[weather] ?? weather}`}
+            className="inline-flex items-center justify-center w-3 h-3 ml-1 rounded-full bg-amber-500 text-[8px] font-black text-black align-middle"
+          >
+            !
+          </span>
+        )}
         {player.isUnavailable && (
           <UnavailableMark
             player={player}
