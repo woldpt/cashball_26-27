@@ -1,16 +1,16 @@
 import { WeatherOverlay } from "../match/shared/WeatherOverlay.jsx";
 import { EMOJI_TO_CONDITION } from "../match/shared/weatherConditions.js";
 
-/* Tinta por condição: céu (topo), duas tonalidades de relva, véu por cima. */
+/* Tinta por condição: duas tonalidades de relva, véu por cima. */
 const TINT = {
-  default: { sky: "#0b1a2e", g1: "#1f6b2a", g2: "#24782f", veil: "transparent" },
-  sol: { sky: "#3a5f8a", g1: "#2f8a35", g2: "#36993c", veil: "rgba(255,200,90,0.12)" },
-  chuva: { sky: "#1a2433", g1: "#175a24", g2: "#1b6629", veil: "rgba(20,30,50,0.25)" },
-  chuva_forte: { sky: "#0d131c", g1: "#124a1d", g2: "#155422", veil: "rgba(10,15,30,0.4)" },
-  neve: { sky: "#9aa8b8", g1: "#a9bfae", g2: "#c3d3c6", veil: "rgba(230,240,255,0.15)" },
-  frio: { sky: "#2a3d55", g1: "#22654a", g2: "#277055", veil: "rgba(150,190,255,0.12)" },
-  nevoeiro: { sky: "#59626b", g1: "#2c5e33", g2: "#326638", veil: "rgba(200,210,220,0.35)" },
-  vento: { sky: "#2b4560", g1: "#21702c", g2: "#267c32", veil: "transparent" },
+  default: { g1: "#1f6b2a", g2: "#24782f", veil: "transparent" },
+  sol: { g1: "#2f8a35", g2: "#36993c", veil: "rgba(255,200,90,0.12)" },
+  chuva: { g1: "#175a24", g2: "#1b6629", veil: "rgba(20,30,50,0.25)" },
+  chuva_forte: { g1: "#124a1d", g2: "#155422", veil: "rgba(10,15,30,0.4)" },
+  neve: { g1: "#a9bfae", g2: "#c3d3c6", veil: "rgba(230,240,255,0.15)" },
+  frio: { g1: "#22654a", g2: "#277055", veil: "rgba(150,190,255,0.12)" },
+  nevoeiro: { g1: "#2c5e33", g2: "#326638", veil: "rgba(200,210,220,0.35)" },
+  vento: { g1: "#21702c", g2: "#267c32", veil: "transparent" },
 };
 
 /**
@@ -30,7 +30,11 @@ export function LivePitchStrip({ emoji }) {
     <div
       aria-hidden="true"
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 h-[calc(4rem+env(safe-area-inset-bottom))] overflow-hidden border-t border-outline-variant/30 pointer-events-none"
-      style={{ perspective: "220px", background: `linear-gradient(${t.sky}, ${t.g1} 45%)` }}
+      style={{
+        perspective: "220px",
+        maskImage: "linear-gradient(transparent, #000 60%)",
+        WebkitMaskImage: "linear-gradient(transparent, #000 60%)",
+      }}
     >
       <svg
         viewBox="0 0 680 525"
@@ -52,7 +56,7 @@ export function LivePitchStrip({ emoji }) {
         <circle cx="340" cy="10" r="5" fill={line} />
         <circle cx="340" cy="420" r="5" fill={line} />
       </svg>
-      <div className="absolute inset-0" style={{ background: t.veil, boxShadow: "inset 0 10px 18px rgba(0,0,0,0.35)" }} />
+      <div className="absolute inset-0" style={{ background: t.veil }} />
       <WeatherOverlay emoji={emoji} />
     </div>
     </>
