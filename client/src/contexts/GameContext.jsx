@@ -935,7 +935,8 @@ year: seasonYear,
 	}, [me?.teamId, seasonYear]);
 
 	useEffect(() => {
-		if (activeTab !== "tactic" || !me?.teamId) return;
+		// Calendário também: traz o estado do amigável da semana da Taça.
+		if ((activeTab !== "tactic" && activeTab !== "calendario") || !me?.teamId) return;
 		startTransition(() => setNextMatchSummaryLoading(true));
 		socket.emit("requestNextMatchSummary", { teamId: me.teamId });
 	}, [activeTab, me?.teamId, matchweekCount, calendarIndex]);

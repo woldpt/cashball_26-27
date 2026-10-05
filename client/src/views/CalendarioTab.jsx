@@ -1,4 +1,4 @@
-import { useMemo, memo } from "react";
+import { useMemo, memo, useState } from "react";
 import { motion } from "framer-motion";
 import { SEASON_CALENDAR, CUP_FINAL_STADIUM } from "../constants/index.js";
 import { generateLeagueFixtures } from "../utils/fixtures.js";
@@ -111,9 +111,10 @@ const buildFriendlyItem = (entry, status, ctx) => {
 
 const buildCupItem = (entry, status, ctx) => {
   const { cal, teams, myTeam, myTeamId, eliminatedCupRound } = ctx;
-  // Rondas após a eliminação → placeholder de eliminado.
-  if (eliminatedCupRound !== null && entry.round > eliminatedCupRound) {
-    return { entry, status, type: "cup", eliminated: true };
+  // Rondas após a eliminação (ou Div. 5, que não joga a Taça) → placeholder.
+  const notInCup = myTeam?.division === 5;
+  if (notInCup || (eliminatedCupRound !== null && entry.round > eliminatedCupRound)) {
+    return { entry, status, type: "cup", eliminated: true, notInCup };
   }
   const fixtures =
     cal?.cupMatches?.filter((m) => m.round === entry.round) ?? [];
@@ -383,7 +384,64 @@ function NextMatchHero({ item, teamForms, onOpenTeamSquad, onGoToTactics }) {
  *   navigateTab: (key: string) => void,
  * }} props
  */
-export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, setCalFilter, handleOpenTeamSquad, teamForms, navigateTab }) {
+/**
+ * Amigável da semana da Taça para quem está fora dela: o jogo (ronda -r em
+ * cupMatches), a inscrição pendente ou o botão para marcar na véspera.
+ * @param {Object} props
+ * @param {{round: number}} props.entry
+ * @param {Object} props.cal
+ * @param {Array<{id: number, name: string}>} props.teams
+ * @param {number} props.myTeamId
+ * @param {{cupRound: number, signedUp: boolean}|null} props.cupWeekFriendly
+ * @param {(done: (res: {ok: boolean, error?: string}) => void) => void} props.onSignup
+ * @returns {JSX.Element|null}
+ */
+function CupWeekFriendlyRow({ entry, cal, teams, myTeamId, cupWeekFriendly, onSignup }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const match = findMyFixture(
+    cal?.cupMatches?.filter((m) => m.round === -entry.round) ?? [],
+    myTeamId,
+  );
+  const opponent = match?.away_team_id ? opponentOf(teams, match, myTeamId) : null;
+  const canSignup = !match && cupWeekFriendly?.cupRound === entry.round && !cupWeekFriendly.signedUp;
+  let text = null;
+  if (opponent) {
+    const { myScore, opScore } = splitScore(match.played ? match : null, myTeamId);
+    text = match.played
+      ? `Amigável vs ${opponent.name} · ${myScore}–${opScore}`
+      : `Amigável vs ${opponent.name} (${homeIdOf(match) === myTeamId ? "Casa" : "Fora"})`;
+  } else if (match || (cupWeekFriendly?.cupRound === entry.round && cupWeekFriendly.signedUp)) {
+    text = "Amigável marcado — adversário definido no fecho da jornada";
+  } else if (!canSignup) {
+    return null;
+  }
+  return (
+    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-surface-container border-l-2 border-l-primary">
+      <span className="flex items-center gap-2 text-xs font-bold text-on-surface min-w-0">
+        <span className="material-symbols-outlined text-[16px] text-primary">handshake</span>
+        <span className="truncate">{text ?? error ?? "Sem jogo nesta semana — queres marcar um amigável?"}</span>
+      </span>
+      {canSignup && (
+        <button
+          disabled={busy}
+          className="shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded bg-primary text-on-primary disabled:opacity-50"
+          onClick={() => {
+            setBusy(true);
+            onSignup((res) => {
+              setBusy(false);
+              if (!res?.ok) setError(res?.error ?? "Não foi possível marcar.");
+            });
+          }}
+        >
+          Marcar amigável
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, setCalFilter, handleOpenTeamSquad, teamForms, navigateTab, cupWeekFriendly, onSignupCupFriendly }) {
   const cal = calendarData;
   const curIdx = cal?.calendarIndex ?? 0;
   const calYear = cal?.year ?? seasonYear;
@@ -549,8 +607,8 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
               // ── Eliminado da Taça ──────────────────
               if (eliminated) {
                 return (
+                  <div key={entry.calendarIndex} className="flex flex-col gap-1">
                   <motion.div
-                    key={entry.calendarIndex}
                     {...staggerItemProps(idx)}
                     className="flex items-stretch gap-0 rounded-md overflow-hidden opacity-40 bg-surface-container border-l-2 border-l-error"
                   >
@@ -570,7 +628,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-sm font-black text-error leading-tight">
-                          Eliminado da Taça
+                          {item.notInCup ? "Fora da Taça" : "Eliminado da Taça"}
                         </span>
                         <span className="text-[10px] text-on-surface-variant/40">
                           {entry.roundName}
@@ -578,9 +636,20 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                       </div>
                     </div>
                     <div className="shrink-0 flex items-center justify-end px-4 short:px-2 py-2.5 sm:py-3 short:py-1.5">
-                      <Badge variant="error">Eliminado</Badge>
+                      <Badge variant="error">{item.notInCup ? "Fora" : "Eliminado"}</Badge>
                     </div>
                   </motion.div>
+                  {entry.round !== CUP_FINAL_ROUND && (
+                    <CupWeekFriendlyRow
+                      entry={entry}
+                      cal={cal}
+                      teams={teams}
+                      myTeamId={myTeamId}
+                      cupWeekFriendly={cupWeekFriendly}
+                      onSignup={onSignupCupFriendly}
+                    />
+                  )}
+                  </div>
                 );
               }
 

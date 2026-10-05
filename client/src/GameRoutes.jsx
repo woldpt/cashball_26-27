@@ -78,6 +78,7 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     cupRoundResults,
     // calendário
     calendarData,
+    nextMatchSummary,
     calFilter,
     setCalFilter,
     // finanças / estádio
@@ -450,6 +451,15 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         handleOpenTeamSquad={handleOpenTeamSquad}
                         teamForms={teamForms}
                         navigateTab={navigateTab}
+                        cupWeekFriendly={nextMatchSummary?.cupWeekFriendly ?? null}
+                        onSignupCupFriendly={(done) =>
+                          socket.emit("signupCupWeekFriendly", {}, (res) => {
+                            done?.(res);
+                            if (!res?.ok) return;
+                            socket.emit("requestCalendar");
+                            socket.emit("requestNextMatchSummary", { teamId: me?.teamId });
+                          })
+                        }
                       />
                     )}
                     {activeTab === "club" && (

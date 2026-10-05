@@ -8,6 +8,7 @@ import {
   FORM_NEUTRAL,
   FRIENDLY_ROUND,
   FRIENDLY_ROUND_NAME,
+  cupWeekFriendlyRound,
   MATCH_TUNING,
   FANBASE_BY_DIVISION,
   FANBASE_DIV_CAP,
@@ -1262,6 +1263,62 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.cupHalftimePayload = null;
 	}
 
+	// ─── AMIGÁVEIS DA SEMANA DA TAÇA ────────────────────────────────────────────
+	// Inscrições = linhas de cup_matches na ronda -r com away NULL (ordem do id =
+	// ordem de inscrição). No sorteio: pares de humanos pela ordem (casa = quem
+	// marcou primeiro); o que sobra recebe uma IA fora da ronda. Idempotente:
+	// num re-sorteio os pares já fechados reaproveitam-se.
+	async function prepareCupWeekFriendlies(game: ActiveGame, round: number) {
+		const season = game.season;
+		const dbRound = cupWeekFriendlyRound(round);
+		const open = await runAll(
+			game.db,
+			"SELECT id, home_team_id FROM cup_matches WHERE season = ? AND round = ? AND played = 0 AND away_team_id IS NULL ORDER BY id",
+			[season, dbRound],
+		);
+		const run = (sql: string, params: any[]) =>
+			new Promise<void>((resolve) => game.db.run(sql, params, () => resolve()));
+		for (let i = 0; i + 1 < open.length; i += 2) {
+			await run("UPDATE cup_matches SET away_team_id = ? WHERE id = ?", [open[i + 1].home_team_id, open[i].id]);
+			await run("DELETE FROM cup_matches WHERE id = ?", [open[i + 1].id]);
+		}
+		if (open.length % 2 === 1) {
+			const last = open[open.length - 1];
+			const busy = new Set<number>(game.cupTeamIds || []);
+			for (const seat of Object.values(game.seats || {})) {
+				if (seat.teamId != null) busy.add(Number(seat.teamId));
+			}
+			const taken = await runAll(
+				game.db,
+				"SELECT home_team_id, away_team_id FROM cup_matches WHERE season = ? AND round = ?",
+				[season, dbRound],
+			);
+			for (const r of taken) {
+				busy.add(r.home_team_id);
+				if (r.away_team_id) busy.add(r.away_team_id);
+			}
+			const candidates = (
+				await runAll(game.db, "SELECT id FROM teams WHERE division BETWEEN 1 AND 5")
+			).filter((t: any) => !busy.has(t.id));
+			if (candidates.length > 0) {
+				const ai = candidates[Math.floor(Math.random() * candidates.length)].id;
+				await run("UPDATE cup_matches SET away_team_id = ? WHERE id = ?", [ai, last.id]);
+			} else {
+				await run("DELETE FROM cup_matches WHERE id = ?", [last.id]);
+			}
+		}
+		const pairs = await runAll(
+			game.db,
+			"SELECT home_team_id, away_team_id FROM cup_matches WHERE season = ? AND round = ? AND played = 0 AND away_team_id IS NOT NULL ORDER BY id",
+			[season, dbRound],
+		);
+		const fixtures: any[] = [];
+		for (const p of pairs) {
+			fixtures.push(await enrichFixturePair(game, p.home_team_id, p.away_team_id, FRIENDLY_ROUND));
+		}
+		return fixtures;
+	}
+
 	// ─── PREPARE CUP ROUND ──────────────────────────────────────────────────────
 	// Generates the draw, populates game.currentFixtures, emits cupDrawStart.
 	// Does NOT change gamePhase — that is the caller's responsibility.
@@ -1284,7 +1341,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			);
 		}
 
-		game.currentFixtures = enrichedFixtures;
+		// Amigáveis dos eliminados correm na mesma ronda (ronda 0 em memória).
+		const friendlies = round === 5 ? [] : await prepareCupWeekFriendlies(game, round);
+		game.currentFixtures = [...enrichedFixtures, ...friendlies];
 		game.currentEvent = SEASON_CALENDAR[game.calendarIndex];
 		game.cupHalftimePayload = null;
 
@@ -1471,8 +1530,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		);
 
 		// ── Determine which fixtures are drawn at 90 min ──────────────────────────
+		// Amigáveis (ronda 0) não vão a prolongamento: empate fica.
 		const drawnFixtures = fixtures.filter(
-			(fx: any) => fx.finalHomeGoals === fx.finalAwayGoals,
+			(fx: any) => fx.round !== FRIENDLY_ROUND && fx.finalHomeGoals === fx.finalAwayGoals,
 		);
 		const hasAnyET = drawnFixtures.length > 0;
 		// Decisão por assentos (quem TEM jogo), não por `socketId` (quem está
@@ -1885,6 +1945,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game: ActiveGame,
 		setups: FixtureSetup[],
 		opts: { round: number; season: number; roundName: string; roundLabel: string },
+		friendlyFixtures: any[] = [],
 	): Promise<{ results: any[]; upsets: any[] } | null> {
 		const { round, season, roundName, roundLabel } = opts;
 		const results: any[] = [];
@@ -2276,6 +2337,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				}
 			}
 		}
+			// Amigáveis dos eliminados: mesma transação (sem stats, como na pré-época).
+			if (friendlyFixtures.length > 0) {
+				for (const fixture of friendlyFixtures) fixture._deltas = undefined;
+				const friendlyResults = await commitFriendlyFixtures(game, friendlyFixtures, cupWeekFriendlyRound(round));
+				results.push(...friendlyResults.map((r) => ({ ...r, isFriendly: true })));
+			}
 			// Fecha transacção atómica da Taça (receita + resultados + attendance)
 			await new Promise<void>((resolve) => {
 				game.db.run(
@@ -2351,7 +2418,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		try {
 
 		// ── Phase 1: Setup tactics and snapshot 90-min scores ────────────────────
-		const setups = await setupCupFixtures(game, fixtures);
+		const cupFixtures = fixtures.filter((fx: any) => fx.round !== FRIENDLY_ROUND);
+		const friendlyFixtures = fixtures.filter((fx: any) => fx.round === FRIENDLY_ROUND);
+		const setups = await setupCupFixtures(game, cupFixtures);
 
 		// ── Phase 2: Extra time — all drawn fixtures batched ─────────────────────
 		const hasAnyET = await playExtraTimeAndPenalties(game, setups, round, roundName);
@@ -2362,7 +2431,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			season,
 			roundName,
 			roundLabel,
-		});
+		}, friendlyFixtures);
 		if (!cupOutcome) {
 			// A transação falhou (ROLLBACK já feito): não prender os clientes
 			// nos 120' — emite os resultados simulados em memória (provisórios)
@@ -2509,6 +2578,136 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 	}
 
+	// Escritas por jogo do amigável (bilheteira a meias, resultado, rescaldo,
+	// memória táctica). Corre DENTRO da transação de quem chama, antes do
+	// marker 'finalized'. dbRound: 0 na pré-época, -ronda na semana da Taça.
+	async function commitFriendlyFixtures(game: ActiveGame, fixtures: any[], dbRound: number): Promise<any[]> {
+		const results: any[] = [];
+		const friendlyTeamOf = new Map<number, { name: string; division: number }>();
+		try {
+			const friendlyTeams = await getTeamsWithCoachNames(game.db);
+			for (const t of friendlyTeams || [])
+				friendlyTeamOf.set(Number(t.id), { name: t.name, division: Number(t.division) });
+		} catch {
+			/* sem foto: o rescaldo sai com variante simples */
+		}
+		for (const fixture of fixtures) {
+			const price = (fixture as any)._ticketPrice || 15;
+			const revenue = (fixture.attendance || 0) * price;
+			const awayShare = Math.floor(revenue / 2);
+			const homeShare = revenue - awayShare;
+			if (homeShare > 0) {
+				await new Promise<void>((resolve) => {
+					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [homeShare, fixture.homeTeamId], () => resolve());
+				});
+			}
+			if (awayShare > 0) {
+				await new Promise<void>((resolve) => {
+					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [awayShare, fixture.awayTeamId], () => resolve());
+				});
+			}
+			await new Promise<void>((resolve) => {
+				game.db.run(
+					"UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, attendance = ?, ticket_revenue = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ? AND played = 0",
+					[fixture.finalHomeGoals, fixture.finalAwayGoals, fixture.attendance || 0, revenue, game.season, dbRound, fixture.homeTeamId, fixture.awayTeamId],
+					() => resolve(),
+				);
+			});
+			// Rescaldo persistente do Jornal, um por equipa (replay seguro:
+			// o helper substitui a linha do mesmo jogo).
+			try {
+				const fHG = fixture.finalHomeGoals ?? 0;
+				const fAG = fixture.finalAwayGoals ?? 0;
+				const fHome = friendlyTeamOf.get(Number(fixture.homeTeamId));
+				const fAway = friendlyTeamOf.get(Number(fixture.awayTeamId));
+				const friendlyKey = `friendly:${game.season}:${game.matchweek}`;
+				const friendlyRatings = computeMatchRatings(fixture);
+				persistLastRatings(game.db, fixture);
+				logPostMatchRecap(game, {
+					teamId: fixture.homeTeamId,
+					teamName: fHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
+					opponentId: fixture.awayTeamId,
+					opponentName: fAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
+					myGoals: fHG,
+					oppGoals: fAG,
+					outcome: fHG > fAG ? "win" : fHG < fAG ? "loss" : "draw",
+					source: "friendly",
+					roundLabel: "Amigável",
+					key: friendlyKey,
+					ratings: friendlyRatings.home,
+					ticketRevenue: homeShare,
+					myDivision: fHome?.division ?? null,
+					opponentDivision: fAway?.division ?? null,
+					matchweek: game.matchweek,
+				});
+				logPostMatchRecap(game, {
+					teamId: fixture.awayTeamId,
+					teamName: fAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
+					opponentId: fixture.homeTeamId,
+					opponentName: fHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
+					myGoals: fAG,
+					oppGoals: fHG,
+					outcome: fAG > fHG ? "win" : fAG < fHG ? "loss" : "draw",
+					source: "friendly",
+					roundLabel: "Amigável",
+					key: friendlyKey,
+					ratings: friendlyRatings.away,
+					ticketRevenue: awayShare,
+					myDivision: fAway?.division ?? null,
+					opponentDivision: fHome?.division ?? null,
+					matchweek: game.matchweek,
+				});
+			} catch (friendlyRecapErr: any) {
+				console.warn(`[finalizeFriendly] recap failed:`, friendlyRecapErr?.message);
+			}
+			try {
+				logMatchMedicalNews(game, fixture.homeTeamId, game.matchweek);
+				logMatchMedicalNews(game, fixture.awayTeamId, game.matchweek);
+			} catch {}
+			const hG = fixture.finalHomeGoals ?? 0;
+			const aG = fixture.finalAwayGoals ?? 0;
+			// Memória táctica: o amigável conta como liga/Taça (0.5 + 0.5 por parte).
+			const recordFriendlyFamiliarity = (teamId: number, tactic: any, result: string, firstTactic?: any) => {
+				if (!tactic?.formation || !tactic?.style) return;
+				updateTacticFamiliarity(game, teamId, firstTactic ?? tactic, tactic, game.matchweek, result);
+				const playerState = Object.values(game.playersByName).find(
+					(p: any) => p.teamId === teamId && p.socketId,
+				);
+				if (!playerState) return;
+				game.db.run(
+					"INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
+					[teamId, playerState.name, tactic.formation, tactic.style, game.matchweek, "friendly", result],
+				);
+			};
+			const fHomeRes = hG > aG ? "V" : hG < aG ? "D" : "E";
+			const fAwayRes = aG > hG ? "V" : aG < hG ? "D" : "E";
+			recordFriendlyFamiliarity(fixture.homeTeamId, (fixture as any)._t1, fHomeRes, (fixture as any)._firstHalfT1);
+			recordFriendlyFamiliarity(fixture.awayTeamId, (fixture as any)._t2, fAwayRes, (fixture as any)._firstHalfT2);
+			results.push({
+				homeTeamId: fixture.homeTeamId,
+				awayTeamId: fixture.awayTeamId,
+				homeTeam: fixture.homeTeam || null,
+				awayTeam: fixture.awayTeam || null,
+				homeGoals: hG,
+				awayGoals: aG,
+				homeTicketRevenue: homeShare,
+				awayTicketRevenue: awayShare,
+				winnerId: hG > aG ? fixture.homeTeamId : aG > hG ? fixture.awayTeamId : null,
+				wentToET: false,
+				decidedByPenalties: false,
+				penaltyHomeGoals: null,
+				penaltyAwayGoals: null,
+				events: fixture.events,
+				mom: computeMoms(
+					fixture.events || [],
+					fixture.homeLineup || [],
+					fixture.awayLineup || [],
+				),
+			});
+		}
+		return results;
+	}
+
 	// ─── FRIENDLY FINALIZATION ──────────────────────────────────────────────────
 	// Amigavel de pre-epoca (slot 0, ronda 0): sem ET/penaltis (empates ficam),
 	// sem apurados, sem premios. Bilheteira dividida a meio; treino e evolucao
@@ -2521,16 +2720,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		console.log(
 			`[${game.roomCode}] finalizeFriendly | fixtures=${fixtures.length}`,
 		);
-		// Nomes/divisões para o rescaldo do Jornal (variante simples: sem rank).
-		const friendlyTeamOf = new Map<number, { name: string; division: number }>();
-		try {
-			const friendlyTeams = await getTeamsWithCoachNames(game.db);
-			for (const t of friendlyTeams || [])
-				friendlyTeamOf.set(Number(t.id), { name: t.name, division: Number(t.division) });
-		} catch {
-			/* sem foto: o rescaldo sai com variante simples */
-		}
-
 		await new Promise<void>((resolve) => game.db.run("BEGIN TRANSACTION", () => resolve()));
 		// Amigavel nao conta para estatisticas de jogador (nem epoca nem
 		// carreira): golos, presencas, cartoes e lesoes ficam de fora. Os
@@ -2539,120 +2728,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		queueMatchDeltaWrites(game.db, fixtures);
 		let friendlyTxFailed = false;
 		try {
-			for (const fixture of fixtures) {
-				const price = (fixture as any)._ticketPrice || 15;
-				const revenue = (fixture.attendance || 0) * price;
-				const awayShare = Math.floor(revenue / 2);
-				const homeShare = revenue - awayShare;
-				if (homeShare > 0) {
-					await new Promise<void>((resolve) => {
-						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [homeShare, fixture.homeTeamId], () => resolve());
-					});
-				}
-				if (awayShare > 0) {
-					await new Promise<void>((resolve) => {
-						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [awayShare, fixture.awayTeamId], () => resolve());
-					});
-				}
-				await new Promise<void>((resolve) => {
-					game.db.run(
-						"UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, attendance = ?, ticket_revenue = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-						[fixture.finalHomeGoals, fixture.finalAwayGoals, fixture.attendance || 0, revenue, season, FRIENDLY_ROUND, fixture.homeTeamId, fixture.awayTeamId],
-						() => resolve(),
-					);
-				});
-				// Rescaldo persistente do Jornal, um por equipa (replay seguro:
-				// o helper substitui a linha do mesmo jogo).
-				try {
-					const fHG = fixture.finalHomeGoals ?? 0;
-					const fAG = fixture.finalAwayGoals ?? 0;
-					const fHome = friendlyTeamOf.get(Number(fixture.homeTeamId));
-					const fAway = friendlyTeamOf.get(Number(fixture.awayTeamId));
-					const friendlyKey = `friendly:${season}:${game.matchweek}`;
-					const friendlyRatings = computeMatchRatings(fixture);
-					persistLastRatings(game.db, fixture);
-					logPostMatchRecap(game, {
-						teamId: fixture.homeTeamId,
-						teamName: fHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
-						opponentId: fixture.awayTeamId,
-						opponentName: fAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
-						myGoals: fHG,
-						oppGoals: fAG,
-						outcome: fHG > fAG ? "win" : fHG < fAG ? "loss" : "draw",
-						source: "friendly",
-						roundLabel: "Amigável",
-						key: friendlyKey,
-						ratings: friendlyRatings.home,
-						ticketRevenue: homeShare,
-						myDivision: fHome?.division ?? null,
-						opponentDivision: fAway?.division ?? null,
-						matchweek: game.matchweek,
-					});
-					logPostMatchRecap(game, {
-						teamId: fixture.awayTeamId,
-						teamName: fAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
-						opponentId: fixture.homeTeamId,
-						opponentName: fHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
-						myGoals: fAG,
-						oppGoals: fHG,
-						outcome: fAG > fHG ? "win" : fAG < fHG ? "loss" : "draw",
-						source: "friendly",
-						roundLabel: "Amigável",
-						key: friendlyKey,
-						ratings: friendlyRatings.away,
-						ticketRevenue: awayShare,
-						myDivision: fAway?.division ?? null,
-						opponentDivision: fHome?.division ?? null,
-						matchweek: game.matchweek,
-					});
-				} catch (friendlyRecapErr: any) {
-					console.warn(`[finalizeFriendly] recap failed:`, friendlyRecapErr?.message);
-				}
-				try {
-					logMatchMedicalNews(game, fixture.homeTeamId, game.matchweek);
-					logMatchMedicalNews(game, fixture.awayTeamId, game.matchweek);
-				} catch {}
-				const hG = fixture.finalHomeGoals ?? 0;
-				const aG = fixture.finalAwayGoals ?? 0;
-				// Memória táctica: o amigável conta como liga/Taça (0.5 + 0.5 por parte).
-				const recordFriendlyFamiliarity = (teamId: number, tactic: any, result: string, firstTactic?: any) => {
-					if (!tactic?.formation || !tactic?.style) return;
-					updateTacticFamiliarity(game, teamId, firstTactic ?? tactic, tactic, game.matchweek, result);
-					const playerState = Object.values(game.playersByName).find(
-						(p: any) => p.teamId === teamId && p.socketId,
-					);
-					if (!playerState) return;
-					game.db.run(
-						"INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
-						[teamId, playerState.name, tactic.formation, tactic.style, game.matchweek, "friendly", result],
-					);
-				};
-				const fHomeRes = hG > aG ? "V" : hG < aG ? "D" : "E";
-				const fAwayRes = aG > hG ? "V" : aG < hG ? "D" : "E";
-				recordFriendlyFamiliarity(fixture.homeTeamId, (fixture as any)._t1, fHomeRes, (fixture as any)._firstHalfT1);
-				recordFriendlyFamiliarity(fixture.awayTeamId, (fixture as any)._t2, fAwayRes, (fixture as any)._firstHalfT2);
-				results.push({
-					homeTeamId: fixture.homeTeamId,
-					awayTeamId: fixture.awayTeamId,
-					homeTeam: fixture.homeTeam || null,
-					awayTeam: fixture.awayTeam || null,
-					homeGoals: hG,
-					awayGoals: aG,
-					homeTicketRevenue: homeShare,
-					awayTicketRevenue: awayShare,
-					winnerId: hG > aG ? fixture.homeTeamId : aG > hG ? fixture.awayTeamId : null,
-					wentToET: false,
-					decidedByPenalties: false,
-					penaltyHomeGoals: null,
-					penaltyAwayGoals: null,
-					events: fixture.events,
-					mom: computeMoms(
-						fixture.events || [],
-						fixture.homeLineup || [],
-						fixture.awayLineup || [],
-					),
-				});
-			}
+			results.push(...(await commitFriendlyFixtures(game, fixtures, FRIENDLY_ROUND)));
 			await new Promise<void>((resolve) => {
 				game.db.run(
 					"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
@@ -2724,6 +2800,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						game.currentFixtures.some(
 							(f) =>
 								(f.homeTeamId === p.teamId || f.awayTeamId === p.teamId) &&
+								f.round !== FRIENDLY_ROUND &&
 								f.finalHomeGoals === f.finalAwayGoals,
 						),
 				);
@@ -2777,10 +2854,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			socket.emit("cupDrawStart", {
 				round: entry.round,
 				roundName: entry.roundName,
-				fixtures: game.currentFixtures.map((f: any) => ({
-					homeTeam: f.homeTeam,
-					awayTeam: f.awayTeam,
-				})),
+				fixtures: game.currentFixtures
+					.filter((f: any) => f.round !== FRIENDLY_ROUND)
+					.map((f: any) => ({
+						homeTeam: f.homeTeam,
+						awayTeam: f.awayTeam,
+					})),
 				humanInCup,
 				season: game.season,
 				drawWeek: game.calendarIndex,

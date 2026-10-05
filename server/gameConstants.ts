@@ -471,6 +471,8 @@ export function getAgentName(playerId: number): string {
 export const FRIENDLY_ROUND = 0;
 /** Nome canónico do amigável (servidor e cliente usam a mesma string). */
 export const FRIENDLY_ROUND_NAME = "Amigável de pré-época";
+/** Amigável dos eliminados na semana da ronda r da Taça: ronda -r em cup_matches (0 em memória). */
+export const cupWeekFriendlyRound = (cupRound: number) => -cupRound;
 
 /**
  * Typed calendar entry — a league matchweek, a cup round or the pre-season friendly.

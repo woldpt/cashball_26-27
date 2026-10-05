@@ -29,6 +29,7 @@ import {
   remainingSubstitutions,
   incrementSubCount,
   slotForLeagueMatchweek,
+  FRIENDLY_ROUND,
 } from "./gameConstants";
 
 /**
@@ -2138,7 +2139,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       game.gamePhase === "match_et_gate"
         ? new Set<number>(
             game.currentFixtures
-              .filter((f) => f.finalHomeGoals === f.finalAwayGoals)
+              .filter((f) => (f as any).round !== FRIENDLY_ROUND && f.finalHomeGoals === f.finalAwayGoals)
               .flatMap((f) => [f.homeTeamId, f.awayTeamId]),
           )
         : requiredTeamIds(game);

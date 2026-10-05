@@ -42,6 +42,7 @@ const allFiring = {
   totalWeeklyWage: 200000,
   isLineupComplete: false,
   lineupEligible: true,
+  cupWeekFriendly: { signedUp: false },
 };
 
 /** Estado em que NENHUMA dispara (plantel são, treino feito, cofre cheio). */
@@ -72,6 +73,7 @@ const hurt = (n) => ({
     "training",
     "trainingcap",
     "traininglow",
+    "cupfriendly",
     "medical",
     "wage",
   ]);
@@ -134,6 +136,18 @@ const hurt = (n) => ({
         focusName: "Resistência",
       }),
     )?.id,
+    "cupfriendly",
+  );
+  assert.equal(
+    pickAssistantTip(
+      off({
+        hasRedFlag: false,
+        lineupEligible: false,
+        hasTraining: true,
+        focusName: "Resistência",
+        cupWeekFriendly: { signedUp: true },
+      }),
+    )?.id,
     "medical",
   );
   // Plantel são: cai na do salário; cofre a chegar, nada.
@@ -143,6 +157,7 @@ const hurt = (n) => ({
     hasTraining: true,
     focusName: null,
     squad: squad(10),
+    cupWeekFriendly: null,
   });
   assert.equal(pickAssistantTip(noHurtAndNoCap)?.id, "wage");
   assert.equal(

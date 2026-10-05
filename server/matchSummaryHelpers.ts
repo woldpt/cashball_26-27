@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR, AWAY_TICKET_SHARE, slotForLeagueMatchweek } from "./gameConstants";
+import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR, AWAY_TICKET_SHARE, slotForLeagueMatchweek, cupWeekFriendlyRound } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { persistMoms } from "./momHelpers";
 import { computeMatchRatings, persistLastRatings } from "./game/ratings";
@@ -796,8 +796,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       }
       const cupMatch = await runGet(
         game.db,
-        "SELECT * FROM cup_matches WHERE season = ? AND round = ? AND (home_team_id = ? OR away_team_id = ?) AND played = 0",
-        [game.season, currentEntry.round, teamId, teamId],
+        // Eliminados com amigável marcado: o par vive na ronda -r.
+        "SELECT * FROM cup_matches WHERE season = ? AND round IN (?, ?) AND (home_team_id = ? OR away_team_id = ?) AND played = 0 AND away_team_id IS NOT NULL",
+        [game.season, currentEntry.round, isFriendly ? currentEntry.round : cupWeekFriendlyRound(currentEntry.round), teamId, teamId],
       );
       if (!cupMatch) {
         // Sem jogo esta semana (eliminado da Taça ou bye do amigável) —
@@ -831,6 +832,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         };
       }
 
+      const weekFriendly = cupMatch.round < 0;
       const isHome = cupMatch.home_team_id === teamId;
       const opponentId = isHome ? cupMatch.away_team_id : cupMatch.home_team_id;
       const opponent = await runGet(
@@ -884,7 +886,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         isCup: true,
         fixtureKey: `${cupMatch.home_team_id}-${cupMatch.away_team_id}`,
         cupRound: currentEntry.round,
-        cupRoundName: currentEntry.roundName,
+        cupRoundName: weekFriendly ? "Amigável" : currentEntry.roundName,
         venue,
         odds,
         difficulty: computeDifficulty(odds, isHome),
@@ -901,7 +903,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
           myPoints: null,
           oppPoints: null,
         }),
-        stakes: isFriendly
+        stakes: isFriendly || weekFriendly
           ? "Amigável — sem pontos em disputa, só ritmo e testes."
           : buildStakes(null, null, true),
         stadium: isHome

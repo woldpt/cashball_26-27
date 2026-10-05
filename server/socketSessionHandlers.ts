@@ -10,6 +10,7 @@ import {
   listTeamMatchActions,
 } from "./game/engine";
 import { serializeActiveAuctions } from "./auctionHelpers";
+import { getCupWeekFriendlyStatus } from "./socketCupHandlers";
 import { notifyRoomInvite } from "./push";
 import {
   claimSeat,
@@ -854,6 +855,13 @@ export function registerSessionSocketHandlers(
 				game,
 				playerState.teamId || teamId,
 			);
+			if (summary) {
+				summary.cupWeekFriendly = await getCupWeekFriendlyStatus(
+					game,
+					playerState.teamId || teamId,
+					runAll,
+				);
+			}
 			socket.emit("nextMatchSummary", summary);
 		} catch (error) {
 			console.error(`[${game.roomCode}] nextMatchSummary error:`, error);
@@ -1209,7 +1217,7 @@ export function registerSessionSocketHandlers(
 						winnerTeamId: null,
 					})),
 					...(cupRows || []).map((r: any) => ({
-						kind: Number(r.round) === 0 ? "friendly" : "cup",
+						kind: Number(r.round) <= 0 ? "friendly" : "cup",
 						season: r.season,
 						year: baseYear + r.season,
 						matchweek: null,
@@ -1217,6 +1225,8 @@ export function registerSessionSocketHandlers(
 						roundName:
 							Number(r.round) === 0
 								? FRIENDLY_ROUND_NAME
+								: Number(r.round) < 0
+								? "Amigável"
 								: (CUP_ROUND_NAMES[Number(r.round)] || `Ronda ${r.round}`),
 						homeTeamId: r.home_team_id,
 						awayTeamId: r.away_team_id,

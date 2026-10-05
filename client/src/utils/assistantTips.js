@@ -36,6 +36,8 @@ export const ONCE_PER_ROOM_TIPS = new Set(["lineup"]);
  * @property {boolean} [isLineupComplete]
  * @property {boolean} [lineupEligible] 11 por fechar E já passou o gate de
  *   inatividade (ver `LINEUP_IDLE_MS` no hook).
+ * @property {{signedUp: boolean}|null} [cupWeekFriendly] Véspera de Taça
+ *   para um eliminado (ver `nextMatchSummary.cupWeekFriendly`).
  */
 
 /**
@@ -109,6 +111,18 @@ export const ASSISTANT_TIPS = [
   {
     id: "traininglow",
     build: (s) => trainingLowTip(s.squad, s.focusName),
+  },
+  {
+    id: "cupfriendly",
+    build: (s) =>
+      !s.cupWeekFriendly || s.cupWeekFriendly.signedUp
+        ? null
+        : {
+            mood: "worried",
+            text: "Estamos fora da Taça, mas a malta não pode ficar a coçar a barriga! Marca um amigável para a semana, ritmo é ritmo.",
+            tab: "calendario",
+            cta: "Marcar amigável",
+          },
   },
   {
     id: "medical",

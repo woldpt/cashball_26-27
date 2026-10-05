@@ -104,6 +104,7 @@ export function useAssistantCoach() {
     dismissalModal,
     welcomeModal,
     navigateTab,
+    nextMatchSummary,
   } = useGame();
   const { isLineupComplete } = useTactics();
 
@@ -204,6 +205,7 @@ export function useAssistantCoach() {
         totalWeeklyWage,
         isLineupComplete,
         lineupEligible: !isLineupComplete && lineupIdle && !lineupGate.shown,
+        cupWeekFriendly: nextMatchSummary?.cupWeekFriendly ?? null,
       },
       { activeTab, seenIds: seen.ids },
     );
@@ -225,6 +227,7 @@ export function useAssistantCoach() {
     isLineupComplete,
     lineupIdle,
     lineupGate.shown,
+    nextMatchSummary?.cupWeekFriendly,
     activeTab,
     hasLocalTraining,
     localTraining,
