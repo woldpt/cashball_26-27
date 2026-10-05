@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { MODAL_Z, PENALTY_SUSPENSE_REVEAL_MS } from "../../constants/index.js";
 
@@ -23,12 +24,23 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
     return () => clearTimeout(timer);
   }, [penaltySuspense]);
 
-  if (!penaltySuspense) return null;
-  const showResult = revealedFor === penaltySuspense;
+  // Último penálti mostrado: mantém o conteúdo durante a animação de saída
+  // (o pai passa a null no mesmo tick em que dispara o festejo do golo).
+  const [shown, setShown] = useState(penaltySuspense);
+  if (penaltySuspense && penaltySuspense !== shown) setShown(penaltySuspense);
+  const data = penaltySuspense ?? shown;
+  if (!data) return null;
+  const showResult = revealedFor === data;
 
   return (
-    <ModalShell z={MODAL_Z.penalty} variant="transparent">
-      <div
+    <ModalShell
+      visible={!!penaltySuspense}
+      z={MODAL_Z.penalty}
+      variant="transparent"
+    >
+      <motion.div
+        exit={{ scale: 0.85, opacity: 0 }}
+        transition={{ duration: 0.18 }}
         role="status"
         aria-live="assertive"
         className={`bg-surface-container border-2 border-amber-500/50 rounded-xl px-8 py-6 text-center shadow-2xl ${
@@ -39,22 +51,22 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
           Penálti
         </p>
         <p className="text-on-surface-variant text-sm font-bold mb-1">
-          {penaltySuspense.playerName}
+          {data.playerName}
         </p>
         {showResult ? (
           <p
             className={`text-3xl font-black ${
-              penaltySuspense.isGoal ? "text-emerald-400" : "text-red-400"
+              data.isGoal ? "text-emerald-400" : "text-red-400"
             }`}
           >
-            {penaltySuspense.result}
+            {data.result}
           </p>
         ) : (
           <p className="text-3xl font-black text-amber-300 motion-safe:animate-pulse">
             ...
           </p>
         )}
-      </div>
+      </motion.div>
     </ModalShell>
   );
 }
