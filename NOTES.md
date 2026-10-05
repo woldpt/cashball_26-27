@@ -1,3 +1,6 @@
+## Deploy v26.10.14 no rick (2026-10-05)
+- Amigáveis para eliminados da Taça na semana da ronda (com todos os suplentes utilizáveis); `backend Healthy`.
+
 ## Deploy v26.10.13 no rick (2026-10-05)
 - LandingPage com props agrupadas em `form`/`room` + fallback de auth explícito para login; `backend Healthy`.
 
