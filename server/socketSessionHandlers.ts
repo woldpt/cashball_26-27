@@ -1339,7 +1339,7 @@ export function registerSessionSocketHandlers(
 				);
 
 				// Always append current skill to ensure the chart shows latest value.
-				// buildSkillHistory preserves `season` (matchweek is the per-season calendar slot 1..20;
+				// buildSkillHistory preserves `season` (matchweek is the per-season calendar slot 1..25;
 				// without season, multi-season charts collapse all seasons onto the
 				// same X positions — latest records become invisible).
 				const playerRow = await runGet(
@@ -1899,9 +1899,9 @@ export function registerSessionSocketHandlers(
 				// ── Balance history ──────────────────────────────────────────────
 				// Saldo real de fim de semana, gravado em team_balance_history
 				// (um ponto por slot do calendário). Janela deslizante das últimas
-				// 20 semanas (atravessa a viragem de época em vez de fazer reset).
+				// 25 semanas — uma época (atravessa a viragem em vez de fazer reset).
 				// Cada ponto tem um `label` para o eixo X e `x` global
-				// (época * 20 + slot) para épocas distintas não colapsarem no eixo.
+				// (época * 25 + slot) para épocas distintas não colapsarem no eixo.
 				let balanceHistory: Array<{
 					x: number;
 					year: number;
@@ -1915,10 +1915,10 @@ export function registerSessionSocketHandlers(
 						`SELECT slot, season, matchweek, year, balance FROM team_balance_history
 						 WHERE team_id = ?
 						 ORDER BY season DESC, slot DESC
-						 LIMIT 20`,
+						 LIMIT ${SEASON_CALENDAR.length}`,
 						[teamId],
 					);
-					const cupTick = ["", "16 avos", "Oitavos", "Quartos", "Meias", "Final"];
+					const cupTick = ["", "32 avos", "16 avos", "Oitavos", "Quartos", "Meias", "Final"];
 					const ordered = [...(histRows || [])].reverse();
 					balanceHistory = ordered.map((r) => {
 						const entry = SEASON_CALENDAR[r.slot ?? 0];

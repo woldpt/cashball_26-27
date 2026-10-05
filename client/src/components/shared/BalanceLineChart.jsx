@@ -40,7 +40,7 @@ export function BalanceLineChart({ data = [] }) {
 
   /**
    * Posição global no eixo X. Com histórico de 2 épocas o matchweek repete-se
-   * (0..14 em cada época), por isso posicionamos pelo índice global `x`
+   * (slots 0..24 em cada época), por isso posicionamos pelo índice global `x`
    * (fallback para matchweek em dados antigos).
    * @param {{x?: number, matchweek: number}} p
    * @returns {number}
