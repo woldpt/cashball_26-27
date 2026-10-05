@@ -427,7 +427,7 @@ function MatchRow({ match, myTeamId, players, onOpenTeam }) {
             style={{ color: readableColor(homeTeam?.color_primary) }}
           />
           {homeCoach && (
-            <span className="block text-[9px] text-on-surface-variant/60 font-bold truncate">
+            <span className="block text-[9px] text-amber-400 font-black truncate">
               {homeCoach}
             </span>
           )}
@@ -491,7 +491,7 @@ function MatchRow({ match, myTeamId, players, onOpenTeam }) {
             style={{ color: readableColor(awayTeam?.color_primary) }}
           />
           {awayCoach && (
-            <span className="block text-[9px] text-on-surface-variant/60 font-bold truncate">
+            <span className="block text-[9px] text-amber-400 font-black truncate">
               {awayCoach}
             </span>
           )}
@@ -714,11 +714,17 @@ export function CupBracketPage({
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {bracketData.exemptTeams.map((team) => (
+            {bracketData.exemptTeams.map((team) => {
+              const coach = players?.find((p) => p.teamId === team.id)?.name;
+              return (
               <div
                 key={team.id}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md border bg-surface-container ${
-                  team.id === me?.teamId ? "border-primary/40 bg-primary/10" : "border-outline-variant/25"
+                  team.id === me?.teamId
+                    ? "border-primary/40 bg-primary/10"
+                    : coach
+                      ? "border-amber-400/40 bg-amber-400/5"
+                      : "border-outline-variant/25"
                 }`}
               >
                 <TeamCrest team={team} size="w-6 h-6 text-[10px]" />
@@ -728,8 +734,14 @@ export function CupBracketPage({
                   className="flex-1 min-w-0 truncate text-left font-black text-xs"
                   style={{ color: readableColor(team.color_primary) }}
                 />
+                {coach && (
+                  <span className="shrink-0 max-w-[45%] truncate px-1.5 py-px bg-amber-400/15 text-amber-400 text-[9px] font-black rounded-sm border border-amber-400/30">
+                    {coach}
+                  </span>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

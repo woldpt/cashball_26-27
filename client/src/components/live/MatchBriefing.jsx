@@ -50,7 +50,8 @@ function VenueFallback({ venue }) {
 
 export function MatchBriefing() {
   const { teamInfo, setPrepPhase } = useTactics();
-  const { nextMatchSummary, handleOpenTeamSquad, nextMatchSummaryLoading } = useGame();
+  const { nextMatchSummary, handleOpenTeamSquad, nextMatchSummaryLoading, players } = useGame();
+  const coachOf = (teamId) => players?.find((p) => p.teamId != null && String(p.teamId) === String(teamId))?.name;
   const vm = useMemo(
     () => buildBriefingViewModel(nextMatchSummary, teamInfo),
     [nextMatchSummary, teamInfo],
@@ -129,16 +130,28 @@ export function MatchBriefing() {
                   </span>
                 </div>
                 <ul className="px-3 short:px-2 py-2 short:py-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 short:gap-1">
-                  {vm.spyGames.map((g, i) => (
+                  {vm.spyGames.map((g, i) => {
+                    const homeCoach = coachOf(g.homeTeamId);
+                    const awayCoach = coachOf(g.awayTeamId);
+                    return (
                     <li
                       key={`${g.homeTeamId}-${g.awayTeamId}-${i}`}
-                      className="min-w-0 bg-surface-container-low/60 border border-outline-variant/25 rounded-xl px-2.5 py-2 flex items-center gap-2 text-[11px] font-black text-white"
+                      className={`min-w-0 bg-surface-container-low/60 border rounded-xl px-2.5 py-2 flex items-center gap-2 text-[11px] font-black text-white ${
+                        homeCoach || awayCoach ? "border-amber-400/40" : "border-outline-variant/25"
+                      }`}
                     >
-                      <span className="flex-1 min-w-0 truncate text-right">{g.homeName}</span>
+                      <span className="flex-1 min-w-0 text-right">
+                        <span className={`block truncate ${homeCoach ? "text-amber-300" : ""}`}>{g.homeName}</span>
+                        {homeCoach && <span className="block truncate text-[9px] text-amber-400/80">{homeCoach}</span>}
+                      </span>
                       <span aria-hidden className="shrink-0 text-gray-600 text-[9px]">VS</span>
-                      <span className="flex-1 min-w-0 truncate">{g.awayName}</span>
+                      <span className="flex-1 min-w-0">
+                        <span className={`block truncate ${awayCoach ? "text-amber-300" : ""}`}>{g.awayName}</span>
+                        {awayCoach && <span className="block truncate text-[9px] text-amber-400/80">{awayCoach}</span>}
+                      </span>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             )}
