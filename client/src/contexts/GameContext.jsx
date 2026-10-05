@@ -826,19 +826,25 @@ year: seasonYear,
 		whistledKeysRef.current[w.competition] = w.key;
 		playWhistleSound(w.outcome);
 		setFinalWhistle({ key: w.key, competition: w.competition, outcome: w.outcome, myGoals: w.myGoals, oppGoals: w.oppGoals });
+	}, [matchResults, cupRoundResults, isPlayingMatch, liveMinute, me?.teamId, season]);
+	// Timer próprio: no efeito acima era limpo por qualquer mudança de deps e
+	// o selo ficava preso (e com ele o sorteio, que espera pelo apito).
+	useEffect(() => {
+		if (!finalWhistle) return;
 		const t = setTimeout(() => setFinalWhistle(null), 5000);
 		return () => clearTimeout(t);
-	}, [matchResults, cupRoundResults, isPlayingMatch, liveMinute, me?.teamId, season]);
+	}, [finalWhistle]);
 
 	// ── Cup draw reveal animation ───────────────────────────────────────────
 	useEffect(() => {
-		if (!showCupDrawPopup || !cupDraw) return;
+		// Sorteio só anima depois do carimbo do apito final.
+		if (!showCupDrawPopup || !cupDraw || finalWhistle) return;
 		const totalTeams = (cupDraw.fixtures || []).length * 2;
 		if (cupDrawRevealIdx >= totalTeams) return;
 		const delay = cupDraw.humanInCup ? 700 : 200;
 		const timer = setTimeout(() => setCupDrawRevealIdx((i) => i + 1), delay);
 		return () => clearTimeout(timer);
-	}, [showCupDrawPopup, cupDraw, cupDrawRevealIdx]);
+	}, [showCupDrawPopup, cupDraw, cupDrawRevealIdx, finalWhistle]);
 
 	useEffect(() => {
 		if (!showCupDrawPopup || !cupDraw || cupDraw.humanInCup) return;

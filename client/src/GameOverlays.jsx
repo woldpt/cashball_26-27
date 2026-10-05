@@ -40,6 +40,7 @@ export function GameOverlays() {
     coachMarketReport,
     cupDraw,
     cupDrawRevealIdx,
+    finalWhistle,
     cupMatchRoundName,
     currentCupRound,
     cupPenaltyKickIdx,
@@ -127,8 +128,9 @@ export function GameOverlays() {
   });
   // O sorteio espera pela fila (penáltis primeiro); o raw continua a
   // bloquear o landing via anyPostMatchModal até ser fechado.
+  // Também espera pelo carimbo do apito final (5 s) para não atropelar.
   const showCupDrawPopupGated =
-    postMatchFlow.showCupDraw && showCupDrawPopup;
+    postMatchFlow.showCupDraw && showCupDrawPopup && !finalWhistle;
 
   // Faixa global de espera (visível em qualquer tab): prolongamento da Taça
   // à espera de Prontos (gate sem timeout) ou resultados a tardar fora do
