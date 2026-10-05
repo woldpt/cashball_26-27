@@ -591,7 +591,14 @@ function TeamEvents({ events, align }) {
                     ? "text-emerald-400/80"
                     : "text-on-surface-variant/70"
         }`;
-        const icon = <span className="shrink-0">{matchEventIcon(e.type)}</span>;
+        const icon =
+          e.type === "var_disallowed" ? (
+            <span className="shrink-0 rounded px-1 text-[9px] font-black leading-4 tracking-wider bg-zinc-700 text-zinc-100">
+              VAR
+            </span>
+          ) : (
+            <span className="shrink-0">{matchEventIcon(e.type)}</span>
+          );
         const minuteEl = (
           <span className="text-on-surface-variant/40 tabular-nums shrink-0">
             {minuteLabel}
