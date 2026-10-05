@@ -3,7 +3,6 @@ import { StadiumIllustration } from "../components/shared/StadiumIllustration.js
 import { DIVISION_NAMES, STADIUM_EXPANSION_COST as EXPANSION_COST } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { getFansMoodLabel } from "../utils/morale.js";
-import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { Button } from "../components/shared/Button.jsx";
 
@@ -67,8 +66,59 @@ export function StadiumTab({
   return (
     <div className="space-y-4 short:space-y-2">
       {/* ── HERO: ESTÁDIO ─────────────────────────────────────────── */}
-      <div className="rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container group">
-        <div className="h-28 sm:h-40 lg:h-44 short:h-20 relative flex items-end overflow-hidden">
+      <div className="rounded-lg border border-outline-variant/25 overflow-hidden bg-surface-container grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        {/* Coluna A: dados */}
+        <dl className="divide-y divide-outline-variant/15 order-2 sm:order-1">
+          {[
+            {
+              label: "Nome",
+              value: teamInfo?.stadium_name || "Estádio Municipal",
+              sub: DIVISION_NAMES[division] || `Divisão ${division}`,
+              cls: "font-headline text-on-surface",
+            },
+            {
+              label: "Capacidade",
+              value: stadiumCapacity.toLocaleString("pt-PT"),
+              sub: "lugares",
+              cls: "text-on-surface",
+            },
+            {
+              label: "Média",
+              value:
+                avgAttendance != null
+                  ? avgAttendance.toLocaleString("pt-PT")
+                  : "—",
+              sub: `${homeMatches} jogo(s) em casa`,
+              cls: "text-amber-400",
+            },
+            {
+              label: "Receita Máx.",
+              value: formatCurrency(capacityRevPerGame),
+              sub: `${ticketPrice}€ × lotação`,
+              cls: "text-tertiary",
+            },
+          ].map((row) => (
+            <div
+              key={row.label}
+              className="flex items-baseline justify-between gap-3 px-4 py-2.5 short:px-3 short:py-1.5"
+            >
+              <dt className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant shrink-0">
+                {row.label}
+              </dt>
+              <dd className="text-right min-w-0">
+                <span className={`block truncate text-base lg:text-lg short:text-sm font-black tabular-nums ${row.cls}`}>
+                  {row.value}
+                </span>
+                <span className="block text-[10px] text-on-surface-variant/60">
+                  {row.sub}
+                </span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        {/* Coluna B: foto do estádio */}
+        <div className="relative h-40 sm:h-auto sm:min-h-52 short:h-28 overflow-hidden order-1 sm:order-2 group">
           <StadiumIllustration
             capacity={stadiumCapacity}
             primary={teamInfo?.color_primary}
@@ -77,68 +127,7 @@ export function StadiumTab({
             mood={teamInfo?.fans_mood ?? null}
             className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-[1.02]"
           />
-          {/* Holofotes: dois cones de luz fria do topo (só gradiente, sem custo). */}
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(60% 55% at 18% 0%, rgba(255,255,240,0.10) 0%, transparent 60%), radial-gradient(60% 55% at 82% 0%, rgba(255,255,240,0.10) 0%, transparent 60%)",
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-          <div className="relative px-4 short:px-3 pb-3 short:pb-2 w-full">
-            <p
-              className="text-[10px] font-black uppercase tracking-widest mb-1 drop-shadow text-primary"
-              style={
-                teamInfo?.color_primary
-                  ? { color: teamInfo.color_primary }
-                  : undefined
-              }
-            >
-              Recinto Principal
-            </p>
-            <h2 className="font-headline text-lg sm:text-xl short:text-base font-black text-white leading-tight drop-shadow">
-              {teamInfo?.stadium_name || "Estádio Municipal"}
-            </h2>
-            <p className="text-[11px] text-white/70 font-bold mt-1 drop-shadow">
-              {DIVISION_NAMES[division] || `Divisão ${division}`}
-            </p>
-          </div>
         </div>
-      </div>
-
-      {/* ── ROW: STATS ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 short:gap-2">
-        <SummaryWidget
-          label="Capacidade Atual"
-          value={stadiumCapacity.toLocaleString("pt-PT")}
-          sub="lugares"
-          compactMobile
-          valueClass="text-lg lg:text-xl"
-        />
-        <SummaryWidget
-          label="Receita máx. / jogo"
-          value={formatCurrency(capacityRevPerGame)}
-          sub={`${ticketPrice}€ × lotação`}
-          compactMobile
-          valueClass="text-lg lg:text-xl"
-          accentClass="border-tertiary"
-          valueColorClass="text-tertiary"
-        />
-        <SummaryWidget
-          label="Assistência Média"
-          value={
-            avgAttendance != null
-              ? avgAttendance.toLocaleString("pt-PT")
-              : "—"
-          }
-          sub={`${homeMatches} jogo(s) em casa`}
-          compactMobile
-          valueClass="text-lg lg:text-xl"
-          accentClass="border-amber-400"
-          className="col-span-2 lg:col-span-1"
-        />
       </div>
 
       {/* ── DUAS COLUNAS (desktop) ────────────────────────────────── */}
