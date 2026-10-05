@@ -333,6 +333,9 @@ export const TRAINING_CAP_TARGETS = {
 };
 /** A partir de que fração do plantel no teto é que o adjunto avisa. */
 export const TRAINING_CAP_SQUAD_RATIO = 0.7;
+/** Média do plantel (escala 1–50) abaixo da qual o adjunto pede esse foco.
+ *  Neutros no servidor: forma 32, resistência 26. */
+export const TRAINING_LOW_AVG = 20;
 // ── TREINADOR-ADJUNTO (limiares das dicas) ──────────────────────────────
 /** Jogadores indisponíveis (lesão/castigo/cooldown) a partir dos quais avisa. */
 export const ASSISTANT_UNAVAILABLE_MIN = 3;

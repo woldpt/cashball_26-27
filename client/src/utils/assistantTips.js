@@ -1,6 +1,6 @@
 import { ASSISTANT_UNAVAILABLE_MIN } from "../constants/index.js";
 import { isPlayerAvailable } from "./playerHelpers.js";
-import { trainingCapTip } from "./trainingCapAdvice.js";
+import { trainingCapTip, trainingLowTip } from "./trainingCapAdvice.js";
 
 const SEEN_BASE_KEY = "cashball_assistant";
 
@@ -105,6 +105,10 @@ export const ASSISTANT_TIPS = [
   {
     id: "trainingcap",
     build: (s) => trainingCapTip(s.squad, s.focusName),
+  },
+  {
+    id: "traininglow",
+    build: (s) => trainingLowTip(s.squad, s.focusName),
   },
   {
     id: "medical",

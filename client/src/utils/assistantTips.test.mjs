@@ -26,11 +26,11 @@ const squad = (n, extra = {}) =>
 
 /** Plantel com 70% no teto da Forma e 3 indisponíveis (lesão). */
 const squadAtTeto = [
-  ...squad(7, { form: 50 }),
-  ...squad(3, { form: 44, injury_until_matchweek: 9 }),
+  ...squad(7, { form: 50, resistance: 10 }),
+  ...squad(3, { form: 44, resistance: 10, injury_until_matchweek: 9 }),
 ];
 
-/** Estado em que TODAS as 7 dicas disparam. */
+/** Estado em que TODAS as dicas disparam. */
 const allFiring = {
   squad: squadAtTeto,
   matchweek: 3,
@@ -71,6 +71,7 @@ const hurt = (n) => ({
     "lineup",
     "training",
     "trainingcap",
+    "traininglow",
     "medical",
     "wage",
   ]);
@@ -122,9 +123,20 @@ const hurt = (n) => ({
         focusName: null,
       }),
     )?.id,
+    "traininglow",
+  );
+  assert.equal(
+    pickAssistantTip(
+      off({
+        hasRedFlag: false,
+        lineupEligible: false,
+        hasTraining: true,
+        focusName: "Resistência",
+      }),
+    )?.id,
     "medical",
   );
-  // Plantel são: cai na do salário; cofre a chegar, cai na dos adeptos.
+  // Plantel são: cai na do salário; cofre a chegar, nada.
   const noHurtAndNoCap = off({
     hasRedFlag: false,
     lineupEligible: false,

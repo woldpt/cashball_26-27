@@ -4,7 +4,7 @@
  *   node client/src/utils/trainingCapAdvice.test.mjs
  */
 import assert from "node:assert/strict";
-import { trainingCapTip } from "./trainingCapAdvice.js";
+import { trainingCapTip, trainingLowTip } from "./trainingCapAdvice.js";
 
 const squad = (n, extra = {}) =>
   Array.from({ length: n }, (_, i) => ({
@@ -61,4 +61,14 @@ const squad = (n, extra = {}) =>
   assert.equal(tip.mood, "worried");
 }
 
-console.log("trainingCapAdvice: 5 grupos de asserções OK");
+// 6. Forma/Resistência baixas: avisa o mais baixo, cala-se se já é o foco.
+{
+  assert.equal(trainingLowTip(squad(10), null), null);
+  const low = squad(10, { form: 15, resistance: 10 });
+  assert.match(trainingLowTip(low, null).text, /Resistência/);
+  assert.match(trainingLowTip(low, "Resistência").text, /Forma/);
+  assert.equal(trainingLowTip(squad(10, { form: 15 }), "Forma"), null);
+  assert.equal(trainingLowTip(squad(10, { form: 20 }), null), null);
+}
+
+console.log("trainingCapAdvice: 6 grupos de asserções OK");
