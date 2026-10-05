@@ -74,7 +74,8 @@ export function StadiumTab({
               label: "Nome",
               value: teamInfo?.stadium_name || "Estádio Municipal",
               sub: DIVISION_NAMES[division] || `Divisão ${division}`,
-              cls: "font-headline text-on-surface",
+              cls: "font-headline text-on-surface leading-tight",
+              wrap: true,
             },
             {
               label: "Capacidade",
@@ -106,7 +107,7 @@ export function StadiumTab({
                 {row.label}
               </dt>
               <dd className="text-right min-w-0">
-                <span className={`block truncate text-base lg:text-lg short:text-sm font-black tabular-nums ${row.cls}`}>
+                <span className={`block ${row.wrap ? "" : "truncate"} text-base lg:text-lg short:text-sm font-black tabular-nums ${row.cls}`}>
                   {row.value}
                 </span>
                 <span className="block text-[10px] text-on-surface-variant/60">
