@@ -2122,4 +2122,5 @@ export function useGame() {
  * conseguirem injetar um valor fabricado sem depender do GameProvider real.
  * Não faz parte da API pública da app.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export { GameContext };

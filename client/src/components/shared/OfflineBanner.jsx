@@ -41,12 +41,13 @@ export function OfflineBanner() {
   const down = !browserOnline || !socketConnected;
   const [showPopup, setShowPopup] = useState(false);
   useEffect(() => {
-    if (!down) {
-      setShowPopup(false);
-      return;
-    }
+    if (!down) return;
     const t = setTimeout(() => setShowPopup(true), SHOW_DELAY_MS);
-    return () => clearTimeout(t);
+    // O reset vai no cleanup: corre quando `down` volta a false.
+    return () => {
+      clearTimeout(t);
+      setShowPopup(false);
+    };
   }, [down]);
   const isBrowserOffline = !browserOnline;
   const pendingLabel = pending > 0 ? ` · ${pending} em fila` : "";
