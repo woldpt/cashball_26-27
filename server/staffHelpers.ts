@@ -39,43 +39,26 @@ import { currentSlot, logClubNews, runExec } from "./coreHelpers";
  */
 const NPC_HIRE_RESERVE = 4;
 
-/** Nome de cada funcionário, determinístico por papel e nível (sem RNG). */
-const STAFF_NAMES: Record<StaffRole, string[]> = {
-  auxiliar: [
-    "Zé Traininho",
-    "Mestre Fontes",
-    "Prof. Cabrita",
-    "Eng. Táctica",
-    "Doutor Futebol",
-  ],
-  fisico: [
-    "Sargento Brás",
-    "Enf. Cardio",
-    "Mestre Flexões",
-    "Dra. Recuperação",
-    "Sr. Alongamento",
-  ],
-  comunicacao: [
-    "Tó Megafone",
-    "Dona Bilhete",
-    "Zé Cartaz",
-    "Dra. Imprensa",
-    "Senhor Estrondo",
-  ],
-  medico: [
-    "Dr. Ossos",
-    "Enf. Pensos",
-    "Dr. Gelo",
-    "Dra. Radiografia",
-    "Prof. Milagre",
-  ],
+/** Títulos por papel + apelidos: o nome sorteia-se na contratação e fica gravado. */
+const STAFF_TITLES: Record<StaffRole, string[]> = {
+  auxiliar: ["Mister", "Prof.", "Mestre", "Eng."],
+  fisico: ["Sargento", "Prof.", "Mestre", "Sr."],
+  comunicacao: ["Sr.", "Dona", "Dra.", "Tó"],
+  medico: ["Dr.", "Dra.", "Enf.", "Prof."],
 };
+const STAFF_SURNAMES = [
+  "Cabrita", "Fontes", "Brás", "Pimenta", "Carvalho", "Tavares", "Moura",
+  "Barros", "Quaresma", "Leitão", "Rebelo", "Sardinha", "Coelho", "Pires",
+  "Gaspar", "Lobo", "Machado", "Nogueira", "Teixeira", "Valente", "Bento",
+  "Morais", "Simões", "Antunes", "Faria", "Godinho", "Mota", "Patrício",
+];
 
-/** Nome canónico de um funcionário (nível clampado à tabela). */
-export function staffNameFor(role: StaffRole | string, level: number): string {
-  const list = STAFF_NAMES[role as StaffRole] ?? [];
-  const lvl = Math.min(STAFF_MAX_LEVEL, Math.max(1, Math.floor(Number(level) || 1)));
-  return list[lvl - 1] ?? "Funcionário";
+const pick = <T>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
+
+/** Nome sorteado para um funcionário novo. */
+export function randomStaffName(role: StaffRole | string): string {
+  const titles = STAFF_TITLES[role as StaffRole] ?? ["Sr."];
+  return `${pick(titles)} ${pick(STAFF_SURNAMES)}`;
 }
 
 export interface StaffMember {
@@ -205,7 +188,7 @@ export async function buildStaffState(
   const members: StaffMember[] = (rows || []).map((r: any) => ({
     role: String(r.role),
     level: Number(r.level) || 1,
-    name: String(r.name || staffNameFor(r.role, r.level)),
+    name: String(r.name || "Funcionário"),
     salaryWeekly: Number(r.salary_weekly) || staffSalaryFor(r.level),
     hiredSlot: Number(r.hired_slot) || 0,
     effect: staffEffectNumbers(r.role, r.level),
@@ -267,12 +250,13 @@ export async function hireStaff(
 
   const cost = staffSigningFee(lvl);
   const salary = staffSalaryFor(lvl);
+  const name = randomStaffName(role);
   try {
     await runExec(game.db, "BEGIN");
     const insert = await runExec(
       game.db,
       "INSERT INTO team_staff (team_id, role, level, name, salary_weekly, hired_slot) VALUES (?, ?, ?, ?, ?, ?)",
-      [teamId, role, lvl, staffNameFor(role, lvl), salary, currentSlot(game)],
+      [teamId, role, lvl, name, salary, currentSlot(game)],
     ).catch((err: any) => {
       // UNIQUE(team_id, role) — corrida perdida para outra contratação.
       throw err;
@@ -297,7 +281,7 @@ export async function hireStaff(
     return { ok: false, error: "db" };
   }
 
-  logClubNews(game, "staff_hire", `${staffNameFor(role, lvl)} contratado`, teamId, {
+  logClubNews(game, "staff_hire", `${name} contratado`, teamId, {
     amount: cost,
     slot: currentSlot(game),
     description: `Funcionário contratado (nível ${lvl}) — assinatura de ${cost}€, ${salary}€ por semana.`,
