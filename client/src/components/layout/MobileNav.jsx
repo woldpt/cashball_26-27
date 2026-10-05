@@ -40,7 +40,7 @@ function MobileGroupButton({ groupId, icon, label, tour, isChildActive, isOpen, 
       {highlighted && (
         <motion.span
           layoutId="mobileTabIndicator"
-          className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full"}`}
+          className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-t-full"}`}
           transition={SPRING.indicator}
         />
       )}
@@ -94,7 +94,7 @@ function JournalButton({ scrollToTop }) {
       {isActive && (
         <motion.span
           layoutId="mobileTabIndicator"
-          className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full"}`}
+          className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-t-full"}`}
           transition={SPRING.indicator}
         />
       )}
