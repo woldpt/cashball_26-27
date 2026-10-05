@@ -8,80 +8,111 @@ const getCtx = () => {
   return _ctx;
 };
 
-const playSequence = (sequence, type) => {
+// Sino suave: fundamental + parcial inarmónico (×2,76) a decair mais depressa.
+const bell = (ctx, t, freq, dur, vol) => {
+  [[1, vol, dur], [2.76, vol * 0.35, dur * 0.4]].forEach(([m, v, d]) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.value = freq * m;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g).connect(ctx.destination);
+    o.start(t);
+    o.stop(t + d);
+  });
+};
+
+const play = (fn) => {
   try {
     const ctx = getCtx();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-    sequence.forEach(({ freq, time, dur, vol }) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, now + time);
-      gain.gain.setValueAtTime(vol, now + time);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + time + dur);
-      osc.start(now + time);
-      osc.stop(now + time + dur);
-    });
+    if (ctx) fn(ctx, ctx.currentTime + 0.02);
   } catch {
     // ignore
   }
 };
 
+// Notificação: ping de sino em duas notas.
 export const playNotification = () =>
-  playSequence(
-    [
-      { freq: 880, time: 0, dur: 0.22, vol: 0.07 },
-      { freq: 1100, time: 0.13, dur: 0.22, vol: 0.07 },
-    ],
-    "sine",
-  );
+  play((ctx, t) => {
+    bell(ctx, t, 880, 0.5, 0.07);
+    bell(ctx, t + 0.13, 1175, 0.6, 0.07);
+  });
 
-// Som especial para golos — mais grave, forte e memorável
+// Golo: ding triunfal de sino + rugido da bancada a rebentar.
 export const playGoalSound = () =>
-  playSequence(
-    [
-      { freq: 523, time: 0, dur: 0.12, vol: 0.25 }, // Dó
-      { freq: 659, time: 0.1, dur: 0.12, vol: 0.22 }, // Mi
-      { freq: 784, time: 0.2, dur: 0.35, vol: 0.28 }, // Sol (nota de celebração)
-    ],
-    "triangle",
-  );
+  play((ctx, t) => {
+    bell(ctx, t, 523, 0.5, 0.16);
+    bell(ctx, t + 0.1, 659, 0.5, 0.16);
+    bell(ctx, t + 0.2, 784, 0.9, 0.2);
+    crowd(ctx, t, "win");
+  });
 
-// Fanfarra para contratação de jogador — arpejo ascendente festivo
+// Contratação: arpejo de sino ascendente, brilhante.
 export const playSigningSound = () =>
-  playSequence(
-    [
-      { freq: 523, time: 0, dur: 0.14, vol: 0.16 }, // Dó
-      { freq: 659, time: 0.11, dur: 0.14, vol: 0.18 }, // Mi
-      { freq: 784, time: 0.22, dur: 0.14, vol: 0.2 }, // Sol
-      { freq: 1046, time: 0.33, dur: 0.42, vol: 0.24 }, // Dó agudo (celebração)
-    ],
-    "triangle",
-  );
+  play((ctx, t) => {
+    [523, 659, 784, 1046].forEach((f, i) =>
+      bell(ctx, t + i * 0.11, f, i === 3 ? 1.1 : 0.5, 0.13),
+    );
+  });
 
-// Som de vaia dos adeptos após derrota — drone descendente grave e curto
+// Vaia: "ooo" grave a descer com vibrato (sawtooth filtrado) + bancada em lamento.
 export const playBooSound = () =>
-  playSequence(
-    [
-      { freq: 330, time: 0, dur: 0.2, vol: 0.14 },
-      { freq: 262, time: 0.16, dur: 0.24, vol: 0.16 },
-      { freq: 196, time: 0.34, dur: 0.55, vol: 0.18 },
-    ],
-    "sawtooth",
-  );
+  play((ctx, t) => {
+    const o = ctx.createOscillator();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(240, t);
+    o.frequency.exponentialRampToValueAtTime(150, t + 1.1);
+    const vib = ctx.createOscillator();
+    const vibG = ctx.createGain();
+    vib.frequency.value = 5.5;
+    vibG.gain.value = 6;
+    vib.connect(vibG).connect(o.frequency);
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 520;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.1, t + 0.25);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+    o.connect(lp).connect(g).connect(ctx.destination);
+    o.start(t);
+    vib.start(t);
+    o.stop(t + 1.2);
+    vib.stop(t + 1.2);
+    crowd(ctx, t, "loss");
+  });
 
-// Som descendente para golo anulado pelo VAR
+// VAR: dois bips secos + "bwom" descendente de sala de vídeo.
 export const playVarSound = () =>
-  playSequence(
-    [
-      { freq: 440, time: 0, dur: 0.16, vol: 0.11 },
-      { freq: 330, time: 0.15, dur: 0.32, vol: 0.09 },
-    ],
-    "sine",
-  );
+  play((ctx, t) => {
+    [0, 0.16].forEach((dt) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "square";
+      o.frequency.value = 1000;
+      g.gain.setValueAtTime(0.05, t + dt);
+      g.gain.setValueAtTime(0.0001, t + dt + 0.09);
+      o.connect(g).connect(ctx.destination);
+      o.start(t + dt);
+      o.stop(t + dt + 0.1);
+    });
+    const o = ctx.createOscillator();
+    const lp = ctx.createBiquadFilter();
+    const g = ctx.createGain();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(330, t + 0.4);
+    o.frequency.exponentialRampToValueAtTime(130, t + 0.95);
+    lp.type = "lowpass";
+    lp.frequency.value = 700;
+    g.gain.setValueAtTime(0.0001, t + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.46);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+    o.connect(lp).connect(g).connect(ctx.destination);
+    o.start(t + 0.4);
+    o.stop(t + 0.95);
+  });
 
 // ── Apito final realista (síntese Web Audio, sem ficheiros) ──────────────
 // Apito de bolinha: tom ~2,9 kHz com trilo de amplitude (~38 Hz, a bolinha),
