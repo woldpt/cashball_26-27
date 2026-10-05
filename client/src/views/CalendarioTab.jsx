@@ -604,7 +604,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
           />
         ) : (
           <div className="flex flex-col gap-1.5">
-            {nextItem && (
+            {calFilter === "all" && nextItem && (
               <NextMatchHero
                 item={nextItem}
                 teamForms={teamForms}
