@@ -607,15 +607,17 @@ function leagueFinalArticle(n, viewerTeamId = null) {
   const lines = rows.map(
     (r) => `${r.pos}.º ${r.name} — ${r.p} pts (${r.v}V ${r.e}E ${r.d}D)`,
   );
-  const body =
+  // O texto desenhado fica só com o lead: a tabela vem do `LeagueFinalTable`.
+  // As linhas ficam em `body` apenas para a pesquisa.
+  const lead =
     `A liga terminou e ${champion} sagrou-se campeão da ${divName}. ` +
-    `A tabela final fica registada nesta edição para consulta futura, mesmo depois do arranque da nova época.\n\n` +
-    lines.join("\n");
+    `A tabela final fica registada nesta edição para consulta futura, mesmo depois do arranque da nova época.`;
+  const body = `${lead}\n\n${lines.join("\n")}`;
   const champ = rows[0] ? { id: rows[0].id, label: rows[0].name } : null;
   return {
     ...makeArticle(
       [partText(title)],
-      champ ? linkFirstMention(body, partTeam(champ)) : [partText(body)],
+      champ ? linkFirstMention(lead, partTeam(champ)) : [partText(lead)],
       null,
       champ ? [champ] : [],
       null,
