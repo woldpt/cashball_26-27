@@ -1,14 +1,14 @@
 /**
  * TransferHub — Mercado de transferências (compra de jogadores).
  * Estilo cromo face única idêntico ao AuctionCard: faixa por posição,
- * herói com halo + skill, tiles Forma/Jogos/Golos e rodapé de ação único.
+ * herói com halo + BadgeSkills, tiles Jogos/Golos e rodapé de ação único.
  */
 import { memo, useContext, useMemo, useState } from "react";
 import { TeamLink } from "../shared/TeamLink.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
-import { AggBadge } from "../shared/AggBadge.jsx";
+import { BadgeSkills } from "../shared/BadgeSkills.jsx";
 import { Badge } from "../shared/Badge.jsx";
 import { StarMark } from "../shared/PlayerStatusBadges.jsx";
 import { StatTile } from "../shared/StatTile.jsx";
@@ -203,9 +203,6 @@ const MarketCard = memo(function MarketCard({
       : player.team_name
     : sellerName || "Sem clube";
 
-  const formVal = player.form ?? 32;
-  const formClass = formVal >= 41 ? "text-emerald-400" : formVal <= 22 ? "text-rose-400" : "text-zinc-200";
-
   return (
     <article
       className={`relative flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[player.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg cursor-pointer ${POSITION_GLOW_CLASS[player.position] || ""}`}
@@ -264,7 +261,7 @@ const MarketCard = memo(function MarketCard({
         ) : null}
       </div>
 
-      {/* Herói: avatar com halo + skill */}
+      {/* Herói: avatar com halo + BadgeSkills */}
       <div
         className="mx-3 short:mx-2 mt-2 short:mt-1 rounded-lg flex flex-col items-center pt-3 short:pt-2 pb-2.5 short:pb-1.5 px-2 short:px-1.5"
         style={{ background: `radial-gradient(ellipse 90% 100% at 50% 0%, ${hexToRgba(posHex, 0.22)} 0%, transparent 70%)` }}
@@ -283,13 +280,6 @@ const MarketCard = memo(function MarketCard({
               photo={player.photo || null}
             />
           </div>
-          <span
-            className="absolute -bottom-1 -right-3 min-w-9 h-9 px-1.5 rounded-full bg-surface-container border-2 flex items-center justify-center font-headline font-black text-lg leading-none tabular-nums text-amber-300 animate-fam-glow"
-            style={{ borderColor: posHex }}
-            title={`Skill ${player.skill}`}
-          >
-            {player.skill ?? 0}
-          </span>
         </div>
         <button
           type="button"
@@ -302,6 +292,14 @@ const MarketCard = memo(function MarketCard({
         <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
           {[player.nationality, countryName].filter(Boolean).join(" · ")}
         </p>
+        <BadgeSkills
+          className="mt-2 short:mt-1"
+          skill={player.skill}
+          form={player.form}
+          morale={player.morale}
+          resistance={player.resistance}
+          aggressiveness={player.aggressiveness}
+        />
       </div>
 
       {/* Preço + salário */}
@@ -322,23 +320,7 @@ const MarketCard = memo(function MarketCard({
       </div>
 
       {/* Mini-stats */}
-      <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
-        <StatTile label="Forma">
-          <span className={`tabular-nums font-bold ${formClass}`}>{formVal}</span>
-        </StatTile>
-        <StatTile label="RES">
-          <span
-            className={`tabular-nums font-black ${
-              (player.resistance ?? 0) >= 38
-                ? "text-green-400"
-                : (player.resistance ?? 0) >= 26
-                  ? "text-yellow-400"
-                  : "text-red-400"
-            }`}
-          >
-            {player.resistance ?? "–"}
-          </span>
-        </StatTile>
+      <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-2 gap-1.5 short:gap-1">
         <StatTile label="Jogos">
           <span className="tabular-nums">{player.games_played ?? 0}</span>
         </StatTile>
@@ -346,12 +328,6 @@ const MarketCard = memo(function MarketCard({
           <span className="tabular-nums">{player.goals ?? 0}</span>
         </StatTile>
       </div>
-      {player.aggressiveness != null && (
-        <div className="mt-1.5 short:mt-1 flex items-center justify-center gap-1.5">
-          <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/50">Agressividade</span>
-          <AggBadge value={player.aggressiveness} />
-        </div>
-      )}
 
       {/* Rodapé único */}
       <div className="px-3 short:px-2 py-3 short:py-2 mt-auto">
