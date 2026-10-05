@@ -291,7 +291,10 @@ export function WeeklyFinanceTable({ facts }) {
   if (!facts || facts.v !== 1) return null;
   const net = Number(facts.net) || 0;
   const sections = [
-    { title: "Receitas", rows: [{ label: "Rendimento base", value: facts.income }] },
+    { title: "Receitas", rows: [
+        { label: "Rendimento base", value: facts.income },
+        ...(Number(facts.sponsor) > 0 ? [{ label: "Patrocínio", value: facts.sponsor }] : []),
+      ] },
     {
       title: "Despesas",
       rows: [

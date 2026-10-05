@@ -132,14 +132,17 @@ export function buildWeeklyFinanceFacts(p: {
   wages: number;
   upkeep: number;
   staff?: number;
+  sponsor?: number;
   interest: number;
   installment: number;
   oldLoan: number;
 }): string {
   const hasLoan = p.oldLoan > 0;
   const staff = p.staff || 0;
+  const sponsor = p.sponsor || 0;
   const net =
-    p.income -
+    p.income +
+    sponsor -
     p.wages -
     p.upkeep -
     staff -
@@ -150,6 +153,7 @@ export function buildWeeklyFinanceFacts(p: {
     wages: p.wages,
     upkeep: p.upkeep,
     staff,
+    sponsor,
     interest: hasLoan ? p.interest : 0,
     installment: hasLoan ? p.installment : 0,
     net,
@@ -1734,6 +1738,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       // para a reconciliação do gráfico não esmagar valores (bug antigo
       // dos prémios creditados sem diário). Salas antigas sem as colunas
       // caem no catch com lista vazia.
+      const paidSponsor: Record<number, number> = {};
       try {
         const sponsorRows: any[] = await dbAll(
           game.db,
@@ -1745,6 +1750,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           const sName = sponsorById(String(t.sponsor_id || ""))?.name || "Patrocinador";
           if ((t.sponsor_weekly || 0) > 0) {
             await dbRun(game.db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [t.sponsor_weekly, t.id]);
+            paidSponsor[t.id] = (paidSponsor[t.id] || 0) + t.sponsor_weekly;
             logClubNews(game, "sponsor", `${sName} — prestação semanal`, t.id, {
               amount: t.sponsor_weekly,
               description: `Patrocínio ${sName} (época ${game.year})`,
@@ -1756,6 +1762,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               "UPDATE teams SET budget = budget + ?, sponsor_paid_second = 1 WHERE id = ?",
               [t.sponsor_second_half, t.id],
             );
+            paidSponsor[t.id] = (paidSponsor[t.id] || 0) + t.sponsor_second_half;
             logClubNews(game, "sponsor", `${sName} — 2.ª tranche`, t.id, {
               amount: t.sponsor_second_half,
               description: `Patrocínio ${sName}, segunda metade (época ${game.year})`,
@@ -1846,6 +1853,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             wages,
             upkeep,
             staff: preStaff[id] || 0,
+            sponsor: paidSponsor[id] || 0,
             interest,
             installment,
             oldLoan,

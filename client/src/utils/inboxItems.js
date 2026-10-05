@@ -1426,6 +1426,8 @@ export function newsRowsToItems(rows, fallbackDate, viewerTeamId = null) {
   const done = new Set();
   const items = [];
   for (const n of list) {
+    // Parcelas de patrocínio só contam no resumo financeiro semanal.
+    if (n?.type === "sponsor" && /prestação semanal|2\.ª tranche/.test(String(n.title || ""))) continue;
     const key = dealKey(n);
     if (key) {
       if (done.has(key)) continue;
