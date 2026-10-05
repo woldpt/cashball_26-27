@@ -6,7 +6,7 @@ import { GameLayout } from "./GameLayout.jsx";
 import { SEASON_LABEL } from "./constants/index.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { useJoinSession } from "./hooks/useJoinSession.js";
-import { loadSavedSession } from "./utils/localStorage.js";
+import { loadSavedAuth, loadSavedSession } from "./utils/localStorage.js";
 import { checkCacheVersion } from "./utils/cacheVersion.js";
 import {
 	initPushNotifications,
@@ -90,7 +90,11 @@ function App() {
 	useEffect(() => {
 		if (!cacheReady) return;
 		const session = loadSavedSession();
-		if (!session) return;
+		if (!session) {
+			const savedAuth = loadSavedAuth();
+			if (savedAuth) auth.restoreAuth(savedAuth, { toModeScreen: true });
+			return;
+		}
 		auth.restoreAuth(session);
 		join.restoreSession(session);
 		// eslint-disable-next-line react-hooks/set-state-in-effect

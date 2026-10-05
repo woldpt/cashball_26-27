@@ -198,9 +198,11 @@ export function useAuth({ backendUrl, roomCode, setRoomCode }) {
 		window.location.reload();
 	};
 
-	const restoreAuth = (session) => {
+	const restoreAuth = (session, { toModeScreen = false } = {}) => {
 		setName(session.name);
 		setToken(session.token);
+		// Sem sala guardada: salta o login e vai direto à escolha de modo.
+		if (toModeScreen) setAuthPhase("mode");
 	};
 
 	// ── Saves deste treinador (só no modo saved-game) ──────────────────────
