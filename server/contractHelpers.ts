@@ -18,6 +18,7 @@ import {
   CONTRACT_REQUEST_RESET_SQL,
   AGENT_RENEGOTIATION_WAGE_FLOOR,
   NPC_RENEW_MIN_BUDGET,
+  NPC_RENEW_MIN_SKILL_RATIO,
   AUCTION_PRICE_FLOOR_RATE,
   AUCTION_PRICE_FLOOR_MIN_SKILL,
   AUCTION_PRICE_FLOOR_WEEKS,
@@ -361,17 +362,28 @@ export function createContractHelpers(deps: ContractDeps) {
         // juniores (ids negativos) não mascaram carências reais.
         const posCounts = await runAll(
           game.db,
-          "SELECT position, COUNT(*) as cnt FROM players WHERE team_id = ? AND id > 0 GROUP BY position",
+          "SELECT position, COUNT(*) as cnt, SUM(skill) as skillSum FROM players WHERE team_id = ? AND id > 0 GROUP BY position",
           [player.team_id],
         );
         const posMap: Record<string, number> = {};
-        for (const row of posCounts) posMap[row.position] = row.cnt;
+        let squadSize = 0;
+        let skillSum = 0;
+        for (const row of posCounts) {
+          posMap[row.position] = row.cnt;
+          squadSize += row.cnt;
+          skillSum += row.skillSum || 0;
+        }
+        // Não renova quem está muito abaixo da média do plantel: vai a leilão
+        // e o mercado NPC repõe a posição (evita plantéis bloqueados de fracos).
+        const isGoodEnough =
+          squadSize === 0 ||
+          (player.skill || 0) >= (skillSum / squadSize) * NPC_RENEW_MIN_SKILL_RATIO;
         const posCount = posMap[player.position] ?? 0;
         const posMin = POS_MIN[player.position] ?? 3;
         const isNeeded = posCount < posMin;
         const isAffordable = (team as any).budget > NPC_RENEW_MIN_BUDGET;
 
-        if (isNeeded && isAffordable) {
+        if (isNeeded && isAffordable && isGoodEnough) {
           const fairWage = fairWageOf(player);
           const seasonEnd = getSeasonEndMatchweek(game.matchweek);
           await new Promise<void>((resolve) => {

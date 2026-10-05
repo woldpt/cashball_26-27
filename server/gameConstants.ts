@@ -419,6 +419,9 @@ export const AGENT_RENEGOTIATION_WAGE_FLOOR = 0.7;
  * acima deste piso (nunca insolvência por renovação). */
 export const NPC_RENEW_MIN_BUDGET = 5000;
 
+/** NPC só renova jogador com skill >= esta fração da média do plantel. */
+export const NPC_RENEW_MIN_SKILL_RATIO = 0.85;
+
 /**
  * Piso anti-preço-simbólico no leilão ex-clube (contrato expirado ou corte
  * de folha NPC): preço mínimo = max(skill × FLOOR_RATE, FLOOR_MIN_SKILL) ×
