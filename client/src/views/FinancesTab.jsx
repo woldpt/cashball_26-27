@@ -147,10 +147,18 @@ export function FinancesTab({
   const staffMembers = staff?.members || [];
   const staffWeeklyWage = staff?.salaryWeekly || 0;
   // Semanas pagas desde a contratação; hiredSlot acima do índice actual = época anterior.
-  const staffSeasonCost = staffMembers.reduce((sum, m) => {
-    const from = m.hiredSlot > weeksElapsed ? 0 : m.hiredSlot || 0;
-    return sum + m.salaryWeekly * Math.max(0, weeksElapsed - from);
-  }, 0);
+  // Rubricas reais da época (resumos semanais do Jornal); sem elas, estimativa.
+  const weekly = financeData?.weekly || null;
+  const staffSeasonCost = weekly
+    ? weekly.staff
+    : staffMembers.reduce((sum, m) => {
+        const from = m.hiredSlot > weeksElapsed ? 0 : m.hiredSlot || 0;
+        return sum + m.salaryWeekly * Math.max(0, weeksElapsed - from);
+      }, 0);
+  const wagesSeasonCost = weekly ? weekly.wages : totalWeeklyWage * weeksElapsed;
+  const interestSeasonCost = weekly
+    ? weekly.interest
+    : loanInterestPerWeek * weeksElapsed;
   const {
     totalSeasonIncome,
     totalSeasonExpenses,
@@ -161,11 +169,14 @@ export function FinancesTab({
     const totalSeasonIncome =
       (financeData?.totalTicketRevenue || 0) +
       (financeData?.sponsorRevenue || 0) +
+      (financeData?.prizeRevenue || 0) +
+      (weekly?.baseIncome || 0) +
       (financeData?.totalTransferIncome || 0);
     const totalSeasonExpenses =
-      totalWeeklyWage * weeksElapsed +
+      wagesSeasonCost +
       staffSeasonCost +
-      loanInterestPerWeek * weeksElapsed +
+      interestSeasonCost +
+      (weekly?.upkeep || 0) +
       (financeData?.totalTransferExpenses || 0) +
       (financeData?.totalStadiumExpenses || 0);
     const seasonResult = totalSeasonIncome - totalSeasonExpenses;
@@ -175,7 +186,7 @@ export function FinancesTab({
         ? Math.min(
             100,
             Math.round(
-              ((totalWeeklyWage * weeksElapsed) / totalSeasonIncome) * 100,
+              (wagesSeasonCost / totalSeasonIncome) * 100,
             ),
           )
         : 0;
@@ -188,10 +199,10 @@ export function FinancesTab({
     };
   }, [
     financeData,
-    totalWeeklyWage,
+    weekly,
+    wagesSeasonCost,
     staffSeasonCost,
-    weeksElapsed,
-    loanInterestPerWeek,
+    interestSeasonCost,
     loanAmount,
   ]);
 
@@ -249,10 +260,12 @@ export function FinancesTab({
         v: financeData?.sponsorRevenue || 0,
         bg: "bg-tertiary",
       },
+      { label: "Receita base", v: weekly?.baseIncome || 0, bg: "bg-emerald-500" },
+      { label: "Prémios", v: financeData?.prizeRevenue || 0, bg: "bg-amber-400" },
       { label: "Vendas", v: financeData?.totalTransferIncome || 0, bg: "bg-sky-500" },
     ].filter((p) => p.v > 0);
     return parts.map((p) => ({ ...p, pct: (p.v / totalSeasonIncome) * 100 }));
-  }, [totalSeasonIncome, financeData]);
+  }, [totalSeasonIncome, financeData, weekly]);
 
   // O ponto mais recente do gráfico é sempre o saldo actual: se divergir do
   // último snapshot (transfers/obras a meio da semana), acrescenta um ponto
@@ -323,7 +336,7 @@ export function FinancesTab({
                 : "trending_down"}
             </span>
             <span className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant font-medium font-label uppercase">
-              {completedJornada} / {SEASON_JORNADAS} jornadas concluídas
+              {weeksElapsed} / {SEASON_WEEKS} semanas concluídas
             </span>
           </div>
         </SummaryWidget>
@@ -482,6 +495,28 @@ export function FinancesTab({
                 )}
               </span>
             </li>
+            {(weekly?.baseIncome || 0) > 0 && (
+              <li className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-on-surface-variant">Receita Base</p>
+                  <p className="text-[10px] opacity-40 uppercase">Por divisão · semanal</p>
+                </div>
+                <span className="font-headline text-sm font-bold">
+                  {formatCurrency(weekly.baseIncome)}
+                </span>
+              </li>
+            )}
+            {(financeData?.prizeRevenue || 0) > 0 && (
+              <li className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-on-surface-variant">Prémios</p>
+                  <p className="text-[10px] opacity-40 uppercase">Taça, campeonato e individuais</p>
+                </div>
+                <span className="font-headline text-sm font-bold">
+                  {formatCurrency(financeData.prizeRevenue)}
+                </span>
+              </li>
+            )}
             {(financeData?.totalTransferIncome || 0) > 0 && (
               <ExpandableRow
                 label="Vendas de Jogadores"
@@ -542,9 +577,7 @@ export function FinancesTab({
                 </p>
               </div>
               <span className="font-headline text-sm font-bold">
-                {formatCurrency(
-                  totalWeeklyWage * weeksElapsed,
-                )}
+                {formatCurrency(wagesSeasonCost)}
               </span>
             </li>
             {staffMembers.length > 0 && (
@@ -574,9 +607,18 @@ export function FinancesTab({
                   </p>
                 </div>
                 <span className="font-headline text-sm font-bold">
-                  {formatCurrency(
-                    loanInterestPerWeek * weeksElapsed,
-                  )}
+                  {formatCurrency(interestSeasonCost)}
+                </span>
+              </li>
+            )}
+            {(weekly?.upkeep || 0) > 0 && (
+              <li className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-on-surface-variant">Manutenção do Estádio</p>
+                  <p className="text-[10px] opacity-40 uppercase">Lugares acima da isenção · semanal</p>
+                </div>
+                <span className="font-headline text-sm font-bold">
+                  {formatCurrency(weekly.upkeep)}
                 </span>
               </li>
             )}

@@ -1896,6 +1896,26 @@ export function registerSessionSocketHandlers(
 				}
 				const sponsorChosen = team?.sponsor_id ? sponsorById(String(team.sponsor_id)) : undefined;
 
+				// Rubricas semanais reais (resumos `weekly_finance` do Jornal) e
+				// prémios da época — o cliente deixa de estimar com o salário atual.
+				const weekly = { baseIncome: 0, wages: 0, upkeep: 0, staff: 0, interest: 0 };
+				let prizeRevenue = 0;
+				try {
+					const weekRows = await runAll(game.db, "SELECT description FROM club_news WHERE team_id = ? AND type = 'weekly_finance' AND year = ?", [teamId, currentYear]);
+					for (const r of weekRows || []) {
+						try {
+							const f = JSON.parse(r.description || "{}");
+							weekly.baseIncome += f.income || 0;
+							weekly.wages += f.wages || 0;
+							weekly.upkeep += f.upkeep || 0;
+							weekly.staff += f.staff || 0;
+							weekly.interest += f.interest || 0;
+						} catch {}
+					}
+					const prizes = await runGet(game.db, "SELECT COALESCE(SUM(amount), 0) AS s FROM club_news WHERE team_id = ? AND type = 'prize' AND year = ?", [teamId, currentYear]);
+					prizeRevenue = Number(prizes?.s || 0);
+				} catch {}
+
 				// ── Balance history ──────────────────────────────────────────────
 				// Saldo real de fim de semana, gravado em team_balance_history
 				// (um ponto por slot do calendário). Janela deslizante das últimas
@@ -1974,6 +1994,8 @@ export function registerSessionSocketHandlers(
 					totalTransferExpenses,
 					totalStadiumExpenses,
 					sponsorRevenue,
+					prizeRevenue,
+					weekly,
 					sponsorName: sponsorChosen?.name || null,
 					sponsorId: team?.sponsor_id || null,
 					sponsorProfile: team?.sponsor_profile || null,
