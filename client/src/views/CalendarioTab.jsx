@@ -496,21 +496,24 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
     };
     // Separador dos amigáveis: pré-época + semanas da Taça (marcado/jogado,
     // ou a véspera em que ainda se pode marcar).
+    const cupWeekFriendlyItem = (entry, status) => {
+      if (entry.round === CUP_FINAL_ROUND) return null;
+      const item = buildFriendlyItem(
+        { ...entry, type: "friendly", roundName: `Semana Taça: ${entry.roundName}` },
+        status,
+        ctx,
+        -entry.round,
+      );
+      if (item) return item;
+      return cupWeekFriendly?.cupRound === entry.round
+        ? { entry, status, type: "friendly", signupRow: true }
+        : null;
+    };
     if (calFilter === "friendly") {
       return SEASON_CALENDAR.map((entry) => {
         const status = getStatus(entry);
         if (entry.type === "friendly") return buildFriendlyItem(entry, status, ctx);
-        if (entry.type !== "cup" || entry.round === CUP_FINAL_ROUND) return null;
-        const item = buildFriendlyItem(
-          { ...entry, type: "friendly", roundName: `Semana Taça: ${entry.roundName}` },
-          status,
-          ctx,
-          -entry.round,
-        );
-        if (item) return item;
-        return cupWeekFriendly?.cupRound === entry.round
-          ? { entry, status, type: "friendly", signupRow: true }
-          : null;
+        return entry.type === "cup" ? cupWeekFriendlyItem(entry, status) : null;
       }).filter(Boolean);
     }
     return SEASON_CALENDAR.filter((entry) => {
@@ -522,7 +525,11 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
         const status = getStatus(entry);
         if (entry.type === "friendly")
           return buildFriendlyItem(entry, status, ctx);
-        if (entry.type === "cup") return buildCupItem(entry, status, ctx);
+        if (entry.type === "cup") {
+          const cupItem = buildCupItem(entry, status, ctx);
+          // Todos: na semana em que estou fora, o amigável toma o lugar do «Eliminado».
+          return (cupItem.eliminated && calFilter === "all" && cupWeekFriendlyItem(entry, status)) || cupItem;
+        }
         return buildLeagueItem(entry, status, ctx);
       })
       .filter(Boolean)
@@ -644,8 +651,8 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
               // ── Eliminado da Taça ──────────────────
               if (eliminated) {
                 return (
-                  <div key={entry.calendarIndex} className="flex flex-col gap-1">
                   <motion.div
+                    key={entry.calendarIndex}
                     {...staggerItemProps(idx)}
                     className="flex items-stretch gap-0 rounded-md overflow-hidden opacity-40 bg-surface-container border-l-2 border-l-error"
                   >
@@ -676,17 +683,6 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                       <Badge variant="error">{item.notInCup ? "Fora" : "Eliminado"}</Badge>
                     </div>
                   </motion.div>
-                  {entry.round !== CUP_FINAL_ROUND && (
-                    <CupWeekFriendlyRow
-                      entry={entry}
-                      cal={cal}
-                      teams={teams}
-                      myTeamId={myTeamId}
-                      cupWeekFriendly={cupWeekFriendly}
-                      onSignup={onSignupCupFriendly}
-                    />
-                  )}
-                  </div>
                 );
               }
 
