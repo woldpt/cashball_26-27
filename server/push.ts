@@ -398,7 +398,7 @@ async function doMaybeNotify(game: ActiveGame): Promise<void> {
   await sendToCoach(name, {
     type: "waiting",
     title: "CashBall",
-    body: `Sala ${game.roomCode} · Falta a tua tática!`,
+    body: `Sala ${(game as any).roomName || game.roomCode} · Falta a tua tática!`,
     roomCode: game.roomCode,
   });
 }
@@ -422,7 +422,7 @@ export function maybeNotifyWaiting(game: ActiveGame): void {
       sendToCoach(name, {
         type: "waiting",
         title: "CashBall",
-        body: `Sala ${game.roomCode} · A sala está parada à tua espera`,
+        body: `Sala ${(game as any).roomName || game.roomCode} · A sala está parada à tua espera`,
         roomCode: game.roomCode,
       }),
     );
@@ -448,7 +448,7 @@ export function maybeNotifyOutbid(
     sendToCoach(coach, {
       type: "auction",
       title: "CashBall",
-      body: `Sala ${game.roomCode} · Ultrapassaram-te no leilão de ${playerName || "um jogador"} (€${amount})`,
+      body: `Sala ${(game as any).roomName || game.roomCode} · Ultrapassaram-te no leilão de ${playerName || "um jogador"} (€${amount})`,
       roomCode: game.roomCode,
     }),
   );
@@ -459,6 +459,7 @@ export function notifyRoomInvite(
   toCoach: string,
   fromName: string,
   roomCode: string,
+  roomName?: string,
 ): void {
   if (!isPushEnabled()) return;
   fireAndForget(
@@ -466,7 +467,7 @@ export function notifyRoomInvite(
     sendToCoach(toCoach, {
       type: "invite",
       title: "CashBall",
-      body: `${fromName} convidou-te para a sala ${roomCode}`,
+      body: `${fromName} convidou-te para a sala ${roomName || roomCode}`,
       roomCode,
     }),
   );
@@ -513,7 +514,7 @@ async function sendMatchdayPushes(
         type: "matchday",
         title: "CashBall",
         body:
-          `Sala ${game.roomCode} · Jornada ${matchweek}: ${goalsFor}-${goalsAgainst}` +
+          `Sala ${(game as any).roomName || game.roomCode} · Jornada ${matchweek}: ${goalsFor}-${goalsAgainst}` +
           (pos ? ` · ${pos}.º lugar` : ""),
         roomCode: game.roomCode,
       }),

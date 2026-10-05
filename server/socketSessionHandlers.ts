@@ -1471,7 +1471,7 @@ export function registerSessionSocketHandlers(
 			// Offline: o socket não chega lá — o convite segue por push (o toque
 			// abre a app na sala certa, pelo deep link). Sem convite pendente:
 			// não há socket para o aceitar.
-			notifyRoomInvite(toCoach, session.name, roomCode);
+			notifyRoomInvite(toCoach, session.name, roomCode, roomName);
 			return reply({ ok: true, toCoach, pushed: true });
 		}
 		if (target.roomCode === roomCode) {
