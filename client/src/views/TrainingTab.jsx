@@ -157,7 +157,7 @@ function getTrainingLabel(trainingKey) {
    Card de opção de treino — agora com faixa lateral, glow e
    gradiente de fundo, alinhado com PlayerRow (STYLE.md §4).
    ═══════════════════════════════════════════════════════════════ */
-function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, onClick }) {
+function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, pending, onClick }) {
   const meta = TRAINING_META[optionKey];
   const style = getMeta(optionKey);
   const isSelected = selected === optionKey;
@@ -171,7 +171,7 @@ function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, 
         isSelected
           ? `${style.border} bg-primary/10 text-on-surface shadow-lg`
           : `border-outline-variant/25 bg-gradient-to-r ${style.bgGrad} via-surface-container/70 to-surface/30 ${style.glow} shadow-sm shadow-black/30 hover:border-outline-variant/50`
-      } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${isSaved && justSaved ? "training-saved-pulse" : ""}`}
+      } ${loading ? `cursor-not-allowed ${pending ? "" : "opacity-50"}` : "cursor-pointer"} ${isSaved && justSaved ? "training-saved-pulse" : ""}`}
     >
       {/* Faixa lateral colorida */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${style.bar}`} />
@@ -191,7 +191,13 @@ function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, 
         </div>
         <div className="text-xs short:text-[10px] text-on-surface-variant">{meta.description}</div>
 
-        {isSaved && (
+        {pending && (
+          <div className="text-xs short:text-[10px] font-black mt-2 short:mt-1 flex items-center gap-1 text-on-surface-variant">
+            <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+            A guardar…
+          </div>
+        )}
+        {isSaved && !pending && (
           <div
             className={`text-xs short:text-[10px] font-black mt-2 short:mt-1 flex items-center gap-1 ${
               justSaved ? "text-emerald-400" : "text-primary"
@@ -257,26 +263,43 @@ function groupByPlayer(records) {
 }
 
 /**
+ * Cabeçalho das colunas de atributo, uma vez por grupo, alinhado com
+ * as colunas do PlayerReportRow. A coluna do foco leva a cor do foco;
+ * as restantes esbatem-se para o olho ir direto ao que interessa.
+ * @param {{ highlightAttr?: string|null, highlightClass?: string }} props
+ * @returns {JSX.Element}
+ */
+function AttrHeader({ highlightAttr, highlightClass }) {
+  const cls = (attr) => {
+    if (attr === highlightAttr && highlightClass) return highlightClass;
+    if (highlightAttr) return "text-on-surface-variant/40";
+    return "text-on-surface-variant/70";
+  };
+  return (
+    <div className="flex justify-end gap-2 pl-1 pr-3 short:pr-2">
+      {ATTR_COLUMNS.map((col) => (
+        <span
+          key={col.key}
+          className={`min-w-[64px] text-center text-[10px] font-black uppercase tracking-widest ${cls(col.key)}`}
+        >
+          {col.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Card de jogador no relatório — layout horizontal compacto
  * com colunas de atributo, seguindo o padrão PlayerRow.
  * @param {{
  *   player: { player_id: number, name: string, changes: object[] },
  *   position: string,
- *   highlightAttr?: string,
- *   highlightClass?: string,
  * }} props
  */
-function PlayerReportRow({ player, position, highlightAttr, highlightClass }) {
+function PlayerReportRow({ player, position }) {
   const byAttr = {};
   for (const c of player.changes) byAttr[c.attribute] = c;
-
-  // Cabeçalho da coluna do atributo treinado leva a cor do foco;
-  // os restantes esbatem-se para o olho ir direto ao que interessa.
-  const headerClass = (attr) => {
-    if (attr === highlightAttr && highlightClass) return highlightClass;
-    if (highlightAttr) return "text-on-surface-variant/40";
-    return "text-on-surface-variant/70";
-  };
 
   const bar = POSITION_BAR_CLASS[position] || "from-zinc-500 to-zinc-600";
   const glow = POSITION_GLOW_CLASS[position] || "";
@@ -299,15 +322,7 @@ function PlayerReportRow({ player, position, highlightAttr, highlightClass }) {
         {/* Separador + deltas */}
         <div className="flex items-center gap-2 shrink-0">
           {ATTR_COLUMNS.map((col) => (
-            <div
-              key={col.key}
-              className="flex flex-col items-center min-w-[64px]"
-            >
-              <span
-                className={`text-[8px] font-black uppercase tracking-widest mb-0.5 ${headerClass(col.key)}`}
-              >
-                {col.label}
-              </span>
+            <div key={col.key} className="flex justify-center min-w-[64px]">
               <DeltaCell record={byAttr[col.key]} />
             </div>
           ))}
@@ -364,7 +379,8 @@ export function TrainingTab({ me, matchweek, staff = null }) {
   const [savedTraining, setSavedTraining] = useState(() => {
     return readStoredTrainingFocus(me?.roomCode);
   });
-  const [loading, setLoading] = useState(false);
+  const [pendingKey, setPendingKey] = useState(null);
+  const loading = pendingKey != null;
   const [saved, setSaved] = useState(false);
   // Contador de confirmações — remontado na key do cartão, relança o pulso.
   const [savedTick, setSavedTick] = useState(0);
@@ -425,7 +441,7 @@ export function TrainingTab({ me, matchweek, staff = null }) {
 
   const handleSetTraining = async (trainingKey) => {
     if (!me?.teamId || trainingKey === savedTraining) return;
-    setLoading(true);
+    setPendingKey(trainingKey);
     setError("");
 
     const ok = await emitWithTimeout("setTrainingFocus", [trainingKey], 4000);
@@ -434,7 +450,7 @@ export function TrainingTab({ me, matchweek, staff = null }) {
     } else {
       setError("Erro ao guardar foco de treino.");
     }
-    setLoading(false);
+    setPendingKey(null);
   };
 
   // Group history by position
@@ -469,6 +485,17 @@ export function TrainingTab({ me, matchweek, staff = null }) {
     0,
   );
 
+  // Soma dos níveis ganhos/perdidos no último treino (só jogadores visíveis).
+  let gains = 0;
+  let losses = 0;
+  for (const g of orderedGroups)
+    for (const p of g.players)
+      for (const c of p.changes) {
+        const d = c.new_value - c.old_value;
+        if (d > 0) gains += d;
+        else losses -= d;
+      }
+
   // Resolve border accent do foco atual
   const focusStyle = savedTraining ? getMeta(savedTraining) : null;
   const focusMeta = savedTraining ? TRAINING_META[savedTraining] : null;
@@ -501,7 +528,18 @@ export function TrainingTab({ me, matchweek, staff = null }) {
             </span>
           )}
         </SummaryWidget>
-        <SummaryWidget label="Jornada" value={matchweek} compactMobile valueClass="text-lg sm:text-2xl short:!text-sm" />
+        <SummaryWidget
+          label="Melhorias / Quedas"
+          value={
+            <>
+              <span className="text-emerald-400">+{gains}</span>
+              <span className="text-on-surface-variant/40"> / </span>
+              <span className="text-error">−{losses}</span>
+            </>
+          }
+          compactMobile
+          valueClass="text-lg sm:text-2xl short:!text-sm"
+        />
         <SummaryWidget
           label="Jogadores Treinados"
           value={visiblePlayerCount}
@@ -536,6 +574,7 @@ export function TrainingTab({ me, matchweek, staff = null }) {
                   isSaved={savedTraining === key}
                   justSaved={saved}
                   loading={loading}
+                  pending={pendingKey === key}
                   onClick={() => handleSetTraining(key)}
                 />
               ))}
@@ -620,13 +659,15 @@ export function TrainingTab({ me, matchweek, staff = null }) {
 
                     {/* Lista de cards */}
                     <div className="space-y-1.5">
+                      <AttrHeader
+                        highlightAttr={focusAttr}
+                        highlightClass={focusStyle?.text}
+                      />
                       {players.map((p) => (
                         <PlayerReportRow
                           key={p.player_id}
                           player={p}
                           position={position}
-                          highlightAttr={focusAttr}
-                          highlightClass={focusStyle?.text}
                         />
                       ))}
                     </div>
