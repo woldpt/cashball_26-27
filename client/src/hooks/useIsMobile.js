@@ -57,6 +57,15 @@ export function useMobileLandscape() {
 }
 
 /**
+ * useCoarsePointer — `true` em dispositivos de toque (ponteiro principal grosso).
+ *
+ * @returns {boolean} `true` se o ponteiro principal for `coarse`.
+ */
+export function useCoarsePointer() {
+  return useMediaQuery("(pointer: coarse)");
+}
+
+/**
  * useCompactViewport — devolve `true` quando o viewport NÃO tem espaço para o
  * layout desktop do jogo: exige largura ≥ `md` (BREAKPOINTS.md) E altura ≥
  * `compact` (HEIGHTS.compact).

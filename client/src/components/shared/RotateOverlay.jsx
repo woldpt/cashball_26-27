@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { fade } from "../../motion.js";
-import { useMobileLandscape } from "../../hooks/useIsMobile.js";
+import { useCoarsePointer, useMobileLandscape } from "../../hooks/useIsMobile.js";
 
 /**
  * RotateOverlay — bloqueia a interação em telemóvel landscape.
@@ -9,11 +9,13 @@ import { useMobileLandscape } from "../../hooks/useIsMobile.js";
  * horizontal abaixo de `lg` (`useMobileLandscape`), este overlay fixo tapa
  * a app e pede a rotação. Desktop e retrato nunca o veem (o hook devolve
  * `false`); o código landscape existente fica como fallback por baixo.
+ * Sem ecrã tátil (desktop com janela estreita) pede antes uma resolução mínima.
  *
  * @returns {JSX.Element} Overlay de rotação (ou nada, em retrato/desktop).
  */
 export function RotateOverlay() {
   const isMobileLandscape = useMobileLandscape();
+  const isTouch = useCoarsePointer();
 
   return (
     <AnimatePresence initial={false}>
@@ -45,10 +47,12 @@ export function RotateOverlay() {
             <path d="M22.4 17.2l-1.6-2.2-2.6.9" />
           </svg>
           <p className="text-lg font-black uppercase tracking-widest text-on-surface">
-            Roda o telemóvel
+            {isTouch ? "Roda o telemóvel" : "Resolução insuficiente"}
           </p>
           <p className="max-w-xs text-sm font-semibold leading-relaxed text-on-surface-variant">
-            O CashBall joga-se em retrato. Roda o telemóvel para continuares.
+            {isTouch
+              ? "O CashBall joga-se em retrato. Roda o telemóvel para continuares."
+              : "O CashBall precisa de uma janela com pelo menos 1024px de largura. Aumenta a janela para continuares."}
           </p>
         </motion.div>
       )}
