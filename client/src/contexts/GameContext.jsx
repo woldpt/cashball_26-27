@@ -821,7 +821,7 @@ year: seasonYear,
 		});
 		if (!w || whistledKeysRef.current[w.competition] === w.key) return;
 		whistledKeysRef.current[w.competition] = w.key;
-		playWhistleSound();
+		playWhistleSound(w.outcome);
 		setFinalWhistle({ key: w.key, outcome: w.outcome, myGoals: w.myGoals, oppGoals: w.oppGoals });
 		const t = setTimeout(() => setFinalWhistle(null), 5000);
 		return () => clearTimeout(t);

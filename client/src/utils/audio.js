@@ -83,14 +83,100 @@ export const playVarSound = () =>
     "sine",
   );
 
-// Apito final do árbitro — trilo clássico curto-curto-longo, igual para
-// todos os resultados (a festa ou a desilusão ficam no overlay e no humor).
-export const playWhistleSound = () =>
-  playSequence(
-    [
-      { freq: 2350, time: 0, dur: 0.18, vol: 0.12 },
-      { freq: 2350, time: 0.25, dur: 0.18, vol: 0.12 },
-      { freq: 2350, time: 0.5, dur: 0.65, vol: 0.14 },
-    ],
-    "square",
-  );
+// ── Apito final realista (síntese Web Audio, sem ficheiros) ──────────────
+// Apito de bolinha: tom ~2,9 kHz com trilo de amplitude (~38 Hz, a bolinha),
+// leve subida de tom ao encher, e sopro de ar (ruído filtrado). Três silvos:
+// curto-curto-longo. Por baixo, a bancada reage consoante o desfecho.
+let _noise = null;
+const noiseBuffer = (ctx) => {
+  if (_noise && _noise.sampleRate === ctx.sampleRate) return _noise;
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return (_noise = buf);
+};
+
+const blast = (ctx, t, dur, vol) => {
+  const out = ctx.createGain();
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.exponentialRampToValueAtTime(vol, t + 0.025);
+  out.gain.setValueAtTime(vol, t + dur - 0.05);
+  out.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  out.connect(ctx.destination);
+  // Trilo da bolinha: LFO a modular o ganho do tom.
+  const trill = ctx.createGain();
+  trill.gain.value = 0.65;
+  const lfo = ctx.createOscillator();
+  const lfoDepth = ctx.createGain();
+  lfo.frequency.value = 38;
+  lfoDepth.gain.value = 0.35;
+  lfo.connect(lfoDepth).connect(trill.gain);
+  trill.connect(out);
+  [2880, 2915].forEach((f) => {
+    const o = ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(f * 0.97, t);
+    o.frequency.linearRampToValueAtTime(f, t + 0.06);
+    o.connect(trill);
+    o.start(t);
+    o.stop(t + dur);
+  });
+  // Sopro de ar.
+  const n = ctx.createBufferSource();
+  n.buffer = noiseBuffer(ctx);
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 3200;
+  bp.Q.value = 2.5;
+  const ng = ctx.createGain();
+  ng.gain.value = 0.5;
+  n.connect(bp).connect(ng).connect(out);
+  n.start(t);
+  n.stop(t + dur);
+  lfo.start(t);
+  lfo.stop(t + dur);
+};
+
+// Bancada: ruído filtrado com swell. win = rugido que sobe e fica;
+// loss = lamento grave que desce; draw = murmúrio morno.
+const crowd = (ctx, t, outcome) => {
+  const cfg = {
+    win: { f0: 500, f1: 1100, peak: 0.16, rise: 0.9, dur: 4.2 },
+    draw: { f0: 450, f1: 450, peak: 0.07, rise: 0.8, dur: 3 },
+    loss: { f0: 700, f1: 260, peak: 0.1, rise: 0.5, dur: 3.2 },
+  }[outcome] || { f0: 450, f1: 450, peak: 0.07, rise: 0.8, dur: 3 };
+  const n = ctx.createBufferSource();
+  n.buffer = noiseBuffer(ctx);
+  n.loop = true;
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.Q.value = 0.7;
+  bp.frequency.setValueAtTime(cfg.f0, t);
+  bp.frequency.linearRampToValueAtTime(cfg.f1, t + cfg.dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(cfg.peak, t + cfg.rise);
+  g.gain.setValueAtTime(cfg.peak, t + cfg.dur * 0.55);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + cfg.dur);
+  n.connect(bp).connect(g).connect(ctx.destination);
+  n.start(t);
+  n.stop(t + cfg.dur);
+};
+
+/**
+ * Apito final: curto-curto-longo + reação da bancada.
+ * @param {"win"|"loss"|"draw"} [outcome] Desfecho do meu jogo.
+ */
+export const playWhistleSound = (outcome) => {
+  try {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const t = ctx.currentTime + 0.02;
+    blast(ctx, t, 0.22, 0.2);
+    blast(ctx, t + 0.34, 0.22, 0.2);
+    blast(ctx, t + 0.68, 0.9, 0.24);
+    crowd(ctx, t + 0.9, outcome);
+  } catch {
+    // ignore
+  }
+};
