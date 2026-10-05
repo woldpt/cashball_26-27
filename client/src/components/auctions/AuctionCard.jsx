@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import { TeamLink } from "../shared/TeamLink.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
 import { BidForm } from "./BidForm.jsx";
@@ -150,7 +151,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           <Badge variant="injured">🩹 {(auction.injury_until_matchweek ?? 0) - nowIdx + 1}J</Badge>
         )}
         <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
-          {teamLabel}
+          <TeamLink teamId={auction.sellerTeamId}>{teamLabel}</TeamLink>
         </span>
         {sellerTeam || sellerCrest ? (
           sellerCrest ? (
@@ -303,7 +304,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           <div className="text-center py-1">
             {auction.result?.sold ? (
               <p className="font-headline font-black text-emerald-400 text-xs uppercase">
-                Vendido a {auction.result.buyerTeamName} · {formatCurrency(auction.result.finalBid)}
+                Vendido a <TeamLink teamId={auction.result.buyerTeamId}>{auction.result.buyerTeamName}</TeamLink> · {formatCurrency(auction.result.finalBid)}
               </p>
             ) : (
               <p className="font-headline font-black text-zinc-500 text-xs uppercase">Sem licitações</p>

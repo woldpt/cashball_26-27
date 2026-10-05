@@ -1,4 +1,5 @@
 import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
+import { TeamLink } from "../shared/TeamLink.jsx";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
@@ -40,6 +41,7 @@ function dismissalReason(event) {
 function MarketRow({
 	name,
 	teamName,
+	teamId,
 	division,
 	photo,
 	clubColor,
@@ -51,6 +53,7 @@ function MarketRow({
 	coachAvatars,
 	coachAvatarSeeds,
 	backendUrl,
+	onClose,
 }) {
 	const accent = tone === "out" ? OUT_COLOR : IN_COLOR;
 
@@ -75,7 +78,7 @@ function MarketRow({
 						className="text-[11px] font-semibold truncate leading-tight mt-0.5"
 						style={{ color: clubColor }}
 					>
-						{teamName}
+						<TeamLink teamId={teamId} onNavigate={onClose}>{teamName}</TeamLink>
 					</p>
 				)}
 				{reason && (
@@ -137,9 +140,9 @@ function Connector({ children }) {
  *
  * @param {{ card: { dismissal?: object, replacement?: object, nextClub?: object, hiring?: object }, meName?: string|null, coachAvatars?: object, coachAvatarSeeds?: object, backendUrl?: string }} props
  */
-function MarketCard({ card, meName, coachAvatars, coachAvatarSeeds, backendUrl }) {
+function MarketCard({ card, meName, coachAvatars, coachAvatarSeeds, backendUrl, onClose }) {
 	const { dismissal, replacement, nextClub, hiring } = card;
-	const pass = { meName, coachAvatars, coachAvatarSeeds, backendUrl };
+	const pass = { meName, coachAvatars, coachAvatarSeeds, backendUrl, onClose };
 
 	// Contratação standalone (sem despedimento associado no reporte).
 	if (!dismissal) {
@@ -155,6 +158,7 @@ function MarketCard({ card, meName, coachAvatars, coachAvatarSeeds, backendUrl }
 				<MarketRow
 					name={hiring.coachName}
 					teamName={hiring.teamName}
+					teamId={hiring.teamId}
 					division={hiring.division}
 					photo={hiring.coachPhoto}
 					clubColor={c}
@@ -188,7 +192,7 @@ function MarketCard({ card, meName, coachAvatars, coachAvatarSeeds, backendUrl }
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2 pb-2 mb-1 border-b border-white/5">
 						<p className="text-white font-black text-sm truncate leading-tight">
-							{dismissal.teamName}
+							<TeamLink teamId={dismissal.teamId} onNavigate={pass.onClose}>{dismissal.teamName}</TeamLink>
 						</p>
 						<span
 							className="ml-auto shrink-0 px-1.5 py-0.5 rounded border text-[9px] font-black tracking-widest uppercase"
@@ -237,6 +241,7 @@ function MarketCard({ card, meName, coachAvatars, coachAvatarSeeds, backendUrl }
 			<MarketRow
 				name={dismissal.coachName}
 				teamName={dismissal.teamName}
+				teamId={dismissal.teamId}
 				division={dismissal.division}
 				photo={dismissal.coachPhoto}
 				clubColor={c}
@@ -248,7 +253,7 @@ function MarketCard({ card, meName, coachAvatars, coachAvatarSeeds, backendUrl }
 			/>
 			{nextClub && (
 				<>
-					<Connector>Assinou para o {nextClub.teamName}</Connector>
+					<Connector>Assinou para o <TeamLink teamId={nextClub.teamId} onNavigate={onClose}>{nextClub.teamName}</TeamLink></Connector>
 					<MarketRow
 						name={nextClub.coachName}
 						photo={nextClub.coachPhoto}
@@ -314,6 +319,7 @@ export function CoachMarketModal({ report, onClose, meName, coachAvatars, coachA
 										coachAvatars={coachAvatars}
 										coachAvatarSeeds={coachAvatarSeeds}
 										backendUrl={backendUrl}
+										onClose={onClose}
 									/>
 								))}
 							</div>

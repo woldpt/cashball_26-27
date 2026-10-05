@@ -292,6 +292,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     await recordMarketEvent(game, {
       type: "dismissal",
       coachName,
+      teamId: oldTeamId,
       teamName,
       division,
       reason,
@@ -386,6 +387,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     await recordMarketEvent(game, {
       type: "hiring",
       coachName: manager.name,
+      teamId: team.id,
       teamName: team.name,
       division: team.division,
       isHuman: false,
@@ -450,6 +452,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     await recordMarketEvent(game, {
       type: "dismissal",
       coachName,
+      teamId: team.id,
       teamName: team.name,
       division: team.division,
       isHuman: false,
@@ -760,6 +763,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     await recordMarketEvent(game, {
       type: "hiring",
       coachName,
+      teamId: team.id,
       teamName: team.name,
       division: team.division,
       isHuman: true,

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { TeamLink } from "../components/shared/TeamLink.jsx";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { DIVISION_NAMES, WAGE_CAP } from "../constants/index.js";
 import { staffRoleMeta, staffLevelStars } from "../constants/staff.js";
@@ -79,7 +80,7 @@ function NewsRow({ news }) {
         <p className="text-[10px] text-on-surface-variant truncate">
           {news.related_team_name &&
           (news.type === "transfer_in" || news.type === "transfer_out")
-            ? `${news.type === "transfer_in" ? "de" : "para"} ${news.related_team_name}`
+            ? <>{news.type === "transfer_in" ? "de" : "para"}{" "}<TeamLink teamId={news.related_team_id}>{news.related_team_name}</TeamLink></>
             : `Jornada ${news.matchweek || "?"}${news.year ? ` · ${news.year}` : ""}`}
         </p>
       </div>

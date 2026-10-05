@@ -4,6 +4,7 @@
  * herói com halo + skill, tiles Forma/Jogos/Golos e rodapé de ação único.
  */
 import { memo, useContext, useMemo, useState } from "react";
+import { TeamLink } from "../shared/TeamLink.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
@@ -143,7 +144,7 @@ function TransferRow({ rec, teams = [], onOpenPlayer }) {
         <p className="mt-0.5 flex items-center gap-1 text-[9px] text-zinc-500 leading-tight min-w-0">
           <TeamMark team={sellerTeam} name={originName} />
           <span className="truncate" title={originName}>
-            {originName}
+            <TeamLink teamId={rec.seller_team_id}>{originName}</TeamLink>
           </span>
           <span className="shrink-0 text-zinc-600" aria-hidden="true">
             →
@@ -152,7 +153,7 @@ function TransferRow({ rec, teams = [], onOpenPlayer }) {
             <>
               <TeamMark team={buyerTeam} name={buyerName} />
               <span className="truncate text-zinc-300 font-semibold" title={buyerName}>
-                {buyerName}
+                <TeamLink teamId={rec.buyer_team_id}>{buyerName}</TeamLink>
               </span>
             </>
           ) : (

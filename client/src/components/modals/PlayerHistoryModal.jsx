@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef } from "react";
+import { TeamLink } from "../shared/TeamLink.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { contractWeekLabel } from "../../utils/slotLabel.js";
 import { formatCurrency, seasonToYear } from "../../utils/formatters.js";
@@ -224,11 +225,13 @@ export function PlayerHistoryModal({
                   <span className="w-5 h-5 rounded-sm flex items-center justify-center text-[8px] font-black shrink-0 border border-white/10" style={{ background: player.team_color_primary || player.color_primary || "#333", color: player.team_color_secondary || player.color_secondary || "#fff" }}>{player.team_name[0]}</span>
                 ) : null}
                 <span className="font-bold text-tertiary text-xs" title={player.team_name || undefined}>
-                  {player.team_name
-                    ? player.transfer_status === "auction" && player.isExClub
-                      ? `ex-${player.team_name}`
-                      : player.team_name
-                    : "Sem clube"}
+                  <TeamLink teamId={player.team_id} onNavigate={closeModal}>
+                    {player.team_name
+                      ? player.transfer_status === "auction" && player.isExClub
+                        ? `ex-${player.team_name}`
+                        : player.team_name
+                      : "Sem clube"}
+                  </TeamLink>
                 </span>
               </div>
             </div>
@@ -603,6 +606,8 @@ export function PlayerHistoryModal({
                       const isOut = t.type === "transfer_out";
                       const fromTeam = isOut ? t.team_name : t.related_team_name;
                       const toTeam = isOut ? t.related_team_name : t.team_name;
+                      const fromId = isOut ? t.team_id : t.related_team_id;
+                      const toId = isOut ? t.related_team_id : t.team_id;
                       return (
                         <tr
                           key={`${t.year ?? "?"}-${t.matchweek ?? "?"}-${t.related_team_name ?? "?"}-${t.team_name ?? "?"}-${i}`}
@@ -615,10 +620,10 @@ export function PlayerHistoryModal({
                             ) : null}
                           </td>
                           <td className="px-3 py-2.5 text-on-surface-variant text-xs truncate max-w-22.5" title={fromTeam || undefined}>
-                            {fromTeam || "—"}
+                            <TeamLink teamId={fromId} onNavigate={closeModal}>{fromTeam || "—"}</TeamLink>
                           </td>
                           <td className="px-3 py-2.5 font-bold text-on-surface truncate max-w-22.5" title={toTeam || undefined}>
-                            {toTeam || "?"}
+                            <TeamLink teamId={toId} onNavigate={closeModal}>{toTeam || "?"}</TeamLink>
                           </td>
                           <td className="px-3 py-2.5 text-right text-tertiary font-black text-xs tabular-nums">
                             {t.amount > 0 ? formatCurrency(t.amount) : "—"}

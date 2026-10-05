@@ -210,6 +210,7 @@ export interface CoachMarketEvent {
   type: "dismissal" | "hiring";
   coachName: string;
   teamName: string;
+  teamId?: number;
   division: number;
   reason?: "results" | "budget" | "relegation";
   detail?: string;

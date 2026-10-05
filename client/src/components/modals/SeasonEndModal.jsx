@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { TeamLink } from "../shared/TeamLink.jsx";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { Button } from "../shared/Button.jsx";
@@ -247,7 +248,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-black text-sm text-on-surface truncate">
-                          {champ.teamName}
+                          <TeamLink teamId={champ.teamId} onNavigate={onClose}>{champ.teamName}</TeamLink>
                         </p>
                         <p className="text-[10px] text-on-surface-variant/50 font-bold">
                           {champ.divName}
@@ -296,7 +297,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-sm text-on-surface truncate">
-                        {data.cupWinner.teamName}
+                        <TeamLink teamId={data.cupWinner.teamId} onNavigate={onClose}>{data.cupWinner.teamName}</TeamLink>
                       </p>
                       <p className="text-[10px] text-on-surface-variant/50 font-bold">
                         Vencedor da Taça
@@ -346,7 +347,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                           {scorer.name}
                         </p>
                         <p className="text-[10px] text-on-surface-variant/50 font-bold truncate">
-                          {scorer.divName} · {scorer.teamName} · {" "}
+                          {scorer.divName} · <TeamLink teamId={scorer.teamId} onNavigate={onClose}>{scorer.teamName}</TeamLink> · {" "}
                           {scorer.goals} golos
                         </p>
                       </div>

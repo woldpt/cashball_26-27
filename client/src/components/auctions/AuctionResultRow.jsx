@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../utils/formatters.js";
+import { TeamLink } from "../shared/TeamLink.jsx";
 import {
   POSITION_ACCENT_HEX,
   POSITION_BAR_CLASS,
@@ -128,7 +129,7 @@ export function AuctionResultRow({ auction, teams = [], currentMatchweek = 0, on
         <p className="mt-0.5 flex items-center gap-1 text-[9px] text-zinc-500 leading-tight min-w-0">
           <TeamMark team={sellerTeam} name={originName} />
           <span className="truncate" title={originLabel}>
-            {originLabel}
+            <TeamLink teamId={auction.sellerTeamId}>{originLabel}</TeamLink>
           </span>
           {sold ? (
             <>
@@ -137,7 +138,7 @@ export function AuctionResultRow({ auction, teams = [], currentMatchweek = 0, on
               </span>
               <TeamMark team={buyerTeam} name={buyerName} />
               <span className="truncate text-zinc-300 font-semibold" title={buyerName}>
-                {buyerName}
+                <TeamLink teamId={auction.result?.buyerTeamId}>{buyerName}</TeamLink>
               </span>
             </>
           ) : (

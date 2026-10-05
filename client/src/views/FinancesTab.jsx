@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { socket } from "../socket.js";
+import { TeamLink } from "../components/shared/TeamLink.jsx";
 import { formatCurrency } from "../utils/formatters.js";
 import { CountUp } from "../components/shared/CountUp.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
@@ -447,7 +448,7 @@ export function FinancesTab({
                         {isCup ? `Taça · ${t.roundName}` : `J${t.matchweek}`}
                       </p>
                       <p className="text-[10px] opacity-30 uppercase">
-                        vs {t.away_team_name || "—"} · {t.attendance.toLocaleString("pt-PT")} esp.
+                        vs <TeamLink teamId={t.away_team_id}>{t.away_team_name || "—"}</TeamLink> · {t.attendance.toLocaleString("pt-PT")} esp.
                       </p>
                     </div>
                     <span className="text-xs font-bold">
@@ -497,7 +498,7 @@ export function FinancesTab({
                       <p className="text-xs text-on-surface-variant/80">
                         {t.player_name || "Jogador"}
                         <span className="opacity-40 mx-1">→</span>
-                        {t.related_team_name || "—"}
+                        <TeamLink teamId={t.related_team_id}>{t.related_team_name || "—"}</TeamLink>
                       </p>
                       {t.matchweek != null && (
                         <p className="text-[10px] opacity-30 uppercase">
@@ -596,7 +597,7 @@ export function FinancesTab({
                       <p className="text-xs text-on-surface-variant/80">
                         {t.player_name || "Jogador"}
                         <span className="opacity-40 mx-1">←</span>
-                        {t.related_team_name || "—"}
+                        <TeamLink teamId={t.related_team_id}>{t.related_team_name || "—"}</TeamLink>
                       </p>
                       {t.matchweek != null && (
                         <p className="text-[10px] opacity-30 uppercase">

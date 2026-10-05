@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { TeamLink } from "../../components/shared/TeamLink.jsx";
 import { DIVISION_NAMES, SEASON_JORNADAS } from "../../constants/index.js";
 import { EmptyState } from "../shared/EmptyState.jsx";
 import { FormDots } from "../shared/FormDots.jsx";
@@ -519,7 +520,7 @@ function GoldenBootSidebar({ topScorers, teams, myTeamId }) {
                 <div
                   className={`text-[10px] font-bold uppercase truncate ${isMe ? "text-primary/70" : "text-on-surface-variant/50"}`}
                 >
-                  {s.team_name}
+                  <TeamLink teamId={s.team_id}>{s.team_name}</TeamLink>
                 </div>
                 <div
                   className={`text-[11px] font-bold truncate ${isMe ? "text-primary" : "text-on-surface"}`}
@@ -593,7 +594,7 @@ function AllTimeChampions({ allChampions }) {
                           : "text-on-surface"
                       }
                     >
-                      {c.team_name}
+                      <TeamLink teamId={c.team_id}>{c.team_name}</TeamLink>
                     </span>
                     <span className="text-on-surface-variant">
                       {" "}
