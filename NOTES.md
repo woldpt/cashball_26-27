@@ -3,6 +3,11 @@
 - Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.
 - Testado: typecheck, lint/check:types, connect-smoke + script sobre BD de sala (duplicados, final, par humano, NPC).
 
+## Deploy v26.10.22 no rick (2026-10-05)
+- Estádio: cabeçalho em duas colunas com foto e nome longo a quebrar; campo em perspetiva com poças onduladas, neve acumulada e topo desvanecido.
+- Finanças: bilheteiras líquidas, saldo previsto semana a semana, Resultado da Época com rubricas reais e gráfico de 25 semanas.
+- Taça: amigáveis em todas as semanas restantes com adversário imediato; pulse no anel de destaque do tutorial; `backend Healthy`.
+
 ## Deploy v26.10.21 no rick (2026-10-05)
 - Ligas de 10 equipas e 32 avos da Taça com Distritais em produção; sala sem criador deixa de tornar todos admin; compatibilidade antiga removida.
 - Transferências: +8 de moral ao mudar de clube; BadgeSkills no cromo (mercado/leilões), sem a agressividade antiga.
