@@ -16,7 +16,7 @@ import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { emitCmNews, cmAuctionText, cmBombText, cmIsRecordSale } from "./cmNews";
 import { upcomingMatchweek } from "./game/lineupReady";
 import { maybeNotifyOutbid } from "./push";
-import { signingWage, AUCTION_BID_STEP, getAgentName, FORM_NEUTRAL, RES_NEUTRAL, CONTRACT_REQUEST_RESET_SQL } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, getAgentName, FORM_NEUTRAL, RES_NEUTRAL, MORALE_NEUTRAL, CONTRACT_REQUEST_RESET_SQL } from "./gameConstants";
 
 interface AuctionDeps {
   io: any;
@@ -64,6 +64,7 @@ export function serializeActiveAuctions(game: ActiveGame): any[] {
       skill: row.skill,
       form: row.form ?? FORM_NEUTRAL,
       resistance: row.resistance ?? RES_NEUTRAL,
+      morale: row.morale ?? MORALE_NEUTRAL,
       value: row.value,
       wage: row.wage,
       nationality: row.nationality,
@@ -620,6 +621,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           skill: player.skill,
           form: player.form ?? FORM_NEUTRAL,
           resistance: player.resistance ?? RES_NEUTRAL,
+          morale: player.morale ?? MORALE_NEUTRAL,
           value: player.value,
           wage: player.wage,
           nationality: player.nationality,
