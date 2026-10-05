@@ -22,6 +22,7 @@ import { aggLabel } from "../../utils/playerHelpers.js";
  * @param {{
  *   skill?: number,
  *   resistance?: number,
+ *   resWarning?: string,
  *   form?: number,
  *   morale?: number,
  *   aggressiveness?: number|string,
@@ -35,6 +36,7 @@ import { aggLabel } from "../../utils/playerHelpers.js";
 export function BadgeSkills({
   skill,
   resistance,
+  resWarning,
   form,
   morale,
   aggressiveness,
@@ -133,7 +135,15 @@ export function BadgeSkills({
             </span>
           </div>
           {!skillLast && (
-          <div className={`flex flex-col items-center justify-center gap-0.5 bg-sky-500/10 border-r border-sky-500/20 ${cellCls}`}>
+          <div
+            title={resWarning}
+            className={`relative flex flex-col items-center justify-center gap-0.5 bg-sky-500/10 border-r border-sky-500/20 ${cellCls}`}
+          >
+            {resWarning && (
+              <span className="absolute top-0 right-0 flex items-center justify-center w-2.5 h-2.5 rounded-full bg-amber-500 text-[7px] font-black leading-none text-black">
+                !
+              </span>
+            )}
             <span className={`${labelCls} text-sky-200/70`}>
               Res
             </span>

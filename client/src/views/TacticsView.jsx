@@ -321,14 +321,6 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           (player.position === "MED" || player.position === "ATA") && (
             <span className="text-amber-400 text-[9px] ml-0.5">★</span>
           )}
-        {weatherRisk && (
-          <span
-            title={`Resistência baixa para ${WEATHER_LABELS[weather] ?? weather}`}
-            className="inline-flex items-center justify-center w-3 h-3 ml-1 rounded-full bg-amber-500 text-[8px] font-black text-black align-middle"
-          >
-            !
-          </span>
-        )}
         {player.isUnavailable && (
           <UnavailableMark
             player={player}
@@ -344,6 +336,11 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
         morale={player.morale}
         aggressiveness={player.aggressiveness}
         prevSkill={player.prev_skill}
+        resWarning={
+          weatherRisk
+            ? `Resistência baixa para ${WEATHER_LABELS[weather] ?? weather}`
+            : undefined
+        }
       />
       {children}
     </div>
