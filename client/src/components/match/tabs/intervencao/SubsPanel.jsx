@@ -583,40 +583,15 @@ export function SubsPanel({
         <div className="shrink-0 border-b border-outline-variant/15 bg-surface-container-low/95">
           {!shortLandscape && (
             <>
-              <button
-                type="button"
-                onClick={() => setMentalidadeOpen((o) => !o)}
-                aria-expanded={mentalidadeOpen}
-                className="flex min-h-9 w-full items-center justify-between gap-2 px-4 pt-1.5 pb-1"
-              >
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.5)]" />
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                    Mentalidade
-                  </span>
-                  <span className="truncate text-xs font-bold text-on-surface">
-                    {STYLE_LABELS[tactic.style] || tactic.style}
-                  </span>
-                </span>
-                <MatchIcon
-                  name="chevron-right"
-                  className={`h-4 w-4 shrink-0 text-on-surface-variant/60 transition-transform ${
-                    mentalidadeOpen ? "rotate-[270deg]" : "rotate-90"
-                  }`}
+              {/* Mentalidade sempre visível — 3 botões na mesma altura (min-h-9)
+               * que o antigo toggle recolhível. */}
+              <div className="flex min-h-9 items-center px-4 pt-1 pb-0.5">
+                <TacticsButtons
+                  className="w-full"
+                  value={tactic.style}
+                  onChange={onUpdateTactic}
                 />
-              </button>
-              {mentalidadeOpen && (
-                <div className="px-4 pb-2">
-                  <TacticsButtons
-                    className="w-full"
-                    value={tactic.style}
-                    onChange={(next) => {
-                      onUpdateTactic(next);
-                      setMentalidadeOpen(false);
-                    }}
-                  />
-                </div>
-              )}
+              </div>
             </>
           )}
 
