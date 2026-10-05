@@ -355,9 +355,7 @@ function getRoomInfo(
 
 // ── Room ownership (Admin) ───────────────────────────────────────────────────
 // The room creator (Admin) is persisted in each room DB under game_state key
-// "roomCreator". Rooms created before this field existed have no creator —
-// in that legacy case every member is treated as admin so no room becomes
-// impossible to delete.
+// "roomCreator".
 function getRoomCreator(roomCode: string): Promise<string> {
 	return new Promise((resolve) => {
 		try {
@@ -395,8 +393,7 @@ function getRoomCreator(roomCode: string): Promise<string> {
 }
 
 function isRoomAdmin(roomCreator: string, managerName: string): boolean {
-	if (!roomCreator) return true; // legado: sem criador, todos são admin
-	return roomCreator.toLowerCase() === managerName.toLowerCase();
+	return !!roomCreator && roomCreator.toLowerCase() === managerName.toLowerCase();
 }
 
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:5173")
