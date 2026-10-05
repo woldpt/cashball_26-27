@@ -236,21 +236,6 @@ async function main() {
   const dbPath = path.join(tmpDir, "test.db");
   fs.copyFileSync(path.join(__dirname, "../db/base.db"), dbPath);
   const probe = new sqlite3.Database(dbPath);
-  // Colunas adicionadas pelo gameManager no arranque da sala (ausentes no template)
-  const cols: Array<[string, string]> = [
-    ["signed_season", "INTEGER DEFAULT NULL"],
-    ["career_games", "INTEGER DEFAULT 0"],
-    ["games_played", "INTEGER DEFAULT 0"],
-    ["last_appearance_matchweek", "INTEGER"],
-  ];
-  for (const [col, def] of cols) {
-    await new Promise<void>((resolve, reject) => {
-      probe.run(
-        `ALTER TABLE players ADD COLUMN ${col} ${def}`,
-        (err) => (err ? reject(err) : resolve()),
-      );
-    });
-  }
   const firstTeams: any[] = await new Promise((resolve, reject) => {
     probe.all(
       "SELECT id FROM teams ORDER BY id LIMIT 2",

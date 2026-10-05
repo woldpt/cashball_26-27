@@ -181,6 +181,12 @@ async function main() {
   // Drop tables in dependency order so that the schema is always recreated
   // fresh (novas colunas aparecem mesmo ao re-seedar uma base antiga).
   const dropSchema = `
+DROP TABLE IF EXISTS inbox_reads;
+DROP TABLE IF EXISTS match_moms;
+DROP TABLE IF EXISTS player_season_goals;
+DROP TABLE IF EXISTS team_balance_history;
+DROP TABLE IF EXISTS team_staff;
+DROP TABLE IF EXISTS transfer_history;
 DROP TABLE IF EXISTS room_events;
 DROP TABLE IF EXISTS room_seats;
 DROP TABLE IF EXISTS chat_messages;

@@ -29,6 +29,19 @@ CREATE TABLE IF NOT EXISTS teams (
   fans_mood INTEGER DEFAULT 30,
   ticket_price INTEGER DEFAULT 15,
   fanbase INTEGER DEFAULT 0,
+  avg_attendance INTEGER DEFAULT 0,
+  -- Posição global da época anterior ((div-1)*100 + lugar) — isenções da Taça.
+  last_season_rank INTEGER,
+  -- Mercado de patrocinadores (escolha pré-época + tranches por época).
+  sponsor_pending INTEGER DEFAULT 0,
+  sponsor_offers TEXT,
+  sponsor_id TEXT,
+  sponsor_profile TEXT,
+  sponsor_season INTEGER DEFAULT 0,
+  sponsor_upfront INTEGER DEFAULT 0,
+  sponsor_weekly INTEGER DEFAULT 0,
+  sponsor_second_half INTEGER DEFAULT 0,
+  sponsor_paid_second INTEGER DEFAULT 0,
   FOREIGN KEY(manager_id) REFERENCES managers(id)
 );
 
@@ -71,6 +84,11 @@ CREATE TABLE IF NOT EXISTS players (
   transfer_cooldown_until_matchweek INTEGER DEFAULT 0,
   training_skill_progress REAL DEFAULT 0,
   training_resistance_progress REAL DEFAULT 0,
+  signed_season INTEGER DEFAULT 0,
+  games_played INTEGER DEFAULT 0,
+  career_games INTEGER DEFAULT 0,
+  last_rating REAL DEFAULT NULL,
+  last_appearance_matchweek INTEGER DEFAULT 0,
   photo TEXT DEFAULT NULL,
   zerozero_id INTEGER DEFAULT NULL,
   team_id INTEGER,
@@ -115,6 +133,7 @@ CREATE TABLE IF NOT EXISTS cup_matches (
   away_penalties INTEGER DEFAULT 0,
   winner_team_id INTEGER,
   played BOOLEAN DEFAULT 0,
+  attendance INTEGER DEFAULT 0,
   ticket_revenue INTEGER DEFAULT 0,
   FOREIGN KEY(home_team_id) REFERENCES teams(id),
   FOREIGN KEY(away_team_id) REFERENCES teams(id)
@@ -158,6 +177,7 @@ CREATE TABLE IF NOT EXISTS club_news (
 
 CREATE INDEX IF NOT EXISTS idx_teams_manager_id ON teams(manager_id);
 CREATE INDEX IF NOT EXISTS idx_players_team_id ON players(team_id);
+CREATE INDEX IF NOT EXISTS idx_players_transfer_status ON players(transfer_status);
 CREATE INDEX IF NOT EXISTS idx_matches_home_team_id ON matches(home_team_id);
 CREATE INDEX IF NOT EXISTS idx_matches_away_team_id ON matches(away_team_id);
 CREATE INDEX IF NOT EXISTS idx_matches_matchweek ON matches(matchweek);

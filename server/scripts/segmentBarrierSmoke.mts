@@ -84,14 +84,6 @@ async function main() {
     new Promise<void>((resolve, reject) => {
       db.run(sql, params, (err: any) => (err ? reject(err) : resolve()));
     });
-  for (const [col, def] of [
-    ["signed_season", "INTEGER DEFAULT NULL"],
-    ["career_games", "INTEGER DEFAULT 0"],
-    ["games_played", "INTEGER DEFAULT 0"],
-    ["last_appearance_matchweek", "INTEGER"],
-  ] as Array<[string, string]>) {
-    await run(`ALTER TABLE players ADD COLUMN ${col} ${def}`);
-  }
   const teams: any[] = await new Promise((resolve, reject) => {
     db.all("SELECT id FROM teams ORDER BY id LIMIT 4", (err: any, rows: any) =>
       err ? reject(err) : resolve(rows),

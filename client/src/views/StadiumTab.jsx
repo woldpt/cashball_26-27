@@ -84,15 +84,6 @@ export function StadiumTab({
               cls: "text-on-surface",
             },
             {
-              label: "Média",
-              value:
-                avgAttendance != null
-                  ? avgAttendance.toLocaleString("pt-PT")
-                  : "—",
-              sub: `${homeMatches} jogo(s) em casa`,
-              cls: "text-amber-400",
-            },
-            {
               label: "Receita Máx.",
               value: formatCurrency(capacityRevPerGame),
               sub: `${ticketPrice}€ × lotação`,
