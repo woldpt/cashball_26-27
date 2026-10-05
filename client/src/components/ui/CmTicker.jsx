@@ -16,7 +16,7 @@ const REDUCED_MIN_MS = 5000;
 
 /**
  * Notícias CM — rodapé breaking-news (estilo CNN): etiqueta vermelha fixa +
- * notícias da sala em passagem ÚNICA, uma de cada vez. A notícia ativa é
+ * notícias da sala em passagem ÚNICA, todas as pendentes seguidas. A notícia ativa é
  * derivada da fila (a primeira por mostrar): notícias novas entram na fila
  * sem remontar a tira em curso. Quando a fila esvazia, a barra sai a
  * deslizar para baixo. O texto entra pela direita e sai pela
@@ -38,12 +38,17 @@ export function CmTicker({ hidden = false, paused = false, sidebarCollapsed = fa
   const items = cmNews || [];
   const [shownIds, setShownIds] = useState(() => new Set());
   const [wasHidden, setWasHidden] = useState(hidden);
+  // Lote em passagem: congelado ao arrancar, para a tira não mudar de largura
+  // a meio. Novidades entram no lote seguinte.
+  const [batchIds, setBatchIds] = useState(null);
 
-  // Ativa da fila (derivado, sem efeitos): chave estável durante a passagem,
-  // por isso novidades a meio não reiniciam a animação.
+  // Todas as pendentes passam seguidas numa só tira.
   const pending = items.filter((it) => !shownIds.has(it.id));
-  const active = pending[0] ?? null;
-  const visible = !hidden && !paused && active !== null;
+  if (batchIds === null && pending.length > 0 && !hidden && !paused) {
+    setBatchIds(pending.map((it) => it.id));
+  }
+  const batch = batchIds ? items.filter((it) => batchIds.includes(it.id)) : [];
+  const visible = !hidden && !paused && (batch.length > 0 || pending.length > 0);
 
   // Ao esconder (jogo em direto) descarta o que ficou por mostrar: seria
   // notícia velha no fim da jornada. As que chegam durante o jogo mantêm-se.
@@ -52,9 +57,10 @@ export function CmTicker({ hidden = false, paused = false, sidebarCollapsed = fa
     setWasHidden(hidden);
     if (hidden && pending.length > 0) {
       setShownIds((prev) => new Set([...prev, ...pending.map((it) => it.id)]));
+      setBatchIds(null);
     }
   }
-  const chars = active?.text?.length || 0;
+  const chars = batch.reduce((n, it) => n + (it.text?.length || 0) + 4, 0);
   const duration = reduced
     ? Math.max(REDUCED_MIN_MS, chars * REDUCED_MS_PER_CHAR)
     : CROSS_MS + chars * MS_PER_CHAR;
@@ -68,6 +74,7 @@ export function CmTicker({ hidden = false, paused = false, sidebarCollapsed = fa
       ids.forEach((id) => next.add(id));
       return next;
     });
+    setBatchIds(null);
   };
 
   const sideOffset = isMobileLandscape ? "left-[var(--rail-w)]" : "left-0";
@@ -100,13 +107,17 @@ export function CmTicker({ hidden = false, paused = false, sidebarCollapsed = fa
             className="cm-ticker-hit flex-1 min-w-0 relative overflow-hidden text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary"
           >
             <div
-              key={active.id}
-              onAnimationEnd={() => markShown([active.id])}
+              key={batchIds?.join("-") || "empty"}
+              onAnimationEnd={() => markShown(batchIds || [])}
               className={`${reduced ? "cm-ticker-still relative py-1.5 pr-2" : "cm-ticker-pass absolute top-0 h-full flex items-center whitespace-nowrap"} pl-2 text-[11px] lg:text-xs text-zinc-100`}
               style={{ "--cm-dur": `${duration}ms` }}
             >
-              <span aria-hidden className="mr-2 text-error">◆</span>
-              {active.text}
+              {batch.map((it) => (
+                <span key={it.id} className="mr-6">
+                  <span aria-hidden className="mr-2 text-error">◆</span>
+                  {it.text}
+                </span>
+              ))}
             </div>
           </button>
         </motion.div>
