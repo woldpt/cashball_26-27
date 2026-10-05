@@ -596,6 +596,13 @@ function TeamEvents({ events, align }) {
             <span className="shrink-0 rounded px-1 text-[9px] font-black leading-4 tracking-wider bg-zinc-700 text-zinc-100">
               VAR
             </span>
+          ) : e.type === "own_goal" ? (
+            <span className="shrink-0 inline-flex items-center gap-0.5">
+              ⚽
+              <span className="rounded px-1 text-[9px] font-black leading-4 tracking-wider bg-red-700 text-white">
+                AG
+              </span>
+            </span>
           ) : (
             <span className="shrink-0">{matchEventIcon(e.type)}</span>
           );
