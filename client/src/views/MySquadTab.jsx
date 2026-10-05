@@ -119,7 +119,7 @@ export function MySquadTab({
       >
         {annotatedSquad.length === 0 ? (
           <EmptyState
-            emoji="👥"
+            icon="group"
             title="Sem jogadores no plantel"
             description="Os jogadores do teu plantel aparecem aqui."
           />
@@ -159,7 +159,7 @@ export function MySquadTab({
             </div>
             {visibleGroups.length === 0 ? (
               <EmptyState
-                emoji="🔍"
+                icon="search"
                 title="Sem jogadores nesta posição"
                 description="Ajusta o filtro para ver o resto do plantel."
               />

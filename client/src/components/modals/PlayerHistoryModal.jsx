@@ -558,7 +558,7 @@ export function PlayerHistoryModal({
               Prémios Individuais
             </p>
             {awards.length === 0 ? (
-              <EmptyState emoji="🏆" title="Sem prémios individuais registados." />
+              <EmptyState icon="trophy" title="Sem prémios individuais registados." />
             ) : (
               <div className="flex flex-wrap gap-2">
                 {awards.map((a, i) => (
@@ -589,7 +589,7 @@ export function PlayerHistoryModal({
               Historial de Transferências
             </p>
             {transfers.length === 0 ? (
-              <EmptyState emoji="🔄" title="Sem transferências registadas." />
+              <EmptyState icon="sync" title="Sem transferências registadas." />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">

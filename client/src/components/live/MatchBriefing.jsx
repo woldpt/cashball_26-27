@@ -61,7 +61,7 @@ export function MatchBriefing() {
     if (!nextMatchSummary)
       return (
         <EmptyState
-          emoji="📋"
+          icon="assignment"
           title="Sem briefing disponível"
           description="A aguardar os dados do próximo jogo…"
         />

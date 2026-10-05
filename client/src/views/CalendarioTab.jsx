@@ -595,12 +595,12 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
       >
         {!cal ? (
           <EmptyState
-            emoji="📅"
+            icon="calendar_month"
             title="A carregar calendário…"
           />
         ) : calEntries.length === 0 ? (
           <EmptyState
-            emoji="📭"
+            icon="inbox"
             title="Sem jogos para mostrar."
             description="Os teus jogos da época aparecem aqui."
           />

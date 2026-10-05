@@ -667,7 +667,7 @@ export function LeagueStandings({
     return (
       <div className="space-y-4">
         <EmptyState
-          emoji="📊"
+          icon="bar_chart"
           title="Época ainda não iniciada"
           description="As classificações aparecem quando a época arrancar."
         />

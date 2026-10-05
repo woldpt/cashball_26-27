@@ -560,7 +560,7 @@ export function TransferHub({
 
         {visible.length === 0 ? (
           <EmptyState
-            emoji="🔄"
+            icon="sync"
             title="Sem jogadores disponíveis"
             description="Os jogadores colocados em transferência aparecem aqui."
           />

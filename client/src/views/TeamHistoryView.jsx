@@ -657,7 +657,7 @@ export function TeamHistoryView({
   if (!clubHistory || clubHistoryTeamId !== selectedTeam?.id) {
     return (
       <div className="space-y-4">
-        <EmptyState emoji="📜" title="A carregar histórico..." />
+        <EmptyState icon="history_edu" title="A carregar histórico..." />
       </div>
     );
   }
@@ -672,7 +672,7 @@ export function TeamHistoryView({
     return (
       <div className="space-y-4">
         <EmptyState
-          emoji="🏟️"
+          icon="stadium"
           title="Ainda sem história para contar"
           description="O histórico do clube escreve-se no fim de cada época. A época em curso acompanha-se no Calendário."
         />
@@ -762,7 +762,7 @@ export function TeamHistoryView({
           {trophies.length > 0 ? (
             <TrophyCabinet trophies={trophies} onOpenPlayer={openPlayer} />
           ) : (
-            <EmptyState emoji="🏆" title="Nenhum título conquistado." />
+            <EmptyState icon="trophy" title="Nenhum título conquistado." />
           )}
         </Panel>
       </div>

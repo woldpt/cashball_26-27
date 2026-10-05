@@ -611,7 +611,7 @@ export function ClubTab({
             <TrophyCabinet trophies={palmares.trophies} />
           ) : (
             <EmptyState
-              emoji="🏆"
+              icon="trophy"
               title="Nenhum título conquistado."
               description="Constrói o teu legado hoje"
               className="flex-1"
@@ -761,7 +761,7 @@ export function ClubTab({
             </div>
           </>
         ) : (
-          <EmptyState emoji="📰" title="Nenhuma notícia ainda." />
+          <EmptyState icon="newspaper" title="Nenhuma notícia ainda." />
         )}
       </Panel>
     </div>

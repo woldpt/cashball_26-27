@@ -462,13 +462,13 @@ export function ScoutView({
           </div>
         ) : !searched ? (
           <EmptyState
-            emoji="🔍"
+            icon="search"
             title="Preenche os filtros e pesquisa"
             description="Procura jogadores em toda a base de dados."
           />
         ) : filteredResults.length === 0 ? (
           <EmptyState
-            emoji="🤷"
+            icon="help"
             title="Sem resultados"
             description={
               onlyAffordable && playerSearchResults.length > 0

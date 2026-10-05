@@ -1,20 +1,20 @@
 /**
  * EmptyState — estado vazio padronizado (STYLE.md §9).
  *
- * Formato canónico: card token-based com emoji + título + descrição.
+ * Formato canónico: card token-based com ícone Material + título + descrição.
  * Substitui os estados vazios `text-zinc-500` hardcoded e as variações
  * de card em TransferHub/AuctionsTab.
  */
 
 /**
  * @param {{
- *   emoji?: string,
+ *   icon?: string, nome do Material Symbol
  *   title: string,
  *   description?: string,
  *   className?: string,
  * }} props
  */
-export function EmptyState({ emoji = "📭", title, description, className = "" }) {
+export function EmptyState({ icon = "inbox", title, description, className = "" }) {
   return (
     <div
       className={`empty-aurora flex flex-col items-center gap-2.5 rounded-lg border border-outline-variant/25 bg-surface-container px-4 py-10 ${className}`}
@@ -23,7 +23,7 @@ export function EmptyState({ emoji = "📭", title, description, className = "" 
         aria-hidden
         className="empty-float flex h-14 w-14 items-center justify-center rounded-full bg-surface-bright shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ring-1 ring-inset ring-outline-variant/30"
       >
-        <span className="text-2xl leading-none drop-shadow-sm">{emoji}</span>
+        <span className="material-symbols-outlined text-[28px] leading-none text-on-surface-variant/70">{icon}</span>
       </div>
       <p className="text-on-surface-variant/60 text-xs font-bold text-center">
         {title}

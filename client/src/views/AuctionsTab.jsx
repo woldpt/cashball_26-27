@@ -159,7 +159,7 @@ export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me
       {live.length === 0 && closed.length === 0 && (
         <div className="flex-1 flex items-center justify-center p-3 md:p-4 short:p-2">
           <EmptyState
-            emoji="⚖️"
+            icon="balance"
             title={activeAuctions.length > 0 ? "Sem leilões para esta posição" : "Sem leilões a mostrar"}
             description={
               activeAuctions.length > 0

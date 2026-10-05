@@ -80,7 +80,7 @@ export function TopicList({
       {/* ── Lista ───────────────────────────────────────────────── */}
       {visible.length === 0 ? (
         <EmptyState
-          emoji="📰"
+          icon="newspaper"
           title={query ? "Nenhuma notícia encontrada" : "Sem notícias"}
           description={
             query

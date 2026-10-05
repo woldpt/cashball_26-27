@@ -119,7 +119,7 @@ Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grup
 - Bordas: `border-outline-variant/25` (cards) · `/15` (separadores internos).
 - Sombras: `shadow-sm shadow-black/30` (cards) · `shadow-md shadow-black/50` (chips).
 - Gradientes de fundo: opacidade baixa (`/8`).
-- Estado vazio: `EmptyState` (emoji + título + descrição) ou `py-12 text-center text-zinc-500`.
+- Estado vazio: `EmptyState` (ícone Material via `icon` + título + descrição) ou `py-12 text-center text-zinc-500`.
 
 ## 10. Componentes partilhados (fonte única — não re-criar receitas)
 

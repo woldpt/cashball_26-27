@@ -171,7 +171,7 @@ export function JournalTab({
             {!selected && (
               <div className="rounded-sm border border-outline-variant/20 bg-surface-container px-4 py-8">
                 <EmptyState
-                  emoji="📰"
+                  icon="newspaper"
                   title={query ? "Nenhuma notícia encontrada" : "Nada para ler"}
                   description={
                     query

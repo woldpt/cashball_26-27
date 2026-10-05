@@ -84,7 +84,7 @@ export function AdminPanel({ open, onClose }) {
   // e na coluna única de mobile (ao ver um utilizador).
   const detailContent = !selectedUser ? (
     <EmptyState
-      emoji="👤"
+      icon="person"
       title="Seleciona um utilizador"
       description="Escolhe um utilizador na lista para editar perfil, salas e equipas."
     />

@@ -61,7 +61,7 @@ export function BalanceLineChart({ data = [] }) {
   if (clean.length === 0) {
     return (
       <EmptyState
-        emoji="📊"
+        icon="bar_chart"
         title="Sem dados suficientes"
         description="O saldo será registado à medida que as jornadas avançam."
       />

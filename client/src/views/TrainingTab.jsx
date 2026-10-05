@@ -626,12 +626,12 @@ export function TrainingTab({ me, matchweek, staff = null }) {
         >
           {trainingHistory.length === 0 ? (
             <EmptyState
-              emoji="📊"
+              icon="bar_chart"
               title="Ainda não há histórico de treino — escolha um foco e jogue uma jornada."
             />
           ) : visiblePlayerCount === 0 ? (
             <EmptyState
-              emoji="🧘"
+              icon="self_improvement"
               title="Sem alterações visíveis neste evento"
               description="Nenhum atributo mudou de nível — os jogadores podem ter atingido o limite de potencial, forma ou resistência."
             />

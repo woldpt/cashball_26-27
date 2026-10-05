@@ -615,7 +615,7 @@ export function OtherSquadsTab({
           <div className="space-y-3 p-3 sm:p-6">
             {fixtures.length === 0 ? (
               <EmptyState
-                emoji="📅"
+                icon="calendar_month"
                 title="Sem jogos para mostrar"
                 description="O calendário desta equipa ainda não está sorteado."
               />
@@ -696,7 +696,7 @@ export function OtherSquadsTab({
               >
                 {lastFive.length === 0 ? (
                   <EmptyState
-                    emoji="⚽"
+                    icon="sports_soccer"
                     title="Ainda sem jogos esta época"
                     description="Os resultados aparecem aqui depois da primeira jornada."
                   />
@@ -821,12 +821,12 @@ export function OtherSquadsTab({
           </div>
         ) : selectedTeamLoading ? (
           <div className="p-6 sm:p-8">
-            <EmptyState emoji="👥" title="A carregar plantel..." />
+            <EmptyState icon="group" title="A carregar plantel..." />
           </div>
         ) : selectedTeamSquad.length === 0 ? (
           <div className="p-6 sm:p-8">
             <EmptyState
-              emoji="👥"
+              icon="group"
               title="Sem jogadores encontrados"
               description="Este clube ainda não tem plantel registado."
             />

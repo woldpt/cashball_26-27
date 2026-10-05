@@ -531,7 +531,7 @@ export function UserSettingsPage({
 				meta={`${trophies.length} troféus`}
 			>
 				{trophies.length === 0 ? (
-					<EmptyState emoji="🏆" title="Ainda sem conquistas" />
+					<EmptyState icon="trophy" title="Ainda sem conquistas" />
 				) : (
 					<div className="space-y-2">
 						{trophies.map((t, i) => (
@@ -561,7 +561,7 @@ export function UserSettingsPage({
 				meta={`${trainedTeams.length} clubes`}
 			>
 				{trainedTeams.length === 0 ? (
-					<EmptyState emoji="⚽" title="Ainda sem clubes treinados" />
+					<EmptyState icon="sports_soccer" title="Ainda sem clubes treinados" />
 				) : (
 					<div className="space-y-2">
 						{trainedTeams.map((team) => (
@@ -662,9 +662,9 @@ export function UserSettingsPage({
 				meta={`${rooms.length} salas`}
 			>
 				{roomsLoading ? (
-					<EmptyState emoji="⏳" title="A carregar..." />
+					<EmptyState icon="hourglass_empty" title="A carregar..." />
 				) : rooms.length === 0 ? (
-					<EmptyState emoji="🏠" title="Nenhuma sala encontrada" />
+					<EmptyState icon="home" title="Nenhuma sala encontrada" />
 				) : (
 					<div className="space-y-2">
 						{rooms.map((r) => {
