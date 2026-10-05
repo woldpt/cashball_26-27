@@ -394,6 +394,7 @@ async function doMaybeNotify(game: ActiveGame): Promise<void> {
   const missing = waiting.filter((s) => !s.intent.ready);
   if (missing.length !== 1) return;
   const name = missing[0].name;
+  if (isSeatPresent(game, name)) return;
   await sendToCoach(name, {
     type: "waiting",
     title: "CashBall",

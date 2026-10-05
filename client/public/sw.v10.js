@@ -95,7 +95,10 @@ self.addEventListener('push', (event) => {
     data = {};
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || 'CashBall', {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      // App aberta e visível: o treinador já vê o estado no ecrã.
+      if (list.some((c) => c.visibilityState === 'visible')) return;
+      return self.registration.showNotification(data.title || 'CashBall', {
       body: data.body || 'Há novidades na tua sala.',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
@@ -104,6 +107,7 @@ self.addEventListener('push', (event) => {
       tag: data.tag || 'cashball-ready',
       renotify: true,
       data: { url: data.url || '/' },
+      });
     })
   );
 });
