@@ -98,10 +98,10 @@ export function MySquadTab({
   const squadCountLabel = `${annotatedSquad.length} ${annotatedSquad.length === 1 ? "jogador" : "jogadores"}`;
 
   const filterTabs = [
-    { key: FILTER_ALL, label: `Todos · ${annotatedSquad.length}` },
+    { key: FILTER_ALL, label: "Todos" },
     ...POS_ORDER.map((pos) => ({
       key: pos,
-      label: `${pos} · ${groupStats[pos].count}`,
+      label: pos,
     })),
   ];
   const visiblePositions =
