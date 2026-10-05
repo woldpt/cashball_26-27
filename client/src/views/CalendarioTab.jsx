@@ -79,11 +79,13 @@ const myTicketRevenueOf = (match, myTeamId) => {
   return total - away;
 };
 
-const buildFriendlyItem = (entry, status, ctx) => {
+// dbRound: 0 na pré-época, -r no amigável da semana da ronda r da Taça.
+const buildFriendlyItem = (entry, status, ctx, dbRound = FRIENDLY_ROUND) => {
   const { cal, teams, myTeam, myTeamId } = ctx;
   const fixtures =
-    cal?.cupMatches?.filter((m) => m.round === FRIENDLY_ROUND) ?? [];
+    cal?.cupMatches?.filter((m) => m.round === dbRound) ?? [];
   const myMatch = findMyFixture(fixtures, myTeamId);
+  if (dbRound !== FRIENDLY_ROUND && !myMatch) return null;
   const opponent = opponentOf(teams, myMatch, myTeamId);
   const imHome = homeIdOf(myMatch) === myTeamId;
   const { myScore, opScore } = splitScore(
@@ -492,10 +494,28 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
       myDivTeams,
       eliminatedCupRound,
     };
+    // Separador dos amigáveis: pré-época + semanas da Taça (marcado/jogado,
+    // ou a véspera em que ainda se pode marcar).
+    if (calFilter === "friendly") {
+      return SEASON_CALENDAR.map((entry) => {
+        const status = getStatus(entry);
+        if (entry.type === "friendly") return buildFriendlyItem(entry, status, ctx);
+        if (entry.type !== "cup" || entry.round === CUP_FINAL_ROUND) return null;
+        const item = buildFriendlyItem(
+          { ...entry, type: "friendly", roundName: `Semana Taça: ${entry.roundName}` },
+          status,
+          ctx,
+          -entry.round,
+        );
+        if (item) return item;
+        return cupWeekFriendly?.cupRound === entry.round
+          ? { entry, status, type: "friendly", signupRow: true }
+          : null;
+      }).filter(Boolean);
+    }
     return SEASON_CALENDAR.filter((entry) => {
       if (calFilter === "league") return entry.type === "league";
-      if (calFilter === "cup")
-        return entry.type === "cup" || entry.type === "friendly";
+      if (calFilter === "cup") return entry.type === "cup";
       return true;
     })
       .map((entry) => {
@@ -518,6 +538,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
     myDivision,
     myDivTeams,
     eliminatedCupRound,
+    cupWeekFriendly,
   ]);
 
   const entriesLabel = `${calEntries.length} ${calEntries.length === 1 ? "jogo" : "jogos"}`;
@@ -551,6 +572,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
               { key: "all", label: "Todos" },
               { key: "league", label: "Liga" },
               { key: "cup", label: "Taça" },
+              { key: "friendly", label: "Amigáveis" },
             ]}
             active={calFilter}
             onChange={setCalFilter}
@@ -603,6 +625,21 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                 myPen,
                 opPen,
               } = item;
+
+              // ── Véspera: ainda dá para marcar o amigável ──
+              if (item.signupRow) {
+                return (
+                  <CupWeekFriendlyRow
+                    key={entry.calendarIndex}
+                    entry={entry}
+                    cal={cal}
+                    teams={teams}
+                    myTeamId={myTeamId}
+                    cupWeekFriendly={cupWeekFriendly}
+                    onSignup={onSignupCupFriendly}
+                  />
+                );
+              }
 
               // ── Eliminado da Taça ──────────────────
               if (eliminated) {
