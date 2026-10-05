@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { socket } from "../socket.js";
 import { TeamLink } from "../components/shared/TeamLink.jsx";
 import { formatCurrency } from "../utils/formatters.js";
@@ -496,7 +497,7 @@ export function FinancesTab({
                   >
                     <div>
                       <p className="text-xs text-on-surface-variant/80">
-                        {t.player_name || "Jogador"}
+                        <PlayerLink playerId={t.player_id}>{t.player_name || "Jogador"}</PlayerLink>
                         <span className="opacity-40 mx-1">→</span>
                         <TeamLink teamId={t.related_team_id}>{t.related_team_name || "—"}</TeamLink>
                       </p>
@@ -595,7 +596,7 @@ export function FinancesTab({
                   >
                     <div>
                       <p className="text-xs text-on-surface-variant/80">
-                        {t.player_name || "Jogador"}
+                        <PlayerLink playerId={t.player_id}>{t.player_name || "Jogador"}</PlayerLink>
                         <span className="opacity-40 mx-1">←</span>
                         <TeamLink teamId={t.related_team_id}>{t.related_team_name || "—"}</TeamLink>
                       </p>

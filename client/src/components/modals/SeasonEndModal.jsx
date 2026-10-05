@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { TeamLink } from "../shared/TeamLink.jsx";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { ModalShell } from "../shared/ModalShell.jsx";
@@ -344,7 +345,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-black text-sm text-on-surface truncate">
-                          {scorer.name}
+                          <PlayerLink playerId={scorer.id}>{scorer.name}</PlayerLink>
                         </p>
                         <p className="text-[10px] text-on-surface-variant/50 font-bold truncate">
                           {scorer.divName} · <TeamLink teamId={scorer.teamId} onNavigate={onClose}>{scorer.teamName}</TeamLink> · {" "}

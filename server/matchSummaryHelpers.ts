@@ -238,21 +238,22 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
   async function getOpponentThreats(
     game: ActiveGame,
     opponentId: number,
-    topScorer: { name: string; goals: number } | null,
+    topScorer: { id?: number; name: string; goals: number } | null,
   ) {
     const bestSkill: any = await runGet(
       game.db,
-      "SELECT name, skill, form FROM players WHERE team_id = ? AND id > 0 ORDER BY skill DESC, form DESC LIMIT 1",
+      "SELECT id, name, skill, form FROM players WHERE team_id = ? AND id > 0 ORDER BY skill DESC, form DESC LIMIT 1",
       [opponentId],
     );
     const bestForm: any = await runGet(
       game.db,
-      "SELECT name, skill, form FROM players WHERE team_id = ? AND id > 0 ORDER BY form DESC, skill DESC LIMIT 1",
+      "SELECT id, name, skill, form FROM players WHERE team_id = ? AND id > 0 ORDER BY form DESC, skill DESC LIMIT 1",
       [opponentId],
     );
 
     const threats: {
       role: "goleador" | "qualidade" | "forma";
+      id: number | null;
       name: string;
       skill: number | null;
       form: number | null;
@@ -262,6 +263,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     if (topScorer) {
       threats.push({
         role: "goleador",
+        id: topScorer.id ?? null,
         name: topScorer.name,
         skill: null,
         form: null,
@@ -275,6 +277,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     ) {
       threats.push({
         role: "qualidade",
+        id: bestSkill.id ?? null,
         name: bestSkill.name,
         skill: bestSkill.skill ?? null,
         form: bestSkill.form ?? null,
@@ -288,6 +291,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     ) {
       threats.push({
         role: "forma",
+        id: bestForm.id ?? null,
         name: bestForm.name,
         skill: bestForm.skill ?? null,
         form: bestForm.form ?? null,
@@ -674,7 +678,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
 
     const topScorerRow = await runGet(
       game.db,
-      `SELECT name, goals FROM players
+      `SELECT id, name, goals FROM players
        WHERE team_id = ? AND id > 0
        ORDER BY goals DESC, skill DESC
        LIMIT 1`,
@@ -711,7 +715,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       avgSkill,
       topScorer:
         topScorerName && topScorerGoals > 0
-          ? { name: topScorerName, goals: topScorerGoals }
+          ? { id: topScorerRow.id, name: topScorerName, goals: topScorerGoals }
           : null,
       h2hRecord: {
         wins: h2hRow?.wins ?? 0,

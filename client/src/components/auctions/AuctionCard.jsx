@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { TeamLink } from "../shared/TeamLink.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
@@ -207,7 +208,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           </span>
         </div>
         <p className="mt-2 short:mt-1 font-headline font-black text-on-surface text-base short:text-sm leading-tight truncate max-w-full">
-          {auction.name}
+          <PlayerLink playerId={auction.playerId}>{auction.name}</PlayerLink>
         </p>
         <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
           {[auction.nationality, countryName].filter(Boolean).join(" · ")}

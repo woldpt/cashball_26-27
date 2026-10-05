@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { PlayerLink } from "../../shared/PlayerLink.jsx";
 import { THREAT_ROLE_META } from "../../match/matchConstants.js";
 
 /**
@@ -46,7 +47,7 @@ export const ThreatGrid = memo(function ThreatGrid({ threats }) {
                 <span aria-hidden>{meta.icon}</span> {meta.label}
               </span>
               <span className="flex-1 min-w-0 text-[11px] font-black text-white break-words">
-                {t.name}
+                <PlayerLink playerId={t.id}>{t.name}</PlayerLink>
               </span>
               <ThreatValue threat={t} />
             </div>

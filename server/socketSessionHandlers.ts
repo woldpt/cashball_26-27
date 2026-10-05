@@ -1855,12 +1855,12 @@ export function registerSessionSocketHandlers(
 				const currentYear = game.year || 0;
 				const transferInList = await runAll(
 					game.db,
-					"SELECT player_name, amount, related_team_id, related_team_name, matchweek FROM club_news WHERE team_id = ? AND type = 'transfer_in' AND amount > 0 AND year = ? ORDER BY matchweek ASC",
+					"SELECT player_id, player_name, amount, related_team_id, related_team_name, matchweek FROM club_news WHERE team_id = ? AND type = 'transfer_in' AND amount > 0 AND year = ? ORDER BY matchweek ASC",
 					[teamId, currentYear],
 				);
 				const transferOutList = await runAll(
 					game.db,
-					"SELECT player_name, amount, related_team_id, related_team_name, matchweek FROM club_news WHERE team_id = ? AND type = 'transfer_out' AND amount > 0 AND year = ? ORDER BY matchweek ASC",
+					"SELECT player_id, player_name, amount, related_team_id, related_team_name, matchweek FROM club_news WHERE team_id = ? AND type = 'transfer_out' AND amount > 0 AND year = ? ORDER BY matchweek ASC",
 					[teamId, currentYear],
 				);
 				const stadiumBuilds = await runAll(

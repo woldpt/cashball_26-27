@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { socket } from "../socket.js";
 import {
   POSITION_TEXT_CLASS,
@@ -291,7 +292,7 @@ function PlayerReportRow({ player, position, highlightAttr, highlightClass }) {
       <div className="flex-1 min-w-0 flex items-center px-3 short:px-2 py-2 short:py-1.5 gap-3 short:gap-2">
         {/* Nome */}
         <span className="flex-1 min-w-0 truncate text-sm font-black tracking-tight text-on-surface">
-          {player.name}
+          <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
         </span>
 
         {/* Separador + deltas */}

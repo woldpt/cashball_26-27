@@ -7,6 +7,7 @@
  * entrados numa linha por baixo.
  */
 import { PitchFormation } from "../match/shared/PitchFormation.jsx";
+import { PlayerLink } from "./PlayerLink.jsx";
 import { PITCH_POS_COLORS } from "../match/matchConstants.js";
 import { Stars } from "./Stars.jsx";
 
@@ -42,7 +43,7 @@ export function PostMatchPitch({ players }) {
           {subs.map((s, i) => (
             <span key={s.id ?? i} className="whitespace-nowrap">
               {i > 0 && " · "}
-              {s.name}{" "}
+              <PlayerLink playerId={s.id}>{s.name}</PlayerLink>{" "}
               <Stars value={s.stars} className="text-amber-400 text-[10px]" />
             </span>
           ))}
