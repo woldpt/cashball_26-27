@@ -35,6 +35,7 @@ export function registerMatchListeners(handlers, refs, ctx) {
 			results: (data.fixtures || []).map((f) => ({
 				homeTeamId: f.homeTeamId,
 				awayTeamId: f.awayTeamId,
+				isFriendly: !!f.isFriendly,
 				homeTeam: f.homeTeam,
 				awayTeam: f.awayTeam,
 				finalHomeGoals: f.finalHomeGoals || 0,
@@ -80,6 +81,7 @@ export function registerMatchListeners(handlers, refs, ctx) {
 				results: (data.fixtures || []).map((f) => ({
 					homeTeamId: f.homeTeamId,
 					awayTeamId: f.awayTeamId,
+					isFriendly: !!f.isFriendly,
 					homeTeam: f.homeTeam,
 					awayTeam: f.awayTeam,
 					finalHomeGoals: f.finalHomeGoals || 0,
@@ -314,6 +316,7 @@ export function registerMatchListeners(handlers, refs, ctx) {
 						: r.awayLineup,
 					homePossession: update.homePossession ?? r.homePossession ?? 50,
 					awayPossession: update.awayPossession ?? r.awayPossession ?? 50,
+					isFriendly: update.isFriendly ?? r.isFriendly,
 				};
 			});
 			return { ...prev, results: updatedResults };
@@ -370,6 +373,7 @@ export function registerMatchListeners(handlers, refs, ctx) {
 			results: (data.results || []).map((fx) => ({
 				homeTeamId: fx.homeTeamId,
 				awayTeamId: fx.awayTeamId,
+				isFriendly: !!fx.isFriendly,
 				finalHomeGoals: fx.finalHomeGoals,
 				finalAwayGoals: fx.finalAwayGoals,
 				events: fx.events || [],

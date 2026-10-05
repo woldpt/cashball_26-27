@@ -8,6 +8,7 @@ import { socket } from "../../socket.js";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
 import { DIVISION_NAMES } from "../../constants/index.js";
+import { isFriendlyMatch } from "../live/liveHelpers.js";
 import {
 	useCompactViewport,
 	useLandscapePhone,
@@ -165,12 +166,15 @@ export function MatchPage({
 	// Extract cup fixtures from matchResults for the sidebar when in cup mode
 	const cupOtherFixtures = useMemo(() => {
 		if (!isCupMatch || !matchResults?.results) return [];
+		// Amigável na semana da Taça: só os outros amigáveis, não a eliminatória.
+		const friendly = !!fixture?.isFriendly;
 		return matchResults.results.filter(
 			(r) =>
+				!!r.isFriendly === friendly &&
 				Number(r.homeTeamId) !== Number(myTeamId) &&
 				Number(r.awayTeamId) !== Number(myTeamId),
 		);
-	}, [isCupMatch, matchResults, myTeamId]);
+	}, [isCupMatch, matchResults, myTeamId, fixture]);
 
 	// ── Fixture Card (compact) ──────────────────────────────────────────────
 	const FixtureCard = ({ homeTeamId, awayTeamId, fixtureData }) => {
@@ -224,7 +228,7 @@ export function MatchPage({
 	const hColor = homeTeam?.color_primary || "#6366f1";
 	const aColor = awayTeam?.color_primary || "#f43f5e";
 	const isFriendly =
-		currentCupRound === 0 || /amigável/i.test(cupMatchRoundName || "");
+		isFriendlyMatch(fixture, currentCupRound) || /amigável/i.test(cupMatchRoundName || "");
 	const isCupContext = isCupMatch || cupPreMatch;
 	// Quem tem de confirmar neste gate: no prolongamento só quem tem jogo
 	// EMPATADO (jogos sem humanos seguem sem confirmação). Sem resultados
@@ -418,7 +422,9 @@ export function MatchPage({
 					<div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/70 px-3 py-2">
 						<h4 className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1.5">
 							{isCupMatch
-								? `${cupMatchRoundName || "Taça"} · Outros jogos`
+								? isFriendly
+									? "Amigáveis · Outros jogos"
+									: `${cupMatchRoundName || "Taça"} · Outros jogos`
 								: `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
 						</h4>
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">

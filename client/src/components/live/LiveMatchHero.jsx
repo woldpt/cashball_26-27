@@ -5,7 +5,7 @@ import { PreMatchIntro, KickoffBadge, FinalWhistleStamp } from "../match/shared/
 import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { useKitClash } from "../../hooks/useKitClash.js";
-import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
+import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
 
 /* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
 const PAUSE_TEXT = {
@@ -96,8 +96,10 @@ export function LiveMatchHero({
   const clash = useKitClash(hInfo?.crest, aInfo?.crest);
   if (!myMatch) return null;
   // Amigável (ronda 0): sem prefixo "Taça ·" nem estética de taça.
-  const isFriendly = /amigável/i.test(cupMatchRoundName || "");
-  const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
+  // Amigável (pré-época ou dos eliminados na semana da Taça): sem estética de taça.
+  const isFriendly = isFriendlyMatch(myMatch) || /amigável/i.test(cupMatchRoundName || "");
+  const roundLabel = isFriendly && !/amigável/i.test(cupMatchRoundName || "") ? "Amigável" : cupMatchRoundName;
+  const isCupFinal = isCupMatch && !isFriendly && cupMatchRoundName === "Final";
   const stadiumName = isCupFinal ? CUP_FINAL_STADIUM : hInfo?.stadium_name;
   // Cores das equipas para a cenografia de luz (fallbacks estáveis).
   const hCol = hInfo?.color_primary || "#3b82f6";
@@ -238,13 +240,13 @@ export function LiveMatchHero({
         <div className="flex items-center justify-between w-full mb-4">
           <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/50 font-black">
             {isCupMatch
-              ? isFriendly ? cupMatchRoundName : `Taça · ${cupMatchRoundName}`
+              ? isFriendly ? roundLabel : `Taça · ${cupMatchRoundName}`
               : `${DIVISION_NAMES[hInfo?.division] || ""} · Jornada ${matchResults?.matchweek ?? "—"}`}
           </span>
           <div className="flex items-center gap-2">
             {!isPlayingMatch && isCupMatch && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest">
-                {isFriendly ? "🤝" : "🏆"} {cupMatchRoundName}
+                {isFriendly ? "🤝" : "🏆"} {roundLabel}
               </span>
             )}
           </div>

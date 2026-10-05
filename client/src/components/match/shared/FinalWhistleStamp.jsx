@@ -29,6 +29,35 @@ const PHRASES = {
   ],
 };
 
+/* Taça e amigável não dão pontos: só a vitória/empate da liga fala deles. */
+const PHRASES_BY_COMPETITION = {
+  cup: {
+    ...PHRASES,
+    win: [
+      "Termina o jogo! Festa grande — noite de glória para os nossos.",
+      "Apito final! Passagem garantida, a Taça continua.",
+      "Acabou! O árbitro apita e a bancada rende-se à equipa.",
+    ],
+  },
+  friendly: {
+    win: [
+      "Apito final! Vitória no amigável — bom ensaio.",
+      "Termina o jogo! Sem pontos em jogo, mas a equipa deixou boa imagem.",
+      "Acabou! Teste superado, as ideias começam a encaixar.",
+    ],
+    draw: [
+      "Apito final! Empate no amigável — minutos úteis para todos.",
+      "Termina o jogo! Ninguém ganhou, mas o treinador tirou notas.",
+      "Acabou! Igualdade num jogo de testes.",
+    ],
+    loss: [
+      "Apito final. Derrota no amigável — melhor aqui do que a valer.",
+      "Termina o jogo. Era para testar, e o teste mostrou o que falta.",
+      "Acabou. Resultado esquecível, lições para guardar.",
+    ],
+  },
+};
+
 /** Cor do clarão/brilho por desfecho (vitória verde, derrota vermelha, empate âmbar). */
 const TONE = { win: "#22c55e", loss: "#ef4444", draw: "#f59e0b" };
 
@@ -38,7 +67,7 @@ const TONE = { win: "#22c55e", loss: "#ef4444", draw: "#f59e0b" };
  * `pointer-events-none` — nunca bloqueia cliques.
  *
  * @param {Object} props
- * @param {{ outcome: "win" | "loss" | "draw", myGoals: number, oppGoals: number } | null} props.whistle
+ * @param {{ competition?: "league" | "cup" | "friendly", outcome: "win" | "loss" | "draw", myGoals: number, oppGoals: number } | null} props.whistle
  * @param {string} [props.hColor] Cor da equipa da casa (cenografia de luz).
  * @param {string} [props.aColor] Cor da equipa de fora (cenografia de luz).
  * @returns {JSX.Element|null}
@@ -46,7 +75,8 @@ const TONE = { win: "#22c55e", loss: "#ef4444", draw: "#f59e0b" };
 export function FinalWhistleStamp({ whistle, hColor = "#3b82f6", aColor = "#f43f5e" }) {
   const reduce = useReducedMotion();
   if (!whistle) return null;
-  const pool = PHRASES[whistle.outcome] || PHRASES.draw;
+  const phrases = PHRASES_BY_COMPETITION[whistle.competition] || PHRASES;
+  const pool = phrases[whistle.outcome] || phrases.draw;
   const phrase = pool[(whistle.myGoals * 7 + whistle.oppGoals) % pool.length];
   const tone = TONE[whistle.outcome] || TONE.draw;
   return createPortal(

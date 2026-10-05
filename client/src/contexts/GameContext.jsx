@@ -32,6 +32,7 @@ import {
 	playWhistleSound,
 } from "../utils/audio.js";
 import { computeFinalWhistle } from "../utils/finalWhistle.js";
+import { isFriendlyMatch } from "../components/live/liveHelpers.js";
 import { computeMoodVariant } from "../utils/moodVariant.js";
 import { rankStandings } from "../utils/standingsRank.js";
 import { readGoalFlashEntry } from "../components/live/liveHelpers.js";
@@ -772,10 +773,10 @@ year: seasonYear,
 					Number(r.awayTeamId) === Number(myId),
 			);
 			if (myMatch) {
-				// Ronda 0 = amigável de pré-época (viaja no fio da Taça, mas sem
-				// winnerId nos empates): resultado pelos golos, fonte friendly e
-				// chave igual à do rescaldo persistido (matchweek 1).
-				const isFriendly = Number(cupRoundResults.round) === 0;
+				// Amigável (pré-época = ronda 0, ou dos eliminados na semana da
+				// Taça = flag no fixture; sem winnerId nos empates): resultado
+				// pelos golos, fonte friendly e chave igual à do rescaldo persistido.
+				const isFriendly = isFriendlyMatch(myMatch, cupRoundResults.round);
 				const isHome = Number(myMatch.homeTeamId) === Number(myId);
 				const myGoals = isHome ? myMatch.homeGoals : myMatch.awayGoals;
 				const oppGoals = isHome ? myMatch.awayGoals : myMatch.homeGoals;
@@ -784,7 +785,7 @@ year: seasonYear,
 					? (myGoals > oppGoals ? "win" : myGoals < oppGoals ? "loss" : "draw")
 					: (Number(myMatch.winnerId) === Number(myId) ? "win" : "loss");
 				const key = isFriendly
-					? `friendly:${cupRoundResults.season}:1`
+					? `friendly:${cupRoundResults.season}:${cupRoundResults.matchweek ?? 1}`
 					: `cup:${cupRoundResults.season}:${cupRoundResults.round}`;
 				if (ackedPostMatchKeysRef.current.cup !== key) {
 					ackedPostMatchKeysRef.current.cup = key;
@@ -795,7 +796,9 @@ year: seasonYear,
 							myGoals,
 							oppGoals,
 							isFriendly ? "friendly" : "cup",
-							cupRoundResults.roundName || `Taça R${cupRoundResults.round}`,
+							isFriendly && Number(cupRoundResults.round) !== 0
+								? "Amigável"
+								: cupRoundResults.roundName || `Taça R${cupRoundResults.round}`,
 							key,
 							ticketRevenueFor(myMatch, isHome),
 						),
@@ -822,7 +825,7 @@ year: seasonYear,
 		if (!w || whistledKeysRef.current[w.competition] === w.key) return;
 		whistledKeysRef.current[w.competition] = w.key;
 		playWhistleSound(w.outcome);
-		setFinalWhistle({ key: w.key, outcome: w.outcome, myGoals: w.myGoals, oppGoals: w.oppGoals });
+		setFinalWhistle({ key: w.key, competition: w.competition, outcome: w.outcome, myGoals: w.myGoals, oppGoals: w.oppGoals });
 		const t = setTimeout(() => setFinalWhistle(null), 5000);
 		return () => clearTimeout(t);
 	}, [matchResults, cupRoundResults, isPlayingMatch, liveMinute, me?.teamId, season]);

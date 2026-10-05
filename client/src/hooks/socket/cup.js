@@ -62,6 +62,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 				results: fixtures.map((fx) => ({
 					homeTeamId: fx.homeTeam?.id,
 					awayTeamId: fx.awayTeam?.id,
+					isFriendly: !!fx.isFriendly,
 					finalHomeGoals: fx.homeGoals,
 					finalAwayGoals: fx.awayGoals,
 				events: fx.events || [],
@@ -106,6 +107,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 				results: fixtures.map((fx) => ({
 					homeTeamId: fx.homeTeam?.id,
 					awayTeamId: fx.awayTeam?.id,
+					isFriendly: !!fx.isFriendly,
 					finalHomeGoals: fx.homeGoals,
 					finalAwayGoals: fx.awayGoals,
 				events: fx.events || [],

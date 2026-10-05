@@ -292,3 +292,15 @@ export function computePenaltySteps(events, displayMs) {
     { atMs: list.length * displayMs, action: "reveal" },
   ];
 }
+
+/**
+ * Amigável? O de pré-época viaja como ronda 0; o da semana da Taça
+ * (eliminados) partilha a ronda da Taça, por isso a flag vem no fixture.
+ *
+ * @param {{ isFriendly?: boolean } | null | undefined} fixture
+ * @param {number|string|null|undefined} cupRound
+ * @returns {boolean}
+ */
+export function isFriendlyMatch(fixture, cupRound) {
+  return !!fixture?.isFriendly || (cupRound != null && Number(cupRound) === 0);
+}

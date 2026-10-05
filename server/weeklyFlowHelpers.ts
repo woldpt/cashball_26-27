@@ -967,6 +967,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           fixtures: game.currentFixtures.map((f) => ({
             homeTeamId: f.homeTeamId,
             awayTeamId: f.awayTeamId,
+            isFriendly: f.round === FRIENDLY_ROUND,
             homeGoals: f.finalHomeGoals,
             awayGoals: f.finalAwayGoals,
             minuteEvents: (f.events || []).filter((e) => e.minute === minute),
@@ -1029,6 +1030,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           season: game.season,
           fixtures: game.currentFixtures.map((fixture) => ({
             homeTeam: fixture.homeTeam || null,
+            isFriendly: fixture.round === FRIENDLY_ROUND,
             awayTeam: fixture.awayTeam || null,
             homeGoals: fixture.finalHomeGoals,
             awayGoals: fixture.finalAwayGoals,

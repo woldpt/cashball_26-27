@@ -136,4 +136,35 @@ import { computeFinalWhistle } from "./finalWhistle.js";
   assert.equal(w, null);
 }
 
-console.log("finalWhistle: 8/8 OK");
+// Amigável dos eliminados na semana da Taça (flag no fixture): empate apita.
+{
+  const w = computeFinalWhistle({
+    matchResults: null,
+    cupRoundResults: {
+      round: 3, season: 2, matchweek: 12,
+      results: [{ homeTeamId: 1, awayTeamId: 2, homeGoals: 1, awayGoals: 1, winnerId: null, isFriendly: true }],
+    },
+    myTeamId: 2,
+    season: 2,
+  });
+  assert.equal(w.competition, "friendly");
+  assert.equal(w.outcome, "draw");
+  assert.equal(w.key, "friendly:2:12");
+}
+
+// Mesma semana, jogo da Taça: continua taça.
+{
+  const w = computeFinalWhistle({
+    matchResults: null,
+    cupRoundResults: {
+      round: 3, season: 2, matchweek: 12,
+      results: [{ homeTeamId: 3, awayTeamId: 4, homeGoals: 2, awayGoals: 0, winnerId: 3 }],
+    },
+    myTeamId: 3,
+    season: 2,
+  });
+  assert.equal(w.competition, "cup");
+  assert.equal(w.outcome, "win");
+}
+
+console.log("finalWhistle: 10/10 OK");

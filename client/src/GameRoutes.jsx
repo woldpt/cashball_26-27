@@ -179,9 +179,13 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
 
   // Final da Taça: palco de gala quer participes quer não. Sem o teu jogo,
   // a fixture da final (results[0] — a final é sempre jogo único).
-  const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
+  // Quem joga um amigável nessa semana vê o seu jogo, não o palco.
+  const isCupFinal =
+    isCupMatch && cupMatchRoundName === "Final" && !myMatch?.isFriendly;
   const finalFixture = isCupFinal
-    ? (myMatch ?? matchResults?.results?.[0] ?? null)
+    ? (myMatch ??
+        matchResults?.results?.find((r) => !r.isFriendly) ??
+        null)
     : null;
   // MOM da final (para o palco): a mesma lookup do teu jogo, mas sobre a
   // fixture da final — quando participas, coincide com myMatchMom.

@@ -1,3 +1,5 @@
+import { isFriendlyMatch } from "../components/live/liveHelpers.js";
+
 /**
  * Decide se o árbitro deve apitar: devolve os dados do apito final do MEU
  * jogo (liga, taça ou amigável) ou `null` se ainda não há resultado final.
@@ -14,7 +16,7 @@
  * @param {Object|null} args.cupRoundResults Resultados da taça/amigável (ou null).
  * @param {number|string|null|undefined} args.myTeamId Equipa do utilizador.
  * @param {number} args.season Época corrente.
- * @returns {{ key: string, competition: "league" | "cup", outcome: "win" | "loss" | "draw", myGoals: number, oppGoals: number } | null}
+ * @returns {{ key: string, competition: "league" | "cup" | "friendly", outcome: "win" | "loss" | "draw", myGoals: number, oppGoals: number } | null}
  */
 export function computeFinalWhistle({ matchResults, cupRoundResults, myTeamId, season }) {
   if (myTeamId == null) return null;
@@ -42,19 +44,20 @@ export function computeFinalWhistle({ matchResults, cupRoundResults, myTeamId, s
       oppGoals,
     };
   }
-  // Taça (ronda 0 = amigável de pré-época, decide pelos golos).
+  // Taça. Amigável (pré-época = ronda 0, ou dos eliminados na semana da
+  // Taça = flag no fixture) decide pelos golos.
   const cup = findMine(cupRoundResults?.results);
   if (!cup) return null;
-  const isFriendly = Number(cupRoundResults.round) === 0;
+  const isFriendly = isFriendlyMatch(cup, cupRoundResults.round);
   const isHome = Number(cup.homeTeamId) === Number(myTeamId);
   const myGoals = isHome ? (cup.homeGoals ?? 0) : (cup.awayGoals ?? 0);
   const oppGoals = isHome ? (cup.awayGoals ?? 0) : (cup.homeGoals ?? 0);
   if (!isFriendly && cup.winnerId == null) return null;
   return {
     key: isFriendly
-      ? `friendly:${cupRoundResults.season}:1`
+      ? `friendly:${cupRoundResults.season}:${cupRoundResults.matchweek ?? 1}`
       : `cup:${cupRoundResults.season}:${cupRoundResults.round}`,
-    competition: "cup",
+    competition: isFriendly ? "friendly" : "cup",
     outcome: isFriendly
       ? (myGoals > oppGoals ? "win" : myGoals < oppGoals ? "loss" : "draw")
       : (Number(cup.winnerId) === Number(myTeamId) ? "win" : "loss"),
