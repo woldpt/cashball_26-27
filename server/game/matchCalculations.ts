@@ -52,16 +52,20 @@ export function getWeatherForFixture(
   teamAId: number,
   teamBId: number,
 ): { condition: string; emoji: string } {
-  let ws =
+  // fmix32 (murmur3): um xorshift de 1 ronda sobre seeds pequenas dava
+  // sempre roll ≈ 0.07 → sempre sol.
+  let h =
     ((season ?? 1) * 1000 +
       (matchweek ?? 1) * 31 +
       (teamAId ?? 0) +
       (teamBId ?? 0)) >>>
-      0 || 1;
-  ws ^= ws << 13;
-  ws ^= ws >>> 17;
-  ws ^= ws << 5;
-  const weatherRoll = (ws >>> 0) / 0xffffffff;
+    0;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  const weatherRoll = (h >>> 0) / 0x100000000;
   let condition: string;
   if (weatherRoll < 0.35) condition = "sol";
   else if (weatherRoll < 0.65) condition = "chuva";
