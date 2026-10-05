@@ -1,3 +1,8 @@
+## LandingPage: props agrupadas em form/room (2026-10-05)
+- Plano `docs/plans/2026-10-05-landing-page-melhorias.md` executado F1–F3 em 3 commits (`84cfc937`, `68bf231f`, `121a8b9e`): fallback de auth explícito para login, JSDoc no padrão do `CLAUDE.md`, `landingProps` com grupos `form`/`room` + topo de 7 (o plano dizia 6, mas o `createAccount` limpa o `joinError` — esse ficou no topo; `setAvailableSaves` manteve `{Function}` porque recebe updater). `RoomSelectScreen` intacto.
+- Achado: `disconnected` nunca chega à landing (vive no `GameContext`, em jogo) — passa sempre `undefined`, antes e depois; documentado no JSDoc em vez de inventar valor.
+- Checks: `check:types` 0 · `eslint` 0 erros nos 4 ficheiros (1 warning no `App.jsx` provado pré-existente com `stash`) · `build` OK · grep: só o `App.jsx` consome a landing. Sem `test:mobile` (mesmo DOM/classes, só canalização de props) nem audits (zero servidor/jogo/sockets). Fica para o utilizador: clicar login/registo/voltar/entrar em sala no browser (sem skill `run` neste ambiente).
+
 ## Sombra subtil nos logotipos dos crests (2026-10-05)
 - Plano `docs/plans/2026-10-05-sombra-logotipos-crests.md`: a sombra desenhava-se à volta do tile, não do logótipo — o fundo colorido saiu do `<img>` para um wrapper `<span>` e o `<img>` ganhou `crest-shadow` (novo `@utility` em `index.css`, 2 `drop-shadow` curtos).
 - Fase 1: `shared/TeamCrest` e `live/TeamCrest` (no live o `mediaStyle` de rotação passou para o wrapper — resolvido o bug latente dos dois atributos `style`, o 2.º anulava o 1.º).
