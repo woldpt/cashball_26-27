@@ -122,11 +122,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               // A rail vertical (w-[var(--rail-w)]) só está montada quando
               // !isMatchInProgress — fora disso a ml-var ficava órfã e deixava
               // uma faixa vazia à esquerda do ecrã de jogo ao vivo.
-              // Em jogo, o pill "AO VIVO" (fixed bottom-3) flutua sobre o
-              // conteúdo; reservamos pb-16 (igual ao retrato) para o conteúdo
-              // não ser coberto, em vez de pb-3.
-              ? `transition-all duration-200 pt-[var(--header-h)] ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-[var(--rail-w)]"}`
-              : `pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 ${isMatchInProgress ? "lg:ml-0" : sidebarCollapsed ? "lg:ml-[var(--sidebar-w-collapsed)]" : "lg:ml-[var(--sidebar-w)]"}`
+              ? `transition-all duration-200 pt-[var(--header-h)] ${isMatchInProgress ? "pb-3 ml-0" : "pb-3 ml-[var(--rail-w)]"}`
+              : `pt-[var(--header-h)] ${isMatchInProgress ? "pb-3" : "pb-16"} lg:pb-0 transition-all duration-200 ${isMatchInProgress ? "lg:ml-0" : sidebarCollapsed ? "lg:ml-[var(--sidebar-w-collapsed)]" : "lg:ml-[var(--sidebar-w)]"}`
           }`}
         >
           {/* Avisos em fluxo (empurram o conteúdo, nunca o tapam): a coluna

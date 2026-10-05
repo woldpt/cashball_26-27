@@ -225,7 +225,6 @@ export function MobileNav({ scrollToTop }) {
   const {
     activeTab,
     isMatchInProgress,
-    showHalftimePanel,
     mobileSubMenu,
     setMobileSubMenu,
   } = useGame();
@@ -318,17 +317,6 @@ export function MobileNav({ scrollToTop }) {
         </>
       )}
 
-      {/* LIVE pill during match (mobile) */}
-      {isMatchInProgress && !showHalftimePanel && (
-        <div className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 h-9 px-5 z-40 flex items-center justify-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/30 backdrop-blur-sm shadow-lg shadow-black/40">
-          <span className="material-symbols-outlined text-red-400 text-[18px] leading-none animate-pulse">
-            sensors
-          </span>
-          <span className="text-red-400 text-[10px] font-black uppercase tracking-widest">
-            AO VIVO
-          </span>
-        </div>
-      )}
     </>
   );
 }
