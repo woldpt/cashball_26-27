@@ -2,10 +2,11 @@ import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { EMOJI_TO_CONDITION } from "./weatherConditions.js";
 
+/* Chuva: folhas em mosaico (barato em ecrã inteiro); a forte junta uma folha distante. */
+const RAIN_SHEETS = { chuva: ["wx-rain-sheet"], chuva_forte: ["wx-rain-sheet", "wx-rain-sheet wx-rain-far"] };
+
 /* Partículas por condição: n = quantidade, kind = classe CSS base. */
 const PARTICLES = {
-  chuva: { n: 40, kind: "wx-rain" },
-  chuva_forte: { n: 80, kind: "wx-rain wx-rain-heavy" },
   neve: { n: 46, kind: "wx-snow" },
   frio: { n: 14, kind: "wx-snow wx-snow-sparse" },
   vento: { n: 22, kind: "wx-gust" },
@@ -48,6 +49,7 @@ export function WeatherOverlay({ emoji, condition, fullscreen = false }) {
       aria-hidden="true"
       className={`wx-layer wx-${cond} ${fullscreen ? "fixed z-30" : "absolute z-20"} inset-0 pointer-events-none overflow-hidden`}
     >
+      {RAIN_SHEETS[cond]?.map((cls) => <div key={cls} className={cls} />)}
       {items.map((p, i) => (
         <span
           key={i}
