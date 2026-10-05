@@ -100,7 +100,7 @@ export function CupDrawPopup({
 
               {/* Home team */}
               <div
-                className={`flex-1 flex items-center justify-end gap-2 transition-all duration-300 ${
+                className={`flex-1 min-w-0 flex items-center justify-end gap-2 transition-all duration-300 ${
                   homeRevealed ? "opacity-100" : "opacity-0"
                 }`}
               >
@@ -138,7 +138,7 @@ export function CupDrawPopup({
 
               {/* Away team */}
               <div
-                className={`flex-1 flex items-center gap-2 transition-all duration-300 ${
+                className={`flex-1 min-w-0 flex items-center gap-2 transition-all duration-300 ${
                   awayRevealed ? "opacity-100" : "opacity-0"
                 }`}
               >
