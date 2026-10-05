@@ -289,4 +289,9 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Em desktop a dica põe o balão à esquerda do retrato (`lg:flex-row-reverse`): o boneco ficava de costas para o balão e a olhar para fora do ecrã (visto no render 1440×900). Prop `flipOnDesktop` no `AssistantMascot`, usada **só na vista da dica** — o tutorial tem o balão sempre à direita e não se espelha.
 - Checks: `test:mobile` **175/175** (`resErr=0` no harness do adjunto) + screenshots 360 e 1440 lidos · `eslint` limpo nos ficheiros da tarefa (restam os 2 pré-existentes: `App.jsx`, `GameContext.jsx`) · `check:types` OK · `build` OK · sem server/jogo/sockets → sem `typecheck` nem audits. Nota: a passagem correu com `client/src/utils/inboxItems.js` modificado (trabalho em curso noutra sessão, fora destes commits e não tocado).
 
+## Glow vermelho nos botões de contrato com pedido de renovação pendente (2026-10-03)
+- Pedido: destacar os 2 botões (Aceitar renovação / Enviar para leilão) do `PlayerHistoryModal` quando há pedido de renovação do agente pendente.
+- `PlayerHistoryModal.jsx`: ramo `hasPendingRequest` — `shadow-[0_0_14px_rgba(239,68,68,0.55)]` nos 2 botões (o `Button` já concatena `className`).
+- Checks: `lint` limpo no ficheiro (4 problemas pré-existentes noutros) · `check:types` OK · tweak de `className` → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 

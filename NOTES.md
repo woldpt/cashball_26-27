@@ -1,3 +1,7 @@
+## Deploy v26.10.20 no rick (2026-10-05)
+- Treino: jogadores muito abaixo da média sobem depressa até 70% da média; NPCs não renovam esses jogadores.
+- Campo em perspetiva fixo no fundo no lugar da navegação mobile; anúncio de prolongamento só no 91'; `backend Healthy`.
+
 ## Deploy v26.10.19 no rick (2026-10-05)
 - Campo em perspetiva no mobile com o tempo ao fundo; pausa pré-jogo de 7s com a análise de volta e anúncio de fase animado no placar.
 - Casaco do adjunto na cor do clube; staff contratado com nome, papel e nível à medida da tesouraria; mentalidade em 3 botões no mobile; `backend Healthy`.
@@ -173,11 +177,3 @@
 - Cliente: `skillHistory.js` — `SLOTS_PER_SEASON = 20`, `skillEpoch` clamp 1..20, janela = últimas 20, labels via `SEASON_CALENDAR` (`J4` liga, `T2` Taça, `Pré` amigável) em vez de `J{n}` genérico. `SkillLineChart`/modal usam o default (20) — sem prop `weeks`.
 - Dados antigos (épocas 1–6 em escala mista) ficam como estão — sem migração; a janela de 20 cobre sobretudo a época atual (escala correta).
 - Checks: server `typecheck` OK · client `lint` (4 problemas pré-existentes noutros) + `check:types` OK · simulação node do pipeline com BD real: 20 pontos, labels corretos (`Pré`, `J1`–`J14`, `T1`–`T5`), multi-época com prefixo de ano. Sem `test:mobile` (geometria do SVG inalterada).
-
-## Glow vermelho nos botões de contrato com pedido de renovação pendente (2026-10-03)
-- Pedido: destacar os 2 botões (Aceitar renovação / Enviar para leilão) do `PlayerHistoryModal` quando há pedido de renovação do agente pendente.
-- `PlayerHistoryModal.jsx`: ramo `hasPendingRequest` — `shadow-[0_0_14px_rgba(239,68,68,0.55)]` nos 2 botões (o `Button` já concatena `className`).
-- Checks: `lint` limpo no ficheiro (4 problemas pré-existentes noutros) · `check:types` OK · tweak de `className` → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
-
-
-
