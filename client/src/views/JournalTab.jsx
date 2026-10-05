@@ -1,8 +1,8 @@
 /**
  * JournalTab — a caixa de entrada do treinador (hub estilo CM2001).
  *
- * Tópicos à esquerda e detalhe à direita no desktop, uma só linha de filtros:
- * Todas, O Meu Clube, Competições, Plantel, Mercado. A notícia mais antiga
+ * Tópicos à esquerda e detalhe à direita no desktop, sem filtros de categoria
+ * (só a pesquisa). A notícia mais antiga
  * por ler fica seleccionada (sem a marcar como lida) e a lista tem
  * «Ler próxima». Só o clique na linha, o «Ler próxima» ou o Enter
  * marcam como lida.
@@ -27,15 +27,12 @@ import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
 import { PostMatchPitch } from "../components/shared/PostMatchPitch.jsx";
 import { SponsorChooseModal } from "../components/shared/SponsorChooseModal.jsx";
-import { FILTER_TONES } from "./journal/tones.js";
 import { flagSummary, searchText } from "./journal/utils.jsx";
 import { ArticleMeta, CategoryAccentBar, RichNewsText, RichParagraphs } from "./journal/ArticleBody.jsx";
 import { CupDrawIntro, CupDrawTable, LeagueFinalTable, WeeklyFinanceTable } from "./journal/ArticleTables.jsx";
 import { ArticleActionBar } from "./journal/ArticleActions.jsx";
 import { NewsMedia } from "./journal/NewsMedia.jsx";
 import { TopicList } from "./journal/TopicList.jsx";
-
-const FILTERS = ["all", "club", "competitions", "squad", "market"];
 
 /**
  * Caixa de entrada do treinador.
@@ -51,7 +48,6 @@ export function JournalTab({
   const inbox = useInbox();
   const { selected: inboxSelected, selectNextUnread } = inbox;
   const [sponsorOpen, setSponsorOpen] = useState(false);
-  const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const detailRef = useRef(null);
 
@@ -83,14 +79,9 @@ export function JournalTab({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  const categoryItems =
-    filter === "all"
-      ? inbox.items
-      : inbox.items.filter((it) => it.cat === filter);
-
   const query = searchText(search.trim());
   const visible = query
-    ? categoryItems.filter((item) => {
+    ? inbox.items.filter((item) => {
         const searchTextBody = searchText(
           `${item.title} ${item.body} ${flagSummary(item)} ${item.media?.player?.label || ""} ${
             (item.media?.teams || []).map((t) => t.label).join(" ")
@@ -98,7 +89,7 @@ export function JournalTab({
         );
         return searchTextBody.includes(query);
       })
-    : categoryItems;
+    : inbox.items;
 
   // Seleção coerente: o detalhe mostra sempre uma notícia visível. Se a
   // seleção sair do filtro/pesquisa, cai na primeira visível sem a marcar
@@ -117,12 +108,6 @@ export function JournalTab({
       : null;
 
   const labelOf = (id) => inbox.cats.find((c) => c.id === id)?.label || id;
-  const unreadByFilter = {};
-  for (const it of inbox.items) {
-    if (!inbox.isUnread(it)) continue;
-    unreadByFilter.all = (unreadByFilter.all || 0) + 1;
-    unreadByFilter[it.cat] = (unreadByFilter[it.cat] || 0) + 1;
-  }
   const hasUnreadNonFlag = inbox.items.some(
     (item) => !item.redFlag && inbox.isUnread(item),
   );
@@ -136,24 +121,6 @@ export function JournalTab({
     },
     [inbox],
   );
-
-  const tabBtn = (id) => {
-    const tone = FILTER_TONES[id] || FILTER_TONES.all;
-    const count = unreadByFilter[id] || 0;
-    return (
-      <button
-        key={id}
-        type="button"
-        onClick={() => setFilter(id)}
-        aria-pressed={filter === id}
-        className={`shrink-0 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
-          filter === id ? tone.active : tone.idle
-        }`}
-      >
-        {labelOf(id)}{count > 0 ? ` · ${count}` : ""}
-      </button>
-    );
-  };
 
   return (
     <div className="space-y-2 short:space-y-1.5 lg:flex lg:min-h-[calc(100dvh-var(--header-h)-3rem)] lg:flex-col">
@@ -184,15 +151,6 @@ export function JournalTab({
         </p>
       )}
 
-      {/* ── Filtros (uma só linha) ──────────────────────────────────── */}
-      <div
-        role="group"
-        aria-label="Filtrar notícias"
-        className="flex gap-px overflow-x-auto rounded-sm bg-surface-container-low border border-outline-variant/20"
-      >
-        {FILTERS.map(tabBtn)}
-      </div>
-
       <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
         {/* ── Coluna esquerda: Tópicos ───────────────────────────────── */}
         <TopicList
@@ -202,8 +160,6 @@ export function JournalTab({
           query={query}
           search={search}
           onSearchChange={setSearch}
-          filter={filter}
-          filterLabel={labelOf(filter)}
           onSelectItem={handleSelectItem}
           onPreviewItem={inbox.preview}
           hasUnreadNonFlag={hasUnreadNonFlag}

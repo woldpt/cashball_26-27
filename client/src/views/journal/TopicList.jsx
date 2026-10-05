@@ -16,8 +16,6 @@ import { flagSummary, getSnippet, highlightText } from "./utils.jsx";
  *   query: string,
  *   search: string,
  *   onSearchChange?: Function,
- *   filter: string,
- *   filterLabel?: string,
  *   onSelectItem?: Function,
  *   onPreviewItem?: Function,
  *   hasUnreadNonFlag?: boolean
@@ -31,8 +29,6 @@ export function TopicList({
   query,
   search,
   onSearchChange,
-  filter,
-  filterLabel,
   onSelectItem,
   onPreviewItem,
   hasUnreadNonFlag,
@@ -89,9 +85,7 @@ export function TopicList({
           description={
             query
               ? "Tenta outro termo de pesquisa."
-              : filter === "all"
-                ? "Ainda não há notícias nesta época."
-                : `Nada em ${filterLabel}.`
+              : "Ainda não há notícias nesta época."
           }
         />
       ) : (

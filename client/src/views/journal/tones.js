@@ -5,8 +5,6 @@
 
 export const FILTER_TONES = {
   all: {
-    idle: "bg-surface-container-high/40 text-on-surface-variant hover:bg-surface-container-high",
-    active: "bg-surface-container-high text-on-surface",
     row: "bg-surface-container/40 hover:bg-surface-container-high",
     selected: "bg-surface-container-high/80 ring-1 ring-inset ring-outline-variant/50",
     bar: "bg-on-surface-variant/40",
@@ -15,8 +13,6 @@ export const FILTER_TONES = {
     cap: "text-on-surface",
   },
   club: {
-    idle: "bg-amber-500/10 text-amber-300/80 hover:bg-amber-500/20",
-    active: "bg-amber-500/25 text-amber-200",
     row: "bg-amber-500/10 hover:bg-amber-500/15",
     selected: "bg-amber-500/20 ring-1 ring-inset ring-amber-400/40",
     bar: "bg-amber-500",
@@ -25,8 +21,6 @@ export const FILTER_TONES = {
     cap: "text-amber-300",
   },
   competitions: {
-    idle: "bg-sky-500/10 text-sky-300/80 hover:bg-sky-500/20",
-    active: "bg-sky-500/25 text-sky-200",
     row: "bg-sky-500/10 hover:bg-sky-500/15",
     selected: "bg-sky-500/20 ring-1 ring-inset ring-sky-400/40",
     bar: "bg-sky-500",
@@ -35,8 +29,6 @@ export const FILTER_TONES = {
     cap: "text-sky-300",
   },
   squad: {
-    idle: "bg-emerald-500/10 text-emerald-300/80 hover:bg-emerald-500/20",
-    active: "bg-emerald-500/25 text-emerald-200",
     row: "bg-emerald-500/10 hover:bg-emerald-500/15",
     selected: "bg-emerald-500/20 ring-1 ring-inset ring-emerald-400/40",
     bar: "bg-emerald-500",
@@ -45,8 +37,6 @@ export const FILTER_TONES = {
     cap: "text-emerald-300",
   },
   market: {
-    idle: "bg-violet-500/10 text-violet-300/80 hover:bg-violet-500/20",
-    active: "bg-violet-500/25 text-violet-200",
     row: "bg-violet-500/10 hover:bg-violet-500/15",
     selected: "bg-violet-500/20 ring-1 ring-inset ring-violet-400/40",
     bar: "bg-violet-500",
