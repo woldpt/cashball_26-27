@@ -11,44 +11,40 @@ import ShowcaseSections from "./ShowcaseSections.jsx";
 import LandingFooter from "./LandingFooter.jsx";
 
 /**
- * @typedef {Object} LandingPageProps
- * @property {string} authPhase - "login" | "register" | "mode"
- * @property {function} setAuthPhase
- * @property {string} name
- * @property {function} setName
- * @property {string} password
- * @property {function} setPassword
- * @property {string} confirmPassword
- * @property {function} setConfirmPassword
- * @property {string} roomCode
- * @property {function} setRoomCode
- * @property {boolean} authSubmitting
- * @property {string} authError
- * @property {function} setAuthError
- * @property {boolean} isNewAccount
- * @property {boolean} joining
- * @property {boolean} disconnected
- * @property {string} joinError
- * @property {function} setJoinError
- * @property {function} handleAuthenticate
- * @property {function} handleJoin
- * @property {function} resetAuthFlow
- * @property {function} selectJoinMode
- * @property {string|null} joinMode
- * @property {function} handleLogout
- * @property {Object|null} me - The user object (to show reconnection status)
- * @property {string|null} token - The session token (used for authenticated API calls)
- * @property {Array} availableSaves - The list of available saves
- * @property {function} setAvailableSaves
- * @property {string} backendUrl
- */
-
-/**
  * Composition root da página de entrada. Sem estado próprio: apenas decide o que
  * mostrar (reconexão, landing com hero + autenticação, ou escolha de sala) e
  * liga os formulários aos handlers de auth do `App`.
  *
- * @param {LandingPageProps} props
+ * @param {Object} props
+ * @param {string} props.authPhase - "login" | "register" | "mode"
+ * @param {(v: string) => void} props.setAuthPhase
+ * @param {string} props.name
+ * @param {(v: string) => void} props.setName
+ * @param {string} props.password
+ * @param {(v: string) => void} props.setPassword
+ * @param {string} props.confirmPassword
+ * @param {(v: string) => void} props.setConfirmPassword
+ * @param {string} props.roomCode
+ * @param {(v: string) => void} props.setRoomCode
+ * @param {boolean} props.authSubmitting
+ * @param {string} props.authError
+ * @param {(v: string) => void} props.setAuthError
+ * @param {boolean} props.isNewAccount
+ * @param {boolean} props.joining
+ * @param {boolean} props.disconnected
+ * @param {string} props.joinError
+ * @param {(v: string) => void} props.setJoinError
+ * @param {(mode: string) => void} props.handleAuthenticate
+ * @param {() => void} props.handleJoin
+ * @param {() => void} props.resetAuthFlow
+ * @param {(mode: string) => void} props.selectJoinMode
+ * @param {string|null} props.joinMode
+ * @param {() => void} props.handleLogout
+ * @param {Object|null} props.me - O utilizador (para mostrar reconexão)
+ * @param {string|null} props.token - O token de sessão (para chamadas autenticadas)
+ * @param {Array} props.availableSaves - A lista de saves disponíveis
+ * @param {Function} props.setAvailableSaves
+ * @param {string} props.backendUrl
  * @returns {JSX.Element}
  */
 const LandingPage = ({
