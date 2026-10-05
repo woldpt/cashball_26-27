@@ -6,10 +6,10 @@ import { DifficultyGauge } from "./DifficultyGauge.jsx";
 
 /**
  * Slot de equipa no duelo (emblema grande + posição + nome + estatuto).
- * @param {{ slot: { id: number|null, team: Object|null, name: string, isMine: boolean }, side: "home"|"away", onOpenTeamSquad?: (team: Object) => void }} props
+ * @param {{ slot: { id: number|null, team: Object|null, name: string, isMine: boolean }, side: "home"|"away", coach?: string|null, onOpenTeamSquad?: (team: Object) => void }} props
  * @returns {JSX.Element}
  */
-const DuelSlot = memo(function DuelSlot({ slot, side, onOpenTeamSquad }) {
+const DuelSlot = memo(function DuelSlot({ slot, side, coach, onOpenTeamSquad }) {
   const position = slot.team?.position ? `${slot.team.position}º lugar` : "—";
   return (
     <div className="relative z-10 flex-1 min-w-0 flex flex-col items-center gap-1 text-center">
@@ -32,6 +32,11 @@ const DuelSlot = memo(function DuelSlot({ slot, side, onOpenTeamSquad }) {
       >
         {slot.name}
       </button>
+      {!slot.isMine && coach && (
+        <span className="max-w-full truncate px-1.5 py-px bg-amber-400/15 text-amber-400 text-[9px] font-black rounded-sm border border-amber-400/30">
+          {coach}
+        </span>
+      )}
       <span className={`text-[9px] font-bold ${slot.isMine ? "text-emerald-400" : "text-gray-500"}`}>
         {slot.isMine ? "A minha equipa" : "Adversário direto"}
         {" · "}
@@ -46,10 +51,10 @@ const DuelSlot = memo(function DuelSlot({ slot, side, onOpenTeamSquad }) {
  * jornada em cima, frente a frente casa/fora com VS central, manchete como
  * linha "flash" em baixo. Só usa dados reais do view-model (sem countdown
  * nem hot-zones inventadas).
- * @param {{ vm: Object, onOpenTeamSquad?: (team: Object) => void }} props
+ * @param {{ vm: Object, coachOf?: (teamId: number|null) => string|undefined, onOpenTeamSquad?: (team: Object) => void }} props
  * @returns {JSX.Element}
  */
-export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
+export const DuelHero = memo(function DuelHero({ vm, coachOf, onOpenTeamSquad }) {
   const [home, away] = vm.slots;
   // Empate de camisolas de casa: a equipa de fora veste a sua de fora.
   const clash = useKitClash(home?.team?.crest, away?.team?.crest);
@@ -142,7 +147,7 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
             )}
           </div>
         )}
-        {home && <DuelSlot slot={home} side="home" onOpenTeamSquad={onOpenTeamSquad} />}
+        {home && <DuelSlot slot={home} side="home" coach={coachOf?.(home.id)} onOpenTeamSquad={onOpenTeamSquad} />}
         <div className="relative z-10 shrink-0 flex flex-col items-center gap-1 px-1 lg:px-4">
           <span
             aria-hidden
@@ -151,7 +156,7 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
             VS
           </span>
         </div>
-        {away && <DuelSlot slot={away} side="away" onOpenTeamSquad={onOpenTeamSquad} />}
+        {away && <DuelSlot slot={away} side="away" coach={coachOf?.(away.id)} onOpenTeamSquad={onOpenTeamSquad} />}
       </div>
 
       {/* Dificuldade em mobile: linha própria, fora do frente a frente */}

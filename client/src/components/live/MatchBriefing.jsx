@@ -93,7 +93,7 @@ export function MatchBriefing() {
         {vm.hasOpponent ? (
           <>
             <div className="min-w-0 lg:col-span-2">
-              <DuelHero vm={vm} onOpenTeamSquad={handleOpenTeamSquad} />
+              <DuelHero vm={vm} coachOf={coachOf} onOpenTeamSquad={handleOpenTeamSquad} />
             </div>
             <PrepCtaCard onAdvance={advance} />
             <CompareRadar vm={vm} onOpenTeamSquad={handleOpenTeamSquad} />
