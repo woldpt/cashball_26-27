@@ -2261,6 +2261,8 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
   await resolveCards(tick, shared);
   await resolveInjuries(tick, shared);
   await resolveUserSubs(tick, shared);
+  // Memória do último golo: o minuto seguinte não dá golo de bola corrida.
+  if (shared.goalScored) fixture._lastGoalMinute = minute;
 }
 
 /**
@@ -2280,6 +2282,8 @@ export type MinuteShared = {
 export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShared, attackingSide: MatchSide): void {
   const { fixture, minute, powers, rng } = tick;
     if (shared.goalScored) return;
+    // Golos em minutos seguidos são raríssimos no futebol real.
+    if (fixture._lastGoalMinute === minute - 1) return;
     const attacking = attackingSide === "home" ? shared.currentHome : shared.currentAway;
     const defending = attackingSide === "home" ? shared.currentAway : shared.currentHome;
     const isHome = attackingSide === "home";

@@ -115,6 +115,7 @@ export interface MatchFixture {
   _awaySquad?: PlayerRow[];
   /** Minutos já simulados nesta fixture (anti-duplo-minuto/duplo arranque). */
   _simulatedMinutes?: Set<number>;
+  _lastGoalMinute?: number;
   _homeFullRoster?: PlayerRow[];
   _awayFullRoster?: PlayerRow[];
   _injuryLoadMult?: { home: number; away: number };
