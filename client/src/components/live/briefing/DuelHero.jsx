@@ -15,7 +15,7 @@ const DuelSlot = memo(function DuelSlot({ slot, side, onOpenTeamSquad }) {
     <div className="relative z-10 flex-1 min-w-0 flex flex-col items-center gap-1 text-center">
       <span
         className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-px rounded border ${
-          side === "home"
+          slot.isMine
             ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
             : "bg-sky-500/10 text-sky-400 border-sky-500/30"
         }`}
@@ -26,13 +26,13 @@ const DuelSlot = memo(function DuelSlot({ slot, side, onOpenTeamSquad }) {
       <button
         type="button"
         onClick={() => slot.team && onOpenTeamSquad?.(slot.team)}
-        className="max-w-full text-lg short:text-base lg:text-3xl font-headline font-black uppercase tracking-tight text-white leading-none truncate hover:text-emerald-400 hover:underline transition-colors"
+        className="max-w-full text-base sm:text-lg short:text-base lg:text-3xl font-headline font-black uppercase tracking-tight text-white leading-none line-clamp-2 break-words hover:text-emerald-400 hover:underline transition-colors"
         title={`Ver plantel de ${slot.name}`}
         aria-label={`Ver plantel de ${slot.name}`}
       >
         {slot.name}
       </button>
-      <span className="text-[9px] font-bold text-gray-500">
+      <span className={`text-[9px] font-bold ${slot.isMine ? "text-emerald-400" : "text-gray-500"}`}>
         {slot.isMine ? "A minha equipa" : "Adversário direto"}
         {" · "}
         {side === "home" ? "Casa" : "Fora"}
@@ -80,7 +80,7 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
             </span>
           )}
           {vm.stakes && (
-            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-outline-variant/25 text-gray-300">
+            <span className="hidden sm:inline text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-outline-variant/25 text-gray-300">
               <span aria-hidden>🎯</span> {vm.stakes}
             </span>
           )}
@@ -150,11 +150,15 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
           >
             VS
           </span>
-          <span className="sm:hidden w-20">
-            <DifficultyGauge score={vm.difficulty.score} label={vm.difficulty.label} />
-          </span>
         </div>
         {away && <DuelSlot slot={away} side="away" onOpenTeamSquad={onOpenTeamSquad} />}
+      </div>
+
+      {/* Dificuldade em mobile: linha própria, fora do frente a frente */}
+      <div className="sm:hidden px-4 short:px-3 pb-3 short:pb-2 flex justify-center">
+        <div className="w-48">
+          <DifficultyGauge score={vm.difficulty.score} label={vm.difficulty.label} />
+        </div>
       </div>
 
       {/* Linha flash: manchete + contexto real */}
