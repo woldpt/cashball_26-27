@@ -284,17 +284,6 @@ export function PlayerRow({
               prevSkill={player.prev_skill}
               size="sm"
             />
-            {showLastRating && player.last_rating != null && (
-              <span
-                className="flex flex-col items-center"
-                title={`Última classificação: ${String(player.last_rating).replace(".", ",")} de 10 estrelas`}
-              >
-                <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5 leading-none">
-                  Nota
-                </span>
-                <Stars value={player.last_rating} className="text-amber-400 text-[11px] leading-none" />
-              </span>
-            )}
             <span className="flex flex-col items-center">
               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
                 Golos
