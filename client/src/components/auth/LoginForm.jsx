@@ -9,12 +9,7 @@ import useNameCarousel from "./useNameCarousel.js";
  * teclado mobile mostre a tecla de submissão.
  *
  * @param {Object} props
- * @param {string} props.name
- * @param {(value: string) => void} props.setName
- * @param {string} props.password
- * @param {(value: string) => void} props.setPassword
- * @param {boolean} props.authSubmitting
- * @param {string} props.authError
+ * @param {Object} props.form - name, setName, password, setPassword, authSubmitting, authError
  * @param {boolean} props.disconnected
  * @param {() => void} props.onClearError - Limpa o erro ao editar um campo.
  * @param {() => void} props.onSubmit - Submete o login.
@@ -22,17 +17,14 @@ import useNameCarousel from "./useNameCarousel.js";
  * @returns {JSX.Element}
  */
 const LoginForm = ({
-	name,
-	setName,
-	password,
-	setPassword,
-	authSubmitting,
-	authError,
+	form,
 	disconnected,
 	onClearError,
 	onSubmit,
 	onCreateAccount,
 }) => {
+	const { name, setName, password, setPassword, authSubmitting, authError } =
+		form;
 	const { current: exampleName } = useNameCarousel(exampleNames);
 
 	return (

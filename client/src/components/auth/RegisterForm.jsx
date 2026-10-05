@@ -8,14 +8,7 @@ import useNameCarousel from "./useNameCarousel.js";
  * comprimento mínimo e a confirmação da palavra-passe antes de submeter.
  *
  * @param {Object} props
- * @param {string} props.name
- * @param {(value: string) => void} props.setName
- * @param {string} props.password
- * @param {(value: string) => void} props.setPassword
- * @param {string} props.confirmPassword
- * @param {(value: string) => void} props.setConfirmPassword
- * @param {boolean} props.authSubmitting
- * @param {string} props.authError
+ * @param {Object} props.form - name, setName, password, setPassword, confirmPassword, setConfirmPassword, authSubmitting, authError
  * @param {boolean} props.disconnected
  * @param {() => void} props.onClearError - Limpa o erro ao editar um campo.
  * @param {() => void} props.onSubmit - Submete o registo.
@@ -23,19 +16,22 @@ import useNameCarousel from "./useNameCarousel.js";
  * @returns {JSX.Element}
  */
 const RegisterForm = ({
-	name,
-	setName,
-	password,
-	setPassword,
-	confirmPassword,
-	setConfirmPassword,
-	authSubmitting,
-	authError,
+	form,
 	disconnected,
 	onClearError,
 	onSubmit,
 	onBack,
 }) => {
+	const {
+		name,
+		setName,
+		password,
+		setPassword,
+		confirmPassword,
+		setConfirmPassword,
+		authSubmitting,
+		authError,
+	} = form;
 	const { current: exampleName } = useNameCarousel(exampleNames);
 
 	const registerPasswordMismatch =

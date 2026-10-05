@@ -18,65 +18,25 @@ import LandingFooter from "./LandingFooter.jsx";
  * @param {Object} props
  * @param {string} props.authPhase - "login" | "register" | "mode"
  * @param {(v: string) => void} props.setAuthPhase
- * @param {string} props.name
- * @param {(v: string) => void} props.setName
- * @param {string} props.password
- * @param {(v: string) => void} props.setPassword
- * @param {string} props.confirmPassword
- * @param {(v: string) => void} props.setConfirmPassword
- * @param {string} props.roomCode
- * @param {(v: string) => void} props.setRoomCode
- * @param {boolean} props.authSubmitting
- * @param {string} props.authError
- * @param {(v: string) => void} props.setAuthError
- * @param {boolean} props.isNewAccount
- * @param {boolean} props.joining
- * @param {boolean} props.disconnected
- * @param {string} props.joinError
- * @param {(v: string) => void} props.setJoinError
- * @param {(mode: string) => void} props.handleAuthenticate
- * @param {() => void} props.handleJoin
  * @param {() => void} props.resetAuthFlow
- * @param {(mode: string) => void} props.selectJoinMode
- * @param {string|null} props.joinMode
- * @param {() => void} props.handleLogout
+ * @param {(mode: string) => void} props.handleAuthenticate
  * @param {Object|null} props.me - O utilizador (para mostrar reconexão)
- * @param {string|null} props.token - O token de sessão (para chamadas autenticadas)
- * @param {Array} props.availableSaves - A lista de saves disponíveis
- * @param {Function} props.setAvailableSaves
- * @param {string} props.backendUrl
+ * @param {(v: string) => void} props.setJoinError
+ * @param {boolean} [props.disconnected] - Sempre undefined na landing (vive no GameContext, em jogo)
+ * @param {Object} props.form - name, setName, password, setPassword, confirmPassword, setConfirmPassword, authSubmitting, authError, setAuthError
+ * @param {Object} props.room - Tudo o que é só do RoomSelectScreen (roomCode, setRoomCode, joining, joinError, joinMode, selectJoinMode, handleLogout, handleJoin, token, isNewAccount, availableSaves, setAvailableSaves, backendUrl)
  * @returns {JSX.Element}
  */
 const LandingPage = ({
 	authPhase,
 	setAuthPhase,
-	name,
-	setName,
-	password,
-	setPassword,
-	confirmPassword,
-	setConfirmPassword,
-	roomCode,
-	setRoomCode,
-	authSubmitting,
-	authError,
-	setAuthError,
-	isNewAccount,
-	joining,
-	disconnected,
-	joinError,
-	setJoinError,
-	handleAuthenticate,
-	handleJoin,
 	resetAuthFlow,
-	selectJoinMode,
-	joinMode,
-	handleLogout,
+	handleAuthenticate,
 	me,
-	token,
-	availableSaves,
-	setAvailableSaves,
-	backendUrl,
+	setJoinError,
+	disconnected,
+	form,
+	room,
 }) => {
 	// 1. Reconnecting State
 	if (me && !me.teamId) {
@@ -85,10 +45,10 @@ const LandingPage = ({
 
 	const isMode = authPhase === "mode";
 
-	const clearAuthError = () => setAuthError("");
+	const clearAuthError = () => form.setAuthError("");
 	const createAccount = () => {
-		setConfirmPassword("");
-		setAuthError("");
+		form.setConfirmPassword("");
+		form.setAuthError("");
 		setJoinError("");
 		setAuthPhase("register");
 	};
@@ -108,22 +68,10 @@ const LandingPage = ({
 				{isMode ? (
 					<RoomSelectScreen
 						key="room-select"
-						name={name}
-						availableSaves={availableSaves}
-						setAvailableSaves={setAvailableSaves}
-						roomCode={roomCode}
-						setRoomCode={setRoomCode}
-						joining={joining}
-						joinError={joinError}
+						{...room}
+						name={form.name}
 						disconnected={disconnected}
 						resetAuthFlow={resetAuthFlow}
-						joinMode={joinMode}
-						selectJoinMode={selectJoinMode}
-						handleLogout={handleLogout}
-						token={token}
-						isNewAccount={isNewAccount}
-						handleJoin={handleJoin}
-						backendUrl={backendUrl}
 					/>
 				) : (
 					<motion.div
@@ -151,14 +99,7 @@ const LandingPage = ({
 									<AnimatePresence mode="wait">
 										{authPhase === "register" ? (
 											<RegisterForm
-												name={name}
-												setName={setName}
-												password={password}
-												setPassword={setPassword}
-												confirmPassword={confirmPassword}
-												setConfirmPassword={setConfirmPassword}
-												authSubmitting={authSubmitting}
-												authError={authError}
+												form={form}
 												disconnected={disconnected}
 												onClearError={clearAuthError}
 												onSubmit={() => handleAuthenticate("register")}
@@ -166,12 +107,7 @@ const LandingPage = ({
 											/>
 										) : (
 											<LoginForm
-												name={name}
-												setName={setName}
-												password={password}
-												setPassword={setPassword}
-												authSubmitting={authSubmitting}
-												authError={authError}
+												form={form}
 												disconnected={disconnected}
 												onClearError={clearAuthError}
 												onSubmit={() => handleAuthenticate("login")}

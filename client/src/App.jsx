@@ -126,36 +126,42 @@ function App() {
 		join.switchRoom({ name: auth.name, token: auth.token, roomCode: code });
 	};
 
-	// Props da landing (mesma API de antes — spread em vez de 28 linhas).
+	// Props da landing: 2 grupos (form só dos formulários, room só da
+	// escolha de sala) + topo partilhado. O `disconnected` não vem:
+	// vive no GameContext (em jogo); na landing é sempre undefined.
 	const landingProps = {
 		authPhase: auth.authPhase,
 		setAuthPhase: auth.setAuthPhase,
-		name: auth.name,
-		setName: auth.setName,
-		password: auth.password,
-		setPassword: auth.setPassword,
-		confirmPassword: auth.confirmPassword,
-		setConfirmPassword: auth.setConfirmPassword,
-		roomCode,
-		setRoomCode,
-		authSubmitting: auth.authSubmitting,
-		authError: auth.authError,
-		setAuthError: auth.setAuthError,
-		isNewAccount: auth.isNewAccount,
-		joining,
-		joinError,
-		setJoinError: join.setJoinError,
-		handleAuthenticate,
-		handleJoin,
 		resetAuthFlow,
-		selectJoinMode,
-		joinMode: auth.joinMode,
-		handleLogout: auth.handleLogout,
+		handleAuthenticate,
 		me,
-		token: auth.token,
-		availableSaves: auth.availableSaves,
-		setAvailableSaves: auth.setAvailableSaves,
-		backendUrl,
+		setJoinError: join.setJoinError,
+		form: {
+			name: auth.name,
+			setName: auth.setName,
+			password: auth.password,
+			setPassword: auth.setPassword,
+			confirmPassword: auth.confirmPassword,
+			setConfirmPassword: auth.setConfirmPassword,
+			authSubmitting: auth.authSubmitting,
+			authError: auth.authError,
+			setAuthError: auth.setAuthError,
+		},
+		room: {
+			roomCode,
+			setRoomCode,
+			joining,
+			joinError,
+			joinMode: auth.joinMode,
+			selectJoinMode,
+			handleLogout: auth.handleLogout,
+			handleJoin,
+			token: auth.token,
+			isNewAccount: auth.isNewAccount,
+			availableSaves: auth.availableSaves,
+			setAvailableSaves: auth.setAvailableSaves,
+			backendUrl,
+		},
 	};
 
 	// ── Loading screen ─────────────────────────────────────────────────────
