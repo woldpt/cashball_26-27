@@ -27,6 +27,7 @@
     "test:trainingcap": "node src/utils/trainingCapAdvice.test.mjs",
     "test:assistant": "node src/utils/assistantTips.test.mjs",
     "test:finalwhistle": "node src/utils/finalWhistle.test.mjs",
+    "test:stadium": "node src/components/shared/stadiumIllustration.test.mjs",
     "test:breakpoints": "node scripts/breakpointParityRegression.mjs",
     "test:mobile": "node scripts/mobileRespCheck.mjs"
   },

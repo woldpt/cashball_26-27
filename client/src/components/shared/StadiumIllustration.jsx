@@ -30,6 +30,8 @@ import { FANS_MOOD_HIGH, FANS_MOOD_LOW } from "../../constants/index.js";
  * - > 80k: presença colossal — o corpo cresce mais íngreme (até ~1.35
  *   aos 120k), cobertura mais alta (o telão cabe dentro do arco),
  *   testeira mais grossa, telão maior e 6 setores em vez de 4
+ * Bancadas laterais em perspetiva (`sideTier`): nenhuma no pelado, baixas
+ * <15k, completas <50k, com cobertura ≥50k; ondulam e esvaziam com o mood.
  * A largura (`span`) e o corpo (`bulk`) são contínuos em toda a gama:
  * cada obra de +5 000 lugares muda a imagem.
  *
@@ -195,6 +197,12 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const claqueHalf = ((standX1 - standX0) / 2) * 0.22;
   // O topo do relvado acompanha a largura da bancada (perspetiva).
   const farHalf = (standX1 - standX0) / 2 + CAP_INSET;
+  // Bancadas laterais em perspetiva: encostam à linha lateral e saem do
+  // enquadramento em primeiro plano. O pelado não tem; crescem por escalão.
+  const sideTier = bare ? 0 : cap < 15000 ? 1 : cap < 50000 ? 2 : 3;
+  const sideH = [0, 16, 30, 44][sideTier];
+  // Com laterais a bancada do fundo fica menos densa (orçamento de pontos).
+  const crowdStep = sideTier >= 2 ? 6 : 5;
 
   // ── Geometria da bancada (vista frontal) ──────────────────────
   /** Topo do anel i (0 = o de baixo). */
@@ -272,6 +280,24 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const HAZE_OP = night ? 0.12 : 0.4;
 
   // ── Multidão ─────────────────────────────────────────────────────
+  /** Cor de um adepto: zona (casa / fora / pele / escuro) + variação h. */
+  const crowdFill = (zone, h) =>
+    zone < 0.52
+      ? h < 0.8
+        ? home
+        : shade(home, 0.3)
+      : zone < 0.74
+        ? h < 0.75
+          ? away
+          : shade(away, -0.25)
+        : zone < 0.88
+          ? h < 0.5
+            ? "#f7d7b6"
+            : "#e0b98f"
+          : h < 0.5
+            ? "#1e293b"
+            : "#3b4a61";
+
   /** Multidão de um anel: manchas de cor (equipa + neutros) com jitter. */
   const crowdDots = (yTop, yBot, seed) => {
     const dots = [];
@@ -282,7 +308,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     let k = 0;
     for (let r = 0; r < rows; r += 1) {
       const yBase = yTop + 3 + ((yBot - yTop - 6) * (r + 0.5)) / rows;
-      for (let x = standX0 + 4 + (r % 2) * 2.5; x < standX1 - 4; x += 5) {
+      for (let x = standX0 + 4 + (r % 2) * 2.5; x < standX1 - 4; x += crowdStep) {
         // Lugares vazios: thinning determinístico; a claque central esvazia em último.
         const inClaque = Math.abs(x - 400) < claqueHalf;
         const keepP = inClaque ? Math.min(1, moodOcc * 1.5 + 0.2) : moodOcc;
@@ -293,23 +319,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         const zone = inClaque
           ? hash01(seed + Math.floor(x / 34) * 4.7 + r * 0.8) * 0.5
           : hash01(seed + Math.floor(x / 34) * 4.7 + r * 0.8);
-        const h = hash01(seed + k * 12.9898);
-        const fill =
-          zone < 0.52
-            ? h < 0.8
-              ? home
-              : shade(home, 0.3)
-            : zone < 0.74
-              ? h < 0.75
-                ? away
-                : shade(away, -0.25)
-              : zone < 0.88
-                ? h < 0.5
-                  ? "#f7d7b6"
-                  : "#e0b98f"
-                : h < 0.5
-                  ? "#1e293b"
-                  : "#3b4a61";
+        const fill = crowdFill(zone, hash01(seed + k * 12.9898));
         dots.push(
           <circle
             key={`${seed}-${k}`}
@@ -344,6 +354,52 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       );
     }
     return lines;
+  };
+
+  // ── Bancadas laterais ───────────────────────────────────────────
+  /** Ganho de perspetiva do fundo (u=0) para a linha de baixo (u=1). */
+  const SIDE_NEAR = 3.2;
+  /**
+   * Ponto da bancada lateral: `sign` −1 esquerda / +1 direita, `u` 0..1 ao
+   * longo do campo, `v` 0 (linha lateral) .. 1 (topo; >1 = cobertura).
+   */
+  const sidePoint = (sign, u, v) => {
+    const y = PITCH_TOP + u * PITCH_H;
+    const h = sideH * (1 + (SIDE_NEAR - 1) * u);
+    return [400 + sign * (pitchHalf(y) + h * 0.45 * v), y - h * v];
+  };
+  const pts = (list) => list.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const sideRows = sideTier * 2;
+
+  /** Multidão da lateral: filas inclinadas, espaçamento a crescer para a câmara. */
+  const sideCrowd = (sign) => {
+    const dots = [];
+    const seed = sign < 0 ? 5000 : 7000;
+    let k = 0;
+    for (let r = 0; r < sideRows; r += 1) {
+      const v = (r + 0.5) / sideRows;
+      for (let u = 0.01 + (r % 2) * 0.01; u < 1; u += 0.022 * (1 + (SIDE_NEAR - 1) * u)) {
+        const [x, y] = sidePoint(sign, u, v);
+        if (x < -10 || x > W + 10) break;
+        if (hash01(seed + 999 + k * 4.31) > moodOcc) {
+          k += 1;
+          continue;
+        }
+        const g = 1 + (SIDE_NEAR - 1) * u;
+        dots.push(
+          <circle
+            key={`side-${seed}-${k}`}
+            cx={x}
+            cy={y}
+            r={(1 + hash01(seed + k * 7.3) * 0.8) * g}
+            fill={crowdFill(hash01(seed + Math.floor(u * 9) * 4.7 + r * 0.8), hash01(seed + k * 12.9898))}
+            opacity={0.7 + hash01(seed + k * 5.1) * 0.3}
+          />,
+        );
+        k += 1;
+      }
+    }
+    return dots;
   };
 
   // ── Relvado ─────────────────────────────────────────────────────
@@ -558,6 +614,9 @@ export const StadiumIllustration = memo(function StadiumIllustration({
           <stop offset="55%" stopColor="#000000" stopOpacity="0" />
           <stop offset="100%" stopColor="#000000" stopOpacity={night ? 0.3 : 0.12} />
         </radialGradient>
+        <clipPath id={gid("pitchClip")}>
+          <polygon points={`${400 - farHalf},${PITCH_TOP} ${400 + farHalf},${PITCH_TOP} ${W},${PITCH_BOT} 0,${PITCH_BOT}`} />
+        </clipPath>
         <filter id={gid("blur")}>
           <feGaussianBlur stdDeviation="2.5" />
         </filter>
@@ -774,6 +833,65 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       <rect x="0" y={PITCH_TOP} width={W} height={PITCH_H} fill={GRASS_BASE} />
       {stripePolys}
       <rect x="0" y={PITCH_TOP} width={W} height={PITCH_H} fill={url("pitchDepth")} />
+      {/* Bancadas laterais (mesma ondulação que os anéis no mood alto) */}
+      {sideTier > 0 && (
+        <g
+          className={moodBand === "high" ? "stadium-sway" : undefined}
+          style={moodBand === "high" ? { animationDuration: "1.15s" } : undefined}
+        >
+          {[-1, 1].map((sign) => (
+            <g key={`side-${sign}`}>
+              <polygon
+                points={pts([sidePoint(sign, 0, 0), sidePoint(sign, 1, 0), sidePoint(sign, 1, 1), sidePoint(sign, 0, 1)])}
+                fill={url("stand")}
+                stroke="#020617"
+                strokeOpacity="0.35"
+                strokeWidth="1.5"
+              />
+              {Array.from({ length: sideRows - 1 }, (_, r) => (r + 1) / sideRows).map((v) => (
+                <line
+                  key={`srow-${v}`}
+                  x1={sidePoint(sign, 0, v)[0]}
+                  y1={sidePoint(sign, 0, v)[1]}
+                  x2={sidePoint(sign, 1, v)[0]}
+                  y2={sidePoint(sign, 1, v)[1]}
+                  stroke="#020617"
+                  strokeWidth="0.8"
+                  opacity="0.18"
+                />
+              ))}
+              {sideCrowd(sign)}
+              {/* Cobertura lateral nos grandes */}
+              {sideTier >= 3 && (
+                <polygon
+                  points={pts([sidePoint(sign, 0, 1), sidePoint(sign, 1, 1), sidePoint(sign, 1, 1.3), sidePoint(sign, 0, 1.3)])}
+                  fill={url("roof")}
+                  stroke="#64748b"
+                  strokeOpacity="0.4"
+                />
+              )}
+              {/* Corrimão (cor do clube) e muro junto à linha lateral */}
+              <line
+                x1={sidePoint(sign, 0, 1)[0]}
+                y1={sidePoint(sign, 0, 1)[1]}
+                x2={sidePoint(sign, 1, 1)[0]}
+                y2={sidePoint(sign, 1, 1)[1]}
+                stroke={away}
+                strokeWidth="2.5"
+                opacity="0.9"
+              />
+              <line
+                x1={sidePoint(sign, 0, 0)[0]}
+                y1={PITCH_TOP}
+                x2={sidePoint(sign, 1, 0)[0]}
+                y2={PITCH_BOT}
+                stroke={CONCRETE_HI}
+                strokeWidth="3"
+              />
+            </g>
+          ))}
+        </g>
+      )}
       {/* Poças de luz dos focos (só à noite) */}
       {night &&
         [210, 400, 590].map((x) => (
@@ -807,8 +925,10 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         </g>
       ))}
       {/* ── Faroeste: rolos de palha no relvado (só mood em baixo) ── */}
-      {moodBand === "low" &&
-        weedRows.map((wy, w) => (
+      {moodBand === "low" && (
+        // Recortados ao relvado: não rolam por cima das bancadas laterais.
+        <g clipPath={url("pitchClip")}>
+        {weedRows.map((wy, w) => (
           <g key={`weed-${w}`} className={`stadium-weed stadium-weed-${w}`}>
             {/* Posição de repouso no meio do relvado: com movimento
                 reduzido a animação não corre e o rolo tinha de ficar
@@ -825,9 +945,11 @@ export const StadiumIllustration = memo(function StadiumIllustration({
             </g>
           </g>
         ))}
+        </g>
+      )}
 
       {/* Linha de meio-campo + círculo central */}
-      <line x1="10" y1="212" x2="790" y2="212" stroke="#f8fafc" strokeWidth="1.8" opacity="0.7" />
+      <line x1={400 - pitchHalf(212)} y1="212" x2={400 + pitchHalf(212)} y2="212" stroke="#f8fafc" strokeWidth="1.8" opacity="0.7" />
       <ellipse cx={400} cy={212} rx={52} ry={11} fill="none" stroke="#f8fafc" strokeWidth="1.8" opacity="0.8" />
       <circle cx={400} cy={212} r={2.5} fill="#f8fafc" opacity="0.9" />
 
