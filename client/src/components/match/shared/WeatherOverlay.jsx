@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { createPortal } from "react-dom";
 
 /* Emoji do evento `weather` → condição (o evento só transporta o emoji). */
 const EMOJI_TO_CONDITION = {
@@ -17,7 +18,7 @@ const PARTICLES = {
   chuva_forte: { n: 80, kind: "wx-rain wx-rain-heavy" },
   neve: { n: 46, kind: "wx-snow" },
   frio: { n: 14, kind: "wx-snow wx-snow-sparse" },
-  vento: { n: 16, kind: "wx-gust" },
+  vento: { n: 22, kind: "wx-gust" },
   nevoeiro: { n: 5, kind: "wx-fog" },
 };
 
@@ -33,9 +34,10 @@ function seeded(i, salt) {
  * @param {Object} props
  * @param {string} [props.emoji] Emoji do evento `weather`.
  * @param {string} [props.condition] Condição direta (sobrepõe o emoji).
+ * @param {boolean} [props.fullscreen] Cobre a página inteira (portal fixo no body).
  * @returns {JSX.Element|null}
  */
-export function WeatherOverlay({ emoji, condition }) {
+export function WeatherOverlay({ emoji, condition, fullscreen = false }) {
   const cond = condition || EMOJI_TO_CONDITION[emoji];
   const spec = PARTICLES[cond];
   const items = useMemo(() => {
@@ -51,10 +53,10 @@ export function WeatherOverlay({ emoji, condition }) {
 
   if (!cond) return null;
 
-  return (
+  const layer = (
     <div
       aria-hidden="true"
-      className={`wx-layer wx-${cond} absolute inset-0 pointer-events-none overflow-hidden z-20`}
+      className={`wx-layer wx-${cond} ${fullscreen ? "fixed z-30" : "absolute z-20"} inset-0 pointer-events-none overflow-hidden`}
     >
       {items.map((p, i) => (
         <span
@@ -71,4 +73,5 @@ export function WeatherOverlay({ emoji, condition }) {
       ))}
     </div>
   );
+  return fullscreen ? createPortal(layer, document.body) : layer;
 }

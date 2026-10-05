@@ -750,11 +750,14 @@ body {
   background: rgba(255, 255, 255, 0.85);
 }
 .wx-snow-sparse { opacity: 0.55; }
+.wx-vento { background: linear-gradient(100deg, rgba(200, 215, 230, 0.06), transparent 60%); }
 .wx-gust {
   position: absolute;
-  width: calc(36px * var(--wx-size, 1));
-  height: 1px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+  width: calc(120px * var(--wx-size, 1));
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.45) 60%, transparent);
+  opacity: 0.6;
 }
 .wx-fog {
   position: absolute;
@@ -771,7 +774,14 @@ body {
   50% { transform: translate(14px, 60vh); }
   100% { transform: translate(-6px, 120vh); }
 }
-@keyframes wx-blow { to { transform: translateX(160%); } }
+/* Rajada atravessa a camada toda com ligeira ondulação e fade nas pontas. */
+@keyframes wx-blow {
+  0% { transform: translate(-30vw, 0); opacity: 0; }
+  15% { opacity: 0.7; }
+  50% { transform: translate(50vw, -14px); }
+  85% { opacity: 0.7; }
+  100% { transform: translate(130vw, 8px); opacity: 0; }
+}
 @keyframes wx-fog-drift {
   0%, 100% { transform: translateX(-6%); }
   50% { transform: translateX(6%); }
@@ -791,8 +801,8 @@ body {
     animation: wx-drift calc(var(--wx-dur) * 9s) linear infinite;
   }
   .wx-gust {
-    left: -40px !important;
-    animation: wx-blow calc(var(--wx-dur) * 2.2s) linear infinite;
+    left: 0 !important;
+    animation: wx-blow calc(var(--wx-dur) * 3s) ease-in-out infinite;
   }
   .wx-fog { animation: wx-fog-drift 14s ease-in-out infinite; }
   .wx-chuva_forte::after {
