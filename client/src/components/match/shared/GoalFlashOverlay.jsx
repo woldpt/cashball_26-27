@@ -89,8 +89,8 @@ export function GoalFlashOverlay({
   variant = "page",
 }) {
   // Fila de momentos (um por golo) + o que está no ecrã é sempre a cabeça.
-  // Sem fila, dois golos no mesmo minuto colapsavam num só festejo: o
-  // efeito só via o timestamp máximo (`bestTs`) e consumia-o de vez.
+  // Os golos da mesma batch (mesmo minuto) encadeiam-se; um golo novo
+  // substitui o festejo em curso em vez de esperar pela vez dele.
   const [moments, setMoments] = useState([]); // [{ mine, side, ts, seq, word }]
   const consumedRef = useRef({ home: { ts: 0, n: 0 }, away: { ts: 0, n: 0 } });
   const seqRef = useRef(0);
@@ -116,7 +116,7 @@ export function GoalFlashOverlay({
           : INTERJECTIONS[lossRef.current++ % INTERJECTIONS.length],
       };
     });
-    setMoments((q) => [...q, ...stamped]);
+    setMoments(stamped);
   }, [
     goalFlashRef,
     homeId,
