@@ -364,9 +364,14 @@ export async function ensureNpcStaff(game: ActiveGame): Promise<void> {
     if (humanTeamIds.has(team.id)) continue;
     const division = Number(team.division ?? 4);
     if (division === 5) continue;
-    const level = STAFF_NPC_LEVEL_BY_DIVISION[division] ?? 1;
-    const cost = staffSigningFee(level);
-    if ((team.budget || 0) < cost * NPC_HIRE_RESERVE) continue;
+    // Nível base da divisão, ±1 consoante a folga de tesouraria.
+    const base = STAFF_NPC_LEVEL_BY_DIVISION[division] ?? 1;
+    const budget = team.budget || 0;
+    const affordable = (lvl: number) => budget >= staffSigningFee(lvl) * NPC_HIRE_RESERVE;
+    const level = budget >= staffSigningFee(base + 1) * NPC_HIRE_RESERVE * 2
+      ? Math.min(STAFF_MAX_LEVEL - 1, base + 1)
+      : affordable(base) ? base : base - 1;
+    if (level < 1 || !affordable(level)) continue;
 
     const rows = await dbAllAsync<{ role: string }>(
       game.db,
@@ -374,8 +379,10 @@ export async function ensureNpcStaff(game: ActiveGame): Promise<void> {
       [team.id],
     ).catch(() => []);
     if ((rows?.length ?? 0) >= STAFF_SLOTS) continue;
-    const role = STAFF_ROLES.find((r) => !(rows || []).some((row) => row.role === r));
-    if (!role) continue;
+    // Papel ao acaso entre os livres: sem isto nenhum NPC tinha médico.
+    const free = STAFF_ROLES.filter((r) => !(rows || []).some((row) => row.role === r));
+    if (free.length === 0) continue;
+    const role = pick(free);
     await hireStaff(game, team.id, role, level);
   }
 }
