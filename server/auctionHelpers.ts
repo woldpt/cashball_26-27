@@ -434,7 +434,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       );
       await runExec(
         game.db,
-        `UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ?`,
+        `UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ?`,
         [
           buyerTeamId,
           signingWage(player),

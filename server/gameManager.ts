@@ -1724,7 +1724,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                               const seasonEndMw = getSeasonEndMatchweek(game.matchweek || 1);
                               await runExec(
                                 db,
-                                "UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=?",
+                                "UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, morale = MIN(50, morale + 8), transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=?",
                                 [buyerTeamId, signingWage(player), seasonEndMw, currentEpoch(game as any), game.matchweek, game.matchweek, pid],
                               );
                               await runExec(db, "COMMIT");
