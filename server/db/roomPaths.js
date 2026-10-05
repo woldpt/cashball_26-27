@@ -2,9 +2,8 @@
  * roomPaths.js — Localização dos ficheiros de sala (`game_<ROOM>.db`).
  *
  * Layout: `saves/<criador>/game_<ROOM>.db` (pasta por criador da sala).
- * Ficheiros antigos no `db/` legado continuam a ser encontrados
- * (compatibilidade + migração) — o `findRoomDbFile` procura no diretório
- * dado: raiz primeiro, depois subpastas (um nível).
+ * `findRoomDbFile` procura no diretório dado: raiz primeiro, depois
+ * subpastas (um nível).
  *
  * CommonJS de propósito: é exigido tanto por TypeScript (`gameManager`,
  * `index`, scripts via tsx) como por JS puro (`auth.js`).
@@ -14,7 +13,7 @@
 const fs = require("fs");
 const path = require("path");
 
-// Pasta de salas cujo criador é desconhecido (salas legado sem `roomCreator`).
+// Pasta de salas cujo criador é desconhecido (sem `roomCreator`).
 const OWNERLESS_DIR = "_sem-dono";
 
 /**
@@ -30,7 +29,7 @@ function savesDirFor(dbDir) {
 /**
  * Move um ficheiro, com fallback para copiar+apagar quando origem e destino
  * estão em filesystems diferentes (EXDEV — ex.: /app/db e /app/saves são
- * volumes separados no docker). Usado pela migração de salas e pelo rename.
+ * volumes separados no docker). Usado pelo rename de salas.
  */
 function movePath(src, dest) {
   try {
@@ -71,7 +70,7 @@ function creatorDbPath(dbDir, roomCode, creatorName) {
 }
 
 /**
- * Localiza o ficheiro de uma sala: raiz primeiro (legado), depois
+ * Localiza o ficheiro de uma sala: raiz primeiro, depois
  * subpastas (um nível, ordem alfabética para determinismo).
  * Devolve o caminho completo ou `null`.
  */

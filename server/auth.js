@@ -101,15 +101,13 @@ const {
 } = require("./db/roomPaths");
 
 // Diretório de saves (server/saves/) — irmão do diretório das bases.
-// Caminho do ficheiro de uma sala (saves/<criador>/game_<ROOM>.db, com
-// fallback ao legado em db/ para salas ainda não migradas ou inexistentes).
+// Caminho do ficheiro de uma sala (saves/<criador>/game_<ROOM>.db).
 function savesDir() {
 	return savesDirFor(path.dirname(DB_PATH));
 }
 function roomDbPath(roomCode) {
 	return (
 		findRoomDbFile(savesDir(), roomCode) ??
-		findRoomDbFile(path.dirname(DB_PATH), roomCode) ??
 		path.join(savesDir(), `game_${roomCode}.db`)
 	);
 }

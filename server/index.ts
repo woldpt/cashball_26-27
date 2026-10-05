@@ -31,7 +31,6 @@ const {
 	closeAllDatabases,
 	flushAllGameStates,
 	activeGames,
-	migrateLegacyRoomDbsToCreatorFolders,
 } = require("./gameManager") as typeof import("./gameManager");
 const {
 	findRoomDbFile,
@@ -164,15 +163,13 @@ function resolveDbDir() {
 }
 
 // Diretório de saves (server/saves/) — irmão do diretório das bases.
-// Caminho do ficheiro de uma sala (saves/<criador>/game_<ROOM>.db, com
-// fallback ao legado em db/ para salas ainda não migradas ou inexistentes).
+// Caminho do ficheiro de uma sala (saves/<criador>/game_<ROOM>.db).
 function savesDir(): string {
 	return savesDirFor(resolveDbDir());
 }
 function roomDbPath(roomCode: string): string {
 	return (
 		findRoomDbFile(savesDir(), roomCode) ??
-		findRoomDbFile(resolveDbDir(), roomCode) ??
 		path.join(savesDir(), `game_${roomCode}.db`)
 	);
 }
@@ -460,11 +457,7 @@ app.get("/saves", apiLimiter, async (req, res) => {
 		const sessionName = await getSessionNameFromReq(req);
 		if (!sessionName) return res.json([]);
 
-		const seen = new Set([
-			...listRoomCodes(savesDir()),
-			...listRoomCodes(resolveDbDir()),
-		]);
-		const allSaves = [...seen];
+		const allSaves = listRoomCodes(savesDir());
 
 		const managerName = sessionName;
 		const mySaves = await getManagerRooms(managerName);
@@ -689,9 +682,7 @@ app.get("/auth/manager-info", apiLimiter, async (req, res) => {
 		const rooms = await Promise.all(
 			result.info.rooms
 				.filter(
-					(code) =>
-						findRoomDbFile(savesDir(), code) ||
-						findRoomDbFile(resolveDbDir(), code),
+					(code) => findRoomDbFile(savesDir(), code),
 				)
 				.map(async (code) => {
 					const [info, coaches, allCoaches, roomCreator] =
@@ -1456,202 +1447,6 @@ validateEnvVars();
 // Web Push: poda o throttle antigo e diz no log se está pronto (inerte com
 // ENABLE_PUSH desligada). Fire-and-forget — o arranque não espera pelo push.
 initPush();
-
-// Migration: ensure resistance column exists for all players
-const db = require("./db/database.js");
-db.run(
-	`ALTER TABLE players ADD COLUMN resistance INTEGER DEFAULT 26`,
-	(err: any) => {
-		if (err && err.message && !err.message.includes("duplicate column name")) {
-			console.warn("[migration] resistance column:", err.message);
-		}
-	},
-);
-
-// Migrations for training accumulators (skill/resistance need fractional progress
-// because the underlying columns are INTEGER and +0.5/+0.2 would otherwise truncate)
-const trainingMigrations: Array<{ sql: string; label: string }> = [
-	{
-		sql: `ALTER TABLE players ADD COLUMN training_skill_progress REAL DEFAULT 0`,
-		label: "training_skill_progress",
-	},
-	{
-		sql: `ALTER TABLE players ADD COLUMN training_resistance_progress REAL DEFAULT 0`,
-		label: "training_resistance_progress",
-	},
-	{
-		sql: `ALTER TABLE team_training ADD COLUMN applied INTEGER DEFAULT 0`,
-		label: "team_training.applied",
-	},
-	{
-		sql: `ALTER TABLE training_player_history ADD COLUMN delta REAL NOT NULL DEFAULT 0`,
-		label: "training_player_history.delta",
-	},
-	{
-		sql: `ALTER TABLE training_player_history ADD COLUMN focus TEXT`,
-		label: "training_player_history.focus",
-	},
-	{
-		sql: `ALTER TABLE players ADD COLUMN transfer_cooldown_until_matchweek INTEGER DEFAULT 0`,
-		label: "players.transfer_cooldown_until_matchweek",
-	},
-	{
-		sql: `ALTER TABLE palmares ADD COLUMN player_id INTEGER`,
-		label: "palmares.player_id",
-	},
-];
-for (const m of trainingMigrations) {
-	db.run(m.sql, (err: any) => {
-		if (
-			err &&
-			err.message &&
-			!err.message.includes("duplicate column name") &&
-			!err.message.includes("no such table")
-		) {
-			console.warn(`[migration] ${m.label}:`, err.message);
-		}
-	});
-}
-
-// Migration: ticket_revenue por jogo (receita faturada à altura, não recalculada
-// ao preço atual). Sem DEFAULT: linhas antigas ficam NULL e o painel usa fallback.
-for (const m of [
-  {
-    sql: `ALTER TABLE matches ADD COLUMN ticket_revenue INTEGER`,
-    label: "matches.ticket_revenue",
-  },
-  {
-    sql: `ALTER TABLE cup_matches ADD COLUMN ticket_revenue INTEGER`,
-    label: "cup_matches.ticket_revenue",
-  },
-]) {
-  db.run(m.sql, (err: any) => {
-    if (
-      err &&
-      err.message &&
-      !err.message.includes("duplicate column name") &&
-      !err.message.includes("no such table")
-    ) {
-      console.warn(`[migration] ${m.label}:`, err.message);
-    }
-  });
-}
-
-// Migration: player_skill_snapshots table
-db.run(
-	`CREATE TABLE IF NOT EXISTS player_skill_snapshots (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  player_id INTEGER NOT NULL,
-  matchweek INTEGER NOT NULL,
-  season INTEGER NOT NULL,
-  skill INTEGER NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY(player_id) REFERENCES players(id)
-)`,
-	(err: any) => {
-		if (err) console.warn("[migration] player_skill_snapshots table:", err.message);
-	},
-);
-db.run(
-	`CREATE INDEX IF NOT EXISTS idx_skill_snapshots_player ON player_skill_snapshots(player_id, season, matchweek)`,
-	(err: any) => {
-		if (err) console.warn("[migration] player_skill_snapshots index:", err.message);
-	},
-);
-
-// Migration: transfer_history table (histórico de transferências concluídas)
-db.run(
-	`CREATE TABLE IF NOT EXISTS transfer_history (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  player_id INTEGER,
-  player_name TEXT NOT NULL,
-  position TEXT,
-  skill INTEGER,
-  is_star INTEGER DEFAULT 0,
-  photo TEXT,
-  seller_team_id INTEGER,
-  seller_team_name TEXT,
-  buyer_team_id INTEGER,
-  buyer_team_name TEXT,
-  amount INTEGER NOT NULL,
-  source TEXT NOT NULL,
-  matchweek INTEGER,
-  year INTEGER DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)`, 
-	(err: any) => {
-		if (err) console.warn("[migration] transfer_history table:", err.message);
-	},
-);
-db.run(
-	`CREATE INDEX IF NOT EXISTS idx_transfer_history_year_created ON transfer_history(year, created_at)`,
-	(err: any) => {
-		if (err) console.warn("[migration] transfer_history index:", err.message);
-	},
-);
-
-// Migration: match_moms table (Jogador do Jogo por equipa/partida — Jornal Global)
-db.run(
-	`CREATE TABLE IF NOT EXISTS match_moms (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  season INTEGER NOT NULL,
-  competition TEXT NOT NULL,
-  matchweek INTEGER,
-  round INTEGER,
-  team_id INTEGER NOT NULL,
-  player_id INTEGER NOT NULL,
-  player_name TEXT NOT NULL,
-  score INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY(team_id) REFERENCES teams(id),
-  FOREIGN KEY(player_id) REFERENCES players(id)
-)`,
-	(err: any) => {
-		if (err) console.warn("[migration] match_moms table:", err.message);
-	},
-);
-db.run(
-	`CREATE UNIQUE INDEX IF NOT EXISTS idx_match_moms_unique ON match_moms(season, competition, matchweek, round, team_id)`,
-	(err: any) => {
-		if (err) console.warn("[migration] match_moms unique index:", err.message);
-	},
-);
-db.run(
-	`CREATE INDEX IF NOT EXISTS idx_match_moms_season ON match_moms(season, competition)`,
-	(err: any) => {
-		if (err) console.warn("[migration] match_moms season index:", err.message);
-	},
-);
-
-// Migration: team_balance_history (saldo real de fim de semana por equipa)
-db.run(
-	`CREATE TABLE IF NOT EXISTS team_balance_history (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  team_id INTEGER NOT NULL,
-  season INTEGER NOT NULL,
-  slot INTEGER NOT NULL,
-  matchweek INTEGER,
-  year INTEGER DEFAULT 0,
-  balance INTEGER NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY(team_id) REFERENCES teams(id)
-)`,
-	(err: any) => {
-		if (err) console.warn("[migration] team_balance_history table:", err.message);
-	},
-);
-db.run(
-	`CREATE UNIQUE INDEX IF NOT EXISTS idx_balance_history_unique ON team_balance_history(season, slot, team_id)`,
-	(err: any) => {
-		if (err) console.warn("[migration] balance_history unique index:", err.message);
-	},
-);
-
-// Migração one-shot das salas do db/ legado para saves/<criador>/ (idempotente).
-try {
-	migrateLegacyRoomDbsToCreatorFolders(resolveDbDir());
-} catch (err) {
-	console.error("[migração] Falha na migração das salas:", err.message);
-}
 
 const PORT = Number(process.env.PORT) || 3000;
 server.listen(PORT, () => {
