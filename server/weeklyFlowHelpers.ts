@@ -5,6 +5,7 @@ import {
   maybeNotifyWaiting,
 } from "./push";
 import type { CalendarEntry } from "./gameConstants";
+import { CUP_FINAL_ROUND } from "./gameConstants";
 import { SPONSOR_SECOND_TRANCHE_SLOT, sponsorById } from "./game/sponsors";
 import {
   emitCmNews,
@@ -1405,7 +1406,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           if (
             entry?.type === "league" &&
             (game.currentEvent as any)?.type === "cup" &&
-            (game.currentEvent as any)?.round === 5
+            (game.currentEvent as any)?.round === CUP_FINAL_ROUND
           ) {
             logLeagueFinalStandings(game, completedMatchweek).catch((standErr: any) =>
               console.error(

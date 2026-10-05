@@ -164,6 +164,6 @@ export const SHOWCASE_HEADLINES = [
  */
 export const SHOWCASE_WIDGETS = [
 	{ label: "Orçamento", value: "€4,2M", sub: "para gerir", accentClass: "border-primary" },
-	{ label: "Jornada", value: "9/14", sub: "época em curso", accentClass: "border-tertiary" },
+	{ label: "Jornada", value: "9/18", sub: "época em curso", accentClass: "border-tertiary" },
 	{ label: "Treinadores", value: "8", sub: "na tua liga", accentClass: "border-blue-400" },
 ];

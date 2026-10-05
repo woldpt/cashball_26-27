@@ -1,15 +1,15 @@
-import { SEASON_CALENDAR } from "../constants/index.js";
+import { SEASON_CALENDAR, SEASON_WEEKS } from "../constants/index.js";
 
 /**
  * Utilitários para o histórico de skill de um jogador.
  *
  * Cada ponto do histórico tem `{ matchweek, season, skill }`, onde `matchweek`
- * é o slot de calendário 1-based (1..20: amigável, 14 jornadas, 5 rondas da Taça).
+ * é o slot de calendário 1-based (1..25: amigável, 18 jornadas, 6 rondas da Taça).
  * O eixo X do gráfico usa uma escala contínua de épocas:
- * `epoch = (season - 1) * 20 + slot`.
+ * `epoch = (season - 1) * SEASON_WEEKS + slot`.
  */
 
-const SLOTS_PER_SEASON = 20;
+const SLOTS_PER_SEASON = SEASON_WEEKS;
 
 /**
  * Converte `{ matchweek, season }` em um índice contínuo de semanas (1-based).
@@ -26,7 +26,7 @@ export function skillEpoch(point) {
 /**
  * Rótulo curto de um slot de calendário: "J4" (liga), "T2" (Taça), "Pré" (amigável).
  *
- * @param {number} slot slot 1-based (1..20)
+ * @param {number} slot slot 1-based (1..SEASON_WEEKS)
  * @returns {string}
  */
 function slotShortLabel(slot) {

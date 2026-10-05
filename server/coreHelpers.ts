@@ -7,6 +7,8 @@ import {
   SEASON_CALENDAR,
   fairWeeklyWage,
   staffAttendanceMult,
+  SEASON_WEEKS,
+  CUP_FINAL_ROUND,
 } from "./gameConstants";
 import { getWeatherForFixture } from "./game/matchCalculations";
 import { sponsorById, sponsorShortName } from "./game/sponsors";
@@ -69,11 +71,11 @@ const refereeNames = [
 ];
 
 export function getSeasonEndMatchweek(matchweek: number) {
-  return Math.ceil(Math.max(1, matchweek) / 20) * 20;
+  return Math.ceil(Math.max(1, matchweek) / SEASON_WEEKS) * SEASON_WEEKS;
 }
 
 /**
- * Slot actual 1-based (1..20) — o relógio único do jogo. Anda em todas as
+ * Slot actual 1-based (1..SEASON_WEEKS) — o relógio único do jogo. Anda em todas as
  * semanas (amigável, liga e taça); o matchweek só anda nas jornadas da liga.
  */
 export function currentSlot(game: ActiveGame): number {
@@ -118,7 +120,7 @@ export function slotLabel(slot: number): string {
 
 /**
  * Jogador com contrato em vigor (contract_start_epoch > 0) só é transferível
- * a partir do aniversário do contrato (start + 20 semanas). Epoch 0 = sem
+ * a partir do aniversário do contrato (start + 1 época). Epoch 0 = sem
  * contrato (free agent / seed) → transferível de imediato.
  */
 export function isContractLocked(
@@ -134,7 +136,7 @@ export function isContractLocked(
  * Constrói o histórico de skill a partir dos snapshots (player_skill_snapshots)
  * e anexa o valor actual, preservando SEMPRE a época.
  *
- * O `matchweek` dos snapshots é o slot de calendário por época (1..20). Descartar a
+ * O `matchweek` dos snapshots é o slot de calendário por época (1..SEASON_WEEKS). Descartar a
  * `season` fazia os pontos da época actual colidirem nos mesmos X da época 1
  * no gráfico (linha em zigzag / últimos registos invisíveis).
  */
@@ -245,6 +247,25 @@ export function validatePositiveInt(val: unknown): number | null {
 export function validateNonNegativeInt(val: unknown): number | null {
   const n = Number(val);
   return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+/**
+ * Isentas dos 32 avos da Taça: a D1 inteira + as 4 melhores da D2 pela
+ * posição da época anterior (`last_season_rank`; na 1.ª época, sem
+ * histórico, pela média de skill do plantel).
+ */
+export async function getCupExemptTeamIds(db: any): Promise<number[]> {
+  const rows = await runAll<{ id: number }>(
+    db,
+    `SELECT id FROM teams WHERE division = 1
+     UNION ALL
+     SELECT id FROM (
+       SELECT t.id FROM teams t WHERE t.division = 2
+       ORDER BY t.last_season_rank IS NULL, t.last_season_rank,
+                (SELECT AVG(p.skill) FROM players p WHERE p.team_id = t.id) DESC, t.id
+       LIMIT 4)`,
+  );
+  return rows.map((r) => r.id);
 }
 
 export function runExec(
@@ -638,9 +659,9 @@ async function computeAttendance(
   if (competition === "cup" && ctx?.cupRound != null) {
     const cupMult = T.attendanceCupRoundMult[ctx.cupRound] ?? 1;
     mult *= cupMult;
-    if (ctx.cupRound >= 4)
+    if (ctx.cupRound >= CUP_FINAL_ROUND - 1)
       reasons.push({
-        label: ctx.cupRound === 5 ? "final da Taça" : "fase decisiva da Taça",
+        label: ctx.cupRound === CUP_FINAL_ROUND ? "final da Taça" : "fase decisiva da Taça",
         impact: Math.abs(cupMult - 1) + 0.2,
       });
   }

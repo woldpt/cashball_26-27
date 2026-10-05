@@ -1,5 +1,6 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { CUP_ROUND_NAMES, SEASON_CALENDAR, cupWeekFriendlyRound } from "./gameConstants";
+import { getCupExemptTeamIds } from "./coreHelpers";
+import { CUP_ROUND_NAMES, CUP_FINAL_ROUND, SEASON_CALENDAR, cupWeekFriendlyRound } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 type RunAll = <T extends AnyRow = AnyRow>(db: any, sql: string, params?: any[]) => Promise<T[]>;
@@ -27,18 +28,21 @@ export async function getCupWeekFriendlyStatus(
   if (!teamId || game.gamePhase !== "lobby") return null;
   const cur = SEASON_CALENDAR[game.calendarIndex];
   const next = SEASON_CALENDAR[game.calendarIndex + 1] as any;
-  if (cur?.type !== "league" || next?.type !== "cup" || next.round === 5) return null;
+  if (cur?.type !== "league" || next?.type !== "cup" || next.round === CUP_FINAL_ROUND) return null;
   const round: number = next.round;
-  // Ainda na Taça? Ronda 1: divisões 1-4; seguintes: vencedores da anterior.
+  // Ainda na Taça? Ronda 1: todas menos as isentas (essas folgam e podem
+  // marcar amigável); ronda 2: vencedores + isentas; seguintes: vencedores.
+  const exempt = round <= 2 ? await getCupExemptTeamIds(game.db) : [];
   const inCup =
     round === 1
-      ? await runAll(game.db, "SELECT id FROM teams WHERE id = ? AND division BETWEEN 1 AND 4", [teamId])
-      : await runAll(
+      ? !exempt.includes(Number(teamId))
+      : (round === 2 && exempt.includes(Number(teamId))) ||
+        (await runAll(
           game.db,
           "SELECT id FROM cup_matches WHERE season = ? AND round = ? AND played = 1 AND winner_team_id = ?",
           [game.season, round - 1, teamId],
-        );
-  if (inCup.length > 0) return null;
+        )).length > 0;
+  if (inCup) return null;
   const signed = await runAll(
     game.db,
     "SELECT id FROM cup_matches WHERE season = ? AND round = ? AND (home_team_id = ? OR away_team_id = ?)",

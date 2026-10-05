@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR, AWAY_TICKET_SHARE, slotForLeagueMatchweek, cupWeekFriendlyRound } from "./gameConstants";
+import { CUP_FINAL_ROUND, FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR, AWAY_TICKET_SHARE, slotForLeagueMatchweek, cupWeekFriendlyRound } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { persistMoms } from "./momHelpers";
 import { computeMatchRatings, persistLastRatings } from "./game/ratings";
@@ -596,7 +596,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       competition: "cup" as const,
       cupRound: cupRow.round,
       cupRoundName: cupEntry?.roundName ?? null,
-      venue: cupRow.round === 5 ? "Jamor" : isHome ? "Casa" : "Fora",
+      venue: cupRow.round === CUP_FINAL_ROUND ? "Jamor" : isHome ? "Casa" : "Fora",
       goalsFor,
       goalsAgainst,
       result,
@@ -875,7 +875,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       );
 
       const venue =
-        currentEntry.round === 5 ? "Jamor" : isHome ? "Casa" : "Fora";
+        currentEntry.round === CUP_FINAL_ROUND ? "Jamor" : isHome ? "Casa" : "Fora";
       const opponentSummary = await buildOpponentSummary(
         game,
         team.id,

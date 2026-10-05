@@ -20,13 +20,14 @@ import {
   recalcPlayerValue,
   remainingSubstitutions,
   incrementSubCount,
+  CUP_FINAL_ROUND,
 } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { emitCmNews, cmUpsetText } from "./cmNews";
 import { drawNpcChoice, drawOffers, drawOffersAny } from "./game/sponsors";
 import { generateAITactic } from "./game/matchCalculations";
 import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites, withJuniorGRs, ensureFullBench } from "./game/engine";
-import { getTeamsWithCoachNames, logClubNews, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory, currentSlot } from "./coreHelpers";
+import { getTeamsWithCoachNames, logClubNews, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory, currentSlot, getCupExemptTeamIds } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
@@ -91,13 +92,14 @@ export function pickTopScorerWinners(rows: TopScorerRow[] = []): TopScorerRow[] 
 
 /**
  * Prémio por ultrapassar cada eliminatória da Taça (ronda → €).
- * A final (ronda 5) não entra aqui: mantém o prémio próprio de 500K€.
+ * A final (CUP_FINAL_ROUND) não entra aqui: mantém o prémio próprio de 500K€.
  */
 const CUP_ROUND_PRIZE: Record<number, number> = {
-	1: 25000,
-	2: 50000,
-	3: 100000,
-	4: 200000,
+	1: 15000,
+	2: 25000,
+	3: 50000,
+	4: 100000,
+	5: 200000,
 };
 
 interface CupFlowDeps {
@@ -999,6 +1001,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			byDiv[Number(div)] = getStandingsRows(byDiv[Number(div)]);
 		}
 
+		// Posição global desta época (isenções da Taça na próxima).
+		await runAll(
+			game.db,
+			`UPDATE teams SET last_season_rank = CASE id ${Object.entries(byDiv)
+				.flatMap(([div, rows]) => rows.map((t: any, i: number) => `WHEN ${Number(t.id)} THEN ${(Number(div) - 1) * 100 + i + 1}`))
+				.join(" ")} END`,
+		);
+
 		const iLigaWinner = await payChampionPrizes(game, byDiv, year);
 
 		await paySponsorRevenue(game, allTeams, year);
@@ -1061,14 +1071,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		let teamIds: number[];
 
 		if (round === 1) {
-			const teams = await runAll(
-				game.db,
-				"SELECT id FROM teams WHERE division BETWEEN 1 AND 4 ORDER BY id",
-			);
-			teamIds = teams.map((team: any) => team.id);
+			// 32 avos: todas as divisões (Distritais incluídos) menos as isentas.
+			const exempt = new Set(await getCupExemptTeamIds(game.db));
+			const teams = await runAll(game.db, "SELECT id FROM teams ORDER BY id");
+			teamIds = teams.map((team: any) => team.id).filter((id: number) => !exempt.has(id));
 			if (teamIds.length !== CUP_TEAMS_BY_ROUND[1]) {
 				throw new Error(
-					`Cup round ${round} expected ${CUP_TEAMS_BY_ROUND[1]} teams from divisions 1-4, got ${teamIds.length}`,
+					`Cup round ${round} expected ${CUP_TEAMS_BY_ROUND[1]} teams, got ${teamIds.length}`,
 				);
 			}
 		} else {
@@ -1078,6 +1087,18 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				[season, round - 1],
 			);
 			teamIds = prevRound.map((row: any) => row.winner_team_id).filter(Boolean);
+			// 16 avos: entram as isentas = quem não jogou os 32 avos (derivado
+			// da BD — durável a crashes, mesmo que as divisões mudem a meio).
+			if (round === 2) {
+				const exempt = await runAll(
+					game.db,
+					`SELECT id FROM teams WHERE id NOT IN (
+					   SELECT home_team_id FROM cup_matches WHERE season = ? AND round = 1
+					   UNION SELECT away_team_id FROM cup_matches WHERE season = ? AND round = 1)`,
+					[season, season],
+				);
+				teamIds.push(...exempt.map((row: any) => row.id));
+			}
 			const expectedTeams = CUP_TEAMS_BY_ROUND[round] || 0;
 			if (teamIds.length !== expectedTeams) {
 				throw new Error(
@@ -1087,7 +1108,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// Fisher-Yates shuffle (skip for finals — neutral ground)
-		if (round !== 5) {
+		if (round !== CUP_FINAL_ROUND) {
 			for (let i = teamIds.length - 1; i > 0; i--) {
 				const j = Math.floor(Math.random() * (i + 1));
 				[teamIds[i], teamIds[j]] = [teamIds[j], teamIds[i]];
@@ -1342,13 +1363,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// Amigáveis dos eliminados correm na mesma ronda (ronda 0 em memória).
-		const friendlies = round === 5 ? [] : await prepareCupWeekFriendlies(game, round);
+		const friendlies = round === CUP_FINAL_ROUND ? [] : await prepareCupWeekFriendlies(game, round);
 		game.currentFixtures = [...enrichedFixtures, ...friendlies];
 		game.currentEvent = SEASON_CALENDAR[game.calendarIndex];
 		game.cupHalftimePayload = null;
 
-		// Skip draw animation for the final (round 5) — fixtures are set silently
-		if (round === 5) return;
+		// Skip draw animation for the final — fixtures are set silently
+		if (round === CUP_FINAL_ROUND) return;
 
 		if (!isLobby) {
 			// Crash recovery during active match: mark as seen, skip the popup
@@ -2291,7 +2312,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				),
 			});
 
-			if (round === 5) {
+			if (round === CUP_FINAL_ROUND) {
 				const winnerTeam = await runGet(
 					game.db,
 					"SELECT name FROM teams WHERE id = ?",
@@ -2481,7 +2502,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				results: fallbackResults,
 				season,
 				matchweek: game.matchweek,
-				isFinal: round === 5,
+				isFinal: round === CUP_FINAL_ROUND,
 				upsets: [],
 				persistError: true,
 			};
@@ -2511,7 +2532,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			results,
 			season,
 			matchweek: game.matchweek,
-			isFinal: round === 5,
+			isFinal: round === CUP_FINAL_ROUND,
 			upsets,
 		};
 		if (hasAnyET) {

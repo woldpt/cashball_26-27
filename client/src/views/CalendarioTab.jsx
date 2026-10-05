@@ -1,6 +1,6 @@
 import { useMemo, memo, useState } from "react";
 import { motion } from "framer-motion";
-import { SEASON_CALENDAR, CUP_FINAL_STADIUM } from "../constants/index.js";
+import { SEASON_CALENDAR, CUP_FINAL_STADIUM, CUP_FINAL_ROUND } from "../constants/index.js";
 import { generateLeagueFixtures } from "../utils/fixtures.js";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
@@ -12,7 +12,6 @@ import { staggerItemProps } from "../motion.js";
 
 // Rondas com significado especial — o SEASON_CALENDAR não as nomeia.
 const FRIENDLY_ROUND = 0;
-const CUP_FINAL_ROUND = 5;
 
 // Desfecho → variante Badge (§5) + acento lateral + cor do marcador.
 // Um só mapa: antes misturava `error` com `red/emerald-500` hardcoded.

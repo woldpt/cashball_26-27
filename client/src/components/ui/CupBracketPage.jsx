@@ -6,13 +6,18 @@ import { TabBar } from "../shared/TabBar.jsx";
 
 const ROUND_NAMES = [
   "",
+  "32 avos de final",
   "16 avos de final",
   "Oitavos de final",
   "Quartos de final",
   "Meias-finais",
   "Final",
 ];
-const ROUND_SHORT = ["", "16 avos", "Oitavos", "Quartos", "Meias", "Final"];
+const ROUND_SHORT = ["", "32 avos", "16 avos", "Oitavos", "Quartos", "Meias", "Final"];
+const ROUND_KEYS = [1, 2, 3, 4, 5, 6];
+const QF_ROUND = 4;
+const SF_ROUND = 5;
+const FINAL_ROUND = 6;
 
 // ── Bracket layout constants (px) ──────────────────────────────────────────
 const BK_CARD_H = 60;
@@ -170,18 +175,18 @@ function BracketCard({ match, myTeamId, onOpenTeam }) {
   );
 }
 
-// ── Desktop bracket tree (rounds 3-5) ────────────────────────────────────────
+// ── Desktop bracket tree (quartos → final) ────────────────────────────────────────
 function BracketTree({ rounds, myTeamId, onOpenTeam }) {
   const qf = useMemo(
-    () => rounds.find((r) => r.round === 3)?.matches || [],
+    () => rounds.find((r) => r.round === QF_ROUND)?.matches || [],
     [rounds],
   );
   const sf = useMemo(
-    () => rounds.find((r) => r.round === 4)?.matches || [],
+    () => rounds.find((r) => r.round === SF_ROUND)?.matches || [],
     [rounds],
   );
   const fn = useMemo(
-    () => rounds.find((r) => r.round === 5)?.matches || [],
+    () => rounds.find((r) => r.round === FINAL_ROUND)?.matches || [],
     [rounds],
   );
 
@@ -558,15 +563,15 @@ export function CupBracketPage({
   }
 
   // Progress stat
-  const totalRounds = 5;
+  const totalRounds = ROUND_KEYS.length;
   const completedRounds = rounds.filter(
     (r) => r.matches?.length > 0 && r.matches.every((m) => m.played),
   ).length;
   const champion = (() => {
-    const fn = rounds.find((r) => r.round === 5);
+    const fn = rounds.find((r) => r.round === FINAL_ROUND);
     return fn ? winnerOf(fn.matches?.[0]) : null;
   })();
-  const hasQF = (rounds.find((r) => r.round === 3)?.matches?.length || 0) > 0;
+  const hasQF = (rounds.find((r) => r.round === QF_ROUND)?.matches?.length || 0) > 0;
 
   return (
     <div className="space-y-5">
@@ -616,7 +621,7 @@ export function CupBracketPage({
 
       {/* ── ROUND TABS ──────────────────────────────────────────────────────── */}
       <TabBar
-        tabs={[1, 2, 3, 4, 5].map((r) => {
+        tabs={ROUND_KEYS.map((r) => {
           const rd = rounds.find((x) => x.round === r);
           const hasData = (rd?.matches?.length || 0) > 0;
           const allPlayed = hasData && rd.matches.every((m) => m.played);
@@ -641,7 +646,7 @@ export function CupBracketPage({
             setSelectedRound(n);
           }
         }}
-        disabledKeys={[1, 2, 3, 4, 5]
+        disabledKeys={ROUND_KEYS
           .filter(
             (r) => (rounds.find((x) => x.round === r)?.matches?.length || 0) === 0,
           )

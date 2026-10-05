@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, WAGE_SEED_SPREAD, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
+import { SEASON_CALENDAR, LEAGUE_MATCHWEEKS, TEAMS_PER_DIVISION, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, WAGE_SEED_SPREAD, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
 import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec, serializeRoomTask, slimMatchResult } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { dealDisplaySponsors } from "./game/sponsors";
@@ -490,7 +490,7 @@ function deriveCalendarIndex(
     );
     if (cupEntry) return cupEntry.calendarIndex;
   }
-  const normMw = ((matchweek - 1) % 14) + 1;
+  const normMw = ((matchweek - 1) % LEAGUE_MATCHWEEKS) + 1;
   const leagueEntry = SEASON_CALENDAR.find(
     (e) => e.type === "league" && (e as any).matchweek === normMw,
   );
@@ -542,7 +542,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
       return null;
     }
     fs.copyFileSync(basePath, dbPath);
-    // --- Pool 60→40: sorteio por sala (8 por divisão, fixos garantidos) ---
+    // --- Pool 60→50: sorteio por sala (TEAMS_PER_DIVISION por divisão, fixos garantidos) ---
     try {
       const DatabaseSync: any = (() => {
         try {
@@ -574,7 +574,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
             const fixedNames = FIXED[d] || [];
             const fixed = pool.filter((t) => fixedNames.includes(t.name));
             const rest = pool.filter((t) => !fixedNames.includes(t.name));
-            const need = 8 - fixed.length;
+            const need = TEAMS_PER_DIVISION - fixed.length;
             if (pool.length !== 12) console.warn(`[gameManager] D${d} pool inesperado: ${pool.length} (esperado 12)`);
             if (need < 0) throw new Error(`Fixos a mais na D${d}`);
             const sampled = shuffle(rest).slice(0, need);
@@ -582,7 +582,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
           }
           const keepSet = new Set(keepIds);
           const dropIds = rows.filter((r) => !keepSet.has(r.id)).map((r) => r.id);
-          if (dropIds.length !== 20) console.warn(`[gameManager] drop esperado 20, obtido ${dropIds.length}`);
+          if (dropIds.length !== rows.length - 5 * TEAMS_PER_DIVISION) console.warn(`[gameManager] drop inesperado: ${dropIds.length}`);
           // Guardar manager_ids das equipas a remover para limpar chat_messages após delete de teams
           let dropManagerIds: number[] = [];
           if (dropIds.length) {
@@ -661,6 +661,8 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               "sponsor_weekly INTEGER DEFAULT 0",
               "sponsor_second_half INTEGER DEFAULT 0",
               "sponsor_paid_second INTEGER DEFAULT 0",
+              // Posição global da época anterior ((div-1)*100 + lugar) — isenções da Taça.
+              "last_season_rank INTEGER",
             ]) {
               try { tmp.exec(`ALTER TABLE teams ADD COLUMN ${col}`); } catch { /* já existe */ }
             }
@@ -668,7 +670,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
             const displayUpd = tmp.prepare("UPDATE teams SET sponsor_id = ?, sponsor_season = 0, sponsor_pending = 0 WHERE id = ?");
             for (const d of dealDisplaySponsors(displayTeams)) displayUpd.run(d.sponsorId, d.teamId);
           tmp.exec("COMMIT");
-          console.log(`[gameManager] Sala ${roomCode}: pool 60→40 filtrado (keep ${keepIds.length}, drop ${dropIds.length})`);
+          console.log(`[gameManager] Sala ${roomCode}: pool 60→50 filtrado (keep ${keepIds.length}, drop ${dropIds.length})`);
         } finally {
           try { tmp.exec("ROLLBACK"); } catch { /* COMMIT já executado */ }
           tmp.close();

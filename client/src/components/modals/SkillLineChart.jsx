@@ -7,11 +7,11 @@ import { buildSkillChartPoints } from "../../utils/skillHistory.js";
  * O número de pontos no gráfico depende dos dados disponíveis.
  * O eixo Y é dinâmico (mín/máx dos dados) para tornar a evolução legível.
  *
- * `matchweek` nos snapshots é o slot de calendário (1..20: amigável, 14
- * jornadas, 5 rondas da Taça). `buildSkillChartPoints` trata do epoch global
- * `(season - 1) * 20 + slot` (para pontos de épocas diferentes não colidirem
+ * `matchweek` nos snapshots é o slot de calendário (1..25: amigável, 18
+ * jornadas, 6 rondas da Taça). `buildSkillChartPoints` trata do epoch global
+ * `(season - 1) * SEASON_WEEKS + slot` (para pontos de épocas diferentes não colidirem
  * nos mesmos X), dos rótulos do calendário (J4 / T2 / Pré) e da janela: as
- * últimas 20 semanas (1 temporada) — os pontos mais antigos ficam ocultos.
+ * últimas SEASON_WEEKS semanas (1 temporada) — os pontos mais antigos ficam ocultos.
  *
  * @param {{ skillHistory: Array<{matchweek: number, season?: number, skill: number}>, skill: number, position: string }} props
  */
@@ -26,7 +26,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
     1,
   );
   // Ordenado por epoch global, sem pontos sem skill e já limitado à última
-  // temporada (janela de 20 slots do calendário).
+  // temporada (janela de SEASON_WEEKS slots do calendário).
   const cleanHistory = buildSkillChartPoints(skillHistory, currentSeason);
   // Rótulos largos (com ano) ⇒ espaçar mais o eixo X.
   const multiSeason = cleanHistory.some((p) => p.label.includes("·"));

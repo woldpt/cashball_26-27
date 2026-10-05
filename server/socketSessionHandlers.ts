@@ -1,7 +1,7 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, fetchTopScorers, logClubNews } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, FRIENDLY_ROUND_NAME, SEASON_CALENDAR } from "./gameConstants";
-import { drawOffers, drawOffersAny, sponsorById } from "./game/sponsors";
+import { drawOffers, drawOffersAny, sponsorById, SPONSOR_WEEKS } from "./game/sponsors";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
@@ -1672,7 +1672,7 @@ export function registerSessionSocketHandlers(
 				fg: brand.fg,
 				glyph: brand.glyph,
 				shape: brand.shape,
-				total: (Number(row?.sponsor_upfront) || 0) + (Number(row?.sponsor_weekly) || 0) * 20 + (Number(row?.sponsor_second_half) || 0),
+				total: (Number(row?.sponsor_upfront) || 0) + (Number(row?.sponsor_weekly) || 0) * SPONSOR_WEEKS + (Number(row?.sponsor_second_half) || 0),
 			} : null,
 		};
 	}

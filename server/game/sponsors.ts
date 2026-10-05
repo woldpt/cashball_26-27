@@ -7,13 +7,15 @@
  *
  * Perfis de pagamento (sobre a base da divisão):
  *   A "Tudo já"      → 100% no dia 1 (liquidez imediata para o mercado)
- *   B "Pinga-pinga"  → 120% em 20 semanas (6%/semana, melhor total)
- *   C "Meio-meio"    → 55% no dia 1 + 55% na semana 10 (total 110%)
+ *   B "Pinga-pinga"  → 120% numa época (~4,8%/semana, melhor total)
+ *   C "Meio-meio"    → 55% no dia 1 + 55% na semana 13 (total 110%)
  *
  * Logotipos: gerados por `sponsorLogo()` a partir de formas geométricas
  * puras (sem `clipPath`, regra do projeto) — o cliente renderiza a partir
  * dos mesmos parâmetros, sem duplicar o catálogo.
  */
+
+import { SEASON_WEEKS } from "../gameConstants";
 import { SPONSOR_REVENUE_BY_DIVISION } from "../gameConstants";
 
 export type SponsorProfile = "A" | "B" | "C";
@@ -49,9 +51,9 @@ export interface SponsorOffer {
 }
 
 /** Semana do calendário (0-based) em que cai a 2.ª tranche do perfil C. */
-export const SPONSOR_SECOND_TRANCHE_SLOT = 9;
+export const SPONSOR_SECOND_TRANCHE_SLOT = 12;
 /** N.º de semanas de pagamento do perfil B. */
-export const SPONSOR_WEEKS = 20;
+export const SPONSOR_WEEKS = SEASON_WEEKS;
 
 const S = (
 	id: string,

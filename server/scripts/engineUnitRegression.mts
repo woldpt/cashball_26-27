@@ -274,9 +274,9 @@ test("U8 — queueMatchDeltaWrites retém deltas até confirmar", async () => {
 });
 
 // ── U9 ──────────────────────────────────────────────────────────────────────
-test("U9 — isCupFinalRound: só a ronda 5", () => {
-  assert.equal(isCupFinalRound(5), true);
-  assert.equal(isCupFinalRound(4), false);
+test("U9 — isCupFinalRound: só a ronda 6", () => {
+  assert.equal(isCupFinalRound(6), true);
+  assert.equal(isCupFinalRound(5), false);
   assert.equal(isCupFinalRound(undefined), false);
 });
 

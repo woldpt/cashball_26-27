@@ -51,7 +51,7 @@ export const MAX_ATTENDANCE_BY_DIVISION: Record<number, number> = {
 
 /**
  * Manutenção semanal do estádio: custo por lugar por semana de jogo.
- * 1.5€ → um 120k custa ~3.6M€/época, um 10k ~300k€/época (20 semanas).
+ * 1.5€ → um 120k custa ~3.6M€/época, um 10k ~300k€/época (1 época).
  * Calibrado contra a sala FGPQH6 (Chaves: ~4.9M€ bilheteira/época).
  */
 export const STADIUM_UPKEEP_PER_SEAT_WEEK = 1.5;
@@ -155,6 +155,7 @@ export function signingWage(player: {
 
 export const CUP_ROUND_NAMES = [
   "",
+  "32 avos de final",
   "16 avos de final",
   "Oitavos de final",
   "Quartos de final",
@@ -162,13 +163,26 @@ export const CUP_ROUND_NAMES = [
   "Final",
 ];
 
+/**
+ * Ronda 1 (32 avos): 36 equipas (D2 fora do top-4, D3, D4 e Distritais).
+ * Ronda 2 (16 avos): 18 vencedores + 14 isentas (D1 inteira + top-4 da D2).
+ */
 export const CUP_TEAMS_BY_ROUND: Record<number, number> = {
-  1: 32,
-  2: 16,
-  3: 8,
-  4: 4,
-  5: 2,
+  1: 36,
+  2: 32,
+  3: 16,
+  4: 8,
+  5: 4,
+  6: 2,
 };
+/** A final da Taça (última ronda). */
+export const CUP_FINAL_ROUND = 6;
+/** Equipas por divisão em cada sala (sorteadas do pool de 12 da base.db). */
+export const TEAMS_PER_DIVISION = 10;
+/** Jornadas de liga por época (duas voltas). */
+export const LEAGUE_MATCHWEEKS = (TEAMS_PER_DIVISION - 1) * 2;
+/** Semanas por época = SEASON_CALENDAR.length (1 amigável + 18 liga + 6 taça). */
+export const SEASON_WEEKS = 1 + LEAGUE_MATCHWEEKS + CUP_FINAL_ROUND;
 
 export const SPONSOR_REVENUE_BY_DIVISION: Record<number, number> = {
   1: 2000000,
@@ -191,8 +205,8 @@ export const WEEKLY_BASE_INCOME: Record<number, number> = {
   5: 20000,
 };
 
-/** Número de eventos (semanas de jogo) por época = SEASON_CALENDAR.length (1 amigável + 14 liga + 5 taça). */
-export const NPC_SEASON_WEEKS = 20;
+/** Número de eventos (semanas de jogo) por época. */
+export const NPC_SEASON_WEEKS = SEASON_WEEKS;
 
 /**
  * Folha salarial semanal "de equilíbrio" (break-even) de uma divisão:
@@ -392,12 +406,12 @@ export const STADIUM_UPKEEP_EXEMPT_SEATS = 3000;
 export const AWAY_TICKET_SHARE = 0.15;
 
 /**
- * Duração de um contrato em slots de calendário (1 época = 20 semanas).
+ * Duração de um contrato em slots de calendário (1 época).
  * Um jogador contratado/renovado no slot X só pode ser transferido a
  * partir do slot X da época seguinte. Relógio único: os slots andam em
  * todas as semanas (amigável, liga e taça), não só nas jornadas da liga.
  */
-export const CONTRACT_LENGTH_WEEKS = 20;
+export const CONTRACT_LENGTH_WEEKS = SEASON_WEEKS;
 /** @deprecated alias antigo — usar CONTRACT_LENGTH_WEEKS. */
 export const CONTRACT_LENGTH_MATCHWEEKS = CONTRACT_LENGTH_WEEKS;
 
@@ -444,10 +458,10 @@ export const NPC_LIST_SQUAD_THRESHOLDS = [
 
 /**
  * Época absoluta (1-based) derivada de (season, slot).
- * O slot é 1-based (1..20) e reseta no fim de época — monótono por época.
+ * O slot é 1-based (1..SEASON_WEEKS) e reseta no fim de época — monótono por época.
  */
 export function contractEpoch(season: number, slot: number): number {
-  return (Math.max(1, season) - 1) * CONTRACT_LENGTH_WEEKS + Math.min(20, Math.max(1, slot));
+  return (Math.max(1, season) - 1) * CONTRACT_LENGTH_WEEKS + Math.min(SEASON_WEEKS, Math.max(1, slot));
 }
 
 /**
@@ -479,7 +493,7 @@ export const cupWeekFriendlyRound = (cupRound: number) => -cupRound;
 
 /**
  * Typed calendar entry — a league matchweek, a cup round or the pre-season friendly.
- * calendarIndex is the position in SEASON_CALENDAR (0-based, 0..19).
+ * calendarIndex is the position in SEASON_CALENDAR (0-based, 0..SEASON_WEEKS-1).
  * O amigável viaja no fio como taça (ronda 0): a vista live e o jornal
  * reutilizam o caminho da taça sem estados novos.
  */
@@ -492,33 +506,39 @@ export type CalendarEntry =
  * The single source of truth for season structure.
  * Each entry is one "game week" — the game plays exactly one event per entry.
  * League, cup and friendly NEVER run simultaneously.
- * 20 entries total: 1 pre-season friendly + 14 league matchweeks + 5 cup rounds.
+ * 25 entries total: 1 pre-season friendly + 18 league matchweeks + 6 cup rounds.
  */
 export const SEASON_CALENDAR: CalendarEntry[] = [
   { type: "friendly", round: 0, roundName: "Amigável de pré-época", calendarIndex: 0  },
   { type: "league", matchweek: 1,  calendarIndex: 1  },
   { type: "league", matchweek: 2,  calendarIndex: 2  },
   { type: "league", matchweek: 3,  calendarIndex: 3  },
-  { type: "cup",    round: 1, roundName: "16 avos de final", teamsIn: 32, calendarIndex: 4  },
+  { type: "cup",    round: 1, roundName: "32 avos de final", teamsIn: 36, calendarIndex: 4  },
   { type: "league", matchweek: 4,  calendarIndex: 5  },
   { type: "league", matchweek: 5,  calendarIndex: 6  },
   { type: "league", matchweek: 6,  calendarIndex: 7  },
-  { type: "cup",    round: 2, roundName: "Oitavos de final", teamsIn: 16, calendarIndex: 8  },
+  { type: "cup",    round: 2, roundName: "16 avos de final", teamsIn: 32, calendarIndex: 8  },
   { type: "league", matchweek: 7,  calendarIndex: 9  },
   { type: "league", matchweek: 8,  calendarIndex: 10 },
   { type: "league", matchweek: 9,  calendarIndex: 11 },
-  { type: "cup",    round: 3, roundName: "Quartos de final", teamsIn: 8,  calendarIndex: 12 },
+  { type: "cup",    round: 3, roundName: "Oitavos de final", teamsIn: 16, calendarIndex: 12 },
   { type: "league", matchweek: 10, calendarIndex: 13 },
   { type: "league", matchweek: 11, calendarIndex: 14 },
-  { type: "cup",    round: 4, roundName: "Meias-finais",     teamsIn: 4,  calendarIndex: 15 },
-  { type: "league", matchweek: 12, calendarIndex: 16 },
+  { type: "league", matchweek: 12, calendarIndex: 15 },
+  { type: "cup",    round: 4, roundName: "Quartos de final", teamsIn: 8,  calendarIndex: 16 },
   { type: "league", matchweek: 13, calendarIndex: 17 },
   { type: "league", matchweek: 14, calendarIndex: 18 },
-  { type: "cup",    round: 5, roundName: "Final",            teamsIn: 2,  calendarIndex: 19 },
+  { type: "league", matchweek: 15, calendarIndex: 19 },
+  { type: "cup",    round: 5, roundName: "Meias-finais",     teamsIn: 4,  calendarIndex: 20 },
+  { type: "league", matchweek: 16, calendarIndex: 21 },
+  { type: "league", matchweek: 17, calendarIndex: 22 },
+  { type: "league", matchweek: 18, calendarIndex: 23 },
+  { type: "cup",    round: 6, roundName: "Final",            teamsIn: 2,  calendarIndex: 24 },
 ];
+if (SEASON_CALENDAR.length !== SEASON_WEEKS) throw new Error("SEASON_CALENDAR fora de sincronia com SEASON_WEEKS");
 
 /**
- * Semana do calendário (1..20) de uma jornada da liga. `matchweek` não é uma
+ * Semana do calendário (1..SEASON_WEEKS) de uma jornada da liga. `matchweek` não é uma
  * data: repete-se nas semanas de Taça que o seguem (ver SEASON_CALENDAR).
  */
 export function slotForLeagueMatchweek(matchweek: number): number {
@@ -745,7 +765,7 @@ export const MATCH_TUNING = {
   fansShameMalus: -3, // perder com equipa de escalão inferior (vergonha)
   fansExpectedLossSoftener: 3, // derrota esperada com mais fortes dói menos
   fansDerbyMultiplier: 2, // dérbi (mesma divisão): emoções a dobrar
-  fansCupRoundMultiplier: { 1: 1, 2: 1.1, 3: 1.25, 4: 1.5, 5: 1.8 } as Record<number, number>,
+  fansCupRoundMultiplier: { 1: 1, 2: 1, 3: 1.1, 4: 1.25, 5: 1.5, 6: 1.8 } as Record<number, number>,
   // ── Assistências (calculateMatchAttendance) ──────────────────────────
   // Chão de fiéis por divisão: % da capacidade que aparece mesmo em crise.
   faithfulFloorByDivision: { 1: 0.35, 2: 0.3, 3: 0.25, 4: 0.22, 5: 0.2 } as Record<number, number>,

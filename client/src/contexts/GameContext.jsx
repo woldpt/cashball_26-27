@@ -18,6 +18,7 @@ import {
   MAX_BENCH_SIZE,
   TRANSFER_LISTED_PRICE_MULT,
   SEASON_CALENDAR,
+  SEASON_JORNADAS,
 } from "../constants/index.js";
 import { isPlayerAvailable } from "../utils/playerHelpers.js";
 import {
@@ -1655,9 +1656,9 @@ year: seasonYear,
 	const nextMatchOpponent = nextMatchSummary?.opponent || null;
 	const nextMatchReferee = nextMatchSummary?.referee || null;
 
-	const currentJornada = (matchweekCount % 14) + 1;
+	const currentJornada = (matchweekCount % SEASON_JORNADAS) + 1;
 	const completedJornada =
-		matchweekCount > 0 ? ((matchweekCount - 1) % 14) + 1 : 0;
+		matchweekCount > 0 ? ((matchweekCount - 1) % SEASON_JORNADAS) + 1 : 0;
 
 	const totalWeeklyWage = useMemo(
 		() => mySquad.reduce((acc, p) => acc + (p.wage || 0), 0),

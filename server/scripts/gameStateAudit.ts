@@ -3,13 +3,13 @@
  * Checks for budget inconsistencies, invalid squad compositions,
  * duplicate players, broken match phase transitions.
  *
- * Pool 60→40:
+ * Pool 60→50:
  *   - base.db é o template completo com 60 equipas (12/divisão, 5 divisões).
- *   - cada sala game_<ROOM>.db é filtrada para 40 equipas (8/divisão) via
+ *   - cada sala game_<ROOM>.db é filtrada para 50 equipas (10/divisão) via
  *     sorteio que preserva fixos (D1: Sporting/Porto/Benfica, D4: Juventudes).
- *   - o audit distingue os dois casos: base espera 12/divisão, sala espera 8/divisão.
+ *   - o audit distingue os dois casos: base espera 12/divisão, sala espera 10/divisão.
  *     Para retrocompatibilidade aceita 8 ou 12 em sala com warning (salas antigas
- *     sem pool_sampling). Valida também pool_sampling JSON (kept:40, dropped:20).
+ *     sem pool_sampling). Valida também pool_sampling JSON (kept:50, dropped:10).
  *
  * Usage:
  *   npx tsx server/scripts/gameStateAudit.ts <roomCode>   # game_<roomCode>.db
@@ -241,10 +241,10 @@ class GameStateAuditor {
     const counts = await this.runQuery<any>(
       "SELECT division, COUNT(*) c FROM teams GROUP BY division ORDER BY division",
     );
-    const expectedPerDivision = this.roomCode === "base" ? 12 : 8;
+    const expectedPerDivision = this.roomCode === "base" ? 12 : 10;
     for (const r of counts) {
       if (r.c !== expectedPerDivision) {
-        if ([8, 12].includes(r.c)) {
+        if ([8, 10, 12].includes(r.c)) {
           this.addIssue(
             "warning",
             "division",
@@ -293,7 +293,7 @@ class GameStateAuditor {
         this.addIssue(
           "warning",
           "pool_sampling",
-          "base.db não deve ter pool_sampling (só salas filtradas 60→40)",
+          "base.db não deve ter pool_sampling (só salas filtradas 60→50)",
           { value: String(rows[0]?.value || "").slice(0, 120) },
         );
       }
@@ -307,7 +307,7 @@ class GameStateAuditor {
         this.addIssue(
           "error",
           "pool_sampling",
-          "Sala com 60 equipas mas sem pool_sampling (estado quebrado — devia ter sido filtrada 60→40)",
+          "Sala com 60 equipas mas sem pool_sampling (estado quebrado — devia ter sido filtrada 60→50)",
           { total },
         );
       }
@@ -318,7 +318,7 @@ class GameStateAuditor {
       const parsed = JSON.parse(raw);
       if (typeof parsed.kept !== "number" || typeof parsed.dropped !== "number") {
         this.addIssue("error", "pool_sampling", "pool_sampling com tipos inválidos", parsed);
-      } else if (parsed.kept !== 40 || parsed.dropped !== 20) {
+      } else if (parsed.kept !== 50 || parsed.dropped !== 10) {
         this.addIssue(
           "error",
           "pool_sampling",

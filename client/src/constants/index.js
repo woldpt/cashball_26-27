@@ -378,22 +378,27 @@ export const SEASON_CALENDAR = [
 	{ type: "league", matchweek: 1, calendarIndex: 1 },
 	{ type: "league", matchweek: 2, calendarIndex: 2 },
 	{ type: "league", matchweek: 3, calendarIndex: 3 },
-	{ type: "cup", round: 1, roundName: "16 avos de final", calendarIndex: 4 },
+	{ type: "cup", round: 1, roundName: "32 avos de final", calendarIndex: 4 },
 	{ type: "league", matchweek: 4, calendarIndex: 5 },
 	{ type: "league", matchweek: 5, calendarIndex: 6 },
 	{ type: "league", matchweek: 6, calendarIndex: 7 },
-	{ type: "cup", round: 2, roundName: "Oitavos de final", calendarIndex: 8 },
+	{ type: "cup", round: 2, roundName: "16 avos de final", calendarIndex: 8 },
 	{ type: "league", matchweek: 7, calendarIndex: 9 },
 	{ type: "league", matchweek: 8, calendarIndex: 10 },
 	{ type: "league", matchweek: 9, calendarIndex: 11 },
-	{ type: "cup", round: 3, roundName: "Quartos de final", calendarIndex: 12 },
+	{ type: "cup", round: 3, roundName: "Oitavos de final", calendarIndex: 12 },
 	{ type: "league", matchweek: 10, calendarIndex: 13 },
 	{ type: "league", matchweek: 11, calendarIndex: 14 },
-	{ type: "cup", round: 4, roundName: "Meias-finais", calendarIndex: 15 },
-	{ type: "league", matchweek: 12, calendarIndex: 16 },
+	{ type: "league", matchweek: 12, calendarIndex: 15 },
+	{ type: "cup", round: 4, roundName: "Quartos de final", calendarIndex: 16 },
 	{ type: "league", matchweek: 13, calendarIndex: 17 },
 	{ type: "league", matchweek: 14, calendarIndex: 18 },
-	{ type: "cup", round: 5, roundName: "Final", calendarIndex: 19 },
+	{ type: "league", matchweek: 15, calendarIndex: 19 },
+	{ type: "cup", round: 5, roundName: "Meias-finais", calendarIndex: 20 },
+	{ type: "league", matchweek: 16, calendarIndex: 21 },
+	{ type: "league", matchweek: 17, calendarIndex: 22 },
+	{ type: "league", matchweek: 18, calendarIndex: 23 },
+	{ type: "cup", round: 6, roundName: "Final", calendarIndex: 24 },
 ];
 
 // Perfil editorial de cada formação (selo + frase + pendor). O pendor
@@ -468,7 +473,9 @@ export const SEASON_LABEL = "26/27";
 /** Versão do build (CalVer `vAA.MM.N`, rolling release — ver NOTES.md). */
 export const APP_VERSION = "v26.10.20";
 /** Total de jornadas de liga por época. */
-export const SEASON_JORNADAS = 14;
+export const SEASON_JORNADAS = 18;
+/** A final da Taça (última ronda) — espelha CUP_FINAL_ROUND do servidor. */
+export const CUP_FINAL_ROUND = 6;
 
 // ── RITMO DA SIMULAÇÃO (espelha SIM_SPEED_PRESETS do servidor) ─────────────
 /** Presets de ritmo do direto, escolhidos pelo admin da sala (ms por minuto). */
@@ -479,9 +486,9 @@ export const SIM_SPEED_PRESETS = {
 };
 export const DEFAULT_SIM_SPEED = "normal";
 /** Total de semanas (slots do relógio único) por época — escala dos contratos. */
-export const SEASON_WEEKS = 20;
+export const SEASON_WEEKS = 25;
 /** Jogos em casa por época (metade das jornadas). */
-export const SEASON_HOME_MATCHES = 7;
+export const SEASON_HOME_MATCHES = 9;
 /** Factor de ocupação estimado para projetar bilheteiras sem histórico. */
 export const TICKET_ESTIMATE_FACTOR = 0.8;
 /** Multiplicador do valor do jogador para a cláusula (preço de proposta a jogadores não listados). */

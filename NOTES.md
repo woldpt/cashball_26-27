@@ -1,3 +1,8 @@
+## Ligas de 10 equipas + 32 avos da Taça (2026-10-05)
+- 10 equipas/divisão, 18 jornadas, época de 25 semanas; final da Taça = ronda 6 (`CUP_FINAL_ROUND`). Salas antigas são para apagar (sem migração).
+- 32 avos com Distritais; isentas = D1 + top-4 da D2 (`last_season_rank`). Plano em `docs/plans/2026-10-05-ligas-10-equipas.md`.
+- Testado: typecheck, lint/check:types, engine-unit, fansmood, sponsor, contratos, skillhistory, connect-smoke + verificação da regra de isenção sobre a base.db.
+
 ## Deploy v26.10.20 no rick (2026-10-05)
 - Treino: jogadores muito abaixo da média sobem depressa até 70% da média; NPCs não renovam esses jogadores.
 - Campo em perspetiva fixo no fundo no lugar da navegação mobile; anúncio de prolongamento só no 91'; `backend Healthy`.

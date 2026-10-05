@@ -98,7 +98,7 @@ async function main() {
   assertEq(await getMood(7), 42, "sem comunicação o mood decai para a base");
   assertEq(await getMood(8), 43, "comunicação nível 5 segura o ânimo da bancada");
 
-  // ── Evento 2: final da Taça (ronda 5) — t1 div 1 vs t4 div 5 ──────────
+  // ── Evento 2: final da Taça (ronda 6) — t1 div 1 vs t4 div 5 ──────────
   await applyPostMatchQualityEvolution(
     db as never,
     [
@@ -107,7 +107,7 @@ async function main() {
         awayTeamId: 4,
         finalHomeGoals: 1,
         finalAwayGoals: 0,
-        round: 5,
+        round: 6,
       },
     ],
     15,

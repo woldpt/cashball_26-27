@@ -1,7 +1,7 @@
 // ── Match calculation utilities extracted from engine.ts ──────────────────────
 
 import { pickBestPlayer, withJuniorGRs, ensureFullBench, isPlayerAvailable, getEffectiveSkill } from "./playerUtils";
-import { MAX_BENCH_SIZE, FORM_NEUTRAL, MORALE_NEUTRAL, MATCH_TUNING } from "../gameConstants";
+import { MAX_BENCH_SIZE, FORM_NEUTRAL, MORALE_NEUTRAL, MATCH_TUNING, CUP_FINAL_ROUND } from "../gameConstants";
 
 type PlayerRow = any;
 
@@ -99,11 +99,10 @@ export function getWeatherGoalMultiplier(condition: string | undefined): number 
 }
 
 /**
- * A final da Taça é a ronda 5 (ver CUP_ROUND_NAMES em gameConstants).
- * Helper único — antes o literal `round === 5` estava espalhado pela engine.
+ * A final da Taça é a ronda CUP_FINAL_ROUND (ver gameConstants).
  */
 export function isCupFinalRound(round: unknown): boolean {
-  return round === 5;
+  return round === CUP_FINAL_ROUND;
 }
 
 export function normaliseStyle(style: unknown) {

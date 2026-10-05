@@ -4,6 +4,7 @@
  * reserva a marca por sala/época. Em colisão (`taken`), o servidor
  * regenera a oferta e o modal refresca com aviso.
  */
+import { SEASON_WEEKS } from "../../constants/index.js";
 import { useId, useState } from "react";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { queueEmit } from "../../socket.js";
@@ -14,7 +15,7 @@ import { SponsorLogo } from "./SponsorLogo.jsx";
 
 const PROFILE_BLURB = {
   A: "Tudo já — liquidez imediata para o mercado",
-  B: "Pinga-pinga — 120% em 20 semanas",
+  B: "Pinga-pinga — 120% numa época",
   C: "Meio-meio — 55% já + 55% na semana 10",
 };
 
@@ -102,7 +103,7 @@ export function SponsorChooseModal({ open, onClose }) {
                 <p className="text-[11px] tabular-nums text-on-surface-variant">
                   {o?.profile === "A" && <>{formatCurrency(o?.upfront)} já</>}
                   {o?.profile === "B" && (
-                    <>{formatCurrency(o?.weekly)}/sem × 20 = {formatCurrency(o?.total)}</>
+                    <>{formatCurrency(o?.weekly)}/sem × {SEASON_WEEKS} = {formatCurrency(o?.total)}</>
                   )}
                   {o?.profile === "C" && (
                     <>
