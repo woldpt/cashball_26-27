@@ -5,6 +5,7 @@ import {
   LiveMatchHero,
   CupFinalStage,
   LiveFixtureRow,
+  LivePitchStrip,
   LiveStandingsPanel,
   isDrawnAt90,
 } from "./components/live/index.js";
@@ -413,6 +414,11 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                                 />
                               ))}
                           </div>
+                        )}
+                        {myMatch && (
+                          <LivePitchStrip
+                            emoji={myMatch.events?.find((e) => e.type === "weather")?.emoji}
+                          />
                         )}
                       </div>
                     )}

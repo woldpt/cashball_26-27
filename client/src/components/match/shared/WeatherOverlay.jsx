@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { createPortal } from "react-dom";
 
 /* Emoji do evento `weather` → condição (o evento só transporta o emoji). */
-const EMOJI_TO_CONDITION = {
+export const EMOJI_TO_CONDITION = {
   "☀️": "sol",
   "🌧️": "chuva",
   "⛈️": "chuva_forte",
