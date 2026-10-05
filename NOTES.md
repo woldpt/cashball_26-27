@@ -1,3 +1,7 @@
+## Deploy v26.10.16 no rick (2026-10-05)
+- Nomes de clubes e jogadores passam a abrir a página do clube e o histórico do jogador; treino com spinner, níveis no relatório e grupos com cabeçalho único; meteorologia animada no hero do direto.
+- Posse por estilo corrigida (ofensivo tem a bola, defensivo cede-a); jornal sem tabela duplicada na classificação final; brasão na árvore da Taça; `backend Healthy`.
+
 ## Lista de melhores marcadores cortada a 7 (2026-10-05)
 - Pedido: harmonizar a altura da lista com a da classificação geral do campeonato.
 - `LeagueStandings.jsx` (`GoldenBootSidebar`): `rows` passa a `.slice(0, 7)` — o servidor continua a enviar 10 por divisão; o corte é só na renderização. Os emblemas de posição usam o índice do array → continuam correctos (1–7).
@@ -186,9 +190,4 @@
 - **F4 verificação:** o harness media um texto escrito à mão que já não existia → passa a construir o pior caso do catálogo real e **reprova se alguma dica não acender** (foi o que aconteceu: plantel no teto só da Forma com foco em Resistência acendia 6 de 7). A vista pura foi para `AssistantCoachView.jsx` (`AssistantCoach.jsx` reexporta) — importar o wrapper puxava o hook → `socket.js`, e o harness abria uma ligação socket.io falhada por largura (`resErr` 7-9 → 0-1, só o 404 pré-existente).
 - Checks: `test:assistant` 8/8 · `test:trainingcap` 5/5 · `eslint` limpo nos ficheiros da tarefa (restam 2 pré-existentes: warning do `App.jsx`, erro do `GameContext.jsx`) · `check:types` OK (227 ficheiros) · `npm run build` OK · `test:mobile` **175/175** (passagem completa: ficheiro partilhado) + screenshots 320/390 revistos · nada em `server/` nem lógica de jogo/sockets → sem `typecheck` nem audits.
 - Fica em aberto (cosmético, 1 token): em desktop o balão (`lg:bottom-6`) ainda cobre os 8px de topo do rodapé CM — padding vazio e barra não interativa; `lg:bottom-10` fecharia. Não entrou porque a posição em desktop não estava no plano aprovado.
-
-## Ticker Notícias CM: fila 1-a-1, sem barra vazia, recorde persistente (2026-10-03)
-- Audit da barra (código 8, conteúdo 9, layout 9) → 3 fixes: (1) replay — notícia nova a meio da fornada remontava a tira e repetia tudo; agora a notícia ativa é derivada (`items.find` por id não visto) e a chave da tira é estável durante a passagem, novidades entram na fila sem reiniciar; (2) barra vazia — removido o `pl-[100%]`, o texto aparece já visível e sai a deslizar para a esquerda, `duration = max(8s, chars×90ms)` é agora tempo de leitura real; (3) "recorde da sala" — `_cmTopSale` em memória (morria no restart) trocado por `cmIsRecordSale` (1 query no `transfer_history`: >1 venda e nenhuma ≥ ao valor), persistente.
-- Keyframes `cmTickerPass`/`cmTickerStill` movidos do `<style>` inline para `index.css`; sombra superior na barra.
-- Checks: `eslint` limpo · `check:types` OK · `test:mobile` 175/175 · `typecheck` OK · `tsx` da `cmIsRecordSale` 5/5 (1.ª venda ≠ recorde, maior = recorde, empate ≠ recorde).
 

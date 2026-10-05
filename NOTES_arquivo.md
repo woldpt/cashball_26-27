@@ -260,4 +260,9 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Saltado de propósito: tática (arrasto já tem escala/opacidade) e transições globais (`GameLayout` já tem `AnimatePresence` + `MotionConfig reducedMotion="user"`). Sem lógica de jogo/sockets → sem audits; `audit:gamestate` sem sala viva fica para a próxima.
 - Checks: `eslint` limpo nos ficheiros · `check:types` OK · `test:mobile` PASS 175/175 (a regressão do troféu foi provada minha via worktree no HEAD: 10/10 PASS) + capturas 390 verificadas (hero, leilões, finanças, estádio).
 
+## Ticker Notícias CM: fila 1-a-1, sem barra vazia, recorde persistente (2026-10-03)
+- Audit da barra (código 8, conteúdo 9, layout 9) → 3 fixes: (1) replay — notícia nova a meio da fornada remontava a tira e repetia tudo; agora a notícia ativa é derivada (`items.find` por id não visto) e a chave da tira é estável durante a passagem, novidades entram na fila sem reiniciar; (2) barra vazia — removido o `pl-[100%]`, o texto aparece já visível e sai a deslizar para a esquerda, `duration = max(8s, chars×90ms)` é agora tempo de leitura real; (3) "recorde da sala" — `_cmTopSale` em memória (morria no restart) trocado por `cmIsRecordSale` (1 query no `transfer_history`: >1 venda e nenhuma ≥ ao valor), persistente.
+- Keyframes `cmTickerPass`/`cmTickerStill` movidos do `<style>` inline para `index.css`; sombra superior na barra.
+- Checks: `eslint` limpo · `check:types` OK · `test:mobile` 175/175 · `typecheck` OK · `tsx` da `cmIsRecordSale` 5/5 (1.ª venda ≠ recorde, maior = recorde, empate ≠ recorde).
+
 
