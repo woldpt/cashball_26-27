@@ -19,6 +19,7 @@ import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 import { RoomPauseBanner } from "./components/shared/RoomPauseBanner.jsx";
 import { CmTicker } from "./components/ui/CmTicker.jsx";
 import { AssistantCoach } from "./components/shared/AssistantCoach.jsx";
+import { useAssistantCoach } from "./hooks/useAssistantCoach.js";
 import { GameRoutes } from "./GameRoutes.jsx";
 import { GameOverlays } from "./GameOverlays.jsx";
 import { GroupBackdrop } from "./components/shared/GroupBackdrop.jsx";
@@ -58,6 +59,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     skipTutorial,
     finishTutorial,
   } = useCoachTutorial(me);
+  const assistant = useAssistantCoach();
+  // O tutorial também é o adjunto a falar — a barra espera nos dois casos.
+  const showAssistant = tutorial.active || assistant.tip != null;
 
   /** Navega para a tab do passo e abre o submenu mobile correspondente. */
   const { setPrepPhase } = useTactics();
@@ -174,12 +178,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         </main>
       )}
 
-      <CmTicker hidden={isMatchInProgress} sidebarCollapsed={sidebarCollapsed} />
+      {/* Adjunto e notícias não falam ao mesmo tempo: a barra espera pela dica. */}
+      <CmTicker
+        hidden={isMatchInProgress}
+        paused={showAssistant}
+        sidebarCollapsed={sidebarCollapsed}
+      />
 
       <GameOverlays />
 
       {/* O tutorial é o adjunto a falar — as dicas normais calam-se entretanto. */}
-      {!tutorial.active && <AssistantCoach />}
+      {!tutorial.active && <AssistantCoach {...assistant} />}
 
       <WelcomeModal
         welcomeModal={dismissalModal ? null : welcomeModal}

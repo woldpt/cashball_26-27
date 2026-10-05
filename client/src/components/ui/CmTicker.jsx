@@ -6,7 +6,7 @@ import { useMobileLandscape } from "../../hooks/useIsMobile.js";
 
 // Velocidade de leitura da passagem única (a largura do texto cresce com o
 // nº de caracteres, logo ms/carácter ≈ velocidade constante em px/s).
-const MS_PER_CHAR = 90;
+const MS_PER_CHAR = 150;
 const MIN_PLAY_MS = 6000;
 // Movimento reduzido: o texto fica estático (e quebra linha em vez de ser
 // cortado); o tempo de leitura é proporcional ao tamanho.
@@ -26,10 +26,11 @@ const REDUCED_MIN_MS = 5000;
  *
  * @param {Object} props
  * @param {boolean} [props.hidden] Esconde a barra (ex.: jogo em direto).
+ * @param {boolean} [props.paused] Esconde sem descartar a fila (ex.: adjunto a falar).
  * @param {boolean} [props.sidebarCollapsed] Sidebar desktop encolhida (ajusta o offset esquerdo).
  * @returns {JSX.Element}
  */
-export function CmTicker({ hidden = false, sidebarCollapsed = false }) {
+export function CmTicker({ hidden = false, paused = false, sidebarCollapsed = false }) {
   const { cmNews, navigateTab } = useGame();
   const reduced = usePrefersReducedMotion();
   const isMobileLandscape = useMobileLandscape();
@@ -42,7 +43,7 @@ export function CmTicker({ hidden = false, sidebarCollapsed = false }) {
   const pending = items.filter((it) => !shownIds.has(it.id));
   const active = pending[0] ?? null;
   const queued = Math.max(0, pending.length - 1);
-  const visible = !hidden && active !== null;
+  const visible = !hidden && !paused && active !== null;
 
   // Ao esconder (jogo em direto) descarta o que ficou por mostrar: seria
   // notícia velha no fim da jornada. As que chegam durante o jogo mantêm-se.

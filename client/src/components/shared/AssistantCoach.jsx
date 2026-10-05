@@ -1,6 +1,5 @@
 import { AnimatePresence } from "framer-motion";
 import { useGame } from "../../contexts/GameContext.jsx";
-import { useAssistantCoach } from "../../hooks/useAssistantCoach.js";
 import { AssistantCoachView, AssistantMascot } from "./AssistantCoachView.jsx";
 
 // A vista pura vive em `AssistantCoachView.jsx` (sem contextos, sem socket);
@@ -9,13 +8,17 @@ export { AssistantCoachView, AssistantMascot };
 
 /**
  * Treinador-adjunto: boneco do treinador + balão de banda desenhada.
- * Monta-se no `GameLayout`; o hook decide se há dica (1x/situação/semana) e
- * o balão cala-se enquanto o fly-up do menu mobile está aberto.
- * @returns {JSX.Element|null}
+ * O `GameLayout` corre o `useAssistantCoach` (a barra de notícias também
+ * precisa de saber se há dica) e passa o resultado; o balão cala-se enquanto
+ * o fly-up do menu mobile está aberto.
+ * @param {Object} props
+ * @param {object|null} props.tip Dica ativa.
+ * @param {() => void} props.dismissTip Dispensa a dica.
+ * @param {() => void} props.goTip Navega para a tab que resolve.
+ * @returns {JSX.Element}
  */
-export function AssistantCoach() {
+export function AssistantCoach({ tip, dismissTip, goTip }) {
   const { mobileSubMenu } = useGame();
-  const { tip, dismissTip, goTip } = useAssistantCoach();
 
   return (
     <AnimatePresence>
