@@ -590,7 +590,7 @@ export const MATCH_TUNING = {
   awayGoalFactor: 0.92,
   // Posse (hatrick-style): médios decidem a repartição das chances, fixada
   // no apito inicial. 50% ± diferença de médios × possePorPonto + estilo.
-  chancesTotal: 30, // chances/jogo no total, divididas pela posse
+  chancesTotal: 31.2, // chances/jogo no total, divididas pela posse (+4%: compensa o minuto sem golo após um golo)
   possePerPoint: 0.014, // 10 pts de diferença de médios ≈ 14pp de posse (antes 7.5pp — o gap de qualidade não se via nas chances)
   posseStyleDefensiva: 0.02, // estilo inclina: OFENSIVO + / DEFENSIVO −
   // Conversão de chance: p = base × ATA/(ATA + defWeight×(DEF+GR)).
