@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { socket } from "../socket.js";
 import { registerCoreListeners } from "./socket/core.js";
 import { registerMarketListeners } from "./socket/market.js";
 import { registerNewsListeners } from "./socket/news.js";
@@ -35,6 +36,13 @@ export function useSocketListeners(handlers, refs) {
 			registerCoachListeners(handlers, refs, ctx),
 			registerChatListeners(handlers, refs, ctx),
 		];
+
+		// O join pode ter terminado antes de o provider montar (fade da landing):
+		// a rajada inicial perdeu-se — pedir o snapshot e o calendário.
+		if (refs.roomCodeRef?.current) {
+			socket.emit("requestResync");
+			socket.emit("requestCalendar");
+		}
 
 		return () => {
 			cleanups.forEach((cleanup) => cleanup());
