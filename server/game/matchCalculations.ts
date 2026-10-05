@@ -338,11 +338,11 @@ export const STYLE_DEFENSE_FACTORS: Record<string, number> = {
   OFENSIVO: 0.85,
 };
 
-/** Inclinação de posse por estilo (hatrick-style): DEFENSIVO segura a bola, OFENSIVO perde-a. */
+/** Inclinação de posse por estilo: OFENSIVO tem a bola, DEFENSIVO cede-a (o custo de fechar atrás). */
 export const STYLE_POSSESSION_FACTORS: Record<string, number> = {
-  DEFENSIVO: 1,
+  DEFENSIVO: -1,
   EQUILIBRADO: 0,
-  OFENSIVO: -1,
+  OFENSIVO: 1,
 };
 
 export type SidePower = {
@@ -457,7 +457,7 @@ export function computeSidePower(
 /**
  * Posse da equipa A (0.30–0.70) a partir dos médios + estilo — hatrick-style,
  * calculada UMA vez no apito inicial e fixa o resto do jogo. Médios melhores →
- * mais posse; DEFENSIVO segura a bola, OFENSIVO perde-a por pressa.
+ * mais posse; OFENSIVO tem a bola, DEFENSIVO cede-a.
  */
 export function computePossession(
   midA: number,

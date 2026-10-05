@@ -592,7 +592,7 @@ export const MATCH_TUNING = {
   // no apito inicial. 50% ± diferença de médios × possePorPonto + estilo.
   chancesTotal: 30, // chances/jogo no total, divididas pela posse
   possePerPoint: 0.014, // 10 pts de diferença de médios ≈ 14pp de posse (antes 7.5pp — o gap de qualidade não se via nas chances)
-  posseStyleDefensiva: 0.02, // estilo inclina: DEFENSIVO + / OFENSIVO −
+  posseStyleDefensiva: 0.02, // estilo inclina: OFENSIVO + / DEFENSIVO −
   // Conversão de chance: p = base × ATA/(ATA + defWeight×(DEF+GR)).
   // Médias → o nº de jogadores não pesa; defWeight é a "parede".
   // Parede 1.2→1.6: o gap de qualidade abre mais o marcador; base 0.175→0.21
