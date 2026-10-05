@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
@@ -45,6 +45,12 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     userDropdownOpen,
     setUserDropdownOpen,
   } = useGame();
+  // Mobile: alterna marca ↔ semana no canto superior esquerdo.
+  const [brandFlip, setBrandFlip] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => setBrandFlip((f) => !f), 4000);
+    return () => clearInterval(id);
+  }, []);
 
   // Telemóvel em landscape (abaixo de lg): header compacto.
   const isMobileLandscape = useMobileLandscape();
@@ -90,8 +96,27 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
               color: teamInfo?.color_secondary || "var(--color-on-surface)",
             }}
           >
-            CashBall <span style={{ opacity: 0.55 }}>26/27</span>{" "}
-            <span className="md:hidden" style={{ opacity: 0.55 }}>S{(calendarIndex ?? 0) + 1}</span>
+            <span className="hidden md:inline">
+              CashBall <span style={{ opacity: 0.55 }}>26/27</span>
+            </span>
+            <span className="md:hidden relative inline-grid overflow-hidden align-bottom">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={brandFlip}
+                  className="whitespace-nowrap"
+                  initial={{ y: "100%", opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: "-100%", opacity: 0 }}
+                  transition={{ duration: 0.45, ease: "easeOut" }}
+                >
+                  {brandFlip ? (
+                    <>Semana <span style={{ opacity: 0.55 }}>{(calendarIndex ?? 0) + 1}/{seasonYear}</span></>
+                  ) : (
+                    <>CashBall <span style={{ opacity: 0.55 }}>26/27</span></>
+                  )}
+                </motion.span>
+              </AnimatePresence>
+            </span>
           </h1>
           <span
             className="hidden md:block text-[10px] font-bold uppercase tracking-[0.2em]"
