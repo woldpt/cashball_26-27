@@ -68,7 +68,7 @@ export function registerNewsSocketHandlers(
          LEFT JOIN teams t ON t.id = cn.team_id
          LEFT JOIN players p ON p.id = cn.player_id
          WHERE cn.team_id = ?
-           AND cn.type NOT IN ('weekly_income', 'wages', 'stadium_upkeep', 'ticket_revenue')`,
+           AND cn.type NOT IN ('takeover', 'weekly_income', 'wages', 'stadium_upkeep', 'ticket_revenue')`,
         [teamId],
       );
 
@@ -87,8 +87,11 @@ export function registerNewsSocketHandlers(
                 th.amount, th.matchweek, th.slot, th.year, th.created_at,
                 th.buyer_team_name AS team_name, NULL AS division
          FROM transfer_history th
-         WHERE th.seller_team_id = ? OR th.buyer_team_id = ?`,
-        [teamId, teamId],
+         WHERE (th.seller_team_id = ? OR th.buyer_team_id = ?)
+           -- Clube herdado: só as transferências desde que o treinador chegou.
+           AND th.created_at >= COALESCE((SELECT MAX(created_at) FROM club_news
+                                          WHERE team_id = ? AND type = 'takeover'), '')`,
+        [teamId, teamId, teamId],
       );
 
       const newsRows = [...(clubRows || []), ...(transferRows || [])].sort(

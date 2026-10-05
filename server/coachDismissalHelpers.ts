@@ -657,7 +657,20 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
     // Era NPC: limpar as notícias acumuladas antes de entregar o clube —
     // sem isto o treinador herdava a caixa cheia como não lida.
-    await execQuiet(game, "DELETE FROM club_news WHERE team_id = ?", [team.id]);
+    await clearInheritedNews(game, team.id);
+  }
+
+  /**
+   * Era NPC: apaga as notícias do clube e grava um marco 'takeover' (oculto no
+   * Jornal) — as transferências anteriores a ele deixam de aparecer na caixa.
+   */
+  async function clearInheritedNews(game: ActiveGame, teamId: number) {
+    await execQuiet(game, "DELETE FROM club_news WHERE team_id = ?", [teamId]);
+    await execQuiet(
+      game,
+      "INSERT INTO club_news (team_id, type, title, year) VALUES (?, 'takeover', '', ?)",
+      [teamId, game.year || 0],
+    );
   }
 
   async function autoAssignDismissedCoach(
@@ -1183,7 +1196,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
     // Era NPC: limpar as notícias acumuladas (o novo treinador herdava a
     // caixa cheia como não lida) antes das boas-vindas.
-    await execQuiet(game, "DELETE FROM club_news WHERE team_id = ?", [toTeamId]);
+    await clearInheritedNews(game, toTeamId);
 
     // O clube novo recebe uma notícia de boas-vindas persistente. Fica ligada
     // ao novo team_id; o histórico da era NPC foi apagado acima.
