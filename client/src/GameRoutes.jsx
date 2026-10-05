@@ -508,6 +508,7 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         seasonYear={seasonYear}
                         capacityRevPerGame={capacityRevPerGame}
                         mySquad={mySquad}
+                        staff={staff}
                         showTransferSales={showTransferSales}
                         setShowTransferSales={setShowTransferSales}
                         showTransferPurchases={showTransferPurchases}

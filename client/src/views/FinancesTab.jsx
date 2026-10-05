@@ -109,6 +109,7 @@ function ExpandableRow({
  *   seasonYear: number,
  *   capacityRevPerGame: number,
  *   mySquad: Array,
+ *   staff?: {salaryWeekly: number, members: Array<{salaryWeekly: number, hiredSlot: number}>}|null,
  *   showTransferSales: boolean,
  *   setShowTransferSales: function,
  *   showTransferPurchases: boolean,
@@ -129,6 +130,7 @@ export function FinancesTab({
   seasonYear,
   capacityRevPerGame,
   mySquad,
+  staff,
   showTransferSales,
   setShowTransferSales,
   showTransferPurchases,
@@ -140,6 +142,13 @@ export function FinancesTab({
   const weeksElapsed = elapsedWeeks ?? completedJornada;
   const interestPct = (LOAN_INTEREST_RATE * 100).toLocaleString("pt-PT");
   const loanStepK = `${LOAN_STEP / 1000}K`;
+  const staffMembers = staff?.members || [];
+  const staffWeeklyWage = staff?.salaryWeekly || 0;
+  // Semanas pagas desde a contratação; hiredSlot acima do índice actual = época anterior.
+  const staffSeasonCost = staffMembers.reduce((sum, m) => {
+    const from = m.hiredSlot > weeksElapsed ? 0 : m.hiredSlot || 0;
+    return sum + m.salaryWeekly * Math.max(0, weeksElapsed - from);
+  }, 0);
   const {
     totalSeasonIncome,
     totalSeasonExpenses,
@@ -153,6 +162,7 @@ export function FinancesTab({
       (financeData?.totalTransferIncome || 0);
     const totalSeasonExpenses =
       totalWeeklyWage * weeksElapsed +
+      staffSeasonCost +
       loanInterestPerWeek * weeksElapsed +
       (financeData?.totalTransferExpenses || 0) +
       (financeData?.totalStadiumExpenses || 0);
@@ -177,6 +187,7 @@ export function FinancesTab({
   }, [
     financeData,
     totalWeeklyWage,
+    staffSeasonCost,
     weeksElapsed,
     loanInterestPerWeek,
     loanAmount,
@@ -201,7 +212,8 @@ export function FinancesTab({
         ? leagueRevenue / leagueHomeMatches
         : capacityRevPerGame * TICKET_ESTIMATE_FACTOR;
     const projectedTicketRevenue = avgTicketRevenue * remainingHomeMatches;
-    const projectedSalaries = totalWeeklyWage * remainingJornadas;
+    const projectedSalaries =
+      (totalWeeklyWage + staffWeeklyWage) * remainingJornadas;
     const projectedInterest = loanInterestPerWeek * remainingJornadas;
     const projectedEndBudget = Math.round(
       currentBudget +
@@ -216,6 +228,7 @@ export function FinancesTab({
     financeData,
     capacityRevPerGame,
     totalWeeklyWage,
+    staffWeeklyWage,
     loanInterestPerWeek,
     currentBudget,
   ]);
@@ -532,6 +545,22 @@ export function FinancesTab({
                 )}
               </span>
             </li>
+            {staffMembers.length > 0 && (
+              <li className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-on-surface-variant">
+                    Funcionários
+                  </p>
+                  <p className="text-[10px] opacity-40 uppercase">
+                    {staffMembers.length} contratado(s) ·{" "}
+                    {formatCurrency(staffWeeklyWage)} / jornada
+                  </p>
+                </div>
+                <span className="font-headline text-sm font-bold">
+                  {formatCurrency(staffSeasonCost)}
+                </span>
+              </li>
+            )}
             {loanAmount > 0 && (
               <li className="flex justify-between items-center">
                 <div>
