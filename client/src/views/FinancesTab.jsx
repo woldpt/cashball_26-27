@@ -168,6 +168,7 @@ export function FinancesTab({
   } = useMemo(() => {
     const totalSeasonIncome =
       (financeData?.totalTicketRevenue || 0) +
+      (financeData?.awayTicketRevenue || 0) +
       (financeData?.sponsorRevenue || 0) +
       (financeData?.prizeRevenue || 0) +
       (weekly?.baseIncome || 0) +
@@ -206,53 +207,53 @@ export function FinancesTab({
     loanAmount,
   ]);
 
+  // Saldo previsto: simula as semanas que faltam como o servidor as cobra
+  // (receita base + patrocínio − salários − funcionários − manutenção − juros
+  // − prestação do empréstimo, que abate a dívida e baixa os juros seguintes)
+  // e soma as bilheteiras de liga ainda por jogar (casa + 15% fora).
+  // Prémios e Taça futura ficam de fora: não são previsíveis.
   const projection = useMemo(() => {
-    const remainingJornadas = Math.max(
-      0,
-      (elapsedWeeks != null ? SEASON_WEEKS : SEASON_JORNADAS) - weeksElapsed,
-    );
-    const remainingHomeMatches = Math.max(
-      0,
-      SEASON_HOME_MATCHES - (financeData?.homeMatchesPlayed || 0),
-    );
-    // Média apenas da Liga — Taça não conta para SEASON_HOME_MATCHES e não deve
-    // inflacionar a projecção de bilheteiras restantes da Liga.
-    const leagueHomeMatches = financeData?.homeMatchesPlayed || 0;
-    const leagueRevenue =
-      financeData?.leagueTicketRevenue ?? financeData?.totalTicketRevenue ?? 0;
-    const avgTicketRevenue =
-      leagueHomeMatches > 0
-        ? leagueRevenue / leagueHomeMatches
+    const fc = financeData?.forecast || null;
+    const weeksCharged = weekly ? weekly.weeks : weeksElapsed;
+    const remainingWeeks = Math.max(0, SEASON_WEEKS - weeksCharged);
+
+    const homePlayed = financeData?.homeMatchesPlayed || 0;
+    const avgHome =
+      homePlayed > 0
+        ? (financeData?.leagueTicketRevenue || 0) / homePlayed
         : capacityRevPerGame * TICKET_ESTIMATE_FACTOR;
-    const projectedTicketRevenue = avgTicketRevenue * remainingHomeMatches;
-    const projectedSalaries =
-      (totalWeeklyWage + staffWeeklyWage) * remainingJornadas;
-    const projectedInterest = loanInterestPerWeek * remainingJornadas;
-    // Receita base e manutenção: média das semanas já pagas (fixas por
-    // divisão/lotação, por isso a média é o valor semanal).
-    const paidWeeks = weekly?.weeks || 0;
-    const projectedBaseNet =
-      paidWeeks > 0
-        ? ((weekly.baseIncome - weekly.upkeep) / paidWeeks) * remainingJornadas
-        : 0;
-    const projectedEndBudget = Math.round(
-      currentBudget +
-        projectedTicketRevenue +
-        projectedBaseNet -
-        projectedSalaries -
-        projectedInterest,
-    );
-    return { remainingJornadas, projectedEndBudget };
+    const awayPlayed = financeData?.awayLeagueMatchesPlayed || 0;
+    const avgAway =
+      awayPlayed > 0 ? (financeData?.awayLeagueTicketRevenue || 0) / awayPlayed : 0;
+    const tickets =
+      avgHome * Math.max(0, SEASON_HOME_MATCHES - homePlayed) +
+      avgAway * Math.max(0, SEASON_JORNADAS - SEASON_HOME_MATCHES - awayPlayed);
+
+    let budget = currentBudget + tickets + (fc?.sponsorSecondPending || 0);
+    let loan = loanAmount;
+    for (let w = 0; w < remainingWeeks; w += 1) {
+      const interest = loan > 0 ? Math.floor(loan * LOAN_INTEREST_RATE) : 0;
+      const installment = Math.min(fc?.loanInstallment || 0, loan);
+      budget +=
+        (fc?.baseIncome || 0) +
+        (fc?.sponsorWeekly || 0) -
+        totalWeeklyWage -
+        staffWeeklyWage -
+        (fc?.upkeep || 0) -
+        interest -
+        installment;
+      loan -= installment;
+    }
+    return { remainingWeeks, projectedEndBudget: Math.round(budget), projectedLoan: loan };
   }, [
-    weeksElapsed,
-    elapsedWeeks,
     financeData,
+    weekly,
+    weeksElapsed,
     capacityRevPerGame,
     totalWeeklyWage,
     staffWeeklyWage,
-    loanInterestPerWeek,
+    loanAmount,
     currentBudget,
-    weekly,
   ]);
 
   // Composição das receitas (proporção) para a barra segmentada do painel.
@@ -261,7 +262,9 @@ export function FinancesTab({
     const parts = [
       {
         label: "Bilheteira",
-        v: financeData?.totalTicketRevenue || 0,
+        v:
+          (financeData?.totalTicketRevenue || 0) +
+          (financeData?.awayTicketRevenue || 0),
         bg: "bg-primary",
       },
       {
@@ -365,7 +368,9 @@ export function FinancesTab({
           </div>
           <div className="mt-2 sm:mt-4 short:mt-1">
             <p className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant uppercase mb-1">
-              Bilheteiras + receita base - salários - manutenção - juros ({projection.remainingJornadas} sem.)
+              Faltam {projection.remainingWeeks} sem. · sem prémios nem Taça
+              {projection.projectedLoan > 0 &&
+                ` · dívida ${formatCurrency(projection.projectedLoan)}`}
             </p>
           </div>
         </SummaryWidget>
@@ -481,6 +486,17 @@ export function FinancesTab({
                 );
               })}
             </ExpandableRow>
+            {(financeData?.awayTicketRevenue || 0) > 0 && (
+              <li className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-on-surface-variant">Bilheteiras fora</p>
+                  <p className="text-[10px] opacity-40 uppercase">15% da receita do visitado</p>
+                </div>
+                <span className="font-headline text-sm font-bold">
+                  {formatCurrency(financeData.awayTicketRevenue)}
+                </span>
+              </li>
+            )}
             <li className="flex justify-between items-center gap-2">
               {financeData?.sponsorId && (
                 <SponsorLogo

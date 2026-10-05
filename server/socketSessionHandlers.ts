@@ -1,6 +1,6 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, fetchTopScorers, logClubNews } from "./coreHelpers";
-import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, FRIENDLY_ROUND_NAME, SEASON_CALENDAR } from "./gameConstants";
+import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, FRIENDLY_ROUND_NAME, SEASON_CALENDAR, AWAY_TICKET_SHARE, loanInstallment, WEEKLY_BASE_INCOME, STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK } from "./gameConstants";
 import { drawOffers, drawOffersAny, sponsorById, SPONSOR_WEEKS } from "./game/sponsors";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
@@ -1762,9 +1762,13 @@ export function registerSessionSocketHandlers(
 			if (!game || !teamId) return;
 			try {
 				// Bilheteira ao preço faturado à altura (ticket_revenue persistido na
-				// finalização). Linhas antigas têm NULL → fallback attendance × 15.
-				const billedOrEstimate = (m: any) =>
-					m.ticket_revenue ?? (m.attendance || 0) * 15;
+				// finalização = receita bruta). A casa fica com a bruta menos a
+				// parte do visitante (AWAY_TICKET_SHARE), exatamente como o crédito.
+				const awayShareOf = (gross: number) => Math.floor(gross * AWAY_TICKET_SHARE);
+				const billedOrEstimate = (m: any) => {
+					const gross = m.ticket_revenue ?? (m.attendance || 0) * 15;
+					return gross - awayShareOf(gross);
+				};
 				let homeMatches: any[];
 				try {
 					homeMatches = await runAll(
@@ -1828,6 +1832,23 @@ export function registerSessionSocketHandlers(
 					0,
 				);
 				const totalTicketRevenue = leagueTicketRevenue + cupTicketRevenue;
+				// Parte do visitante (15%) dos jogos fora — liga e Taça.
+				const awayRows = await runAll(
+					game.db,
+					`SELECT 'league' AS comp, ticket_revenue FROM matches WHERE away_team_id = ? AND played = 1 AND season = ?
+					 UNION ALL
+					 SELECT 'cup' AS comp, ticket_revenue FROM cup_matches WHERE away_team_id = ? AND played = 1 AND season = ?`,
+					[teamId, game.season, teamId, game.season],
+				).catch(() => []);
+				const awayLeagueRows = (awayRows || []).filter((r: any) => r.comp === "league");
+				const awayTicketRevenue = (awayRows || []).reduce(
+					(sum: number, r: any) => sum + awayShareOf(r.ticket_revenue || 0),
+					0,
+				);
+				const awayLeagueTicketRevenue = awayLeagueRows.reduce(
+					(sum: number, r: any) => sum + awayShareOf(r.ticket_revenue || 0),
+					0,
+				);
 				const leagueBreakdown = homeMatches.map((m) => ({
 					competition: "league" as const,
 					matchweek: m.matchweek,
@@ -1881,7 +1902,7 @@ export function registerSessionSocketHandlers(
 
 				const team = await runGet(
 					game.db,
-					"SELECT division, budget, sponsor_id, sponsor_profile FROM teams WHERE id = ?",
+					"SELECT division, budget, sponsor_id, sponsor_profile, sponsor_season, sponsor_weekly, sponsor_second_half, sponsor_paid_second, stadium_capacity FROM teams WHERE id = ?",
 					[teamId],
 				);
 				// Patrocínio real recebido (upfront + tranches com linhas `sponsor`
@@ -1989,6 +2010,9 @@ export function registerSessionSocketHandlers(
 				socket.emit("financeData", {
 					teamId,
 					totalTicketRevenue,
+					awayTicketRevenue,
+					awayLeagueTicketRevenue,
+					awayLeagueMatchesPlayed: awayLeagueRows.length,
 					leagueTicketRevenue,
 					cupTicketRevenue,
 					totalTransferIncome,
@@ -1997,6 +2021,20 @@ export function registerSessionSocketHandlers(
 					sponsorRevenue,
 					prizeRevenue,
 					weekly,
+					// Dados para o saldo previsto (o cliente projeta semana a semana).
+					forecast: {
+						loanInstallment: loanInstallment(team?.division ?? 5),
+						baseIncome: WEEKLY_BASE_INCOME[team?.division ?? 5] ?? 0,
+						upkeep: Math.trunc(
+							Math.max(0, (team?.stadium_capacity || 0) - STADIUM_UPKEEP_EXEMPT_SEATS) *
+								STADIUM_UPKEEP_PER_SEAT_WEEK,
+						),
+						sponsorWeekly: team?.sponsor_season === game.season ? team?.sponsor_weekly || 0 : 0,
+						sponsorSecondPending:
+							team?.sponsor_season === game.season && !team?.sponsor_paid_second
+								? team?.sponsor_second_half || 0
+								: 0,
+					},
 					sponsorName: sponsorChosen?.name || null,
 					sponsorId: team?.sponsor_id || null,
 					sponsorProfile: team?.sponsor_profile || null,
