@@ -232,7 +232,7 @@ export function JournalTab({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="relative rounded-sm border border-outline-variant/20 bg-surface-container px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col overflow-y-auto"
+                className="relative rounded-sm border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col overflow-y-auto"
               >
                 {/* Faixa lateral: categoria, ou error nas pendências */}
                 <CategoryAccentBar category={selected.cat} urgent={selected.redFlag} />

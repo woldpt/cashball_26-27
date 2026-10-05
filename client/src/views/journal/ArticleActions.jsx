@@ -26,7 +26,7 @@ export function ArticleActionBar({ item, inbox, onOpenCupBracket, onOpenSponsor 
     !item.redFlag && !actionable && ACTION_NEWS.includes(item.newsType);
   if (!item.redFlag && !actionable && !resolved) return null;
   return (
-    <div className="sticky bottom-0 mt-5 border-t border-outline-variant/25 bg-surface-container/95 pt-3 pb-1 backdrop-blur">
+    <div className="sticky bottom-0 mt-5 border-t border-outline-variant/25 bg-surface-container-high/95 pt-3 pb-1 backdrop-blur">
       {item.redFlag && (
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <Badge variant="error" size="sm">
