@@ -207,13 +207,12 @@ async function main(): Promise<void> {
   const { findRoomDbFile, listRoomCodes } = require("../db/roomPaths");
   const srcCode =
     process.env.CRASHTEST_ROOM ||
-    listRoomCodes(savesDir)[0] ||
-    listRoomCodes(dbDir)[0];
+    listRoomCodes(savesDir)[0];
   const srcPath = srcCode
-    ? (findRoomDbFile(savesDir, srcCode) ?? findRoomDbFile(dbDir, srcCode))
+    ? findRoomDbFile(savesDir, srcCode)
     : null;
   if (!srcCode || !srcPath) {
-    console.warn(`⚠ Sem game_*.db em ${dbDir} — nada para clonar. Skip.`);
+    console.warn(`⚠ Sem game_*.db em ${savesDir} — nada para clonar. Skip.`);
     return;
   }
   const srcName = `game_${srcCode}.db`;

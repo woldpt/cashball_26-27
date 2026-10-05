@@ -59,7 +59,6 @@ async function main() {
   const savesDir = savesDirFor(dbDir);
   const dbPath =
     findRoomDbFile(savesDir, roomCode) ??
-    findRoomDbFile(dbDir, roomCode) ??
     path.join(savesDir, `game_${roomCode}.db`);
   if (!fs.existsSync(dbPath)) {
     console.error(`❌ Database not found: ${dbPath}`);
