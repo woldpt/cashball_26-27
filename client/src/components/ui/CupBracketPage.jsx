@@ -700,6 +700,39 @@ export function CupBracketPage({
           </div>
         )}
       </div>
+
+      {/* ── ISENTAS (32 avos) ───────────────────────────────────────────────── */}
+      {currentRound === 1 && bracketData.exemptTeams?.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 px-1 mb-1">
+            <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40">
+              Isentas · passam aos 16 avos
+            </span>
+            <div className="flex-1 h-px bg-outline-variant/15" />
+            <span className="text-[9px] text-on-surface-variant/30 font-bold shrink-0">
+              {bracketData.exemptTeams.length} equipas
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {bracketData.exemptTeams.map((team) => (
+              <div
+                key={team.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border bg-surface-container ${
+                  team.id === me?.teamId ? "border-primary/40 bg-primary/10" : "border-outline-variant/25"
+                }`}
+              >
+                <TeamCrest team={team} size="w-6 h-6 text-[10px]" />
+                <TeamName
+                  team={team}
+                  onOpenTeam={onOpenTeamSquad}
+                  className="flex-1 min-w-0 truncate text-left font-black text-xs"
+                  style={{ color: readableColor(team.color_primary) }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

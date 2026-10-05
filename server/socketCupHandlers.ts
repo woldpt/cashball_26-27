@@ -193,7 +193,19 @@ export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
           matches,
         }));
 
-      socket.emit("cupBracketData", { season: game.season, rounds });
+      // Isentas dos 32 avos = quem não joga a ronda 1 (derivado, como no sorteio dos 16 avos).
+      const exemptTeams = roundMap.has(1)
+        ? await runAll(
+            game.db,
+            `SELECT id, name, color_primary, color_secondary, crest FROM teams
+             WHERE id NOT IN (SELECT home_team_id FROM cup_matches WHERE season = ? AND round = 1
+                              UNION SELECT away_team_id FROM cup_matches WHERE season = ? AND round = 1)
+             ORDER BY division, name`,
+            [game.season, game.season],
+          )
+        : [];
+
+      socket.emit("cupBracketData", { season: game.season, rounds, exemptTeams });
     } catch (err) {
       console.error(`[${game.roomCode}] requestCupBracket error:`, err);
     }
