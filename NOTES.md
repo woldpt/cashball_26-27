@@ -1,3 +1,8 @@
+## Lista de melhores marcadores cortada a 7 (2026-10-05)
+- Pedido: harmonizar a altura da lista com a da classificação geral do campeonato.
+- `LeagueStandings.jsx` (`GoldenBootSidebar`): `rows` passa a `.slice(0, 7)` — o servidor continua a enviar 10 por divisão; o corte é só na renderização. Os emblemas de posição usam o índice do array → continuam correctos (1–7).
+- Checks: `lint` limpo no ficheiro (4 problemas pré-existentes noutros) · corte de 1 linha → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
 ## Deploy v26.10.15 no rick (2026-10-05)
 - Amigáveis na semana da Taça (separador no Calendário, live view, cartão certo), clima variado, Jornal sem filtros + semana no cabeçalho mobile; `backend Healthy`.
 
@@ -186,30 +191,4 @@
 - Audit da barra (código 8, conteúdo 9, layout 9) → 3 fixes: (1) replay — notícia nova a meio da fornada remontava a tira e repetia tudo; agora a notícia ativa é derivada (`items.find` por id não visto) e a chave da tira é estável durante a passagem, novidades entram na fila sem reiniciar; (2) barra vazia — removido o `pl-[100%]`, o texto aparece já visível e sai a deslizar para a esquerda, `duration = max(8s, chars×90ms)` é agora tempo de leitura real; (3) "recorde da sala" — `_cmTopSale` em memória (morria no restart) trocado por `cmIsRecordSale` (1 query no `transfer_history`: >1 venda e nenhuma ≥ ao valor), persistente.
 - Keyframes `cmTickerPass`/`cmTickerStill` movidos do `<style>` inline para `index.css`; sombra superior na barra.
 - Checks: `eslint` limpo · `check:types` OK · `test:mobile` 175/175 · `typecheck` OK · `tsx` da `cmIsRecordSale` 5/5 (1.ª venda ≠ recorde, maior = recorde, empate ≠ recorde).
-
-## Confete das celebrações passa a futebol (2026-10-03)
-- Pedido: substituir os emojis de champanhe do confete por emojis mais soccer-friendly.
-- `CelebrationBurst.jsx` (componente partilhado por contratação, golo, vitória, diálogos): `PARTICLES` passa de 🍾/🥂/✨/🎉/💫/🎊 para ⚽ ×4, 🥅 ×3, 🏆 ×3, ✨ ×2, 🎉/🎊 ×1 (14 partículas, mesma contagem); as duas garrafas grandes dos cantos tornam-se ⚽; JSDoc "Explosão de champanhe" → "Explosão de futebol".
-- Checks: `lint` limpo no ficheiro (4 problemas pré-existentes noutros, provado com `git stash`) · `check:types` OK · só texto de emoji em spans existentes → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
-
-## Balões do adjunto redesenhados + tamanho estável (2026-10-02)
-- Pedido: balões redesenhados; nascer já com o tamanho do texto completo em vez de crescer a cada linha da máquina de escrever. Decisões: banda desenhada polida, altura final desde o início, dica + tutorial, JJ intocado.
-- Dica (`AssistantCoach.jsx`) e tutorial (`CoachTutorial.jsx`): bordo 3px, `rounded-3xl`, sombra suave, respiro `p-4`, rabicho alinhado à nova espessura; parágrafo em duas camadas (texto integral invisível reserva a altura, digitado sobreposto em absoluto).
-- Checks: `eslint` limpo nos 2 ficheiros · `check:types` OK · só polimento + reserva de altura (mesmo DOM/flex) → sem `test:mobile`; sem lógica/sockets → sem audits.
-
-## Deploy v26.10.8 no rick (2026-10-02)
-- Rodapé CM breaking-news, notícias automáticas, mascote jj1/jj2, filtros «só os meus»/«cabe no saldo» no servidor, micro-efeitos; `backend Healthy`.
-
-## Relógio: urgência aos 75'/110' + centro em mobile (2026-10-02)
-- Urgência passa de 85' para 75'–90' e 110'+ no prolongamento (`LiveClock.jsx`); fora disso quieto.
-- Descentragem em mobile: o keyframe animava `transform: translateX(-50%)`, que no Tailwind v4 compõe com a propriedade `translate` do `-translate-x-1/2` (duplo -50%) — passa a animar só `scale`, que compõe bem.
-- Checks: `eslint` + `check:types` OK · `test:mobile` 175/175 · harness temporária (apagada após uso) com 33'/80'/115' confirmou centro e limiares em captura 390.
-- Nota: `CmTicker.jsx` tem alterações de outra mão por commitar na árvore (passagem única) — commit só com os 2 ficheiros meus.
-
-## Pacote «impressionar sem pesar» — micro-efeitos por zona (2026-10-02)
-- Só `transform`/`opacity` (+1 `background-position`), durações curtas, tudo parado com movimento reduzido; zero deps novas (`CountUp` em rAF próprio, framer-motion já cá estava).
-- Jogo: `goal-shake` no marcador do `LiveMatchHero`/`CupFinalStage` (remount via key nos golos) + `liveclock-urgent` no `LiveClock` (85'+/prolongamento). Leilões: anel SVG na contagem decrescente (`AuctionCard`, esvazia nos últimos 60 s). Saldo: `CountUp.jsx` novo nos 3 widgets do `FinancesTab`. Troféus: varrimento dourado por `background-position` (`TrophyCabinet`) — a 1.ª versão com filho a transbordar chumbou `club`+`topwidgets` (linhas cortadas), corrigido sem transbordo. Taça: `bracket-draw` nas linhas + `champion-glow` + esqueletos `skeleton-shimmer` no loading (`CupBracketPage`). Jornal: `flag-pulse` na faixa das pendências. Estádio: holofotes em gradiente + zoom ténue em hover. `CmTicker` pausa com movimento reduzido.
-- Saltado de propósito: tática (arrasto já tem escala/opacidade) e transições globais (`GameLayout` já tem `AnimatePresence` + `MotionConfig reducedMotion="user"`). Sem lógica de jogo/sockets → sem audits; `audit:gamestate` sem sala viva fica para a próxima.
-- Checks: `eslint` limpo nos ficheiros · `check:types` OK · `test:mobile` PASS 175/175 (a regressão do troféu foi provada minha via worktree no HEAD: 10/10 PASS) + capturas 390 verificadas (hero, leilões, finanças, estádio).
-
 
