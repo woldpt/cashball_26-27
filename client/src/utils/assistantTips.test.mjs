@@ -8,7 +8,6 @@
  * limiares e o anti-Clippy (nunca na tab que resolve).
  */
 import assert from "node:assert/strict";
-import { FANS_MOOD_LOW } from "../constants/index.js";
 import { NAV_GROUPS } from "../constants/navigation.js";
 import {
   ASSISTANT_TIP_IDS,
@@ -74,7 +73,6 @@ const hurt = (n) => ({
     "trainingcap",
     "medical",
     "wage",
-    "fans",
   ]);
   assert.equal(new Set(ASSISTANT_TIP_IDS).size, ASSISTANT_TIP_IDS.length);
   assert.equal(buildAssistantTips(allFiring).length, ASSISTANT_TIP_IDS.length);
@@ -136,15 +134,7 @@ const hurt = (n) => ({
   });
   assert.equal(pickAssistantTip(noHurtAndNoCap)?.id, "wage");
   assert.equal(
-    pickAssistantTip({ ...noHurtAndNoCap, currentBudget: 500000 })?.id,
-    "fans",
-  );
-  assert.equal(
-    pickAssistantTip({
-      ...noHurtAndNoCap,
-      currentBudget: 500000,
-      fansMood: 30,
-    }),
+    pickAssistantTip({ ...noHurtAndNoCap, currentBudget: 500000 }),
     null,
   );
 }
@@ -183,15 +173,10 @@ const hurt = (n) => ({
   }
 }
 
-// 6. Limiares: enfermaria aos 3 indisponíveis, adeptos abaixo de FANS_MOOD_LOW.
+// 6. Limiar: enfermaria aos 3 indisponíveis.
 {
   assert.equal(pickAssistantTip(hurt(2)), null);
   assert.equal(pickAssistantTip(hurt(3))?.id, "medical");
-  assert.equal(pickAssistantTip({ ...calm, fansMood: FANS_MOOD_LOW }), null);
-  assert.equal(
-    pickAssistantTip({ ...calm, fansMood: FANS_MOOD_LOW - 1 })?.id,
-    "fans",
-  );
 }
 
 // 7. Estado vazio/parcial nunca rebenta nem inventa dicas.

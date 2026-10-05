@@ -1,4 +1,4 @@
-import { ASSISTANT_UNAVAILABLE_MIN, FANS_MOOD_LOW } from "../constants/index.js";
+import { ASSISTANT_UNAVAILABLE_MIN } from "../constants/index.js";
 import { isPlayerAvailable } from "./playerHelpers.js";
 import { trainingCapTip } from "./trainingCapAdvice.js";
 
@@ -137,18 +137,6 @@ export const ASSISTANT_TIPS = [
             text: "O cofre não chega para os salários! A bola é redonda mas o dinheiro não estica. Despacha-te!",
             tab: "finances",
             cta: "Acertar contas",
-          },
-  },
-  {
-    id: "fans",
-    build: (s) =>
-      s.fansMood == null || s.fansMood >= FANS_MOOD_LOW
-        ? null
-        : {
-            mood: "sad",
-            text: "Os adeptos estão inquietos — precisam de uma vitória. Prepara o onze e vai buscá-la.",
-            tab: "tactic",
-            cta: "Ganhar já",
           },
   },
 ];
