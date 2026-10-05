@@ -7,13 +7,12 @@ import { BidForm } from "./BidForm.jsx";
 import {
   FLAG_TO_COUNTRY,
   AUCTION_BID_STEP,
-  POSITION_TEXT_CLASS,
   POSITION_GLOW_CLASS,
   POSITION_BG_GRADIENT_CLASS,
   POSITION_BAR_CLASS,
   POSITION_ACCENT_HEX,
 } from "../../constants/index.js";
-import { AggBadge } from "../shared/AggBadge.jsx";
+import { BadgeSkills } from "../shared/BadgeSkills.jsx";
 import { Badge } from "../shared/Badge.jsx";
 import { StarMark } from "../shared/PlayerStatusBadges.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
@@ -74,7 +73,7 @@ function AuctionRing({ secs, urgent }) {
  * AuctionCard — cromo de leilão (face única).
  *
  * De cima para baixo: faixa da posição · selo de posição + vendedor ·
- * herói (avatar com halo + skill) · nome · faixa de urgência (countdown
+ * herói (avatar com halo) · nome · BadgeSkills · faixa de urgência (countdown
  * gigante) · preço (lance atual + base/salário) · mini-stats · licitação.
  * A cor de destaque deriva sempre da posição (POSITION_*).
  */
@@ -83,7 +82,6 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
 
   const secs = useCountdown(auction.closed || auction.paused ? null : auction.endsAt);
   const posHex = POSITION_ACCENT_HEX[auction.position] || "#94a3b8";
-  const posText = POSITION_TEXT_CLASS[auction.position] || "text-zinc-400";
   const countryName = FLAG_TO_COUNTRY?.[auction.nationality] || auction.nationality || "";
 
   const isSeller = auction.sellerTeamId === me?.teamId;
@@ -109,10 +107,6 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
       ? `ex-${auction.team_name}`
       : auction.team_name
     : sellerName || "Sem clube";
-
-  const formVal = auction.form ?? 32;
-  const formMood = formVal >= 41 ? "💪" : formVal <= 22 ? "😩" : "👍";
-  const formClass = formVal >= 41 ? "text-emerald-400" : formVal <= 22 ? "text-rose-400" : "text-zinc-200";
 
   return (
     <div
@@ -180,7 +174,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
         ) : null}
       </div>
 
-      {/* Herói: avatar com halo + skill sobreposta */}
+      {/* Herói: avatar com halo + BadgeSkills */}
       <div
         className="mx-3 short:mx-2 mt-2 short:mt-1 rounded-lg flex flex-col items-center pt-3 short:pt-2 pb-2.5 short:pb-1.5 px-2 short:px-1.5"
         style={{ background: `radial-gradient(ellipse 90% 100% at 50% 0%, ${hexToRgba(posHex, 0.22)} 0%, transparent 70%)` }}
@@ -199,13 +193,6 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               photo={auction.photo || null}
             />
           </div>
-          <span
-            className={`absolute -bottom-1 -right-3 min-w-9 h-9 px-1.5 rounded-full bg-surface-container border-2 flex items-center justify-center font-headline font-black text-lg leading-none tabular-nums ${posText}`}
-            style={{ borderColor: posHex, textShadow: "0 0 10px currentColor" }}
-            title={`Skill ${auction.skill}`}
-          >
-            {auction.skill}
-          </span>
         </div>
         <p className="mt-2 short:mt-1 font-headline font-black text-on-surface text-base short:text-sm leading-tight truncate max-w-full">
           <PlayerLink playerId={auction.playerId}>{auction.name}</PlayerLink>
@@ -213,6 +200,14 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
         <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
           {[auction.nationality, countryName].filter(Boolean).join(" · ")}
         </p>
+        <BadgeSkills
+          className="mt-2 short:mt-1"
+          skill={auction.skill}
+          form={auction.form}
+          morale={auction.morale}
+          resistance={auction.resistance}
+          aggressiveness={auction.aggressiveness}
+        />
       </div>
 
       {/* Faixa de urgência: countdown gigante */}
@@ -280,22 +275,13 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
 
       {/* Mini-stats do cromo */}
       {!isClosed && !isPaused && (
-        <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-3 gap-1.5 short:gap-1">
-          <StatTile label="Forma">
-            <span className={`tabular-nums ${formClass}`}>{formMood} {formVal}</span>
-          </StatTile>
+        <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-2 gap-1.5 short:gap-1">
           <StatTile label="Jogos">
             <span className="tabular-nums">{auction.games_played ?? 0}</span>
           </StatTile>
           <StatTile label="Golos">
             <span className="tabular-nums">{auction.goals ?? 0}</span>
           </StatTile>
-        </div>
-      )}
-      {!isClosed && !isPaused && auction.aggressiveness != null && (
-        <div className="mt-1.5 short:mt-1 flex items-center justify-center gap-1.5">
-          <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/50">Agressividade</span>
-          <AggBadge value={auction.aggressiveness} />
         </div>
       )}
 
