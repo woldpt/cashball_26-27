@@ -1,7 +1,7 @@
 import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
-import { usePhaseAnnounce, FinalWhistleStamp, WeatherOverlay } from "../match/shared/index.js";
+import { usePhaseAnnounce, PreMatchIntro, FinalWhistleStamp, WeatherOverlay } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { useKitClash } from "../../hooks/useKitClash.js";
@@ -519,6 +519,7 @@ export function LiveMatchHero({
           })()}
         </div>
 
+        <PreMatchIntro matchEvents={matchEvents} liveMinute={liveMinute} isPlayingMatch={isPlayingMatch} />
         {/* ── Apito final: selo transitório do GameContext (só no meu jogo) ── */}
         {finalWhistle && (
           <FinalWhistleStamp
