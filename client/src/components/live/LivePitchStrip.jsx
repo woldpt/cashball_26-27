@@ -54,8 +54,8 @@ export function LivePitchStrip({ emoji }) {
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 h-[calc(4rem+env(safe-area-inset-bottom))] overflow-hidden border-t border-outline-variant/30 pointer-events-none"
       style={{
         perspective: "220px",
-        maskImage: "linear-gradient(transparent, #000 60%)",
-        WebkitMaskImage: "linear-gradient(transparent, #000 60%)",
+        maskImage: "linear-gradient(transparent 40%, #000 90%)",
+        WebkitMaskImage: "linear-gradient(transparent 40%, #000 90%)",
       }}
     >
       <svg
