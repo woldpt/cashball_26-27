@@ -1227,6 +1227,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
   const handleDeclineJobOffer = (game: ActiveGame, coachName: string): void => {
     delete game.pendingJobOffers[coachName];
+    saveGameState(game);
   };
 
   // ── TROCA IMEDIATA PÓS-DESPEDIMENTO ───────────────────────────────────────

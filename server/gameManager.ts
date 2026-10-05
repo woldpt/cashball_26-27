@@ -1389,8 +1389,13 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                 ? savedMs
                 : DEFAULT_MS_PER_MINUTE;
 
-              // Coach dismissal persistence (transient: pendingJobOffers is never persisted)
+              // Coach dismissal persistence — o convite sobrevive ao restart
               game.pendingJobOffers = {};
+              if (st["pendingJobOffers"]) {
+                try {
+                  game.pendingJobOffers = JSON.parse(st["pendingJobOffers"]) || {};
+                } catch (_) {}
+              }
               if (st["negativeBudgetStreak"]) {
                 try {
                   const parsed = JSON.parse(st["negativeBudgetStreak"]);
@@ -2013,6 +2018,7 @@ function saveGameState(game: ActiveGame): void {
   upsert("roomName", (game as any).roomName || "");
   upsert("roomCreator", game.roomCreator || "");
   upsert("msPerMinute", String(game.msPerMinute ?? DEFAULT_MS_PER_MINUTE));
+  upsert("pendingJobOffers", JSON.stringify(game.pendingJobOffers || {}));
   upsert(
     "negativeBudgetStreak",
     JSON.stringify(game.negativeBudgetStreak || {}),
