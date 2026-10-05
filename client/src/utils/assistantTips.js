@@ -36,7 +36,7 @@ export const ONCE_PER_ROOM_TIPS = new Set(["lineup"]);
  * @property {boolean} [isLineupComplete]
  * @property {boolean} [lineupEligible] 11 por fechar E já passou o gate de
  *   inatividade (ver `LINEUP_IDLE_MS` no hook).
- * @property {{signedUp: boolean}|null} [cupWeekFriendly] Véspera de Taça
+ * @property {{signedUp: boolean, nextWeek: boolean}|null} [cupWeekFriendly] Véspera de Taça
  *   para um eliminado (ver `nextMatchSummary.cupWeekFriendly`).
  */
 
@@ -115,7 +115,7 @@ export const ASSISTANT_TIPS = [
   {
     id: "cupfriendly",
     build: (s) =>
-      !s.cupWeekFriendly || s.cupWeekFriendly.signedUp
+      !s.cupWeekFriendly?.nextWeek || s.cupWeekFriendly.signedUp
         ? null
         : {
             mood: "worried",

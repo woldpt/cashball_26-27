@@ -462,8 +462,8 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         teamForms={teamForms}
                         navigateTab={navigateTab}
                         cupWeekFriendly={nextMatchSummary?.cupWeekFriendly ?? null}
-                        onSignupCupFriendly={(done) =>
-                          socket.emit("signupCupWeekFriendly", {}, (res) => {
+                        onSignupCupFriendly={(round, done) =>
+                          socket.emit("signupCupWeekFriendly", { round }, (res) => {
                             done?.(res);
                             if (!res?.ok) return;
                             socket.emit("requestCalendar");

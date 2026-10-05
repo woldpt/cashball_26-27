@@ -1,3 +1,8 @@
+## Amigáveis em todas as semanas da Taça (2026-10-05)
+- Eliminado pode marcar amigável em qualquer semana da Taça ainda por jogar (exceto a final); isenta dos 32 avos marca para a ronda 1.
+- Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.
+- Testado: typecheck, lint/check:types, connect-smoke + script sobre BD de sala (duplicados, final, par humano, NPC).
+
 ## Deploy v26.10.21 no rick (2026-10-05)
 - Ligas de 10 equipas e 32 avos da Taça com Distritais em produção; sala sem criador deixa de tornar todos admin; compatibilidade antiga removida.
 - Transferências: +8 de moral ao mudar de clube; BadgeSkills no cromo (mercado/leilões), sem a agressividade antiga.

@@ -112,10 +112,9 @@ const buildFriendlyItem = (entry, status, ctx, dbRound = FRIENDLY_ROUND) => {
 
 const buildCupItem = (entry, status, ctx) => {
   const { cal, teams, myTeam, myTeamId, eliminatedCupRound } = ctx;
-  // Rondas após a eliminação (ou Div. 5, que não joga a Taça) → placeholder.
-  const notInCup = myTeam?.division === 5;
-  if (notInCup || (eliminatedCupRound !== null && entry.round > eliminatedCupRound)) {
-    return { entry, status, type: "cup", eliminated: true, notInCup };
+  // Rondas após a eliminação → placeholder (os Distritais também jogam a Taça).
+  if (eliminatedCupRound !== null && entry.round > eliminatedCupRound) {
+    return { entry, status, type: "cup", eliminated: true };
   }
   const fixtures =
     cal?.cupMatches?.filter((m) => m.round === entry.round) ?? [];
@@ -393,8 +392,8 @@ function NextMatchHero({ item, teamForms, onOpenTeamSquad, onGoToTactics }) {
  * @param {Object} props.cal
  * @param {Array<{id: number, name: string}>} props.teams
  * @param {number} props.myTeamId
- * @param {{cupRound: number, signedUp: boolean}|null} props.cupWeekFriendly
- * @param {(done: (res: {ok: boolean, error?: string}) => void) => void} props.onSignup
+ * @param {{rounds: Array<number>}|null} props.cupWeekFriendly
+ * @param {(round: number, done: (res: {ok: boolean, error?: string}) => void) => void} props.onSignup
  * @returns {JSX.Element|null}
  */
 function CupWeekFriendlyRow({ entry, cal, teams, myTeamId, cupWeekFriendly, onSignup }) {
@@ -405,14 +404,14 @@ function CupWeekFriendlyRow({ entry, cal, teams, myTeamId, cupWeekFriendly, onSi
     myTeamId,
   );
   const opponent = match?.away_team_id ? opponentOf(teams, match, myTeamId) : null;
-  const canSignup = !match && cupWeekFriendly?.cupRound === entry.round && !cupWeekFriendly.signedUp;
+  const canSignup = !match && !!cupWeekFriendly?.rounds?.includes(entry.round);
   let text = null;
   if (opponent) {
     const { myScore, opScore } = splitScore(match.played ? match : null, myTeamId);
     text = match.played
       ? `Amigável vs ${opponent.name} · ${myScore}–${opScore}`
       : `Amigável vs ${opponent.name} (${homeIdOf(match) === myTeamId ? "Casa" : "Fora"})`;
-  } else if (match || (cupWeekFriendly?.cupRound === entry.round && cupWeekFriendly.signedUp)) {
+  } else if (match) {
     text = "Amigável marcado — adversário definido no fecho da jornada";
   } else if (!canSignup) {
     return null;
@@ -429,7 +428,7 @@ function CupWeekFriendlyRow({ entry, cal, teams, myTeamId, cupWeekFriendly, onSi
           className="shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded bg-primary text-on-primary disabled:opacity-50"
           onClick={() => {
             setBusy(true);
-            onSignup((res) => {
+            onSignup(entry.round, (res) => {
               setBusy(false);
               if (!res?.ok) setError(res?.error ?? "Não foi possível marcar.");
             });
@@ -504,7 +503,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
         -entry.round,
       );
       if (item) return item;
-      return cupWeekFriendly?.cupRound === entry.round
+      return cupWeekFriendly?.rounds?.includes(entry.round)
         ? { entry, status, type: "friendly", signupRow: true }
         : null;
     };
@@ -526,8 +525,8 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
           return buildFriendlyItem(entry, status, ctx);
         if (entry.type === "cup") {
           const cupItem = buildCupItem(entry, status, ctx);
-          // Todos: na semana em que estou fora, o amigável toma o lugar do «Eliminado».
-          return (cupItem.eliminated && calFilter === "all" && cupWeekFriendlyItem(entry, status)) || cupItem;
+          // Todos: na semana em que estou fora (eliminado ou isento), o amigável toma o lugar do «Eliminado».
+          return (calFilter === "all" && (cupItem.eliminated || !cupItem.opponent) && cupWeekFriendlyItem(entry, status)) || cupItem;
         }
         return buildLeagueItem(entry, status, ctx);
       })
@@ -671,7 +670,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-sm font-black text-error leading-tight">
-                          {item.notInCup ? "Fora da Taça" : "Eliminado da Taça"}
+                          Eliminado da Taça
                         </span>
                         <span className="text-[10px] text-on-surface-variant/40">
                           {entry.roundName}
@@ -679,7 +678,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                       </div>
                     </div>
                     <div className="shrink-0 flex items-center justify-end px-4 short:px-2 py-2.5 sm:py-3 short:py-1.5">
-                      <Badge variant="error">{item.notInCup ? "Fora" : "Eliminado"}</Badge>
+                      <Badge variant="error">Eliminado</Badge>
                     </div>
                   </motion.div>
                 );

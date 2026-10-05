@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { getCupExemptTeamIds } from "./coreHelpers";
+import { getCupExemptTeamIds, serializeRoomTask } from "./coreHelpers";
 import { CUP_ROUND_NAMES, CUP_FINAL_ROUND, SEASON_CALENDAR, cupWeekFriendlyRound } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
@@ -16,67 +16,121 @@ interface CupHandlerDeps {
 }
 
 /**
- * Amigável da semana da Taça: disponível no lobby da véspera (liga seguida de
- * ronda da Taça que não seja a final) para quem já não está na Taça.
- * null = não disponível; senão a ronda e se a equipa já está inscrita.
+ * Rondas da Taça (ainda por jogar, sem a final) em que a equipa folga e pode
+ * marcar amigável: todas as restantes se já foi eliminada; a ronda 1 se é
+ * isenta dos 32 avos.
+ */
+async function getCupFriendlyRounds(game: ActiveGame, teamId: number, runAll: RunAll): Promise<number[]> {
+  const upcoming = SEASON_CALENDAR.filter(
+    (e: any) =>
+      e.type === "cup" &&
+      e.round !== CUP_FINAL_ROUND &&
+      (e.calendarIndex > game.calendarIndex ||
+        (e.calendarIndex === game.calendarIndex && game.gamePhase === "lobby" && !game.currentFixtures?.length)),
+  ).map((e: any) => e.round as number);
+  if (!upcoming.length) return [];
+  const lost = await runAll(
+    game.db,
+    `SELECT id FROM cup_matches WHERE season = ? AND round > 0 AND played = 1
+       AND (home_team_id = ? OR away_team_id = ?) AND winner_team_id IS NOT NULL AND winner_team_id <> ?`,
+    [game.season, teamId, teamId, teamId],
+  );
+  if (lost.length > 0) return upcoming;
+  if (upcoming.includes(1) && (await getCupExemptTeamIds(game.db)).includes(teamId)) return [1];
+  return [];
+}
+
+/**
+ * Amigáveis das semanas da Taça para quem já não está na Taça.
+ * `cupRound`/`signedUp` = a 1.ª semana livre (`nextWeek` = é já a seguir — dica do adjunto); `rounds` =
+ * todas as semanas em que ainda se pode marcar (sem amigável já marcado).
  */
 export async function getCupWeekFriendlyStatus(
   game: ActiveGame,
   teamId: number | null | undefined,
   runAll: RunAll,
-): Promise<{ cupRound: number; roundName: string; signedUp: boolean } | null> {
-  if (!teamId || game.gamePhase !== "lobby") return null;
-  const cur = SEASON_CALENDAR[game.calendarIndex];
-  const next = SEASON_CALENDAR[game.calendarIndex + 1] as any;
-  if (cur?.type !== "league" || next?.type !== "cup" || next.round === CUP_FINAL_ROUND) return null;
-  const round: number = next.round;
-  // Ainda na Taça? Ronda 1: todas menos as isentas (essas folgam e podem
-  // marcar amigável); ronda 2: vencedores + isentas; seguintes: vencedores.
-  const exempt = round <= 2 ? await getCupExemptTeamIds(game.db) : [];
-  const inCup =
-    round === 1
-      ? !exempt.includes(Number(teamId))
-      : (round === 2 && exempt.includes(Number(teamId))) ||
-        (await runAll(
-          game.db,
-          "SELECT id FROM cup_matches WHERE season = ? AND round = ? AND played = 1 AND winner_team_id = ?",
-          [game.season, round - 1, teamId],
-        )).length > 0;
-  if (inCup) return null;
-  const signed = await runAll(
+): Promise<{ cupRound: number; roundName: string; signedUp: boolean; nextWeek: boolean; rounds: number[] } | null> {
+  if (!teamId) return null;
+  const free = await getCupFriendlyRounds(game, Number(teamId), runAll);
+  if (!free.length) return null;
+  const signedRows = await runAll<{ round: number }>(
     game.db,
-    "SELECT id FROM cup_matches WHERE season = ? AND round = ? AND (home_team_id = ? OR away_team_id = ?)",
-    [game.season, cupWeekFriendlyRound(round), teamId, teamId],
+    "SELECT round FROM cup_matches WHERE season = ? AND round < 0 AND (home_team_id = ? OR away_team_id = ?)",
+    [game.season, teamId, teamId],
   );
-  return { cupRound: round, roundName: next.roundName, signedUp: signed.length > 0 };
+  const signed = new Set(signedRows.map((r) => -Number(r.round)));
+  const rounds = free.filter((r) => !signed.has(r));
+  const cupRound = free[0];
+  const next = SEASON_CALENDAR[game.calendarIndex + 1] as any;
+  const nextWeek = game.gamePhase === "lobby" && next?.type === "cup" && next.round === cupRound;
+  return { cupRound, roundName: CUP_ROUND_NAMES[cupRound] || `Ronda ${cupRound}`, signedUp: signed.has(cupRound), nextWeek, rounds };
+}
+
+/**
+ * Marca o amigável da semana da ronda `round` já com adversário: junta-se a
+ * uma inscrição sem par (outro humano) ou escolhe uma equipa NPC que também
+ * folga nessa semana. Sem candidatos fica em aberto (emparelha no fecho).
+ */
+async function bookCupWeekFriendly(game: ActiveGame, teamId: number, round: number, runAll: RunAll) {
+  const dbRound = cupWeekFriendlyRound(round);
+  const open = await runAll<{ id: number }>(
+    game.db,
+    "SELECT id FROM cup_matches WHERE season = ? AND round = ? AND played = 0 AND away_team_id IS NULL AND home_team_id <> ? ORDER BY id LIMIT 1",
+    [game.season, dbRound, teamId],
+  );
+  if (open.length) {
+    await runAll(game.db, "UPDATE cup_matches SET away_team_id = ? WHERE id = ?", [teamId, open[0].id]);
+    return;
+  }
+  const humans = new Set<number>();
+  for (const seat of Object.values(game.seats || {})) if (seat.teamId != null) humans.add(Number(seat.teamId));
+  const exempt = round === 1 ? await getCupExemptTeamIds(game.db) : [];
+  // Folgam na ronda: eliminadas (perderam um jogo da Taça) ou isentas dos 32 avos.
+  const candidates = await runAll<{ id: number }>(
+    game.db,
+    `SELECT t.id FROM teams t
+      WHERE t.id <> ?
+        AND (t.id IN (${exempt.map(() => "?").join(",") || "NULL"}) OR EXISTS (
+          SELECT 1 FROM cup_matches c WHERE c.season = ? AND c.round > 0 AND c.played = 1
+            AND (c.home_team_id = t.id OR c.away_team_id = t.id)
+            AND c.winner_team_id IS NOT NULL AND c.winner_team_id <> t.id))
+        AND NOT EXISTS (
+          SELECT 1 FROM cup_matches f WHERE f.season = ? AND f.round = ?
+            AND (f.home_team_id = t.id OR f.away_team_id = t.id))`,
+    [teamId, ...exempt, game.season, game.season, dbRound],
+  );
+  const pool = candidates.filter((c) => !humans.has(Number(c.id)));
+  const ai = pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
+  await runAll(
+    game.db,
+    "INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES (?, ?, ?, ?)",
+    [game.season, dbRound, teamId, ai],
+  );
 }
 
 export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
   const { getGameBySocket, getPlayerBySocket, runAll } = deps;
 
   // ── Amigável da semana da Taça (inscrição na véspera, sem desmarcar) ─────
-  socket.on("signupCupWeekFriendly", async (_payload: any, ack?: (r: any) => void) => {
+  socket.on("signupCupWeekFriendly", async (payload: any, ack?: (r: any) => void) => {
     const reply = typeof ack === "function" ? ack : () => {};
     const game = getGameBySocket(socket.id);
     const player = game && getPlayerBySocket(game, socket.id);
     if (!game || !player?.teamId) return reply({ ok: false, error: "Sem equipa." });
-    try {
-      const status = await getCupWeekFriendlyStatus(game, player.teamId, runAll);
-      if (!status) return reply({ ok: false, error: "Já não é possível marcar o amigável." });
-      // INSERT condicional: um duplo clique não cria duas inscrições.
-      await runAll(
-        game.db,
-        `INSERT INTO cup_matches (season, round, home_team_id)
-         SELECT ?, ?, ? WHERE NOT EXISTS (
-           SELECT 1 FROM cup_matches WHERE season = ? AND round = ? AND (home_team_id = ? OR away_team_id = ?))`,
-        [game.season, cupWeekFriendlyRound(status.cupRound), player.teamId,
-         game.season, cupWeekFriendlyRound(status.cupRound), player.teamId, player.teamId],
-      );
-      reply({ ok: true });
-    } catch (err) {
-      console.error(`[${game.roomCode}] signupCupWeekFriendly:`, err);
-      reply({ ok: false, error: "Erro ao marcar o amigável." });
-    }
+    const teamId = Number(player.teamId);
+    // Serializado por sala: duas inscrições em simultâneo não apanham o mesmo NPC.
+    serializeRoomTask(game.roomCode, async () => {
+      try {
+        const status = await getCupWeekFriendlyStatus(game, teamId, runAll);
+        const round = Number(payload?.round ?? status?.cupRound);
+        if (!status?.rounds.includes(round)) return reply({ ok: false, error: "Já não é possível marcar o amigável." });
+        await bookCupWeekFriendly(game, teamId, round, runAll);
+        reply({ ok: true });
+      } catch (err) {
+        console.error(`[${game.roomCode}] signupCupWeekFriendly:`, err);
+        reply({ ok: false, error: "Erro ao marcar o amigável." });
+      }
+    });
   });
 
   // ── Cup bracket data ─────────────────────────────────────────────────────
