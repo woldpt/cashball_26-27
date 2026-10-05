@@ -1,7 +1,7 @@
 import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
-import { PreMatchIntro, KickoffBadge, FinalWhistleStamp } from "../match/shared/index.js";
+import { PreMatchIntro, KickoffBadge, FinalWhistleStamp, WeatherOverlay } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { useKitClash } from "../../hooks/useKitClash.js";
@@ -201,6 +201,7 @@ export function LiveMatchHero({
         className="absolute inset-0 pointer-events-none"
         style={{ boxShadow: "inset 0 0 90px rgba(0,0,0,0.42)" }}
       />
+      {weatherEvent && <WeatherOverlay emoji={weatherEvent.emoji} />}
       {/* marcas de água dos emblemas (laterais, escuras e desvanecidas) */}
       {!hideScoreboard && hInfo?.crest && (
         <img
