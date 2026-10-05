@@ -100,6 +100,42 @@ function ExpandableRow({
 }
 
 /**
+ * Barra segmentada de composição (proporção) + legenda.
+ * @param {{segments: Array<{label: string, bg: string, pct: number}>}} props
+ * @returns {JSX.Element|null}
+ */
+function SegmentBar({ segments }) {
+  if (segments.length === 0) return null;
+  return (
+    <div className="pt-1 short:pt-0.5">
+      <div className="flex h-2 w-full overflow-hidden rounded-full gap-px">
+        {segments.map((s) => (
+          <div
+            key={s.label}
+            className={`h-full ${s.bg}`}
+            style={{ width: `${s.pct}%` }}
+          />
+        ))}
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+        {segments.map((s) => (
+          <span
+            key={s.label}
+            className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/70"
+          >
+            <span className={`h-2 w-2 rounded-[2px] ${s.bg}`} />
+            {s.label}
+            <span className="text-on-surface-variant/90 tabular-nums">
+              {Math.round(s.pct)}%
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * @param {{
  *   financeData: object|null,
  *   totalWeeklyWage: number,
@@ -279,6 +315,21 @@ export function FinancesTab({
     return parts.map((p) => ({ ...p, pct: (p.v / totalSeasonIncome) * 100 }));
   }, [totalSeasonIncome, financeData, weekly]);
 
+  // Composição das despesas, no mesmo formato (tons quentes).
+  const expenseSegments = useMemo(() => {
+    if (totalSeasonExpenses <= 0) return [];
+    return [
+      { label: "Salários", v: wagesSeasonCost, bg: "bg-error" },
+      { label: "Funcionários", v: staffSeasonCost, bg: "bg-rose-400" },
+      { label: "Juros", v: interestSeasonCost, bg: "bg-orange-500" },
+      { label: "Manutenção", v: weekly?.upkeep || 0, bg: "bg-amber-600" },
+      { label: "Compras", v: financeData?.totalTransferExpenses || 0, bg: "bg-fuchsia-500" },
+      { label: "Obras", v: financeData?.totalStadiumExpenses || 0, bg: "bg-red-800" },
+    ]
+      .filter((p) => p.v > 0)
+      .map((p) => ({ ...p, pct: (p.v / totalSeasonExpenses) * 100 }));
+  }, [totalSeasonExpenses, wagesSeasonCost, staffSeasonCost, interestSeasonCost, weekly, financeData]);
+
   // O ponto mais recente do gráfico é sempre o saldo actual: se divergir do
   // último snapshot (transfers/obras a meio da semana), acrescenta um ponto
   // sintético "Agora" — sem tocar no histórico persistido.
@@ -411,33 +462,7 @@ export function FinancesTab({
               {formatCurrency(totalSeasonIncome)}
             </span>
           </div>
-          {incomeSegments.length > 0 && (
-            <div className="pt-1 short:pt-0.5">
-              <div className="flex h-2 w-full overflow-hidden rounded-full gap-px">
-                {incomeSegments.map((s) => (
-                  <div
-                    key={s.label}
-                    className={`h-full ${s.bg}`}
-                    style={{ width: `${s.pct}%` }}
-                  />
-                ))}
-              </div>
-              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
-                {incomeSegments.map((s) => (
-                  <span
-                    key={s.label}
-                    className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/70"
-                  >
-                    <span className={`h-2 w-2 rounded-[2px] ${s.bg}`} />
-                    {s.label}
-                    <span className="text-on-surface-variant/90 tabular-nums">
-                      {Math.round(s.pct)}%
-                    </span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          <SegmentBar segments={incomeSegments} />
           <ul className="space-y-3 short:space-y-2">
             <ExpandableRow
               label="Bilheteiras"
@@ -590,6 +615,7 @@ export function FinancesTab({
               {formatCurrency(totalSeasonExpenses)}
             </span>
           </div>
+          <SegmentBar segments={expenseSegments} />
           <ul className="space-y-3 short:space-y-2">
             <li className="flex justify-between items-center">
               <div>
