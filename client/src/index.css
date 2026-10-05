@@ -817,6 +817,22 @@ body {
   }
 }
 
+/* LivePitchStrip: ondas nas poças e brilho do gelo (estáticos sem motion) */
+.lps-ripple { opacity: 0; transform-box: fill-box; transform-origin: center; }
+@keyframes lps-ripple {
+  0% { transform: scale(0.2); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes lps-glint {
+  0%, 80%, 100% { opacity: 0; }
+  88% { opacity: 1; }
+}
+.lps-glint { opacity: 0.4; }
+@media (prefers-reduced-motion: no-preference) {
+  .lps-ripple { animation: lps-ripple 1.8s ease-out infinite; }
+  .lps-glint { animation: lps-glint 5s ease-in-out infinite; }
+}
+
 /* Anúncio de fase (1ª/2ª parte, prolongamento) no centro do placar do hero */
 @keyframes phase-announce {
   0% { opacity: 0; transform: scale(0.6); letter-spacing: 0.6em; }
