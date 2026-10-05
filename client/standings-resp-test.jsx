@@ -214,6 +214,26 @@ const teams = [
   },
 ];
 
+// Ligas de 10 equipas: completar cada divisão 1–4 com NPCs de fundo de tabela.
+for (let div = 1; div <= 4; div++) {
+  const have = teams.filter((t) => t.division === div).length;
+  for (let i = have; i < 10; i++) {
+    teams.push({
+      id: div * 100 + i,
+      name: `Clube Fixture D${div} n.º ${i + 1}`,
+      division: div,
+      coach_name: null,
+      color_primary: "#64748b",
+      points: 9 - i,
+      goals_for: 10 - i,
+      goals_against: 12 + i,
+      wins: 2,
+      draws: 3 - (i % 3),
+      losses: 4 + (i % 3),
+    });
+  }
+}
+
 // Players de equipas humanas (a fonte de verdade para humanTeamIds).
 const players = [
   { id: 1, name: "Jogador A", teamId: 1 },
