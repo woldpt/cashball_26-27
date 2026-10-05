@@ -1898,13 +1898,14 @@ export function registerSessionSocketHandlers(
 
 				// Rubricas semanais reais (resumos `weekly_finance` do Jornal) e
 				// prémios da época — o cliente deixa de estimar com o salário atual.
-				const weekly = { baseIncome: 0, wages: 0, upkeep: 0, staff: 0, interest: 0 };
+				const weekly = { weeks: 0, baseIncome: 0, wages: 0, upkeep: 0, staff: 0, interest: 0 };
 				let prizeRevenue = 0;
 				try {
 					const weekRows = await runAll(game.db, "SELECT description FROM club_news WHERE team_id = ? AND type = 'weekly_finance' AND year = ?", [teamId, currentYear]);
 					for (const r of weekRows || []) {
 						try {
 							const f = JSON.parse(r.description || "{}");
+							weekly.weeks += 1;
 							weekly.baseIncome += f.income || 0;
 							weekly.wages += f.wages || 0;
 							weekly.upkeep += f.upkeep || 0;

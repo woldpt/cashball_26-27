@@ -228,9 +228,17 @@ export function FinancesTab({
     const projectedSalaries =
       (totalWeeklyWage + staffWeeklyWage) * remainingJornadas;
     const projectedInterest = loanInterestPerWeek * remainingJornadas;
+    // Receita base e manutenção: média das semanas já pagas (fixas por
+    // divisão/lotação, por isso a média é o valor semanal).
+    const paidWeeks = weekly?.weeks || 0;
+    const projectedBaseNet =
+      paidWeeks > 0
+        ? ((weekly.baseIncome - weekly.upkeep) / paidWeeks) * remainingJornadas
+        : 0;
     const projectedEndBudget = Math.round(
       currentBudget +
-        projectedTicketRevenue -
+        projectedTicketRevenue +
+        projectedBaseNet -
         projectedSalaries -
         projectedInterest,
     );
@@ -244,6 +252,7 @@ export function FinancesTab({
     staffWeeklyWage,
     loanInterestPerWeek,
     currentBudget,
+    weekly,
   ]);
 
   // Composição das receitas (proporção) para a barra segmentada do painel.
@@ -356,7 +365,7 @@ export function FinancesTab({
           </div>
           <div className="mt-2 sm:mt-4 short:mt-1">
             <p className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant uppercase mb-1">
-              Bilheteiras - salários - juros ({projection.remainingJornadas} sem.)
+              Bilheteiras + receita base - salários - manutenção - juros ({projection.remainingJornadas} sem.)
             </p>
           </div>
         </SummaryWidget>
