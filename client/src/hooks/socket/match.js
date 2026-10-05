@@ -13,6 +13,16 @@ import { MAX_BENCH_SIZE, PENALTY_SUSPENSE_DISPLAY_MS } from "../../constants/ind
  * @returns {Function} cleanup (remove os listeners).
  */
 export function registerMatchListeners(handlers, refs, ctx) {
+	// Revelação da fila de penáltis ainda por correr. Um tick novo com penálti
+	// cancela os timers mas executa-a já — senão som/flash/eventos desse minuto
+	// perdiam-se.
+	let pendingPenaltyReveal = null;
+	// Timers de penálti só atuam na sala onde foram agendados (sair/trocar de
+	// sala a meio dos 3s não pode reabrir o popup nem mexer no estado novo).
+	const roomGuard = () => {
+		const room = refs.roomCodeRef?.current;
+		return () => !!room && refs.roomCodeRef?.current === room;
+	};
 	socket.on("matchReplay", (data) => {
 		if (!ctx.inRoom()) return;
 		// Reconnected mid-match: fast-forward to current minute without animation
@@ -162,66 +172,71 @@ export function registerMatchListeners(handlers, refs, ctx) {
 			// (só o último aparecia).
 			ctx.penaltyTimers.current.forEach(clearTimeout);
 			ctx.penaltyTimers.current = [];
+			pendingPenaltyReveal?.();
+			const stillHere = roomGuard();
+			const reveal = () => {
+				pendingPenaltyReveal = null;
+				if (!stillHere()) return;
+				// Revelação atómica no fim da fila: limpa o popup e atualiza
+				// score + eventos retidos uma só vez — sem isto, um golo aberto
+				// no mesmo minuto do penálti entrava em silêncio, sem flash.
+				handlers.setPenaltySuspense(null);
+				const revealedGoals = (f.minuteEvents || []).filter((ne) => ne && isGoalType(ne.type));
+				if (revealedGoals.length) {
+					playGoalSound();
+					refs.setGoalFlashRef((prev) => {
+						const next = { ...prev };
+						for (const g of revealedGoals) {
+							const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${g.team}`;
+							next[flashKey] = { ts: Date.now(), n: readGoalFlashEntry(next[flashKey]).n + 1 };
+						}
+						return next;
+					});
+				}
+				handlers.setMatchResults((prev) => {
+					if (!prev) return prev;
+					const updatedResults = (prev.results || []).map((r) => {
+						if (
+							r.homeTeamId !== f.homeTeamId ||
+							r.awayTeamId !== f.awayTeamId
+						)
+							return r;
+						// Revelacao atomica: adicionar tudo o que ficou retido deste minuto -
+						// o evento de penalti E os restantes eventos do mesmo minuto (ex.: um golo
+						// aberto do adversario). Sem isto, o golo do adversario aparecia no painel
+						// ANTES da revelacao do penalty (sensacao de ter sido marcado antes).
+						const existingEvents = r.events || [];
+						const toAdd = (f.minuteEvents || []).filter(
+							(ne) =>
+								!existingEvents.some(
+									(ee) =>
+										ee.minute === ne.minute &&
+										ee.type === ne.type &&
+										ee.playerId === ne.playerId,
+								),
+						);
+						return {
+							...r,
+							finalHomeGoals: Math.max(r.finalHomeGoals || 0, f.homeGoals),
+							finalAwayGoals: Math.max(r.finalAwayGoals || 0, f.awayGoals),
+							events: [...existingEvents, ...toAdd],
+						};
+					});
+					return { ...prev, results: updatedResults };
+				});
+			};
+			pendingPenaltyReveal = reveal;
 			for (const step of computePenaltySteps(suspenseEvents, PENALTY_SUSPENSE_DISPLAY_MS)) {
 				ctx.penaltyTimers.current.push(
 					setTimeout(() => {
-						if (step.action === "show") {
-							handlers.setPenaltySuspense({
-								playerName: step.event.playerName,
-								result: step.event.penaltyResult,
-								team: step.event.team,
-								// Tipo do evento (não a string) decide a cor — robusto a
-								// mudanças de texto no servidor.
-								isGoal: step.event.type === "penalty_goal",
-							});
-							return;
-						}
-						// Revelação atómica no fim da fila: limpa o popup e atualiza
-						// score + eventos retidos uma só vez — sem isto, um golo aberto
-						// no mesmo minuto do penálti entrava em silêncio, sem flash.
-						handlers.setPenaltySuspense(null);
-						const revealedGoals = (f.minuteEvents || []).filter((ne) => ne && isGoalType(ne.type));
-						if (revealedGoals.length) {
-							playGoalSound();
-							refs.setGoalFlashRef((prev) => {
-								const next = { ...prev };
-								for (const g of revealedGoals) {
-									const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${g.team}`;
-									next[flashKey] = { ts: Date.now(), n: readGoalFlashEntry(next[flashKey]).n + 1 };
-								}
-								return next;
-							});
-						}
-						handlers.setMatchResults((prev) => {
-							if (!prev) return prev;
-							const updatedResults = (prev.results || []).map((r) => {
-								if (
-									r.homeTeamId !== f.homeTeamId ||
-									r.awayTeamId !== f.awayTeamId
-								)
-									return r;
-								// Revelacao atomica: adicionar tudo o que ficou retido deste minuto -
-								// o evento de penalti E os restantes eventos do mesmo minuto (ex.: um golo
-								// aberto do adversario). Sem isto, o golo do adversario aparecia no painel
-								// ANTES da revelacao do penalty (sensacao de ter sido marcado antes).
-								const existingEvents = r.events || [];
-								const toAdd = (f.minuteEvents || []).filter(
-									(ne) =>
-										!existingEvents.some(
-											(ee) =>
-												ee.minute === ne.minute &&
-												ee.type === ne.type &&
-												ee.playerId === ne.playerId,
-										),
-								);
-								return {
-									...r,
-									finalHomeGoals: Math.max(r.finalHomeGoals || 0, f.homeGoals),
-									finalAwayGoals: Math.max(r.finalAwayGoals || 0, f.awayGoals),
-									events: [...existingEvents, ...toAdd],
-								};
-							});
-							return { ...prev, results: updatedResults };
+						if (step.action === "reveal") return reveal();
+						if (!stillHere()) return;
+						handlers.setPenaltySuspense({
+							playerName: step.event.playerName,
+							result: step.event.penaltyResult,
+							// Tipo do evento (não a string) decide a cor — robusto a
+							// mudanças de texto no servidor.
+							isGoal: step.event.type === "penalty_goal",
 						});
 					}, step.atMs),
 				);
@@ -239,7 +254,9 @@ export function registerMatchListeners(handlers, refs, ctx) {
 			);
 			for (const e of f.minuteEvents || []) {
 				if (e.penaltySuspense) {
+					const stillHere = roomGuard();
 					setTimeout(() => {
+						if (!stillHere()) return;
 						if (e.type === "penalty_goal") {
 							if (isHumanFixture) playGoalSound();
 							const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${e.team}`;

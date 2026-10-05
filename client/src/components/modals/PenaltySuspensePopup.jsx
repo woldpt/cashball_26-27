@@ -3,7 +3,9 @@ import { ModalShell } from "../shared/ModalShell.jsx";
 import { MODAL_Z, PENALTY_SUSPENSE_REVEAL_MS } from "../../constants/index.js";
 
 /**
- * @param {{ penaltySuspense: object|null }} props
+ * @param {Object} props
+ * @param {{ playerName: string, result: string, isGoal: boolean }|null} props.penaltySuspense
+ * @returns {JSX.Element|null}
  */
 export function PenaltySuspensePopup({ penaltySuspense }) {
   // Em vez de reset síncrono dentro do useEffect (cascading render), comparamos
@@ -25,16 +27,12 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
   const showResult = revealedFor === penaltySuspense;
 
   return (
-    <ModalShell
-      visible={!!penaltySuspense}
-      z={MODAL_Z.penalty}
-      variant="transparent"
-    >
+    <ModalShell z={MODAL_Z.penalty} variant="transparent">
       <div
         role="status"
         aria-live="assertive"
         className={`bg-surface-container border-2 border-amber-500/50 rounded-xl px-8 py-6 text-center shadow-2xl ${
-          showResult ? "" : "animate-bounce"
+          showResult ? "" : "motion-safe:animate-bounce"
         }`}
       >
         <p className="text-xs text-amber-400 uppercase font-black tracking-widest mb-2">
@@ -52,7 +50,7 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
             {penaltySuspense.result}
           </p>
         ) : (
-          <p className="text-3xl font-black text-amber-300 animate-pulse">
+          <p className="text-3xl font-black text-amber-300 motion-safe:animate-pulse">
             ...
           </p>
         )}
