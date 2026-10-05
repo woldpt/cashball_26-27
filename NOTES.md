@@ -1,3 +1,8 @@
+## Deploy v26.10.21 no rick (2026-10-05)
+- Ligas de 10 equipas e 32 avos da Taça com Distritais em produção; sala sem criador deixa de tornar todos admin; compatibilidade antiga removida.
+- Transferências: +8 de moral ao mudar de clube; BadgeSkills no cromo (mercado/leilões), sem a agressividade antiga.
+- 112 saves de salas de teste desregistados do projeto; `backend Healthy`.
+
 ## Ligas de 10 equipas + 32 avos da Taça (2026-10-05)
 - 10 equipas/divisão, 18 jornadas, época de 25 semanas; final da Taça = ronda 6 (`CUP_FINAL_ROUND`). Salas antigas são para apagar (sem migração).
 - 32 avos com Distritais; isentas = D1 + top-4 da D2 (`last_season_rank`). Plano em `docs/plans/2026-10-05-ligas-10-equipas.md`.
