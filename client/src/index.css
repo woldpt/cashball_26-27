@@ -438,15 +438,17 @@ body {
   }
 }
 
-/* Ticker Notícias CM: a tira aparece já visível e sai a deslizar para a
-   esquerda (1 iteração). Duração em --cm-dur (definida pelo componente).
+/* Ticker Notícias CM: a tira entra pela direita e sai pela esquerda
+   (1 iteração). Duração em --cm-dur (definida pelo componente).
    Em hover/foco da barra a passagem pausa para dar tempo de leitura.
    "still" é um temporizador no-op para reduced-motion. */
 @keyframes cmTickerPass {
   0% {
+    left: 100%;
     transform: translateX(0);
   }
   100% {
+    left: 0;
     transform: translateX(-100%);
   }
 }
