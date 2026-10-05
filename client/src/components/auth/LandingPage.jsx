@@ -153,20 +153,7 @@ const LandingPage = ({
 							>
 								<AuthCard>
 									<AnimatePresence mode="wait">
-										{authPhase === "login" ? (
-											<LoginForm
-												name={name}
-												setName={setName}
-												password={password}
-												setPassword={setPassword}
-												authSubmitting={authSubmitting}
-												authError={authError}
-												disconnected={disconnected}
-												onClearError={clearAuthError}
-												onSubmit={() => handleAuthenticate("login")}
-												onCreateAccount={createAccount}
-											/>
-										) : (
+										{authPhase === "register" ? (
 											<RegisterForm
 												name={name}
 												setName={setName}
@@ -180,6 +167,19 @@ const LandingPage = ({
 												onClearError={clearAuthError}
 												onSubmit={() => handleAuthenticate("register")}
 												onBack={resetAuthFlow}
+											/>
+										) : (
+											<LoginForm
+												name={name}
+												setName={setName}
+												password={password}
+												setPassword={setPassword}
+												authSubmitting={authSubmitting}
+												authError={authError}
+												disconnected={disconnected}
+												onClearError={clearAuthError}
+												onSubmit={() => handleAuthenticate("login")}
+												onCreateAccount={createAccount}
 											/>
 										)}
 									</AnimatePresence>
