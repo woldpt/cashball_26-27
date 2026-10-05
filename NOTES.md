@@ -1,3 +1,6 @@
+## Deploy v26.10.15 no rick (2026-10-05)
+- Amigáveis na semana da Taça (separador no Calendário, live view, cartão certo), clima variado, Jornal sem filtros + semana no cabeçalho mobile; `backend Healthy`.
+
 ## Deploy v26.10.14 no rick (2026-10-05)
 - Amigáveis para eliminados da Taça na semana da ronda (com todos os suplentes utilizáveis); `backend Healthy`.
 
