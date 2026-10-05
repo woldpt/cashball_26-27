@@ -1,16 +1,6 @@
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
-
-/* Emoji do evento `weather` → condição (o evento só transporta o emoji). */
-export const EMOJI_TO_CONDITION = {
-  "☀️": "sol",
-  "🌧️": "chuva",
-  "⛈️": "chuva_forte",
-  "💨": "vento",
-  "🥶": "frio",
-  "🌫️": "nevoeiro",
-  "❄️": "neve",
-};
+import { EMOJI_TO_CONDITION } from "./weatherConditions.js";
 
 /* Partículas por condição: n = quantidade, kind = classe CSS base. */
 const PARTICLES = {

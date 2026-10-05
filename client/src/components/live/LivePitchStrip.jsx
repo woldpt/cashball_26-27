@@ -1,4 +1,5 @@
-import { WeatherOverlay, EMOJI_TO_CONDITION } from "../match/shared/WeatherOverlay.jsx";
+import { WeatherOverlay } from "../match/shared/WeatherOverlay.jsx";
+import { EMOJI_TO_CONDITION } from "../match/shared/weatherConditions.js";
 
 /* Tinta por condição: céu (topo), duas tonalidades de relva, véu por cima. */
 const TINT = {
