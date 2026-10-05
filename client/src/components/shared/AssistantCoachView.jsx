@@ -59,7 +59,14 @@ export function AssistantMascot({ mood, flipOnDesktop, color }) {
         <div
           aria-hidden
           className="absolute inset-0"
-          style={{ backgroundColor: color, mask: "url(/coaches/jj-casaco-mask.webp) 0 0 / 100% 100%" }}
+          // Sombreado por cima da cor lisa: luz no peito, escurece para os
+          // lados e para baixo (o original é chapado, não há pregas a herdar).
+          style={{
+            backgroundColor: color,
+            backgroundImage:
+              "radial-gradient(ellipse 55% 35% at 50% 62%, rgba(255,255,255,0.18), transparent 70%), radial-gradient(ellipse 75% 60% at 50% 58%, transparent 45%, rgba(0,0,0,0.38) 100%)",
+            mask: "url(/coaches/jj-casaco-mask.webp) 0 0 / 100% 100%",
+          }}
         />
       )}
     </div>
