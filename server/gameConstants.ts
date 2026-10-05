@@ -703,15 +703,18 @@ export const MATCH_TUNING = {
   moraleDrawDelta: 2,
   moraleDecayRate: 0.1,
   // Moral individual (players.morale 1–50, neutro 25): deltas por evento
-  // + peso na skill efetiva. Deliberadamente pequeno — como a forma.
-  moralePlayerWinDelta: 2,
-  moralePlayerLossDelta: -2,
-  moralePlayerDrawDelta: 1,
-  moralePlayerStarterBonus: 1,
-  moralePlayerBenchMalus: -1,
-  moralePlayerGoalBonus: 1,
-  moralePlayerOwnGoalMalus: -2,
-  moralePlayerRedMalus: -2,
+  // + peso na skill efetiva. O resultado (comum a todo o plantel) pesa
+  // pouco; o papel individual pesa mais, para a moral diferenciar jogadores.
+  // Equilíbrios c/ decaimento 10%: titular a ganhar ≈50, titular a perder ≈35,
+  // suplente não utilizado ≈5–15.
+  moralePlayerWinDelta: 1,
+  moralePlayerLossDelta: -1,
+  moralePlayerDrawDelta: 0,
+  moralePlayerStarterBonus: 2,
+  moralePlayerBenchMalus: -2,
+  moralePlayerGoalBonus: 2,
+  moralePlayerOwnGoalMalus: -3,
+  moralePlayerRedMalus: -3,
   // Média do plantel desvia ataque e defesa ±5% em torno do neutro.
   moralePlayerPerPoint: 0.002,
   // ── Mood dos adeptos (fans_mood 1–50, coluna teams.fans_mood; migração v5)
