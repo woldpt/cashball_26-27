@@ -6,7 +6,7 @@ export function PlayerLink({ playerId, children }) {
   return (
     <button
       type="button"
-      className="hover:underline underline-offset-2 cursor-pointer"
+      className="underline decoration-dotted decoration-current/30 underline-offset-2 hover:decoration-solid hover:decoration-primary/60 hover:text-primary transition-colors cursor-pointer"
       onClick={() => socket.emit("requestPlayerHistory", { playerId })}
     >
       {children}

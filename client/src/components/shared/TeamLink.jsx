@@ -18,7 +18,7 @@ export function TeamLink({ teamId, children, onNavigate }) {
   return (
     <button
       type="button"
-      className="hover:underline underline-offset-2 cursor-pointer text-left"
+      className="underline decoration-dotted decoration-current/30 underline-offset-2 hover:decoration-solid hover:decoration-primary/60 hover:text-primary transition-colors cursor-pointer text-left"
       onClick={(e) => {
         e.stopPropagation();
         onNavigate?.();
