@@ -87,16 +87,16 @@ export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
         home_et_score: number; away_et_score: number;
         home_penalties: number; away_penalties: number;
         winner_team_id: number | null; played: number;
-        home_name: string | null; home_cp: string | null; home_cs: string | null;
-        away_name: string | null; away_cp: string | null; away_cs: string | null;
+        home_name: string | null; home_cp: string | null; home_cs: string | null; home_crest: string | null;
+        away_name: string | null; away_cp: string | null; away_cs: string | null; away_crest: string | null;
       };
       const rows = await runAll<CupRow>(
         game.db,
         `SELECT cm.id, cm.round, cm.home_team_id, cm.away_team_id,
           cm.home_score, cm.away_score, cm.home_et_score, cm.away_et_score,
           cm.home_penalties, cm.away_penalties, cm.winner_team_id, cm.played,
-          th.name AS home_name, th.color_primary AS home_cp, th.color_secondary AS home_cs,
-          ta.name AS away_name, ta.color_primary AS away_cp, ta.color_secondary AS away_cs
+          th.name AS home_name, th.color_primary AS home_cp, th.color_secondary AS home_cs, th.crest AS home_crest,
+          ta.name AS away_name, ta.color_primary AS away_cp, ta.color_secondary AS away_cs, ta.crest AS away_crest
         FROM cup_matches cm
         LEFT JOIN teams th ON cm.home_team_id = th.id
         LEFT JOIN teams ta ON cm.away_team_id = ta.id
@@ -111,10 +111,10 @@ export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
         roundMap.get(row.round)!.push({
           id: row.id,
           homeTeam: row.home_name
-            ? { id: row.home_team_id, name: row.home_name, color_primary: row.home_cp, color_secondary: row.home_cs }
+            ? { id: row.home_team_id, name: row.home_name, color_primary: row.home_cp, color_secondary: row.home_cs, crest: row.home_crest }
             : null,
           awayTeam: row.away_name
-            ? { id: row.away_team_id, name: row.away_name, color_primary: row.away_cp, color_secondary: row.away_cs }
+            ? { id: row.away_team_id, name: row.away_name, color_primary: row.away_cp, color_secondary: row.away_cs, crest: row.away_crest }
             : null,
           homeScore: row.home_score,
           awayScore: row.away_score,
