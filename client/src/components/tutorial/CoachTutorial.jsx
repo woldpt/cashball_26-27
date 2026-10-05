@@ -83,7 +83,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip, c
 					aria-hidden
 					data-tour="tutorial-ring"
 					className={`absolute rounded-lg border-2 border-primary pointer-events-none ${
-						reducedMotion ? "" : "transition-all duration-200 ease-out"
+						reducedMotion ? "" : "transition-all duration-200 ease-out tutorial-ring-pulse"
 					}`}
 					style={{
 						left: ring.left,
