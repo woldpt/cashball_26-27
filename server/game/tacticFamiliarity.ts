@@ -185,24 +185,3 @@ export function getAllTacticFamiliarity(
   }
   return entries;
 }
-
-/**
- * Migração one-shot: reconstrói a janela das últimas 5 formações a partir das
- * linhas ordenadas de player_tactic_history (mais recentes primeiro).
- */
-export function migrateTacticFamiliarityFromHistory(
-  game: ActiveGame,
-  history: Array<{ team_id: number; formation: string }>,
-): void {
-  if (!history?.length) return;
-  if (!game.tacticFamiliarity) game.tacticFamiliarity = {};
-  const byTeam: Record<number, string[]> = {};
-  for (const row of history) {
-    if (!row?.formation) continue;
-    const list = byTeam[row.team_id] ?? (byTeam[row.team_id] = []);
-    if (list.length < MAX_STARS) list.push(row.formation);
-  }
-  for (const [teamId, list] of Object.entries(byTeam)) {
-    game.tacticFamiliarity[Number(teamId)] = { history: list };
-  }
-}

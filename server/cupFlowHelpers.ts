@@ -509,14 +509,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 	/**
 	 * Candidatos ao Melhor Marcador por divisão, um registo por (jogador, clube)
-	 * que marcou. Fonte primária: `player_season_goals` (golos por clube, liga e
+	 * que marcou. Fonte: `player_season_goals` (golos por clube, liga e
 	 * Taça, escritos no flush do apito final) — quem vendeu o goleador a meio da
 	 * época fica com os golos dele e o comprador não herda o troféu.
-	 *
-	 * Sala sem atribuição nenhuma (época a decorrer no dia do deploy): cai no
-	 * contador do jogador + clube atual, o comportamento anterior. O JOIN a
-	 * `teams` (em vez do LEFT JOIN antigo) tira os agentes livres: eram o único
-	 * vencedor possível de sair sem prémio nenhum (sem equipa, sem divisão).
 	 */
 	async function findTopScorers(game: ActiveGame): Promise<TopScorerRow[]> {
 		const attributed = await runAll<TopScorerRow>(
@@ -528,16 +523,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
        WHERE g.goals > 0 AND t.division BETWEEN 1 AND 4
        ORDER BY t.division ASC, (g.team_id = p.team_id) DESC, g.goals DESC, p.skill DESC`,
 		);
-		if (attributed.length > 0) return pickTopScorerWinners(attributed);
-		const legacy = await runAll<TopScorerRow>(
-			game.db,
-			`SELECT p.id, p.name, p.team_id, p.goals, p.skill, t.name as team_name, t.division
-       FROM players p
-       JOIN teams t ON p.team_id = t.id
-       WHERE p.goals > 0 AND t.division BETWEEN 1 AND 4
-       ORDER BY t.division ASC, p.goals DESC, p.skill DESC`,
-		);
-		return pickTopScorerWinners(legacy);
+		return pickTopScorerWinners(attributed);
 	}
 
 	async function payTopScorerPrize(game: ActiveGame, year: number) {

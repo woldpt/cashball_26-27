@@ -1319,16 +1319,14 @@ export function registerSessionSocketHandlers(
 				}
 
 				// Player awards — Melhor Marcador is the only individual award,
-				// stored in palmares with player_id (fallback: coach_name match for
-				// legacy rows written before the player_id column existed).
+				// stored in palmares with player_id.
 				const awards = await runAll(
 					game.db,
 					`SELECT pa.season, pa.achievement
 					 FROM palmares pa
 					 WHERE pa.player_id = ?
-					    OR (pa.player_id IS NULL AND pa.achievement LIKE 'Melhor Marcador%' AND pa.coach_name = ?)
 					 ORDER BY pa.season ASC, pa.id ASC`,
-					[playerId, player.name],
+					[playerId],
 				);
 
 				// Skill history — from player_skill_snapshots table

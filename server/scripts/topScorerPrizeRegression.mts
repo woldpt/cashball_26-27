@@ -14,13 +14,11 @@
  *        sofreu; o comprador não herda nada
  *   T3 — empate a golos: os dois vencem e os dois levam o prémio cheio
  *   T4 — divisão 5 (pool interno) fora; agente livre (sem equipa) não vence
- *   T5 — sem atribuição nenhuma (sala a decorrer no dia do deploy) → cai no
- *        contador do jogador + clube atual
  *   T6 — equipa NPC: dinheiro e palmarés sim, notícia no Jornal não
  *   T7 — prefixo «Melhor Marcador» intacto (histórico do jogador + museu
  *        dependem dele) e `pickTopScorerWinners` puro
  *   T8 — sidebar (`fetchTopScorers`): ranking por divisão sobre a atribuição,
- *        top 10 por divisão, divisão 5 fora, legado cai no contador do jogador
+ *        top 10 por divisão, divisão 5 fora
  *   T9 — transferência dentro da mesma divisão: um só troféu por jogador, no
  *        clube onde fecha a época
  *
@@ -242,24 +240,6 @@ async function makeRoom() {
 	check(!paid.some((w: any) => w.id === 501 || w.id === 999), "T4 divisão 5 e agente livre fora do prémio");
 }
 
-// ── T5 — sala legada (sem atribuição): contador do jogador + clube atual ────
-{
-	const room = await makeRoom();
-	const { db, game, helpers, addPlayer, budgetOf } = room;
-	// Sem linhas em player_season_goals (época a decorrer no dia do deploy):
-	// volta a valer o contador do jogador, mas continuam a ser 4 prémios —
-	// um por divisão.
-	await addPlayer(101, 10, 9);
-	await addPlayer(102, 11, 12);
-	await addPlayer(201, 20, 21);
-	const paid = await helpers.payTopScorerPrize(game, 2030);
-	await defer();
-	checkEq(paid.map((w: any) => w.id).join(","), "102,201", "T5 legado: máximo por divisão pelo contador do jogador");
-	checkEq(paid.map((w: any) => w.divId).join(","), "1,2", "T5 legado: divisão do clube atual");
-	checkEq(await budgetOf(11), 1500000, "T5 legado: prémio pago ao clube atual do vencedor");
-	checkEq(await budgetOf(10), 1000000, "T5 legado: o segundo da divisão não leva nada");
-}
-
 // ── T6/T7 — NPC sem notícia; prefixo do palmarés; puro ──────────────────────
 {
 	const room = await makeRoom();
@@ -307,18 +287,12 @@ async function makeRoom() {
 	// Bola de ouro da divisão 5: fora do ranking (pool invisível).
 	await addPlayer(501, 50, 40, 45, "Npc Div5");
 	await attribute(501, 50, 40);
-	// Sala legada: sem atribuição nenhuma → contador do jogador.
-	await addPlayer(201, 20, 21, 30, "Zé");
 	const rows = await fetchTopScorers(db);
 	const div1 = rows.filter((r: any) => r.division === 1);
 	checkEq(div1.map((r: any) => `${r.id}:${r.goals}`).join(","), "102:18,101:2", "T8 div 1: golos atribuídos ao clube atual");
 	check(
 		rows.every((r: any) => r.division >= 1 && r.division <= 4),
 		"T8 divisão 5 fora do ranking",
-	);
-	check(
-		rows.some((r: any) => r.id === 201 && r.division === 2 && r.goals === 21),
-		"T8 legado sem atribuição cai no contador do jogador",
 	);
 	check(
 		rows.every((r: any) => r.goals > 0 && r.team_name && r.color_primary === "#111111"),

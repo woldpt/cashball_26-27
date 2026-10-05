@@ -4,7 +4,6 @@ import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, LEAGUE_MATCHWEEKS, TEAMS_PER_DIVISION, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, WAGE_SEED_SPREAD, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
 import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec, serializeRoomTask, slimMatchResult } from "./coreHelpers";
-import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { dealDisplaySponsors } from "./game/sponsors";
 import { getOfflineCoaches, getRoomRoster } from "./presenceHelpers";
 import {
@@ -1409,54 +1408,19 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                 } catch (_) {}
               }
 
-              // ── Memória táctica: restaurar histórico de formações ou migrar ──
+              // ── Memória táctica: restaurar histórico de formações ──
               if (st["tacticFamiliarity"]) {
                 try {
                   const parsed = JSON.parse(st["tacticFamiliarity"]);
                   if (parsed && typeof parsed === "object") {
                     game.tacticFamiliarity = Object.fromEntries(
-                      Object.entries(parsed).map(([k, v]) => {
-                        const fam = v as {
-                          history?: string[];
-                          formations?: Record<string, number>;
-                        };
-                        if (Array.isArray(fam?.history)) {
-                          return [Number(k), { history: fam.history.slice(0, 5) }];
-                        }
-                        // Estado antigo (scores por formação): converter a
-                        // melhor esforço em janela das últimas 5 formações.
-                        const formations = fam?.formations || {};
-                        const history = Object.entries(formations)
-                          .sort((a, b) => b[1] - a[1])
-                          .flatMap(([f, score]) =>
-                            Array(Math.min(5, Math.round(score / 20))).fill(f),
-                          )
-                          .slice(0, 5);
-                        return [Number(k), { history }];
-                      }),
+                      Object.entries(parsed).map(([k, v]) => [
+                        Number(k),
+                        { history: ((v as { history?: string[] })?.history || []).slice(0, 5) },
+                      ]),
                     );
                   }
                 } catch (_) {}
-              } else {
-                // Migração one-shot: reconstruir a janela das últimas 5 formações
-                // a partir da player_tactic_history (só se existir e tiver dados).
-                db.all(
-                  "SELECT team_id, formation FROM player_tactic_history ORDER BY id DESC",
-                  (migrateErr: any, rows: any[] | null) => {
-                    if (migrateErr || !rows || rows.length === 0) return;
-                    try {
-                      migrateTacticFamiliarityFromHistory(game, rows);
-                      console.log(
-                        `[gameManager] 🧠 Memória táctica migrada de ${rows.length} registos de histórico (room ${roomCode})`,
-                      );
-                    } catch (migrateEx) {
-                      console.error(
-                        `[gameManager] Erro ao migrar memória táctica (room ${roomCode}):`,
-                        migrateEx,
-                      );
-                    }
-                  },
-                );
               }
 
               // Limpar pendingMatchActions persistidas na DB — após reinício do servidor
@@ -1601,7 +1565,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                             const bidsDesc = Object.entries(auc.bids || {})
                               .map(([tid2, val]) => ({
                                 teamId: parseInt(tid2, 10),
-                                amount: Number((typeof val === 'object' ? (val as any).amount : val) || 0),
+                                amount: Number((val as any)?.amount || 0),
                               }))
                               .sort((x, y) => y.amount - x.amount);
                             // O orçamento só era validado no lance; entre o lance e o

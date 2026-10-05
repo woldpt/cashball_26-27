@@ -340,16 +340,15 @@ export function fetchTopScorers(db: Db): Promise<AnyRow[]> {
      FROM (
        SELECT p.id, p.name, p.position, p.team_id, t.name AS team_name,
               t.color_primary, t.color_secondary, t.division, p.skill,
-              COALESCE(g.goals, CASE WHEN a.player_id IS NULL THEN p.goals ELSE 0 END) AS goals,
+              g.goals,
               ROW_NUMBER() OVER (
                 PARTITION BY t.division
-                ORDER BY COALESCE(g.goals, CASE WHEN a.player_id IS NULL THEN p.goals ELSE 0 END) DESC,
+                ORDER BY g.goals DESC,
                          p.skill DESC
               ) AS rn
        FROM players p
        JOIN teams t ON t.id = p.team_id
-       LEFT JOIN player_season_goals g ON g.player_id = p.id AND g.team_id = p.team_id
-       LEFT JOIN (SELECT DISTINCT player_id FROM player_season_goals) a ON a.player_id = p.id
+       JOIN player_season_goals g ON g.player_id = p.id AND g.team_id = p.team_id
        WHERE t.division BETWEEN 1 AND 4
      )
      WHERE goals > 0 AND rn <= 10`,
