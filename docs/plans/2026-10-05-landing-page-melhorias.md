@@ -50,3 +50,10 @@ Hoje: 27 props planas; `availableSaves`, `setAvailableSaves`, `token`, `backendU
 ## Ordem e commits
 
 1 → 2 → 3 → 4. Mensagens: `refactor: LandingPage com fase de auth explícita`, `docs: JSDoc da LandingPage no padrão do projeto`, `refactor: LandingPage agrupa props em form/room`.
+
+## Fase 5 — Visual (feita)
+
+- `ShowcaseSections`: `bg` (classe inexistente) → `bg-bg`.
+- Contraste: `/50`→`/70`, `/60`→`/80`; cabeçalho da tabela `text-[8px]`→`text-[10px]`.
+- "Activa" → "Ativa"; `alt=""` nos logótipos ao lado do texto da marca.
+- Header: ponto sem `animate-pulse` (só o "Direto" pulsa); giz do fundo 4%→7%.

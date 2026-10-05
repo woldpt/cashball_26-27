@@ -17,7 +17,7 @@ import {
  * @returns {JSX.Element}
  */
 const ShowcaseSections = () => (
-	<div className="relative z-10 w-full border-t border-outline-variant/20 bg short:hidden">
+	<div className="relative z-10 w-full border-t border-outline-variant/20 bg-bg short:hidden">
 		<div className="max-w-7xl mx-auto px-6 lg:px-10 py-10 space-y-4">
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				{SHOWCASE_WIDGETS.map(({ label, value, sub, accentClass }) => (
@@ -44,7 +44,7 @@ const ShowcaseSections = () => (
 				<Panel title="Primeira Liga" icon="stadium" meta="Demonstração">
 					<table className="w-full text-xs text-left">
 						<thead>
-							<tr className="text-[8px] uppercase text-on-surface-variant/50 font-bold">
+							<tr className="text-[10px] uppercase text-on-surface-variant/70 font-bold">
 								<th className="pl-2 pr-1 py-1.5 w-8">Pos</th>
 								<th className="px-1 py-1.5">Clube</th>
 								<th className="px-1 py-1.5 text-center w-8">J</th>
@@ -59,7 +59,7 @@ const ShowcaseSections = () => (
 									key={t.name}
 									className="border-t border-outline-variant/10 first:border-t-0"
 								>
-									<td className="pl-2 pr-1 py-2 font-black tabular-nums text-on-surface-variant/60">
+									<td className="pl-2 pr-1 py-2 font-black tabular-nums text-on-surface-variant/80">
 										{String(idx + 1).padStart(2, "0")}
 									</td>
 									<td className="px-1 py-2">
@@ -72,7 +72,7 @@ const ShowcaseSections = () => (
 											<span className="truncate font-bold text-on-surface">{t.name}</span>
 										</span>
 									</td>
-									<td className="px-1 py-2 text-center tabular-nums text-on-surface-variant/60">
+									<td className="px-1 py-2 text-center tabular-nums text-on-surface-variant/80">
 										{t.played}
 									</td>
 									<td

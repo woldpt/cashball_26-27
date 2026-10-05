@@ -9,8 +9,8 @@
 const LandingBackground = () => (
 	<div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
 		{/* Linha de meio-campo + círculo central em giz */}
-		<div className="absolute inset-y-[-10%] left-1/2 w-px bg-on-surface/[0.04]" />
-		<div className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-on-surface/[0.04]" />
+		<div className="absolute inset-y-[-10%] left-1/2 w-px bg-on-surface/[0.07]" />
+		<div className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-on-surface/[0.07]" />
 		<div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-on-surface/[0.06]" />
 		{/* Brilhos do jogo: contentor primário em cima, terciário num canto */}
 		<div

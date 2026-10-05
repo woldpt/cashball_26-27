@@ -41,10 +41,10 @@ const HeroSection = () => {
 			{/* Marca compacta — o header é short:hidden; sem isto a marca
 			    desaparecia em mobile landscape */}
 			<div className="hidden short:flex items-center gap-2 mb-3">
-				<img src="/icon-512.png" alt="Logotipo CashBall" className="w-5 h-5" />
+				<img src="/icon-512.png" alt="" className="w-5 h-5" />
 				<span className="font-headline font-black text-base tracking-tighter text-on-surface">
 					Cash<span className="text-primary">Ball</span>
-					<span className="text-on-surface-variant/50 font-bold ml-1.5 text-xs">{SEASON_LABEL}</span>
+					<span className="text-on-surface-variant/70 font-bold ml-1.5 text-xs">{SEASON_LABEL}</span>
 				</span>
 			</div>
 
@@ -82,7 +82,7 @@ const HeroSection = () => {
 								className="shrink-0 w-2 h-2 rounded-full"
 								style={{ backgroundColor: team.color }}
 							/>
-							<span className="text-[10px] font-black text-on-surface-variant/60 w-7">
+							<span className="text-[10px] font-black text-on-surface-variant/80 w-7">
 								{team.short}
 							</span>
 							<span className="flex-1 min-w-0 truncate text-sm font-bold text-on-surface">
