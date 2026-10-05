@@ -1,6 +1,6 @@
 /**
  * SponsorLogo — emblema do patrocinador (ficheiro fixo de
- * `public/sponsors/<id>.svg`: ícone + nome). Com erro de carga, cai no
+ * `public/sponsors/<id>.svg`: só o símbolo). Com erro de carga, cai no
  * monograma geométrico dos parâmetros (mesma receita do servidor).
  *
  * @param {{ brand: object|null, className?: string }} props

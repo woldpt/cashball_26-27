@@ -1,11 +1,3 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Alfaiate Remendo Certo">
-<g transform="translate(-11.67,-11.67) scale(1.2333)"><g data-halo="1" fill="#fff"><rect x="26" y="20" width="48" height="12" rx="5" fill="#fff" stroke="#fff" stroke-width="4.0540540540540535" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="36" y="32" width="28" height="36" fill="#fff" stroke="#fff" stroke-width="10.054054054054053" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="36" y="40" width="28" height="7" fill="#fff" stroke="#fff" stroke-width="4.0540540540540535" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="36" y="53" width="28" height="7" fill="#fff" stroke="#fff" stroke-width="4.0540540540540535" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="26" y="68" width="48" height="12" rx="5" fill="#fff" stroke="#fff" stroke-width="4.0540540540540535" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><rect x="26" y="20" width="48" height="12" rx="5" fill="#44403c"/>
-<rect x="36" y="32" width="28" height="36" fill="#fef3c7" stroke="#44403c" stroke-width="6"/>
-<rect x="36" y="40" width="28" height="7" fill="#44403c"/>
-<rect x="36" y="53" width="28" height="7" fill="#44403c"/>
-<rect x="26" y="68" width="48" height="12" rx="5" fill="#44403c"/></g></g>
+<g transform="translate(-21.37,-16.23) scale(1.3583)"><g data-halo="1" fill="#fff"><path d="M30,76 L72,22" fill="none" stroke="#fff" stroke-width="8.681027695939347" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="68" cy="27" rx="2.5" ry="5" transform="rotate(38 68 27)" fill="#fff" stroke="#fff" stroke-width="3.6810276959393478" stroke-linejoin="round" stroke-linecap="round"/><path d="M68,27 C88,40 70,60 50,56 C30,52 22,66 34,74" fill="none" stroke="#fff" stroke-width="7.181027695939347" stroke-linejoin="round" stroke-linecap="round"/></g><g data-art="1"><path d="M30,76 L72,22" stroke="#64748b" stroke-width="5" stroke-linecap="round" fill="none"/><ellipse cx="68" cy="27" rx="2.5" ry="5" transform="rotate(38 68 27)" fill="#fff"/><path d="M68,27 C88,40 70,60 50,56 C30,52 22,66 34,74" stroke="#dc2626" stroke-width="3.5" stroke-linecap="round" fill="none"/></g></g>
 </svg>
