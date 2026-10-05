@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { createPortal } from "react-dom";
+import { motion, useReducedMotion } from "framer-motion";
 
 /* ── FinalWhistleStamp — carimbo do apito final ──────────────────────────
  *
@@ -28,7 +29,14 @@ const PHRASES = {
   ],
 };
 
+/** Cor do clarão/brilho por desfecho (vitória verde, derrota vermelha, empate âmbar). */
+const TONE = { win: "#22c55e", loss: "#ef4444", draw: "#f59e0b" };
+
 /**
+ * Sobreposição a ecrã inteiro (portal, para escapar a ancestrais com
+ * `transform`): clarão branco, vinheta escura, e o selo entra "à pancada".
+ * `pointer-events-none` — nunca bloqueia cliques.
+ *
  * @param {Object} props
  * @param {{ outcome: "win" | "loss" | "draw", myGoals: number, oppGoals: number } | null} props.whistle
  * @param {string} [props.hColor] Cor da equipa da casa (cenografia de luz).
@@ -36,38 +44,60 @@ const PHRASES = {
  * @returns {JSX.Element|null}
  */
 export function FinalWhistleStamp({ whistle, hColor = "#3b82f6", aColor = "#f43f5e" }) {
+  const reduce = useReducedMotion();
   if (!whistle) return null;
   const pool = PHRASES[whistle.outcome] || PHRASES.draw;
   const phrase = pool[(whistle.myGoals * 7 + whistle.oppGoals) % pool.length];
-  return (
-    <AnimatePresence>
-      <div key="final-whistle" className="flex flex-col items-center gap-1.5 mt-4">
+  const tone = TONE[whistle.outcome] || TONE.draw;
+  return createPortal(
+    <div
+      role="status"
+      className="fixed inset-0 z-[60] pointer-events-none flex flex-col items-center justify-center gap-4 px-4"
+    >
+      <motion.div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{ background: `radial-gradient(circle at center, ${tone}33 0%, rgb(0 0 0 / 0.78) 70%)` }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35 }}
+      />
+      {!reduce && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 6 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.98, y: -8 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="animate-heartbeat px-8 py-4 rounded-full border-2 bg-surface-container-high/90 backdrop-blur-sm"
-          style={{
-            borderColor: `${hColor}aa`,
-            boxShadow: `0 0 60px ${hColor}55, 0 0 24px ${aColor}45`,
-          }}
-        >
-          <span className="flex items-center gap-3 text-lg sm:text-2xl font-black uppercase tracking-[0.2em] text-on-surface">
-            <span aria-hidden="true" className="text-3xl sm:text-4xl">📯</span>
-            <span>Apito final · {whistle.myGoals}–{whistle.oppGoals}</span>
-          </span>
-        </motion.div>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="text-sm font-bold text-on-surface text-center px-4"
-        >
-          {phrase}
-        </motion.p>
-      </div>
-    </AnimatePresence>
+          aria-hidden="true"
+          className="absolute inset-0 bg-white"
+          initial={{ opacity: 0.85 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        />
+      )}
+      <motion.div
+        initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 2.4, rotate: -6 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={reduce ? { duration: 0.2 } : { type: "spring", stiffness: 380, damping: 16, mass: 0.9 }}
+        className="relative flex flex-col items-center gap-2 px-8 py-6 rounded-3xl border-4 bg-surface-container-high/95"
+        style={{
+          borderColor: tone,
+          boxShadow: `0 0 90px ${tone}88, 0 0 40px ${hColor}55, 0 0 24px ${aColor}45`,
+        }}
+      >
+        <span aria-hidden="true" className="text-6xl sm:text-7xl">📯</span>
+        <span className="text-xs sm:text-sm font-black uppercase tracking-[0.4em] text-on-surface-variant">
+          Apito final
+        </span>
+        <span className="text-6xl sm:text-8xl font-headline font-black tabular-nums leading-none text-on-surface">
+          {whistle.myGoals}–{whistle.oppGoals}
+        </span>
+      </motion.div>
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.5 }}
+        className="relative max-w-md text-center text-base sm:text-lg font-bold text-white"
+      >
+        {phrase}
+      </motion.p>
+    </div>,
+    document.body,
   );
 }
