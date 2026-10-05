@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MAX_MATCH_SUBS } from "../../../constants/index.js";
+import { MAX_BENCH_SIZE, MAX_MATCH_SUBS } from "../../../constants/index.js";
 import {
   sortPlayersByPos,
   buildPositionRows,
@@ -256,7 +256,8 @@ export function IntervencaoView({
   const targetPlayer = playerById(selectedInId);
   const sourcePlayer = playerById(effectiveOutId);
   // GR improvisado: escolha única (quem vai para a baliza) — sem par Sai/Entra.
-  const limitReached = subsMade >= MAX_MATCH_SUBS;
+  const maxSubs = isFriendly ? MAX_BENCH_SIZE : MAX_MATCH_SUBS;
+  const limitReached = subsMade >= maxSubs;
   // Lesão sem suplentes disponíveis: o lesado sai e a equipa joga com menos
   // um. Sem uma via de confirmação o treinador ficava preso no countdown.
   const noReplacement =
@@ -582,6 +583,7 @@ export function IntervencaoView({
               forceOutPlayer={forceOutPlayer}
               subbedOut={subbedOut}
               subsMade={subsMade}
+              maxSubs={maxSubs}
               injuryCountdown={injuryCountdown}
               confirmHint={confirmHint}
               canConfirmSwap={canConfirmSwap}

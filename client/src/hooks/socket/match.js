@@ -2,7 +2,7 @@ import { socket, queueEmit } from "../../socket.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
 import { playGoalSound, playVarSound } from "../../utils/audio.js";
 import { readGoalFlashEntry, isGoalType, computePenaltySteps } from "../../components/live/liveHelpers.js";
-import { MAX_MATCH_SUBS, PENALTY_SUSPENSE_DISPLAY_MS } from "../../constants/index.js";
+import { MAX_BENCH_SIZE, PENALTY_SUSPENSE_DISPLAY_MS } from "../../constants/index.js";
 
 /**
  * Listeners de Jogo ao vivo (replay, ações, intervalo).
@@ -641,7 +641,7 @@ export function registerMatchListeners(handlers, refs, ctx) {
 			);
 		}
 		if (countSub) {
-			handlers.setSubsMade((n) => Math.min(MAX_MATCH_SUBS, n + 1));
+			handlers.setSubsMade((n) => Math.min(MAX_BENCH_SIZE, n + 1));
 		}
 	});
 

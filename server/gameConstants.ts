@@ -557,8 +557,13 @@ export function incrementSubCount(fixture: any, teamId: number): void {
 }
 
 /** Verdadeiro enquanto a equipa tiver substituições por fazer. */
+/** Limite de substituições da partida: nos amigáveis todo o banco pode entrar. */
+export function maxSubstitutions(fixture: any): number {
+  return fixture?.round === FRIENDLY_ROUND ? MAX_BENCH_SIZE : MAX_SUBSTITUTIONS;
+}
+
 export function canMakeSubstitution(fixture: any, teamId: number): boolean {
-  return getSubCount(fixture, teamId) < MAX_SUBSTITUTIONS;
+  return getSubCount(fixture, teamId) < maxSubstitutions(fixture);
 }
 
 /**
@@ -566,7 +571,7 @@ export function canMakeSubstitution(fixture: any, teamId: number): boolean {
  * Usado nos intervalos/alongamentos onde várias podem ser feitas de uma vez.
  */
 export function remainingSubstitutions(fixture: any, teamId: number): number {
-  return Math.max(0, MAX_SUBSTITUTIONS - getSubCount(fixture, teamId));
+  return Math.max(0, maxSubstitutions(fixture) - getSubCount(fixture, teamId));
 }
 
 // ---------------------------------------------------------------------------

@@ -15,7 +15,7 @@ import {
   DEFAULT_TACTIC,
   DEFAULT_SIM_SPEED,
   LOAN_INTEREST_RATE,
-  MAX_MATCH_SUBS,
+  MAX_BENCH_SIZE,
   TRANSFER_LISTED_PRICE_MULT,
   SEASON_CALENDAR,
 } from "../constants/index.js";
@@ -1387,7 +1387,7 @@ year: seasonYear,
 						);
 					}
 					if (matchAction.type === "injury") {
-						setSubsMade((n) => Math.min(MAX_MATCH_SUBS, n + 1));
+						setSubsMade((n) => Math.min(MAX_BENCH_SIZE, n + 1));
 					}
 				}
 			}

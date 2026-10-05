@@ -117,6 +117,7 @@ export function SubsPanel({
   forceOutPlayer,
   subbedOut,
   subsMade,
+  maxSubs,
   injuryCountdown,
   confirmHint,
   canConfirmSwap,
@@ -195,6 +196,7 @@ export function SubsPanel({
       isEmergencyGk,
       forceOutPlayer,
       subsMade,
+      maxSubs,
       subbedOut,
       grAvailableOnBench,
       effectiveOutId,
@@ -208,6 +210,7 @@ export function SubsPanel({
       isEmergencyGk,
       forceOutPlayer,
       subsMade,
+      maxSubs,
       subbedOut,
       grAvailableOnBench,
       effectiveOutId,
@@ -382,6 +385,7 @@ export function SubsPanel({
               isHalftime={isHalftime}
               isUserSubPause={isUserSubPause}
               subsMade={subsMade}
+              maxSubs={maxSubs}
               confirmedSubs={confirmedSubs}
               pauseInitialIdx={pauseInitialIdx}
               confirmResetAll={confirmResetAll}
@@ -438,7 +442,7 @@ export function SubsPanel({
               <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shrink-0" />
               {STYLE_LABELS[tactic.style] || tactic.style}
             </button>
-            <SubsCounter subsMade={subsMade} />
+            <SubsCounter subsMade={subsMade} max={maxSubs} />
             {confirmedSubs.length > 0 && (
               <button
                 type="button"
@@ -640,7 +644,7 @@ export function SubsPanel({
                 </button>
               ))}
             </div>
-            <SubsCounter subsMade={subsMade} />
+            <SubsCounter subsMade={subsMade} max={maxSubs} />
             {isUserSubPause && (() => {
               const start = pauseInitialIdx ?? confirmedSubs.length;
               const queued = confirmedSubs.slice(start);
@@ -857,6 +861,7 @@ function PitchColumn({
   isHalftime,
   isUserSubPause,
   subsMade,
+  maxSubs,
   confirmedSubs,
   pauseInitialIdx,
   confirmResetAll,
@@ -883,7 +888,7 @@ function PitchColumn({
         </h3>
         {(isHalftime || isUserSubPause) && (
           <span className="ml-auto shrink-0">
-            <SubsCounter subsMade={subsMade} />
+            <SubsCounter subsMade={subsMade} max={maxSubs} />
           </span>
         )}
         {confirmedSubs.length > 0 && (

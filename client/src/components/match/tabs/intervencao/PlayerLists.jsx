@@ -11,16 +11,16 @@ import {
 import { MatchSummaryBlock } from "./Panels.jsx";
 
 /* ── Subs counter (halftime) ───────────────────────────────────────────── */
-export function SubsCounter({ subsMade }) {
+export function SubsCounter({ subsMade, max = MAX_MATCH_SUBS }) {
   return (
     <div
       className="shrink-0 flex items-center gap-1.5"
-      title={`${subsMade} de ${MAX_MATCH_SUBS} substituições usadas`}
+      title={`${subsMade} de ${max} substituições usadas`}
     >
       <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
         Subs
       </span>
-      {Array.from({ length: MAX_MATCH_SUBS }, (_, i) => (
+      {Array.from({ length: max }, (_, i) => (
         <span
           key={i}
           className={`w-1.5 h-1.5 rounded-full transition-colors ${
@@ -29,7 +29,7 @@ export function SubsCounter({ subsMade }) {
         />
       ))}
       <span className="text-[10px] font-black tabular-nums text-on-surface-variant ml-0.5">
-        {subsMade}/{MAX_MATCH_SUBS}
+        {subsMade}/{max}
       </span>
     </div>
   );

@@ -39,6 +39,7 @@ export function usePrefersReducedMotion() {
  * @property {boolean} isEmergencyGk - Escolha única de GR improvisado?
  * @property {object|null} forceOutPlayer - Jogador que tem de sair (se houver).
  * @property {number} subsMade - Substituições já feitas/planeadas.
+ * @property {number} [maxSubs] - Limite da partida (amigáveis: banco todo).
  * @property {number[]} subbedOut - Ids de quem já saiu.
  * @property {boolean} grAvailableOnBench - Há GR disponível no banco?
  * @property {number|string|null} effectiveOutId - Id de quem sai (seleção + forçado).
@@ -67,6 +68,7 @@ export function getPitchCardState(p, ctx) {
     isEmergencyGk,
     forceOutPlayer,
     subsMade,
+    maxSubs,
     grAvailableOnBench,
     effectiveOutId,
     selectedInId,
@@ -84,7 +86,7 @@ export function getPitchCardState(p, ctx) {
     disabled:
       noGrReplacement ||
       isLockedForced ||
-      (isHalftime && subsMade >= MAX_MATCH_SUBS),
+      (isHalftime && subsMade >= (maxSubs ?? MAX_MATCH_SUBS)),
     selected: isEmergencyGk
       ? selectedInId === p.id
       : effectiveOutId === p.id,
@@ -110,6 +112,7 @@ export function getBenchCardState(p, ctx) {
     isEmergencyGk,
     forceOutPlayer,
     subsMade,
+    maxSubs,
     subbedOut,
     selectedInId,
     playerMatchStats,
@@ -123,7 +126,7 @@ export function getBenchCardState(p, ctx) {
       isEmergencyGk ||
       alreadyUsed ||
       positionMismatch ||
-      (isHalftime && subsMade >= MAX_MATCH_SUBS),
+      (isHalftime && subsMade >= (maxSubs ?? MAX_MATCH_SUBS)),
     selected: selectedInId === p.id,
     stats: playerMatchStats?.get(p.id),
   };
