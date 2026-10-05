@@ -97,7 +97,8 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
               color: teamInfo?.color_secondary || "var(--color-on-surface)",
             }}
           >
-            CashBall <span style={{ opacity: 0.55 }}>26/27</span>
+            CashBall <span style={{ opacity: 0.55 }}>26/27</span>{" "}
+            <span className="md:hidden" style={{ opacity: 0.55 }}>S{(calendarIndex ?? 0) + 1}</span>
           </h1>
           <span
             className="hidden md:block text-[10px] font-bold uppercase tracking-[0.2em]"
