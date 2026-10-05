@@ -42,14 +42,16 @@ export function AssistantMascot({ mood, flipOnDesktop }) {
       role="img"
       aria-label="Treinador-adjunto"
       className={`relative ${size} shrink-0 ${flipOnDesktop ? "lg:scale-x-[-1]" : ""}`}
+      // Filtro no contentor: a sombra sai do composto, igual nas duas bocas
+      // (por imagem, a aberta semi-transparente perdia a sombra).
+      style={filter}
     >
-      <img src="/coaches/jj-fechada.webp" alt="" className={imgClass} style={filter} />
+      <img src="/coaches/jj-fechada.webp" alt="" className={imgClass} />
       <img
         src="/coaches/jj-aberta.webp"
         alt=""
         aria-hidden
         className={`${imgClass} absolute inset-0 m-auto transition-opacity duration-100 ${open ? "opacity-100" : "opacity-0"}`}
-        style={filter}
       />
     </div>
   );

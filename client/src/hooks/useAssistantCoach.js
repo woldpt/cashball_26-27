@@ -17,6 +17,9 @@ const TRAINING_BASE_KEY = "cashball_training_focus";
  */
 const LINEUP_IDLE_MS = 90_000;
 
+/** Silêncio do adjunto depois de um jogo acabar. */
+const POST_MATCH_QUIET_MS = 45_000;
+
 /**
  * Dicas já vistas na sala/semana corrente (chaves em localStorage). Lido uma
  * vez por sala/semana — o memo passa a depender de dados, não de localStorage
@@ -104,6 +107,19 @@ export function useAssistantCoach() {
   } = useGame();
   const { isLineupComplete } = useTactics();
 
+  // Silêncio pós-jogo: logo a seguir ao apito final o adjunto chateia.
+  const [postMatchQuiet, setPostMatchQuiet] = useState(false);
+  const [wasInMatch, setWasInMatch] = useState(isMatchInProgress);
+  if (wasInMatch !== isMatchInProgress) {
+    setWasInMatch(isMatchInProgress);
+    if (!isMatchInProgress) setPostMatchQuiet(true);
+  }
+  useEffect(() => {
+    if (!postMatchQuiet) return undefined;
+    const t = setTimeout(() => setPostMatchQuiet(false), POST_MATCH_QUIET_MS);
+    return () => clearTimeout(t);
+  }, [postMatchQuiet]);
+
   // Vistos da semana em estado. Relido quando a sala/semana muda — ajuste
   // durante o render (sem efeito), evita um flash da dica já dispensada.
   const scope = seenScope(me?.roomCode, calendarIndex);
@@ -157,7 +173,7 @@ export function useAssistantCoach() {
 
   const tip = useMemo(() => {
     if (!me?.teamId) return null;
-    if (isMatchInProgress || panelMode !== null) return null;
+    if (isMatchInProgress || postMatchQuiet || panelMode !== null) return null;
     if (dismissalModal || welcomeModal) return null;
 
     // Herança silenciosa: foco atual ou herdado da BD conta como definido.
@@ -195,6 +211,7 @@ export function useAssistantCoach() {
     me?.teamId,
     roomCode,
     isMatchInProgress,
+    postMatchQuiet,
     panelMode,
     dismissalModal,
     welcomeModal,
