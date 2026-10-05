@@ -66,6 +66,11 @@ export async function applyTrainingBonuses(
   } catch (e) {
     console.error(`[${game.roomCode}] training: npc focus failed:`, e);
   }
+  try {
+    await applyWeakPlayerCatchUp(game);
+  } catch (e) {
+    console.error(`[${game.roomCode}] training: catch-up failed:`, e);
+  }
   return new Promise<void>((resolve) => {
     game.db.all(
       "SELECT team_id, training_focus FROM team_training WHERE matchweek = ? AND applied = 0",
@@ -511,6 +516,52 @@ function markApplied(
  * Sem isto os NPCs nunca treinavam (só humanos tinham linhas em
  * team_training) e apodreciam fisicamente com o decaimento.
  */
+/** Abaixo desta fração da média do plantel o jogador entra em recuperação. */
+const CATCH_UP_RATIO = 0.7;
+/** Fração do fosso até ao alvo recuperada por semana (mín. +1). */
+const CATCH_UP_RATE = 0.25;
+
+/** Ganho semanal de recuperação: fecha CATCH_UP_RATE do fosso, mínimo +1. */
+export function catchUpGain(skill: number, teamAvg: number): number {
+  const target = Math.floor(teamAvg * CATCH_UP_RATIO);
+  if (skill >= target) return 0;
+  return Math.max(1, Math.round((target - skill) * CATCH_UP_RATE));
+}
+
+/**
+ * Recuperação de fracos: jogadores muito abaixo da média do plantel
+ * (ex. skill 1-3 numa equipa de 20) sobem depressa em direção à média,
+ * todas as semanas, independentemente do foco de treino. Sobe o potencial
+ * se for preciso para não ficarem presos no teto.
+ */
+async function applyWeakPlayerCatchUp(game: ActiveGame): Promise<void> {
+  const rows: any[] = await new Promise((resolve, reject) =>
+    game.db.all(
+      `SELECT p.id, p.skill, p.potential, t.avg_skill
+       FROM players p
+       JOIN (SELECT team_id, AVG(skill) AS avg_skill FROM players
+             WHERE team_id IS NOT NULL AND id > 0 GROUP BY team_id) t
+         ON t.team_id = p.team_id
+       WHERE p.id > 0 AND p.skill < t.avg_skill * ?`,
+      [CATCH_UP_RATIO],
+      (err: any, r: any[]) => (err ? reject(err) : resolve(r || [])),
+    ),
+  );
+  for (const r of rows) {
+    const gain = catchUpGain(r.skill || 0, r.avg_skill);
+    if (!gain) continue;
+    const skill = Math.min(50, (r.skill || 0) + gain);
+    const potential = Math.max(r.potential ?? 0, skill);
+    await new Promise<void>((resolve) =>
+      game.db.run(
+        "UPDATE players SET skill = ?, potential = ?, value = ? WHERE id = ?",
+        [skill, potential, recalcPlayerValue(skill), r.id],
+        () => resolve(),
+      ),
+    );
+  }
+}
+
 export async function ensureNpcTrainingFocus(
   game: ActiveGame,
   completedCalendarIndex: number,
