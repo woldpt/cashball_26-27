@@ -11,19 +11,7 @@ import { OddsTiles } from "./OddsTiles.jsx";
 export const MarketPanel = memo(function MarketPanel({ odds, referee }) {
   return (
     <>
-      <Tile
-        label={
-          <span className="inline-flex items-center gap-1">
-            Mercado 1X2
-            <span
-              className="normal-case font-bold text-gray-700 cursor-help"
-              title="Calculadas pelo servidor — iguais às das apostas em jogo"
-            >
-              ⓘ
-            </span>
-          </span>
-        }
-      >
+      <Tile>
         <OddsTiles odds={odds} />
       </Tile>
       {referee && (
