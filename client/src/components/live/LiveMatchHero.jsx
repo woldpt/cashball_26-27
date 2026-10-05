@@ -1,7 +1,7 @@
 import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
-import { PreMatchIntro, KickoffBadge, FinalWhistleStamp, WeatherOverlay } from "../match/shared/index.js";
+import { usePhaseAnnounce, FinalWhistleStamp, WeatherOverlay } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { useKitClash } from "../../hooks/useKitClash.js";
@@ -94,6 +94,7 @@ export function LiveMatchHero({
   const aInfo = myMatch ? teams.find((t) => t.id === myMatch.awayTeamId) : null;
   // Empate de camisolas de casa: a equipa de fora veste a sua de fora.
   const clash = useKitClash(hInfo?.crest, aInfo?.crest);
+  const phaseAnnounce = usePhaseAnnounce(liveMinute, isPlayingMatch);
   if (!myMatch) return null;
   // Amigável (ronda 0): sem prefixo "Taça ·" nem estética de taça.
   // Amigável (pré-época ou dos eliminados na semana da Taça): sem estética de taça.
@@ -344,11 +345,21 @@ export function LiveMatchHero({
               tabIndex={readOnly ? -1 : undefined}
               className={`shrink-0 flex flex-col items-center justify-center px-1.5 min-[430px]:px-2.5 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 ${readOnly ? "cursor-default" : "cursor-pointer group"}`}
             >
+              {phaseAnnounce ? (
+                <div
+                  key={`announce-${phaseAnnounce}`}
+                  className="phase-announce font-headline font-black text-sm min-[430px]:text-base sm:text-2xl tracking-[0.15em] uppercase whitespace-nowrap flex items-center gap-1.5 sm:gap-2 py-1 sm:py-2"
+                >
+                  <span>⚽</span>
+                  {phaseAnnounce}
+                </div>
+              ) : (
               <div key={`${homeGoals.length}-${awayGoals.length}`} className="goal-shake font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap">
                 <span style={flashStyle(myHomeFlashing)}>{homeGoals.length}</span>
                 <span className="text-on-surface/20 text-xl sm:text-3xl">:</span>
                 <span style={flashStyle(myAwayFlashing)}>{awayGoals.length}</span>
               </div>
+              )}
               <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mt-1 tabular-nums truncate max-w-full">
                 {liveMinute > 90 ? "Prol. " : ""}
                 {liveMinute < 1 ? "A começar…" : `${liveMinute}' · ${phaseLabel}`}
@@ -508,21 +519,6 @@ export function LiveMatchHero({
           })()}
         </div>
 
-        {/* ── Pre-match intros (5s pause) + kickoff moments ── */}
-        <PreMatchIntro
-          matchEvents={matchEvents}
-          liveMinute={liveMinute}
-          isPlayingMatch={isPlayingMatch}
-          hInfo={hInfo}
-          aInfo={aInfo}
-        />
-        {isPlayingMatch && (liveMinute === 45 || liveMinute === 90) && (
-          <KickoffBadge
-            label={liveMinute === 45 ? "2ª PARTE" : "PROLONGAMENTO"}
-            hColor={hInfo?.color_primary || "#6366f1"}
-            aColor={aInfo?.color_primary || "#f43f5e"}
-          />
-        )}
         {/* ── Apito final: selo transitório do GameContext (só no meu jogo) ── */}
         {finalWhistle && (
           <FinalWhistleStamp

@@ -2,7 +2,7 @@ export { PitchFormation, PlayerMarker, PlayerRow } from "./PitchFormation.jsx";
 export { MatchPitch } from "./MatchPitch.jsx";
 export { WeatherOverlay } from "./WeatherOverlay.jsx";
 export { MatchScoreboard } from "./MatchScoreboard.jsx";
-export { PreMatchIntro, KickoffBadge } from "./PreMatchIntro.jsx";
+export { usePhaseAnnounce } from "./PreMatchIntro.jsx";
 export { FinalWhistleStamp } from "./FinalWhistleStamp.jsx";
 export { BenchPlayers, BenchPlayerCard } from "./BenchPlayers.jsx";
 export { PossessionBar } from "./PossessionBar.jsx";

@@ -816,3 +816,18 @@ body {
     animation: wx-flash 9s linear infinite;
   }
 }
+
+/* Anúncio de fase (1ª/2ª parte, prolongamento) no centro do placar do hero */
+@keyframes phase-announce {
+  0% { opacity: 0; transform: scale(0.6); letter-spacing: 0.6em; }
+  20% { opacity: 1; transform: scale(1.08); letter-spacing: 0.15em; }
+  30%, 85% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.95); }
+}
+.phase-announce {
+  animation: phase-announce 2.2s ease-out both;
+  text-shadow: 0 0 18px rgba(251, 191, 36, 0.55);
+}
+@media (prefers-reduced-motion: reduce) {
+  .phase-announce { animation: none; }
+}
