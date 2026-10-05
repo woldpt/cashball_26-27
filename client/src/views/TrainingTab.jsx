@@ -69,29 +69,34 @@ const TRAINING_META = {
     description: "Melhorar skill dos GR",
     icon: "sports_soccer",
     pos: "GR",
+    attr: "skill",
   },
   Defesas: {
     label: "Defesas",
     description: "Melhorar skill dos defensas",
     icon: "security",
     pos: "DEF",
+    attr: "skill",
   },
   Médios: {
     label: "Médios",
     description: "Melhorar skill dos médios",
     icon: "pivot_table_chart",
     pos: "MED",
+    attr: "skill",
   },
   Avançados: {
     label: "Avançados",
     description: "Melhorar skill dos avançados",
     icon: "target",
     pos: "ATA",
+    attr: "skill",
   },
   Forma: {
     label: "Forma",
     description: "Melhorar forma geral",
     icon: "favorite",
+    attr: "form",
     bar: "from-orange-300 via-orange-400 to-orange-600",
     glow: "hover:border-orange-400/70 hover:shadow-orange-400/30",
     bgGrad: "from-orange-500/8",
@@ -102,6 +107,7 @@ const TRAINING_META = {
     label: "Resistência",
     description: "Melhorar resistência",
     icon: "bolt",
+    attr: "resistance",
     bar: "from-purple-300 via-purple-400 to-purple-600",
     glow: "hover:border-purple-400/70 hover:shadow-purple-400/30",
     bgGrad: "from-purple-500/8",
@@ -111,16 +117,6 @@ const TRAINING_META = {
 };
 
 const TRAINING_OPTIONS = Object.keys(TRAINING_META);
-
-// Atributo do relatório realçado por cada foco de treino.
-const FOCUS_ATTRIBUTE = {
-  GR: "skill",
-  Defesas: "skill",
-  Médios: "skill",
-  Avançados: "skill",
-  Forma: "form",
-  Resistência: "resistance",
-};
 
 const POSITION_LABELS = {
   GR: "Guarda-redes",
@@ -173,7 +169,7 @@ function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, 
       aria-pressed={isSelected}
       className={`relative group flex items-stretch rounded-lg overflow-hidden border-2 transition-all duration-200 text-left ${
         isSelected
-          ? `${style.border} bg-primary/10 text-on-surface shadow-lg ${style.glow}`
+          ? `${style.border} bg-primary/10 text-on-surface shadow-lg`
           : `border-outline-variant/25 bg-gradient-to-r ${style.bgGrad} via-surface-container/70 to-surface/30 ${style.glow} shadow-sm shadow-black/30 hover:border-outline-variant/50`
       } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${isSaved && justSaved ? "training-saved-pulse" : ""}`}
     >
@@ -220,15 +216,20 @@ function DeltaCell({ record }) {
   const delta = record.new_value - record.old_value;
   const isUp = delta > 0;
   return (
-    <Badge
-      variant={isUp ? "info" : "error"}
+    <span
+      className="inline-flex items-center gap-1"
       title={`${record.old_value} → ${record.new_value}`}
     >
-      <span className="material-symbols-outlined text-[10px] leading-none align-middle mr-0.5">
-        {isUp ? "arrow_upward" : "arrow_downward"}
+      <span className="text-sm font-black tabular-nums text-on-surface">
+        {record.new_value}
       </span>
-      {Math.abs(delta)}
-    </Badge>
+      <Badge variant={isUp ? "success" : "error"}>
+        <span className="material-symbols-outlined text-[10px] leading-none align-middle mr-0.5">
+          {isUp ? "arrow_upward" : "arrow_downward"}
+        </span>
+        {Math.abs(delta)}
+      </Badge>
+    </span>
   );
 }
 
@@ -292,7 +293,7 @@ function PlayerReportRow({ player, position, highlightAttr, highlightClass }) {
       <div className="flex-1 min-w-0 flex items-center px-3 short:px-2 py-2 short:py-1.5 gap-3 short:gap-2">
         {/* Nome */}
         <span className="flex-1 min-w-0 truncate text-sm font-black tracking-tight text-on-surface">
-          <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
+          <PlayerLink playerId={player.player_id}>{player.name}</PlayerLink>
         </span>
 
         {/* Separador + deltas */}
@@ -300,7 +301,7 @@ function PlayerReportRow({ player, position, highlightAttr, highlightClass }) {
           {ATTR_COLUMNS.map((col) => (
             <div
               key={col.key}
-              className="flex flex-col items-center min-w-[48px]"
+              className="flex flex-col items-center min-w-[64px]"
             >
               <span
                 className={`text-[8px] font-black uppercase tracking-widest mb-0.5 ${headerClass(col.key)}`}
@@ -358,9 +359,6 @@ function StaffTrainingNote({ staff }) {
  * }} props
  */
 export function TrainingTab({ me, matchweek, staff = null }) {
-  const [selectedTraining, setSelectedTraining] = useState(() => {
-    return readStoredTrainingFocus(me?.roomCode);
-  });
   const [trainingHistory, setTrainingHistory] = useState([]);
   const [historyCalendarIndex, setHistoryCalendarIndex] = useState(null);
   const [savedTraining, setSavedTraining] = useState(() => {
@@ -375,12 +373,12 @@ export function TrainingTab({ me, matchweek, staff = null }) {
   // Persist selected training to localStorage (por sala)
   useEffect(() => {
     const key = trainingFocusKey(me?.roomCode);
-    if (selectedTraining != null) {
-      localStorage.setItem(key, selectedTraining);
+    if (savedTraining != null) {
+      localStorage.setItem(key, savedTraining);
     } else {
       localStorage.removeItem(key);
     }
-  }, [selectedTraining, me?.roomCode]);
+  }, [savedTraining, me?.roomCode]);
 
   // Fetch current training and history on component mount
   useEffect(() => {
@@ -395,7 +393,6 @@ export function TrainingTab({ me, matchweek, staff = null }) {
       if (!alive) return;
       if (focus != null) {
         setSavedTraining(focus);
-        setSelectedTraining(focus);
       }
       setTrainingHistory(history || []);
       setHistoryCalendarIndex(history?.[0]?.calendar_index ?? null);
@@ -427,13 +424,12 @@ export function TrainingTab({ me, matchweek, staff = null }) {
   }, [me?.teamId]);
 
   const handleSetTraining = async (trainingKey) => {
-    if (!me?.teamId) return;
+    if (!me?.teamId || trainingKey === savedTraining) return;
     setLoading(true);
     setError("");
 
     const ok = await emitWithTimeout("setTrainingFocus", [trainingKey], 4000);
     if (ok) {
-      setSelectedTraining(trainingKey);
       setSavedTraining(trainingKey);
     } else {
       setError("Erro ao guardar foco de treino.");
@@ -477,7 +473,7 @@ export function TrainingTab({ me, matchweek, staff = null }) {
   const focusStyle = savedTraining ? getMeta(savedTraining) : null;
   const focusMeta = savedTraining ? TRAINING_META[savedTraining] : null;
   const focusAttr = savedTraining
-    ? (FOCUS_ATTRIBUTE[savedTraining] ?? null)
+    ? (TRAINING_META[savedTraining]?.attr ?? null)
     : null;
 
   return (
@@ -536,7 +532,7 @@ export function TrainingTab({ me, matchweek, staff = null }) {
                 <TrainingOptionCard
                   key={savedTraining === key ? `foco-${savedTick}` : key}
                   optionKey={key}
-                  selected={selectedTraining}
+                  selected={savedTraining}
                   isSaved={savedTraining === key}
                   justSaved={saved}
                   loading={loading}
@@ -558,7 +554,7 @@ export function TrainingTab({ me, matchweek, staff = null }) {
                   <ul className="text-xs text-on-surface-variant space-y-1.5">
                     <li className="flex items-start gap-2">
                       <span className="text-primary">→</span>
-                      Escolha um foco no início da jornada (league ou taça)
+                      Escolha um foco no início da jornada (liga ou taça)
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary">→</span>

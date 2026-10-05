@@ -11,6 +11,7 @@ const VARIANT_CLASSES = {
   renovado:
     "bg-gradient-to-r from-amber-700/60 via-yellow-500/60 to-amber-700/60 text-amber-100 border-amber-500/40 shadow-sm shadow-amber-500/30",
   sold: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  success: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   cooldown: "bg-sky-500/15 text-sky-300 border-sky-500/30",
   suspended: "bg-error-container/60 text-error border-error/30",
   injured: "bg-amber-900/30 text-amber-400 border-amber-700/30",
