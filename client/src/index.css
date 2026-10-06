@@ -7,18 +7,55 @@
    paridade verificada por scripts/breakpointParityRegression.mjs. */
 @custom-variant short (@media (max-height: 560px));
 
-/* Chrome geometry — fonte única das alturas/insets do shell fixo (header,
-   rail lateral, sidebar desktop). Os offsets de conteúdo e dos elementos
-   fixos derivam destas vars (ex. `pt-[var(--header-h)]`), NUNCA de números à mão, para mudar a
-   altura do header num sítio e tudo acompanhar. Default = desktop/portrait;
-   o override de telemóvel landscape (header compacto + rail à esquerda) usa
-   a mesma media query dos hooks (useMobileLandscape). */
+/* Chrome geometry — fonte única das alturas/larguras do shell (header,
+   bottom-nav, sidebar desktop). A grelha `.game-shell` e os elementos fixos
+   que se alinham com ele (ex. `top-[var(--header-h)]`) derivam destas vars,
+   NUNCA de números à mão. Telemóvel landscape está bloqueado pelo
+   `RotateOverlay`, por isso não há geometria própria para ele. */
 :root {
   --header-h: calc(3.5rem + env(safe-area-inset-top, 0px)); /* header fixo no topo (h-14: desktop e portrait) + notch em PWA */
-  --rail-w: 4rem; /* reserva lateral esquerda (w-16, apenas landscape) */
   --mobile-nav-h: 4rem; /* MobileNav portrait (h-16) */
   --sidebar-w: 14rem; /* sidebar desktop expandida (w-56) */
   --sidebar-w-collapsed: 3.5rem; /* sidebar desktop encolhida (w-14, só ícones) */
+
+  /* Camadas do shell (z-index). Modais têm a sua escala em `MODAL_Z`
+     (constants/index.js); o header fica acima de quase todas para os seus
+     menus caírem por cima do conteúdo. Usar via `z-(--z-header)`. */
+  --z-sidebar: 10;
+  --z-ticker: 30;
+  --z-flyup-scrim: 38;
+  --z-flyup: 39;
+  --z-mobile-nav: 40;
+  --z-header: 160;
+  --z-header-scrim: 170;
+  --z-header-menu: 180;
+}
+
+/* Shell do jogo em grelha: header, sidebar, conteúdo, rodapé CM e bottom-nav
+   têm áreas próprias — nada de `fixed` + margens calculadas a partir da altura
+   do header ou da largura da sidebar. `data-collapsed` encolhe a sidebar;
+   `data-match` (jogo ao vivo) tira-lhe a coluna. Os overlays ficam fora da
+   grelha (irmãos no root do GameLayout). */
+.game-shell {
+  display: grid;
+  height: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "top" "main" "ticker" "bottom";
+}
+@media (min-width: 1024px) {
+  .game-shell {
+    --shell-nav-w: var(--sidebar-w);
+    grid-template-columns: var(--shell-nav-w) minmax(0, 1fr);
+    grid-template-areas: "top top" "nav main" "nav ticker" "bottom bottom";
+    transition: grid-template-columns 200ms ease;
+  }
+  .game-shell[data-collapsed] {
+    --shell-nav-w: var(--sidebar-w-collapsed);
+  }
+  .game-shell[data-match] {
+    --shell-nav-w: 0px;
+  }
 }
 @media (orientation: landscape) and (max-width: 1023px) {
   :root {

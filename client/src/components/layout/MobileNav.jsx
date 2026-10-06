@@ -3,7 +3,6 @@ import { SPRING, sheetUp } from "../../motion.js";
 import { socket } from "../../socket.js";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
-import { useMobileLandscape } from "../../hooks/useIsMobile.js";
 import { useInbox } from "../../hooks/useInbox.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
 import { getGroupTabKeys, getGroupTabs } from "../../constants/navigation.js";
@@ -26,7 +25,6 @@ function CountBadge({ count, title, className = "-top-1 -right-2" }) {
  * O indicador partilha o `layoutId` com o Jornal (só um está ativo de cada vez).
  */
 function MobileGroupButton({ groupId, icon, label, tour, isChildActive, isOpen, onToggle }) {
-  const isMobileLandscape = useMobileLandscape();
   const highlighted = isChildActive || isOpen;
   return (
     <motion.button
@@ -40,7 +38,7 @@ function MobileGroupButton({ groupId, icon, label, tour, isChildActive, isOpen, 
       {highlighted && (
         <motion.span
           layoutId="mobileTabIndicator"
-          className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-t-full"}`}
+          className="absolute bg-primary bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-t-full"
           transition={SPRING.indicator}
         />
       )}
@@ -76,7 +74,6 @@ function TransferSumBadge() {
 function JournalButton({ scrollToTop }) {
   const { activeTab, navigateTab, setMobileSubMenu } = useGame();
   const { unreadCount } = useInbox();
-  const isMobileLandscape = useMobileLandscape();
   const isActive = activeTab === "jornal";
   return (
     <motion.button
@@ -94,7 +91,7 @@ function JournalButton({ scrollToTop }) {
       {isActive && (
         <motion.span
           layoutId="mobileTabIndicator"
-          className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-t-full"}`}
+          className="absolute bg-primary bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-t-full"
           transition={SPRING.indicator}
         />
       )}
@@ -114,11 +111,10 @@ function PlayButton({ scrollToTop }) {
   const { players, me, activeTab, navigateTab, teamInfo, setMobileSubMenu } =
     useGame();
   const { tactic } = useTactics();
-  const isMobileLandscape = useMobileLandscape();
   const myReady = players.find((p) => p.name === me?.name)?.ready;
   const isActive = activeTab === "tactic";
   return (
-    <div className={isMobileLandscape ? "flex-1 flex items-center justify-center relative" : "flex-1 flex items-end justify-center pb-1 relative"}>
+    <div className="flex-1 flex items-end justify-center pb-1 relative">
       {/* glow halo */}
       {!isActive && !myReady && (
         <span
@@ -143,7 +139,7 @@ function PlayButton({ scrollToTop }) {
             ? "bg-primary text-on-primary shadow-primary/40"
             : "bg-primary text-on-primary shadow-primary/30"
         }`}
-        style={isMobileLandscape ? undefined : { marginBottom: "10px" }}
+        style={{ marginBottom: "10px" }}
       >
         <span aria-hidden className="material-symbols-outlined text-[24px] leading-none relative z-10">
           strategy
@@ -216,8 +212,8 @@ function GroupFlyUp({ groupId, scrollToTop }) {
 }
 
 /**
- * Navegação mobile (< lg): barra inferior (rail vertical em landscape),
- * fly-ups por grupo e pill AO VIVO. Lê tudo dos contextos.
+ * Navegação mobile (< lg): barra inferior (área `bottom` do `.game-shell`)
+ * e fly-ups por grupo. Lê tudo dos contextos.
  *
  * @param {{ scrollToTop: () => void }} props
  */
@@ -228,7 +224,6 @@ export function MobileNav({ scrollToTop }) {
     mobileSubMenu,
     setMobileSubMenu,
   } = useGame();
-  const isMobileLandscape = useMobileLandscape();
 
   const groups = [
     { groupId: "gestao", icon: "manage_accounts", label: "Gestão", tour: "nav-gestao" },
@@ -245,7 +240,7 @@ export function MobileNav({ scrollToTop }) {
             {mobileSubMenu && (
               <motion.div
                 key="flyup-overlay"
-                className="lg:hidden fixed inset-0 z-38"
+                className="lg:hidden fixed inset-0 z-(--z-flyup-scrim)"
                 onClick={() => setMobileSubMenu(null)}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -258,11 +253,7 @@ export function MobileNav({ scrollToTop }) {
             {mobileSubMenu && (
               <motion.div
                 key="flyup-panel"
-                className={
-                  isMobileLandscape
-                    ? "lg:hidden fixed bottom-4 left-[72px] w-[min(480px,calc(100vw-88px))] z-39"
-                    : "lg:hidden fixed bottom-16 left-0 right-0 z-39 px-3"
-                }
+                className="lg:hidden fixed bottom-[var(--mobile-nav-h)] left-0 right-0 z-(--z-flyup) px-3"
                 initial={sheetUp.initial}
                 animate={sheetUp.animate}
                 exit={sheetUp.exit}
@@ -278,11 +269,7 @@ export function MobileNav({ scrollToTop }) {
           {/* Main nav bar — 5 buttons, JOGAR no centro */}
           <nav
             aria-label="Navegação móvel"
-            className={
-              isMobileLandscape
-                ? "lg:hidden fixed left-0 top-[var(--header-h)] bottom-0 w-[var(--rail-w)] z-40 flex flex-col bg-surface-container-high/95 backdrop-blur-sm border-r border-outline-variant/30 py-2 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
-                : "lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-high/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]"
-            }
+            className="lg:hidden [grid-area:bottom] relative z-(--z-mobile-nav) h-[var(--mobile-nav-h)] bg-surface-container-high/95 backdrop-blur-sm border-t border-outline-variant/30 flex items-stretch pb-[env(safe-area-inset-bottom)]"
           >
             <JournalButton scrollToTop={scrollToTop} />
             <MobileGroupButton

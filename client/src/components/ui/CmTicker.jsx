@@ -2,7 +2,6 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
-import { useMobileLandscape } from "../../hooks/useIsMobile.js";
 
 // Passagem única da direita para a esquerda: percorre a largura da barra +
 // a do texto. ponytail: a largura da barra é estimada (CROSS_MS), não medida —
@@ -22,19 +21,18 @@ const REDUCED_MIN_MS = 5000;
  * deslizar para baixo. O texto entra pela direita e sai pela
  * esquerda. Clicar abre o Jornal; passar o rato
  * ou focar pausa a passagem. Alimentado pelas
- * `systemMessage` com `cm: true`. Escondido em direto (o que ficou por mostrar é descartado); no telemóvel vive por
- * cima da MobileNav (portrait) ou ao lado da rail (landscape).
+ * `systemMessage` com `cm: true`. Escondido em direto (o que ficou por mostrar
+ * é descartado). Ocupa a área `ticker` do `.game-shell`: por baixo do
+ * conteúdo, por cima da MobileNav, à direita da sidebar.
  *
  * @param {Object} props
  * @param {boolean} [props.hidden] Esconde a barra (ex.: jogo em direto).
  * @param {boolean} [props.paused] Esconde sem descartar a fila (ex.: adjunto a falar).
- * @param {boolean} [props.sidebarCollapsed] Sidebar desktop encolhida (ajusta o offset esquerdo).
  * @returns {JSX.Element}
  */
-export function CmTicker({ hidden = false, paused = false, sidebarCollapsed = false }) {
+export function CmTicker({ hidden = false, paused = false }) {
   const { cmNews, navigateTab } = useGame();
   const reduced = usePrefersReducedMotion();
-  const isMobileLandscape = useMobileLandscape();
   const items = cmNews || [];
   const [shownIds, setShownIds] = useState(() => new Set());
   const [wasHidden, setWasHidden] = useState(hidden);
@@ -77,12 +75,6 @@ export function CmTicker({ hidden = false, paused = false, sidebarCollapsed = fa
     setBatchIds(null);
   };
 
-  const sideOffset = isMobileLandscape ? "left-[var(--rail-w)]" : "left-0";
-  const lgOffset = sidebarCollapsed
-    ? "lg:left-[var(--sidebar-w-collapsed)]"
-    : "lg:left-[var(--sidebar-w)]";
-  const bottom = isMobileLandscape ? "bottom-0" : "bottom-[var(--mobile-nav-h)]";
-
   return (
     <AnimatePresence initial={false}>
       {visible && (
@@ -95,7 +87,7 @@ export function CmTicker({ hidden = false, paused = false, sidebarCollapsed = fa
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: "100%", opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`fixed ${bottom} lg:bottom-0 right-0 z-30 flex items-stretch bg-black border-t border-error-container/60 overflow-hidden shadow-[0_-4px_12px_rgba(0,0,0,0.5)] ${reduced ? "min-h-7 lg:min-h-9" : "h-7 lg:h-9"} ${sideOffset} ${lgOffset}`}
+          className={`[grid-area:ticker] relative z-(--z-ticker) flex items-stretch bg-black border-t border-error-container/60 overflow-hidden shadow-[0_-4px_12px_rgba(0,0,0,0.5)] ${reduced ? "min-h-7 lg:min-h-9" : "h-7 lg:h-9"}`}
         >
           <div className="shrink-0 bg-error-container text-white text-[10px] lg:text-xs font-black px-2 lg:px-3 flex items-center uppercase tracking-widest select-none">
             Notícias CM

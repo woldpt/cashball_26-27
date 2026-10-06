@@ -11,7 +11,6 @@ import {
   GameNoticeBar,
 } from "./components/layout/SystemOverlays.jsx";
 import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
-import { useMobileLandscape } from "./hooks/useIsMobile.js";
 import { useCoachTutorial } from "./hooks/useCoachTutorial.js";
 import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
 import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.js";
@@ -23,10 +22,16 @@ import { useAssistantCoach } from "./hooks/useAssistantCoach.js";
 import { GameRoutes } from "./GameRoutes.jsx";
 import { GameOverlays } from "./GameOverlays.jsx";
 import { GroupBackdrop } from "./components/shared/GroupBackdrop.jsx";
+import { FULL_BLEED_TABS } from "./constants/navigation.js";
 
 /**
  * Shell do jogo: compõe header, navegação, conteúdo e overlays.
  * O estado vem do `useGame()`; `handleLogout`/`setAuthPhase` vêm da App.
+ *
+ * @param {Object} props
+ * @param {() => void} props.handleLogout Termina a sessão.
+ * @param {(phase: string) => void} props.setAuthPhase Muda a fase de autenticação da App.
+ * @returns {JSX.Element}
  */
 export function GameLayout({ handleLogout, setAuthPhase }) {
   // ── All game state from GameContext ─────────────────────────────────────
@@ -48,7 +53,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     toasts,
     dismissToast,
   } = useGame();
-
+  const { setPrepPhase } = useTactics();
 
   // ── Tutorial guiado (contas novas de Coach) ───────────────────────────
   const {
@@ -64,22 +69,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // O tutorial também é o adjunto a falar — a barra espera nos dois casos.
   const showAssistant = tutorial.active || assistant.tip != null;
 
-  /** Navega para a tab do passo e abre o submenu mobile correspondente. */
-  const { setPrepPhase } = useTactics();
-  const handleTutorialNavigate = (step) => {
-    if (!step) return;
-    if (step.tab && step.tab !== activeTab) navigateTab(step.tab);
-    // Passos da tática: avança o briefing (equivale a "Avançar para a tática")
-    // para o editor — e os alvos do tour — montar.
-    if (step.tab === "tactic") setPrepPhase("tactics");
-    setMobileSubMenu(step.submenu ?? null);
-    contentRef.current?.scrollTo(0, 0);
-  };
-
   // Shell de conteúdo: altura fixa (h-dvh na raiz) com scroll interno. As views
   // deixam de adivinhar a altura disponível via 100dvh — o wrapper entrega um
   // slot com altura definida (overflow-y-auto ou flex para páginas full-bleed).
   const contentRef = useRef(null);
+  const scrollToTop = () => contentRef.current?.scrollTo(0, 0);
 
   // Ao trocar de tab, a posição de scroll volta ao topo (o wrapper é o mesmo
   // nó DOM; o scrollTop sobreviveria ao remount do conteúdo sem este reset).
@@ -87,16 +81,24 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     contentRef.current?.scrollTo(0, 0);
   }, [activeTab]);
 
-  // Telemóvel em landscape (abaixo de lg): margens do conteúdo.
-  const isMobileLandscape = useMobileLandscape();
+  /** Navega para a tab do passo e abre o submenu mobile correspondente. */
+  const handleTutorialNavigate = (step) => {
+    if (!step) return;
+    if (step.tab && step.tab !== activeTab) navigateTab(step.tab);
+    // Passos da tática: avança o briefing (equivale a "Avançar para a tática")
+    // para o editor — e os alvos do tour — montar.
+    if (step.tab === "tactic") setPrepPhase("tactics");
+    setMobileSubMenu(step.submenu ?? null);
+    scrollToTop();
+  };
 
-  // Páginas full-bleed: gerem o próprio scroll interno (flex-col); o wrapper
-  // e a cadeia grid → item → motion.div têm de passar min-h-0 para baixo,
-  // senão a árvore fica à altura do conteúdo e o scroll interno nunca ocorre.
-  const isFullBleedTab = activeTab === "squad" || activeTab === "leiloes";
+  // Páginas full-bleed gerem o próprio scroll interno (flex-col); o wrapper e
+  // o motion.div têm de passar min-h-0 para baixo, senão a árvore fica à
+  // altura do conteúdo e o scroll interno nunca ocorre.
+  const isFullBleedTab = FULL_BLEED_TABS.has(activeTab);
 
   return (
-    <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col relative isolate">
+    <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight relative isolate">
       {/* Fundo fotográfico da tab ativa, sempre visível (inclusive no
           direto). Fica atrás da camada .ambient. */}
       <GroupBackdrop tabKey={activeTab} />
@@ -105,83 +107,61 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 ambient" />
       <OfflineBanner />
       <SystemOverlays />
-      <GameHeader
-        handleLogout={handleLogout}
-        setAuthPhase={setAuthPhase}
-        scrollToTop={() => contentRef.current?.scrollTo(0, 0)}
-        replayTutorial={replayTutorial}
-      />
 
-      <Sidebar scrollToTop={() => contentRef.current?.scrollTo(0, 0)} />
+      {/* Só o chrome e o conteúdo entram na grelha (ver .game-shell); os
+          overlays ficam fora para nunca ocuparem uma célula. */}
+      <div
+        className="game-shell"
+        data-collapsed={sidebarCollapsed || undefined}
+        data-match={isMatchInProgress || undefined}
+      >
+        <GameHeader
+          handleLogout={handleLogout}
+          setAuthPhase={setAuthPhase}
+          scrollToTop={scrollToTop}
+          replayTutorial={replayTutorial}
+        />
 
-      <MobileNav scrollToTop={() => contentRef.current?.scrollTo(0, 0)} />
+        <Sidebar scrollToTop={scrollToTop} />
 
-      {panelMode === null && (
-        <main
-          className={`flex-1 min-h-0 flex flex-col ${
-            isMobileLandscape
-              // A rail vertical (w-[var(--rail-w)]) só está montada quando
-              // !isMatchInProgress — fora disso a ml-var ficava órfã e deixava
-              // uma faixa vazia à esquerda do ecrã de jogo ao vivo.
-              ? `transition-all duration-200 pt-[var(--header-h)] ${isMatchInProgress ? "pb-3 ml-0" : "pb-3 ml-[var(--rail-w)]"}`
-              : `pt-[var(--header-h)] ${isMatchInProgress ? "pb-3" : "pb-16"} lg:pb-0 transition-all duration-200 ${isMatchInProgress ? "lg:ml-0" : sidebarCollapsed ? "lg:ml-[var(--sidebar-w-collapsed)]" : "lg:ml-[var(--sidebar-w)]"}`
-          }`}
-        >
-          {/* Avisos em fluxo (empurram o conteúdo, nunca o tapam): a coluna
-              fixa anterior flutuava sobre o topo das tabs. */}
-          <div className="shrink-0 flex flex-col">
-            <RoomPauseBanner />
-            <GameNoticeBar notices={toasts} onDismiss={dismissToast} />
-          </div>
-          {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,
-              mas ancorada ao shell). "squad" e "leiloes" são páginas full-bleed
-              que gerem o próprio scroll interno (flex-col). */}
-          <div
-            ref={contentRef}
-            className={
-              isFullBleedTab
-                ? "flex-1 min-h-0 flex flex-col overflow-hidden"
-                : "flex-1 min-h-0 overflow-y-auto p-4 lg:p-6"
-            }
+        {panelMode === null && (
+          <main
+            className={`[grid-area:main] min-h-0 flex flex-col ${isMatchInProgress ? "pb-3 lg:pb-0" : ""}`}
           >
+            {/* Avisos em fluxo (empurram o conteúdo, nunca o tapam). */}
+            <div className="shrink-0 flex flex-col">
+              <RoomPauseBanner />
+              <GameNoticeBar notices={toasts} onDismiss={dismissToast} />
+            </div>
             <div
+              ref={contentRef}
               className={
                 isFullBleedTab
-                  ? "grid grid-cols-1 gap-6 flex-1 min-h-0 grid-rows-[minmax(0,1fr)]"
-                  : "grid grid-cols-1 gap-6"
+                  ? "flex-1 min-h-0 flex flex-col overflow-hidden"
+                  : "flex-1 min-h-0 overflow-y-auto p-4 lg:p-6"
               }
             >
-              <div className={isFullBleedTab ? "flex flex-col min-h-0" : undefined}>
-                <AnimatePresence mode="sync" initial={false}>
-                  <motion.div
-                    key={activeTab}
-                    className={
-                      isFullBleedTab ? "flex-1 min-h-0 flex flex-col" : undefined
-                    }
-                    initial={fadeSlide.initial}
-                    animate={fadeSlide.animate}
-                    exit={fadeSlide.exit}
-                    transition={fadeSlide.transition}
-                  >
-                    <GameRoutes
-                        handleLogout={handleLogout}
-                        setAuthPhase={setAuthPhase}
-                    />
-
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+              <AnimatePresence mode="sync" initial={false}>
+                <motion.div
+                  key={activeTab}
+                  className={isFullBleedTab ? "flex-1 min-h-0 flex flex-col" : undefined}
+                  initial={fadeSlide.initial}
+                  animate={fadeSlide.animate}
+                  exit={fadeSlide.exit}
+                  transition={fadeSlide.transition}
+                >
+                  <GameRoutes handleLogout={handleLogout} setAuthPhase={setAuthPhase} />
+                </motion.div>
+              </AnimatePresence>
             </div>
-          </div>
-        </main>
-      )}
+          </main>
+        )}
 
-      {/* Adjunto e notícias não falam ao mesmo tempo: a barra espera pela dica. */}
-      <CmTicker
-        hidden={isMatchInProgress}
-        paused={showAssistant}
-        sidebarCollapsed={sidebarCollapsed}
-      />
+        {/* Adjunto e notícias não falam ao mesmo tempo: a barra espera pela dica. */}
+        <CmTicker hidden={isMatchInProgress} paused={showAssistant} />
+
+        <MobileNav scrollToTop={scrollToTop} />
+      </div>
 
       <GameOverlays />
 
@@ -198,28 +178,27 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <AnimatePresence>
         {tutorial.active && !isMatchInProgress && !welcomeModal && (
           <CoachTutorial
-          stepIndex={tutorial.index}
-          color={teams.find((t) => Number(t.id) === Number(me?.teamId))?.color_primary}
-          onNavigate={handleTutorialNavigate}
-          onNext={() => {
-            if (tutorial.index >= COACH_TUTORIAL_STEPS.length - 1) {
-              // Fim do tutorial: fecha o fly-up para não bloquear o dedo no ecrã.
+            stepIndex={tutorial.index}
+            color={teams.find((t) => Number(t.id) === Number(me?.teamId))?.color_primary}
+            onNavigate={handleTutorialNavigate}
+            onNext={() => {
+              if (tutorial.index >= COACH_TUTORIAL_STEPS.length - 1) {
+                // Fim do tutorial: fecha o fly-up para não bloquear o dedo no ecrã.
+                setMobileSubMenu(null);
+                finishTutorial();
+              } else {
+                nextStep();
+              }
+            }}
+            onBack={prevStep}
+            onSkip={() => {
+              // Saltar: fecha o fly-up que o passo atual possa ter aberto.
               setMobileSubMenu(null);
-              finishTutorial();
-            } else {
-              nextStep();
-            }
-          }}
-          onBack={prevStep}
-          onSkip={() => {
-            // Saltar: fecha o fly-up que o passo atual possa ter aberto.
-            setMobileSubMenu(null);
-            skipTutorial();
-          }}
+              skipTutorial();
+            }}
           />
         )}
       </AnimatePresence>
-
     </div>
   );
 }

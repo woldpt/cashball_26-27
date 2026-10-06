@@ -90,3 +90,11 @@ export function getGroupTabKeys(groupId) {
 export function getTabGroupId(tabKey) {
   return NAV_GROUPS.find((g) => g.tabs.some((t) => t.key === tabKey))?.id ?? null;
 }
+
+/**
+ * Tabs full-bleed: gerem o próprio scroll interno (flex-col) em vez de
+ * rolarem no wrapper do GameLayout, que lhes entrega um slot de altura fixa.
+ *
+ * @type {Set<string>}
+ */
+export const FULL_BLEED_TABS = new Set(["squad", "leiloes"]);

@@ -71,7 +71,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-160 flex items-center border-b border-outline-variant/20 h-[var(--header-h)] pt-[env(safe-area-inset-top,0px)] shadow-md shadow-black/30`}
+      className={`[grid-area:top] relative z-(--z-header) flex items-center border-b border-outline-variant/20 h-[var(--header-h)] pt-[env(safe-area-inset-top,0px)] shadow-md shadow-black/30`}
       style={
         teamInfo?.color_primary
           ? {
@@ -282,7 +282,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
               <>
                 {/* Backdrop */}
                 <div
-                  className="fixed inset-0 z-170"
+                  className="fixed inset-0 z-(--z-header-scrim)"
                   onClick={() => setUserDropdownOpen(false)}
                 />
                 {/* Menu */}
@@ -290,7 +290,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
-                  className="absolute right-0 top-full mt-1 w-56 bg-surface-container border border-outline-variant/30 rounded-lg shadow-xl overflow-hidden z-180"
+                  className="absolute right-0 top-full mt-1 w-56 bg-surface-container border border-outline-variant/30 rounded-lg shadow-xl overflow-hidden z-(--z-header-menu)"
                   role="menu"
                   aria-label="Definições do utilizador"
                 >

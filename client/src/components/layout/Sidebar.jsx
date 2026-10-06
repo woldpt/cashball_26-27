@@ -108,7 +108,7 @@ export function Sidebar({ scrollToTop }) {
     <div className={isMatchInProgress ? "hidden" : "contents"}>
       <nav
         aria-label="Navegação principal"
-        className={`hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-[var(--sidebar-w-collapsed)]" : "w-[var(--sidebar-w)]"}`}
+        className="hidden lg:flex [grid-area:nav] relative z-(--z-sidebar) min-h-0 flex-col bg-surface-container-high border-r border-outline-variant/15"
       >
         {/* Bola de encolher — sobreposta ao centro da linha direita da barra. */}
         <button
