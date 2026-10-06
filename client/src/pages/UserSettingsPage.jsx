@@ -8,6 +8,7 @@ import { PushSettings } from "../components/shared/PushSettings.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { Button } from "../components/shared/Button.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 
 const MIN_PASSWORD_LENGTH = 6;
 const MIN_BIRTH_YEAR = 1940;
@@ -381,6 +382,20 @@ export function UserSettingsPage({
 			</span>
 			Voltar
 		</button>
+
+		<TransferHeader
+			icon="manage_accounts"
+			kicker="Conta"
+			title="Definições"
+			valueLabel="Troféus"
+			valueClass="text-amber-400"
+			budget={trophies.length}
+			format={(n) => String(Math.round(n))}
+			chips={[
+				{ label: "clubes", value: trainedTeams.length, tone: "neutral", icon: "groups" },
+				{ label: "salas", value: rooms.length, tone: "neutral", icon: "meeting_room" },
+			]}
+		/>
 
 		{/* Profile (full width) */}
 		<Panel

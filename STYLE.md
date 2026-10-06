@@ -241,5 +241,6 @@ Scout, Mercado e Leilões deram origem ao **padrão visual preferido** para pág
 | `CalendarioTab` | Jogos `n/total` | Chips V/E/D; filtros no cabeçalho |
 | `TrainingTab` | Evolução líquida (níveis) | Chips foco/ganhos/perdas |
 | `FinancesTab` | Saldo | Chips resultado/previsão/dívida; substitui os `SummaryWidget` |
+| `UserSettingsPage` | Troféus | Chips clubes/salas; painéis por baixo |
 
 Páginas novas ou redesenhadas começam aqui, não no `SummaryWidget` (§3, legado).
