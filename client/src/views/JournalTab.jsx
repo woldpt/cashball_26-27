@@ -131,14 +131,13 @@ export function JournalTab({
       {/* ── Topo: por ler em destaque + barra de ações (estilo FM) ───── */}
       <TransferHeader
         icon="newspaper"
-        kicker="Clube"
+        kicker={`Clube · ${inbox.items.length} mensagens`}
         title="Jornal"
         valueLabel="Por ler"
         valueClass={inbox.unreadCount > 0 ? "text-primary" : "text-on-surface-variant"}
         budget={inbox.unreadCount}
         format={(n) => String(Math.round(n))}
         chips={[
-          { label: "mensagens", value: inbox.items.length, tone: "neutral", icon: "mail" },
           ...(inbox.redFlags > 0
             ? [{ label: inbox.redFlags === 1 ? "pendência" : "pendências", value: inbox.redFlags, tone: "bad", icon: "flag" }]
             : []),
