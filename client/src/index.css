@@ -57,11 +57,6 @@
     --shell-nav-w: 0px;
   }
 }
-@media (orientation: landscape) and (max-width: 1023px) {
-  :root {
-    --header-h: calc(2.5rem + env(safe-area-inset-top, 0px)); /* header compacto (h-10) em telemóvel landscape */
-  }
-}
 
 @theme {
   /* Breakpoints do layout: sincronizados com `constants/breakpoints.js`

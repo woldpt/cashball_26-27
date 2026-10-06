@@ -2,33 +2,29 @@ import { motion } from "framer-motion";
 import { SPRING } from "../../motion.js";
 import { socket } from "../../socket.js";
 import { useGame } from "../../contexts/GameContext.jsx";
-import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { useInbox } from "../../hooks/useInbox.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
 import { NAV_GROUPS } from "../../constants/navigation.js";
 
 /**
- * Barra lateral desktop: tabs por grupo, botão de encolher e JOGAR fixo ao fundo.
+ * Barra lateral desktop: tabs por grupo e botão de encolher (o JOGAR vive no
+ * header, com o estado da jornada).
  * Oculta por completo durante o jogo. Lê tudo do `useGame()`.
  *
  * @param {{ scrollToTop: () => void }} props
  */
 export function Sidebar({ scrollToTop }) {
   const {
-    players,
     me,
     activeTab,
     activeAuctions,
     marketPairs,
     navigateTab,
     isMatchInProgress,
-    teamInfo,
     sidebarCollapsed,
     setSidebarCollapsed,
   } = useGame();
-  const { tactic } = useTactics();
 
-  const myReady = players.find((p) => p.name === me?.name)?.ready;
   const liveAuctionCount = activeAuctions.filter(
     (a) => !a.closed && !a.paused,
   ).length;
@@ -198,53 +194,6 @@ export function Sidebar({ scrollToTop }) {
           </motion.div>
         </div>
 
-        {/* JOGAR — pinned to bottom */}
-        <div
-          className={`shrink-0 p-2 border-t border-outline-variant/20 ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "relative" : ""}`}
-        >
-          {/* glow halo behind button (idle only) */}
-          {!isMatchInProgress && activeTab !== "tactic" && !myReady && (
-            <span
-              className="absolute inset-1 rounded-lg opacity-30 pointer-events-none"
-              style={{ background: "var(--color-primary, #a8e6b0)" }}
-            />
-          )}
-          <button
-            data-tour="nav-play"
-            onClick={() => {
-              if (isMatchInProgress) return;
-              navigateTab("tactic");
-              scrollToTop();
-              if (socket && teamInfo?.id && tactic) {
-                socket.emit("requestTacticFamiliarity", teamInfo.id);
-                socket.emit("requestAllTacticFamiliarity");
-              }
-            }}
-            title={
-              sidebarCollapsed
-                ? isMatchInProgress
-                  ? "AO VIVO"
-                  : "JOGAR"
-                : undefined
-            }
-            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-lg overflow-hidden ${sidebarCollapsed ? "justify-center" : ""} ${
-              isMatchInProgress
-                ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
-                : activeTab === "tactic"
-                  ? "bg-primary text-on-primary shadow-lg shadow-primary/30"
-                  : "bg-primary/15 text-primary border border-primary/50 hover:bg-primary/25 shadow-md shadow-primary/20"
-            }`}
-          >
-            <span aria-hidden className="material-symbols-outlined text-[20px] shrink-0 leading-none relative z-10">
-              {isMatchInProgress ? "sensors" : "strategy"}
-            </span>
-            {!sidebarCollapsed && (
-              <span className="flex-1 text-left relative z-10">
-                {isMatchInProgress ? "AO VIVO" : "JOGAR"}
-              </span>
-            )}
-          </button>
-        </div>
       </nav>
     </div>
   );

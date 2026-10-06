@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { SPRING, sheetUp } from "../../motion.js";
 import { socket } from "../../socket.js";
 import { useGame } from "../../contexts/GameContext.jsx";
-import { useTactics } from "../../contexts/TacticsContext.jsx";
+import { usePlayCta } from "./usePlayCta.js";
 import { useInbox } from "../../hooks/useInbox.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
 import { getGroupTabKeys, getGroupTabs } from "../../constants/navigation.js";
@@ -106,45 +106,34 @@ function JournalButton({ scrollToTop }) {
   );
 }
 
-/** Botão central JOGAR, elevado. */
+/** Botão central JOGAR, elevado — mesmo estado da jornada que o do header. */
 function PlayButton({ scrollToTop }) {
-  const { players, me, activeTab, navigateTab, teamInfo, setMobileSubMenu } =
-    useGame();
-  const { tactic } = useTactics();
-  const myReady = players.find((p) => p.name === me?.name)?.ready;
-  const isActive = activeTab === "tactic";
+  const cta = usePlayCta(scrollToTop);
+  const waiting = cta.state === "waiting";
   return (
     <div className="flex-1 flex items-end justify-center pb-1 relative">
-      {/* glow halo */}
-      {!isActive && !myReady && (
+      {/* glow halo enquanto há trabalho por fazer */}
+      {cta.state === "idle" && (
         <span
-          className="absolute bottom-2 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full opacity-40 pointer-events-none"
-          style={{ background: "var(--color-primary, #a8e6b0)" }}
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full opacity-40 pointer-events-none bg-primary"
         />
       )}
       <motion.button
         whileTap={{ scale: 0.9 }}
         data-tour="nav-play-mobile"
-        onClick={() => {
-          navigateTab("tactic");
-          setMobileSubMenu(null);
-          scrollToTop();
-          if (socket && teamInfo?.id && tactic) {
-            socket.emit("requestTacticFamiliarity", teamInfo.id);
-            socket.emit("requestAllTacticFamiliarity");
-          }
-        }}
-        className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg ${
-          isActive
-            ? "bg-primary text-on-primary shadow-primary/40"
+        onClick={cta.onClick}
+        className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg mb-2.5 ${
+          waiting
+            ? "bg-surface-container-highest text-primary border-2 border-primary shadow-black/40"
             : "bg-primary text-on-primary shadow-primary/30"
         }`}
-        style={{ marginBottom: "10px" }}
       >
         <span aria-hidden className="material-symbols-outlined text-[24px] leading-none relative z-10">
-          strategy
+          {cta.icon}
         </span>
-        <span className="relative z-10 leading-none">JOGAR</span>
+        <span className="relative z-10 leading-none tabular-nums">
+          {waiting && cta.totalCoaches > 1 ? `${cta.readyCount}/${cta.totalCoaches}` : cta.label}
+        </span>
       </motion.button>
     </div>
   );

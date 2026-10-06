@@ -1,24 +1,105 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 import { LiveClock } from "../shared/LiveClock.jsx";
+import { TeamCrest } from "../shared/TeamCrest.jsx";
 import { isAdminCoach } from "../admin/adminApi.js";
-import { useMobileLandscape } from "../../hooks/useIsMobile.js";
+import { rankStandings } from "../../utils/standingsRank.js";
+import { formatCurrency } from "../../utils/formatters.js";
+import { usePlayCta } from "./usePlayCta.js";
+
+const compactEuros = new Intl.NumberFormat("pt-PT", {
+  notation: "compact",
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 1,
+});
 
 /**
- * Barra superior do jogo: marca, relógio de direto, sala/chat e menu do utilizador.
- * Lê tudo do `useGame()`; só recebe callbacks de fora.
+ * Próximo jogo (md+): competição, adversário e casa/fora — o que o treinador
+ * está a preparar, sempre à vista.
+ *
+ * @param {Object} props
+ * @param {Object|null} props.summary `nextMatchSummary` do servidor.
+ * @param {number} props.jornada Jornada da liga que aí vem.
+ * @param {string} props.ink Cor do texto sobre a cor do clube.
+ * @returns {JSX.Element|null}
+ */
+function NextMatch({ summary, jornada, ink }) {
+  if (!summary) return null;
+  const opp = summary.opponent;
+  const competition = summary.isCup
+    ? summary.cupRoundName || "Taça"
+    : `Liga · J${jornada}`;
+  return (
+    <div className="hidden md:flex flex-1 min-w-0 justify-center">
+      <div
+        className="flex items-center gap-2 min-w-0 rounded-full bg-black/25 pl-3 pr-1.5 py-1"
+        style={{ color: ink }}
+      >
+        <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.2em] opacity-70">
+          {competition}
+        </span>
+        {opp ? (
+          <>
+            <span className="shrink-0 text-[10px] font-bold opacity-60">vs</span>
+            <TeamCrest team={opp} size="w-6 h-6 text-[10px]" />
+            <span className="min-w-0 truncate text-sm font-headline font-black uppercase tracking-tight">
+              {opp.name}
+            </span>
+            {summary.venue && (
+              <span className="shrink-0 rounded-full bg-black/30 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest">
+                {summary.venue}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="truncate pr-1.5 text-xs font-bold opacity-80">
+            Sem jogo esta semana
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Valor compacto do header (orçamento, posição): rótulo por cima, valor por baixo.
+ *
+ * @param {Object} props
+ * @param {string} props.label Rótulo.
+ * @param {string} props.value Valor já formatado.
+ * @param {string} props.ink Cor do texto sobre a cor do clube.
+ * @param {string} [props.title] Tooltip com o valor por extenso.
+ * @returns {JSX.Element}
+ */
+function HeaderStat({ label, value, ink, title }) {
+  return (
+    <div className="flex flex-col items-end leading-tight px-2" style={{ color: ink }} title={title}>
+      <span className="text-[9px] font-black uppercase tracking-[0.18em] opacity-60">
+        {label}
+      </span>
+      <span className="text-sm font-headline font-black tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+/**
+ * Barra da jornada: o meu clube, o próximo jogo (ou o relógio do direto),
+ * orçamento, posição, o botão JOGAR com o estado da jornada, sala/chat e
+ * menu do utilizador. Lê tudo do `useGame()`; só recebe callbacks de fora.
  *
  * @param {{ handleLogout: () => void, setAuthPhase: (phase: string) => void, scrollToTop: () => void, replayTutorial?: () => void }} props
  */
 export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTutorial }) {
   const {
-    players,
-    awaitingCoaches,
+    teams,
     seasonYear,
     calendarIndex,
+    currentJornada,
+    nextMatchSummary,
     me,
     leaveToMenu,
     teamInfo,
@@ -45,19 +126,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     userDropdownOpen,
     setUserDropdownOpen,
   } = useGame();
-  // Mobile: alterna marca ↔ semana no canto superior esquerdo.
-  const [brandFlip, setBrandFlip] = useState(false);
-  useEffect(() => {
-    const id = setInterval(() => setBrandFlip((f) => !f), 4000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Telemóvel em landscape (abaixo de lg): header compacto.
-  const isMobileLandscape = useMobileLandscape();
-
-  const totalCoaches =
-    players.length +
-    awaitingCoaches.filter((n) => !players.some((p) => p.name === n)).length;
+  const cta = usePlayCta(scrollToTop);
 
   // Dropdown do utilizador fecha com Escape (a saída animada trata o AnimatePresence no JSX).
   useEffect(() => {
@@ -69,9 +138,20 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     return () => window.removeEventListener("keydown", onKey);
   }, [userDropdownOpen, setUserDropdownOpen]);
 
+  // Texto sobre a cor do clube (o fundo do header é a cor primária).
+  const ink = teamInfo?.color_secondary || "var(--color-on-surface)";
+  const week = (calendarIndex ?? 0) + 1;
+  const division = teams.find((t) => Number(t.id) === Number(me?.teamId))?.division;
+  const divisionTeams =
+    division == null ? [] : rankStandings(teams.filter((t) => t.division === division));
+  const position =
+    divisionTeams.findIndex((t) => Number(t.id) === Number(me?.teamId)) + 1;
+  const budget = teamInfo?.budget ?? 0;
+  const nextOpponent = nextMatchSummary?.opponent;
+
   return (
     <header
-      className={`[grid-area:top] relative z-(--z-header) flex items-center border-b border-outline-variant/20 h-[var(--header-h)] pt-[env(safe-area-inset-top,0px)] shadow-md shadow-black/30`}
+      className="[grid-area:top] relative z-(--z-header) flex items-center border-b border-outline-variant/20 h-[var(--header-h)] pt-[env(safe-area-inset-top,0px)] shadow-md shadow-black/30"
       style={
         teamInfo?.color_primary
           ? {
@@ -82,55 +162,25 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             }
       }
     >
-      <div className={`relative flex items-center justify-between w-full ${isMobileLandscape ? "px-3" : "px-4 lg:px-6"}`}>
-        {/* Left: brand + session info */}
-        <div className="flex items-center gap-3">
-          <img
-            src="/icon-512.png"
-            alt="Logotipo CashBall"
-            className={`hidden md:block shrink-0 rounded-full ${isMobileLandscape ? "h-8 w-8" : "h-10 w-10"}`}
-          />
-          <h1
-            className={`${isMobileLandscape ? "text-sm" : "text-base"} font-headline font-black tracking-tighter uppercase`}
-            style={{
-              color: teamInfo?.color_secondary || "var(--color-on-surface)",
-            }}
-          >
-            <span className="hidden md:inline">
-              CashBall <span style={{ opacity: 0.55 }}>26/27</span>
-            </span>
-            <span className="md:hidden relative inline-grid overflow-hidden align-bottom">
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.span
-                  key={brandFlip}
-                  className="whitespace-nowrap"
-                  initial={{ y: "100%", opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: "-100%", opacity: 0 }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
-                >
-                  {brandFlip ? (
-                    <>Semana <span style={{ opacity: 0.55 }}>{(calendarIndex ?? 0) + 1}/{seasonYear}</span></>
-                  ) : (
-                    <>CashBall <span style={{ opacity: 0.55 }}>26/27</span></>
-                  )}
-                </motion.span>
-              </AnimatePresence>
-            </span>
-          </h1>
-          <span
-            className="hidden md:block text-[10px] font-bold uppercase tracking-[0.2em]"
-            style={{
-              color: teamInfo?.color_secondary || "var(--color-on-surface)",
-              opacity: 0.7,
-            }}
-          >
-            {seasonYear} · S{(calendarIndex ?? 0) + 1} · {me.roomName || me.roomCode}
-          </span>
+      <div className="relative flex items-center gap-3 w-full px-3 lg:px-6">
+        {/* Esquerda: o meu clube + semana (no mobile, também o adversário) */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 md:flex-none md:w-56 lg:w-64">
+          <TeamCrest team={teamInfo} size="w-9 h-9 text-sm" />
+          <div className="min-w-0" style={{ color: ink }}>
+            <h1 className="truncate text-sm font-headline font-black uppercase tracking-tight leading-tight">
+              {teamInfo?.name || "CashBall"}
+            </h1>
+            <p className="truncate text-[10px] font-bold uppercase tracking-widest leading-tight opacity-70">
+              {seasonYear} · Semana {week}
+              {nextOpponent && !isMatchInProgress && (
+                <span className="md:hidden"> · vs {nextOpponent.name}</span>
+              )}
+            </p>
+          </div>
         </div>
 
-        {/* Center: live clock (absolute so it's always centered) */}
-        {isMatchInProgress && (
+        {/* Centro: próximo jogo, ou o relógio do direto (absoluto, centrado) */}
+        {isMatchInProgress ? (
           <LiveClock
             liveMinute={liveMinute}
             isPlayingMatch={isPlayingMatch}
@@ -139,10 +189,55 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             cupMatchRoundName={cupMatchRoundName}
             cupExtraTimeBadge={cupExtraTimeBadge}
           />
+        ) : (
+          <NextMatch summary={nextMatchSummary} jornada={currentJornada} ink={ink} />
         )}
 
-        {/* Right: user menu + chat */}
-        <div className="flex items-center gap-1">
+        {/* Direita: números do clube, JOGAR, sala/chat e utilizador */}
+        <div className="flex items-center gap-1 shrink-0 ml-auto">
+          {!isMatchInProgress && (
+            <div className="hidden lg:flex items-center gap-1 mr-1">
+              <HeaderStat
+                label="Orçamento"
+                value={compactEuros.format(budget)}
+                title={formatCurrency(budget)}
+                ink={ink}
+              />
+              {position > 0 && (
+                <HeaderStat
+                  label="Posição"
+                  value={`${position}.º/${divisionTeams.length}`}
+                  ink={ink}
+                />
+              )}
+              <button
+                type="button"
+                data-tour="nav-play"
+                onClick={cta.onClick}
+                className={`ml-2 flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 ${
+                  cta.state === "waiting"
+                    ? "bg-black/30 text-on-surface border border-primary/60"
+                    : cta.state === "active"
+                      ? "bg-primary text-on-primary ring-2 ring-white/40"
+                      : "bg-primary text-on-primary shadow-lg shadow-black/30 hover:brightness-110"
+                }`}
+              >
+                <span aria-hidden className={`material-symbols-outlined text-[18px] leading-none ${cta.state === "waiting" ? "text-primary" : ""}`}>
+                  {cta.icon}
+                </span>
+                {cta.label}
+                {cta.totalCoaches > 1 && (
+                  <span
+                    className="tabular-nums rounded-full bg-black/25 px-1.5 py-0.5 text-[10px]"
+                    title="Treinadores prontos"
+                  >
+                    {cta.readyCount}/{cta.totalCoaches}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
+
           {/* RoomHub button — unified: Coaches + Chat */}
           <div className="relative">
           <button
@@ -155,22 +250,20 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
           >
             <span
               className="material-symbols-outlined text-[20px] leading-none"
-              style={{
-                color: teamInfo?.color_secondary || "var(--color-on-surface)",
-              }}
+              style={{ color: ink }}
             >
               chat
             </span>
             {/* Badge único: não-lidas vencem (acionável); senão nº de coaches na sala */}
             {unreadRoom + unreadGlobal > 0 ? (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1 tabular-nums">
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1 tabular-nums">
                 {unreadRoom + unreadGlobal > 9
                   ? "9+"
                   : unreadRoom + unreadGlobal}
               </span>
             ) : (
-              <span className="absolute -bottom-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1 tabular-nums">
-                {totalCoaches}
+              <span className="absolute -bottom-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-primary text-on-primary text-[9px] font-black leading-none flex items-center justify-center px-1 tabular-nums">
+                {cta.totalCoaches}
               </span>
             )}
           </button>
@@ -232,7 +325,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                   ? "Definições bloqueadas durante o jogo"
                   : "Definições do Utilizador"
               }
-              className={`flex items-center gap-2 transition-colors rounded-lg px-2 py-1 ${
+              className={`flex items-center gap-1 transition-colors rounded-lg px-1.5 py-1 ${
                 isPlayingMatch
                   ? "opacity-40 cursor-not-allowed"
                   : "hover:bg-white/10"
@@ -245,32 +338,9 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                 coachAvatars={coachAvatars}
                 backendUrl={backendUrl}
               />
-              <div className="hidden lg:flex flex-col items-start">
-                <span
-                  className="text-sm font-bold leading-tight"
-                  style={{
-                    color:
-                      teamInfo?.color_secondary || "var(--color-on-surface)",
-                  }}
-                >
-                  {me.name}
-                </span>
-                <span
-                  className="text-xs leading-tight opacity-70"
-                  style={{
-                    color:
-                      teamInfo?.color_secondary || "var(--color-on-surface)",
-                  }}
-                >
-                  {teamInfo?.name}
-                </span>
-              </div>
               <span
                 className="material-symbols-outlined text-[16px] leading-none opacity-60"
-                style={{
-                  color:
-                    teamInfo?.color_secondary || "var(--color-on-surface)",
-                }}
+                style={{ color: ink }}
               >
                 {userDropdownOpen ? "expand_less" : "expand_more"}
               </span>
@@ -294,10 +364,13 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                   role="menu"
                   aria-label="Definições do utilizador"
                 >
-                  {/* Contexto da época (único sítio visível no mobile) */}
-                  <p className="px-4 pt-3 pb-2 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/70 border-b border-outline-variant/20 truncate">
-                    {seasonYear} · S{(calendarIndex ?? 0) + 1} · {me.roomName || me.roomCode}
-                  </p>
+                  {/* Quem sou e em que sala (o header mostra o clube, não o treinador) */}
+                  <div className="px-4 pt-3 pb-2 border-b border-outline-variant/20">
+                    <p className="text-sm font-bold text-on-surface truncate">{me.name}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/70 truncate">
+                      Sala {me.roomName || me.roomCode}
+                    </p>
+                  </div>
                   {/* A minha conta */}
                   <button
                     role="menuitem"

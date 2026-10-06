@@ -951,6 +951,13 @@ year: seasonYear,
 		socket.emit("requestNextMatchSummary", { teamId: me.teamId });
 	}, [activeTab, me?.teamId, matchweekCount, calendarIndex]);
 
+	// Barra da jornada (header): o próximo jogo está sempre à vista, por isso o
+	// resumo também é pedido a cada semana, e não só nas tabs acima.
+	useEffect(() => {
+		if (!me?.teamId) return;
+		socket.emit("requestNextMatchSummary", { teamId: me.teamId });
+	}, [me?.teamId, matchweekCount, calendarIndex]);
+
 	useEffect(() => {
 		if (!matchweekCount) return;
 		startTransition(() => {
