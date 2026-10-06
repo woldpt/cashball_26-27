@@ -169,9 +169,12 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const standX1 = 400 + ((STAND_X1 - STAND_X0) / 2) * span;
   const wallX0 = standX0 - capIn;
   const wallX1 = standX1 + capIn;
-  const goalHalfBot = GOAL_HALF_BOT * span;
-  const goalHalfTop = GOAL_HALF_TOP * span;
-  const netHalf = GOAL_HALF_TOP * span;
+  // A baliza não encolhe tanto como a bancada: abaixo de 0.8× virava um
+  // brinquedo ao pé do muro.
+  const goalScale = Math.max(span, 0.8);
+  const goalHalfBot = GOAL_HALF_BOT * goalScale;
+  const goalHalfTop = GOAL_HALF_TOP * goalScale;
+  const netHalf = GOAL_HALF_TOP * goalScale;
   // Mastro de luz mais baixo, à escala do estádio (só <15k).
   const poleTop = PITCH_TOP - (PITCH_TOP - 66) * span;
   // Crescimento do corpo: contínuo em toda a gama, íngreme acima dos 80k
@@ -914,12 +917,12 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         <line x1={400 + goalHalfBot} y1={GOAL_BOT} x2={400 + goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
         <line x1={400 - goalHalfTop} y1={GOAL_TOP} x2={400 + goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" />
       </g>
-      {/* Bandeiras de canto */}
+      {/* Bandeiras de canto (no plano do fundo: mais pequenas que as da cobertura) */}
       {cornerFlags.map((x) => (
         <g key={`corner-${x}`}>
-          <rect x={x - 0.75} y={PITCH_TOP - 15} width={1.5} height={15} fill="#e2e8f0" />
+          <rect x={x - 0.6} y={PITCH_TOP - 10} width={1.2} height={10} fill="#e2e8f0" />
           <polygon
-            points={`${x},${PITCH_TOP - 15} ${x + 9},${PITCH_TOP - 11.5} ${x},${PITCH_TOP - 8}`}
+            points={`${x},${PITCH_TOP - 10} ${x + 6},${PITCH_TOP - 7.7} ${x},${PITCH_TOP - 5.4}`}
             fill={x < 400 ? home : away}
           />
         </g>
@@ -950,7 +953,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
 
       {/* Linha de meio-campo + círculo central */}
       <line x1={400 - pitchHalf(212)} y1="212" x2={400 + pitchHalf(212)} y2="212" stroke="#f8fafc" strokeWidth="1.8" opacity="0.7" />
-      <ellipse cx={400} cy={212} rx={52} ry={11} fill="none" stroke="#f8fafc" strokeWidth="1.8" opacity="0.8" />
+      <ellipse cx={400} cy={212} rx={pitchHalf(212) * 0.2} ry={pitchHalf(212) * 0.042} fill="none" stroke="#f8fafc" strokeWidth="1.8" opacity="0.8" />
       <circle cx={400} cy={212} r={2.5} fill="#f8fafc" opacity="0.9" />
 
       {/* Faixa inferior com as cores do clube */}
