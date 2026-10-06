@@ -26,12 +26,15 @@ const CHIP_TONE = {
  * @param {Object} props
  * @param {string} props.icon - ícone Material Symbols.
  * @param {string} props.title - título da página.
- * @param {number} props.budget - saldo do treinador.
+ * @param {number} props.budget - valor em destaque (saldo do treinador por defeito).
+ * @param {string} [props.kicker] - sobretítulo (por defeito «Transferências»).
+ * @param {string} [props.valueLabel] - rótulo do valor (por defeito «Saldo»).
+ * @param {string} [props.valueClass] - cor do valor (por defeito verde/`error`).
  * @param {Array<{label: string, value?: import("react").ReactNode, tone?: "neutral"|"good"|"bad"|"warn", icon?: string}>} [props.chips]
  * @param {import("react").ReactNode} [props.children]
  * @returns {JSX.Element}
  */
-export function TransferHeader({ icon, title, budget = 0, chips = [], children }) {
+export function TransferHeader({ icon, title, budget = 0, kicker = "Transferências", valueLabel = "Saldo", valueClass, chips = [], children }) {
   return (
     <header className="relative overflow-hidden rounded-md border border-outline-variant/20 bg-surface-container-low shadow-sm shadow-black/30">
       <div aria-hidden className="top-light" />
@@ -50,7 +53,7 @@ export function TransferHeader({ icon, title, budget = 0, chips = [], children }
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] text-on-surface-variant leading-none">
-            Transferências
+            {kicker}
           </p>
           <h1 className="mt-1 font-headline font-black uppercase tracking-tight text-on-surface text-lg sm:text-2xl leading-none truncate">
             {title}
@@ -58,10 +61,10 @@ export function TransferHeader({ icon, title, budget = 0, chips = [], children }
         </div>
         <div className="shrink-0 text-right">
           <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant leading-none">
-            Saldo
+            {valueLabel}
           </p>
           <p
-            className={`mt-1 font-headline font-black tracking-tighter tabular-nums leading-none text-lg sm:text-3xl ${budget < 0 ? "text-error" : "text-emerald-400"}`}
+            className={`mt-1 font-headline font-black tracking-tighter tabular-nums leading-none text-lg sm:text-3xl ${budget < 0 ? "text-error" : valueClass || "text-emerald-400"}`}
             style={{ textShadow: "0 0 18px currentColor" }}
           >
             <CountUp value={budget} format={formatCurrency} />

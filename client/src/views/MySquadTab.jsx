@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
-import { Panel } from "../components/shared/Panel.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import {
   POSITION_ACCENT_HEX,
+  POSITION_BAR_CLASS,
   POSITION_TEXT_CLASS,
 } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
@@ -23,7 +24,7 @@ const POS_GROUP_LABEL = {
 const FILTER_ALL = "ALL";
 
 const SORT_OPTIONS = [
-  { key: "alpha", label: "Alfabeticamente" },
+  { key: "alpha", label: "A–Z" },
   { key: "skill", label: "Skill" },
   { key: "wage", label: "Salário" },
   { key: "value", label: "Valor" },
@@ -91,169 +92,133 @@ export function MySquadTab({
     };
   }, [annotatedSquad, sortKey]);
 
-  const maxPosWage = Math.max(...Object.values(wageByPos), 1);
-  const wageSummary = POS_ORDER.map(
-    (pos) => `${pos} ${formatCurrency(wageByPos[pos])}`,
-  ).join(", ");
-  const squadCountLabel = `${annotatedSquad.length} ${annotatedSquad.length === 1 ? "jogador" : "jogadores"}`;
-
-  const filterTabs = [
-    { key: FILTER_ALL, label: "Todos" },
-    ...POS_ORDER.map((pos) => ({
-      key: pos,
-      label: pos,
-    })),
+  const totalWage = Object.values(wageByPos).reduce((a, b) => a + b, 0);
+  const total = annotatedSquad.length;
+  const avgSkill = total
+    ? Math.round(annotatedSquad.reduce((a, p) => a + (p.skill || 0), 0) / total)
+    : 0;
+  const unavailable = annotatedSquad.filter((p) => p.isUnavailable).length;
+  const chips = [
+    { label: total === 1 ? "jogador" : "jogadores", value: total, icon: "groups" },
+    { label: "skill média", value: avgSkill, tone: "good", icon: "bolt" },
+    ...(unavailable
+      ? [{ label: "indisponíveis", value: unavailable, tone: "bad", icon: "healing" }]
+      : []),
   ];
-  const visiblePositions =
-    posFilter === FILTER_ALL ? POS_ORDER : [posFilter];
+
+  const visiblePositions = posFilter === FILTER_ALL ? POS_ORDER : [posFilter];
   const visibleGroups = visiblePositions.filter(
     (pos) => groupedByPos[pos].length > 0,
   );
 
   return (
     <div className="space-y-4">
-      {/* ── Linhas do plantel ── */}
-      <Panel
-        title="Gestão do Plantel"
-        meta={squadCountLabel}
+      <TransferHeader
+        icon="groups"
+        kicker="Clube"
+        title="Plantel"
+        valueLabel="Massa salarial/sem"
+        valueClass="text-tertiary"
+        budget={totalWage}
+        chips={chips}
       >
-        {annotatedSquad.length === 0 ? (
-          <EmptyState
-            icon="group"
-            title="Sem jogadores no plantel"
-            description="Os jogadores do teu plantel aparecem aqui."
-          />
-        ) : (
-          <>
-            <div className="flex flex-col gap-2 mb-3">
-              <TabBar
-                size="sm"
-                expand
-                tabs={filterTabs}
-                active={posFilter}
-                onChange={setPosFilter}
-              />
-              <div className="flex items-center justify-end gap-2">
-                <label
-                  htmlFor="players-sort"
-                  className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant"
-                >
-                  Ordenar
-                </label>
-                <select
-                  id="players-sort"
-                  value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value)}
-                  className="shrink-0 bg-surface-container-high border border-outline-variant/25 text-on-surface text-[10px] font-black uppercase tracking-widest rounded-md px-2 py-1 cursor-pointer"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option
-                      key={option.key}
-                      value={option.key}
-                    >
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {visibleGroups.length === 0 ? (
-              <EmptyState
-                icon="search"
-                title="Sem jogadores nesta posição"
-                description="Ajusta o filtro para ver o resto do plantel."
-              />
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                {visibleGroups.map((pos) => {
-                  const stats = groupStats[pos];
-                  return (
-                    <section
-                      key={pos}
-                      aria-label={POS_GROUP_LABEL[pos]}
-                    >
-                      <div className="flex items-center gap-2 px-1 py-2">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                          {POS_GROUP_LABEL[pos]}
-                        </h3>
-                        <span className="text-[9px] text-on-surface-variant/70 font-bold tabular-nums">
-                          {stats.count} · {formatCurrency(stats.wage)}/sem
-                        </span>
-                      </div>
-                      <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
-                        {groupedByPos[pos].map((player) => (
-                          <motion.li
-                            key={player.id}
-                            className="list-none"
-                            {...staggerItemProps(staggerIndex.get(player.id) ?? 0)}
-                          >
-                            <PlayerRow
-                              player={player}
-                              matchweekCount={matchweekCount}
-                              season={season}
-                              showContractBadges
-                              showLastRating
-                              onOpenPlayerHistory={onOpenPlayerHistory}
-                            />
-                          </motion.li>
-                        ))}
-                      </ul>
-                    </section>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-      </Panel>
-
-      {/* ── Distribuição salarial ── */}
-      {/* Gráfico secundário — em landscape não sobra altura para isto. */}
-      <Panel
-        title="Distribuição Salarial por Posição"
-        className="short:hidden"
-      >
-        <div
-          className="flex items-end gap-3"
-          style={{ height: "80px" }}
-          role="img"
-          aria-label={`Distribuição salarial por posição: ${wageSummary}`}
-        >
-          {POS_ORDER.map((pos) => {
-            const pct =
-              maxPosWage > 0 ? (wageByPos[pos] / maxPosWage) * 100 : 0;
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[FILTER_ALL, ...POS_ORDER].map((key) => {
+            const active = posFilter === key;
+            const hex = POSITION_ACCENT_HEX[key];
             return (
-              <div
-                key={pos}
-                aria-hidden
-                className="flex-1 flex flex-col items-center gap-1 h-full justify-end"
+              <button
+                key={key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setPosFilter(key)}
+                style={active && hex ? { borderColor: hex, boxShadow: `0 0 14px -4px ${hex}` } : undefined}
+                className={`inline-flex items-center gap-1.5 min-h-9 px-3 rounded-full border text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 ${
+                  active
+                    ? "bg-primary/20 border-primary/60 text-on-surface"
+                    : "bg-surface/60 border-outline-variant/25 text-on-surface-variant hover:text-on-surface hover:border-outline-variant/50"
+                }`}
               >
-                <div
-                  className="w-full bg-primary/10 rounded-t-sm relative"
-                  style={{ height: "60px" }}
-                >
+                <span className={!active && key !== FILTER_ALL ? POSITION_TEXT_CLASS[key] : ""}>
+                  {key === FILTER_ALL ? "Todos" : key}
+                </span>
+                <span className="tabular-nums opacity-70">
+                  {key === FILTER_ALL ? total : groupStats[key].count}
+                </span>
+              </button>
+            );
+          })}
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+              Ordenar
+            </span>
+            <TabBar size="sm" tabs={SORT_OPTIONS} active={sortKey} onChange={setSortKey} />
+          </div>
+        </div>
+      </TransferHeader>
+
+      {total === 0 ? (
+        <EmptyState
+          icon="group"
+          title="Sem jogadores no plantel"
+          description="Os jogadores do teu plantel aparecem aqui."
+        />
+      ) : visibleGroups.length === 0 ? (
+        <EmptyState
+          icon="search"
+          title="Sem jogadores nesta posição"
+          description="Ajusta o filtro para ver o resto do plantel."
+        />
+      ) : (
+        <div className="flex flex-col gap-4">
+          {visibleGroups.map((pos) => {
+            const stats = groupStats[pos];
+            const pct = totalWage > 0 ? Math.round((stats.wage / totalWage) * 100) : 0;
+            return (
+              <section key={pos} aria-label={POS_GROUP_LABEL[pos]}>
+                <div className="flex items-center gap-3 px-1 pb-2">
+                  <h3 className={`font-headline font-black uppercase tracking-tight text-sm ${POSITION_TEXT_CLASS[pos]}`}>
+                    {POS_GROUP_LABEL[pos]}
+                  </h3>
+                  <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-wider tabular-nums">
+                    {stats.count} · {formatCurrency(stats.wage)}/sem
+                  </span>
                   <div
-                    className="absolute inset-x-0 bottom-0 rounded-t-sm transition-all duration-700"
-                    style={{
-                      height: `${pct}%`,
-                      backgroundColor: POSITION_ACCENT_HEX[pos],
-                      opacity: 0.75,
-                    }}
-                  />
+                    className="ml-auto h-1.5 w-24 sm:w-40 rounded-full bg-surface/80 overflow-hidden"
+                    title={`${pct}% da massa salarial`}
+                  >
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${POSITION_BAR_CLASS[pos]} transition-all duration-700`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="text-[9px] font-black text-on-surface-variant tabular-nums w-8 text-right">
+                    {pct}%
+                  </span>
                 </div>
-                <span
-                  className={`text-[10px] font-black uppercase ${POSITION_TEXT_CLASS[pos] || "text-zinc-400"}`}
-                >
-                  {pos}
-                </span>
-                <span className="text-[9px] text-on-surface-variant tabular-nums">
-                  {formatCurrency(wageByPos[pos])}
-                </span>
-              </div>
+                <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
+                  {groupedByPos[pos].map((player) => (
+                    <motion.li
+                      key={player.id}
+                      className="list-none"
+                      {...staggerItemProps(staggerIndex.get(player.id) ?? 0)}
+                    >
+                      <PlayerRow
+                        player={player}
+                        matchweekCount={matchweekCount}
+                        season={season}
+                        showContractBadges
+                        showLastRating
+                        onOpenPlayerHistory={onOpenPlayerHistory}
+                      />
+                    </motion.li>
+                  ))}
+                </ul>
+              </section>
             );
           })}
         </div>
-      </Panel>
+      )}
     </div>
   );
 }
