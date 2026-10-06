@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
+import { Button } from "../shared/Button.jsx";
 import { FormDots } from "../shared/FormDots.jsx";
 import { Panel } from "../shared/Panel.jsx";
 import { PlayerRow } from "../shared/PlayerRow.jsx";
@@ -10,6 +11,25 @@ import {
 	SHOWCASE_TABLE,
 	SHOWCASE_WIDGETS,
 } from "./landingShowcase.js";
+
+/** Os três passos do "como funciona". */
+const HOW_IT_WORKS = [
+	{ icon: "badge", title: "Cria a conta", text: "Um nome de treinador e uma palavra-passe. Mais nada." },
+	{ icon: "casino", title: "Sorteio do clube", text: "Abre uma sala e o sorteio diz-te que clube vais treinar." },
+	{ icon: "sports_soccer", title: "Joga com amigos", text: "Partilha o código da sala e jogam a época juntos." },
+];
+
+/**
+ * Leva o utilizador ao formulário (login ou registo, o que estiver aberto)
+ * e põe-lhe o foco no primeiro campo.
+ */
+const goToAuthForm = () => {
+	const field = document.querySelector("#login-name, #register-name");
+	if (!(field instanceof HTMLElement)) return;
+	const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+	field.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+	field.focus({ preventScroll: true });
+};
 
 /**
  * Um bloco da montra: texto (kicker + título + frase) ao lado do visual,
@@ -52,7 +72,8 @@ const ShowcaseBlock = ({ kicker, title, text, flip = false, children }) => {
 /**
  * Secções-montra sob o hero: três blocos alternados (plantel, liga, jornal),
  * cada um explicado em texto e mostrado com componentes e tokens do jogo
- * sobre fixtures estáticas. Escondida em ecrãs curtos (mobile landscape),
+ * sobre fixtures estáticas, seguidos do "como funciona" e do CTA final que
+ * devolve ao formulário. Escondida em ecrãs curtos (mobile landscape),
  * onde não há altura para a mostrar.
  *
  * @returns {JSX.Element}
@@ -178,7 +199,58 @@ const ShowcaseSections = () => (
 					</div>
 				</Panel>
 			</ShowcaseBlock>
+
+			<ShowcaseBlock
+				kicker="Como funciona"
+				title="Três passos até ao apito inicial."
+				text="Sem instalar nada: joga no browser, no computador ou no telemóvel."
+			>
+				<ol className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+					{HOW_IT_WORKS.map(({ icon, title, text }, i) => (
+						<li
+							key={title}
+							className="relative bg-surface-container rounded-md border border-outline-variant/25 p-5 overflow-hidden"
+						>
+							<div aria-hidden className="top-light" />
+							<span
+								aria-hidden
+								className="absolute right-3 top-1 font-headline font-black text-6xl text-on-surface/[0.06] tabular-nums"
+							>
+								{i + 1}
+							</span>
+							<span className="material-symbols-outlined text-primary text-3xl mb-3 block">{icon}</span>
+							<p className="font-headline font-black text-base tracking-tight text-on-surface mb-1">
+								{title}
+							</p>
+							<p className="text-sm text-on-surface-variant leading-relaxed">{text}</p>
+						</li>
+					))}
+				</ol>
+			</ShowcaseBlock>
 		</div>
+
+		{/* CTA final — devolve ao formulário */}
+		<section className="relative overflow-hidden border-t border-outline-variant/20">
+			<div
+				aria-hidden
+				className="pointer-events-none absolute inset-0"
+				style={{
+					background:
+						"radial-gradient(60% 120% at 50% 100%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 70%)",
+				}}
+			/>
+			<div className="relative max-w-3xl mx-auto px-6 py-20 sm:py-28 text-center">
+				<h2 className="font-headline font-black tracking-tighter text-4xl sm:text-6xl text-on-surface mb-4">
+					O balneário <span className="text-primary">espera por ti.</span>
+				</h2>
+				<p className="text-base sm:text-lg text-on-surface-variant mb-8">
+					A época já começou. Falta o treinador.
+				</p>
+				<Button variant="primary" size="lg" uppercase onClick={goToAuthForm}>
+					Entrar no jogo
+				</Button>
+			</div>
+		</section>
 	</div>
 );
 

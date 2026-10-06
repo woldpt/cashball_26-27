@@ -1,6 +1,7 @@
 # Redesenho da landing page
 
 **Data:** 2026-10-06
+**Estado:** concluído (fases 1–5). Extra: `--color-bg` não existia no `@theme` (`bg-bg`/`from-bg` eram no-op) — definido como `#131313`.
 **Âmbito:** `client/src/components/auth/` (LandingPage e filhos). `RoomSelectScreen`, `ReconnectScreen` e os formulários de auth ficam fora, salvo retoques visuais no `AuthCard`.
 
 ## Diagnóstico
