@@ -206,13 +206,14 @@ export function JournalTab({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="relative rounded-sm border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col overflow-y-auto"
+                className="relative rounded-sm border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden"
               >
                 {/* Faixa lateral: categoria, ou error nas pendências */}
                 <CategoryAccentBar category={selected.cat} urgent={selected.redFlag} />
 
                 {/* Coluna de leitura: meta, manchete, corpo e ações com
                     largura de imprensa, centrada; tabelas centram-se a si */}
+                <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
                 <div className="mx-auto w-full max-w-prose">
                 {/* Metadados: categoria e data */}
                 <ArticleMeta item={selected} catLabel={labelOf(selected.cat)} />
@@ -305,8 +306,12 @@ export function JournalTab({
                   onOpenSponsor={() => setSponsorOpen(true)}
                 />
 
-                {/* Rodapé: mais recente / mais antiga + próxima por ler */}
-                <div className="mt-5 flex items-center justify-between gap-2 border-t border-outline-variant/25 pt-4">
+                </div>
+                </div>
+
+                {/* Rodapé fixo no fundo do cartão: mais recente / mais antiga + próxima por ler */}
+                <div className="mx-auto mt-2 w-full max-w-prose shrink-0 border-t border-outline-variant/25 pt-3">
+                <div className="flex items-center justify-between gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
