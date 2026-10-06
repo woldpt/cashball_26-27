@@ -5,6 +5,7 @@ import { DIVISION_NAMES, STADIUM_EXPANSION_COST as EXPANSION_COST } from "../con
 import { formatCurrency } from "../utils/formatters.js";
 import { getFansMoodLabel } from "../utils/morale.js";
 import { Panel } from "../components/shared/Panel.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { Button } from "../components/shared/Button.jsx";
 
 const SEATS_PER_BUILD = 5000;
@@ -70,65 +71,34 @@ export function StadiumTab({
 
   return (
     <div className="space-y-4 short:space-y-2">
-      {/* ── HERO: ESTÁDIO ─────────────────────────────────────────── */}
-      <div className="rounded-lg border border-outline-variant/25 overflow-hidden bg-surface-container grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        {/* Coluna A: dados */}
-        <dl className="divide-y divide-outline-variant/15 order-2 sm:order-1">
-          {[
-            {
-              label: "Nome",
-              value: teamInfo?.stadium_name || "Estádio Municipal",
-              sub: DIVISION_NAMES[division] || `Divisão ${division}`,
-              cls: "font-headline text-on-surface leading-tight",
-              wrap: true,
-            },
-            {
-              label: "Capacidade",
-              value: stadiumCapacity.toLocaleString("pt-PT"),
-              sub: "lugares",
-              cls: "text-on-surface",
-            },
-            {
-              label: "Receita Máx.",
-              value: formatCurrency(capacityRevPerGame),
-              sub: `${ticketPrice}€ × lotação`,
-              cls: "text-tertiary",
-            },
-          ].map((row) => (
-            <div
-              key={row.label}
-              className="flex items-baseline justify-between gap-3 px-4 py-2.5 short:px-3 short:py-1.5"
-            >
-              <dt className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant shrink-0">
-                {row.label}
-              </dt>
-              <dd className="text-right min-w-0">
-                <span className={`block ${row.wrap ? "" : "truncate"} text-base lg:text-lg short:text-sm font-black tabular-nums ${row.cls}`}>
-                  {row.value}
-                </span>
-                <span className="block text-[10px] text-on-surface-variant/60">
-                  {row.sub}
-                </span>
-              </dd>
-            </div>
-          ))}
-        </dl>
+      <TransferHeader
+        icon="stadium"
+        kicker={`${DIVISION_NAMES[division] || `Divisão ${division}`} · Clube`}
+        title={teamInfo?.stadium_name || "Estádio Municipal"}
+        valueLabel="Capacidade"
+        valueClass="text-primary"
+        budget={stadiumCapacity}
+        format={(n) => Math.round(n).toLocaleString("pt-PT")}
+        chips={[
+          { label: "receita máx.", value: `${formatCurrency(capacityRevPerGame)} (${ticketPrice}€ × lotação)`, tone: "good", icon: "payments" },
+          { label: "adeptos", value: fansMoodLabel, tone: fansMood >= 35 ? "good" : fansMood >= 23 ? "neutral" : "bad", icon: "mood" },
+          ...(occupancyPct != null ? [{ label: "ocupação", value: `${Math.round(occupancyPct)}%`, tone: occupancyPct >= 95 ? "good" : "neutral" }] : []),
+        ]}
+      />
 
-        {/* Coluna B: foto do estádio */}
-        <div className="relative h-40 sm:h-auto sm:min-h-52 short:h-28 overflow-hidden order-1 sm:order-2 group">
-          <StadiumIllustration
-            seed={teamInfo?.id}
-            weather={homeWeather}
-            capacity={stadiumCapacity}
-            primary={teamInfo?.color_primary}
-            secondary={teamInfo?.color_secondary}
-            occupancy={occupancyPct != null ? occupancyPct / 100 : undefined}
-            mood={teamInfo?.fans_mood ?? null}
-            className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-[1.02]"
-          />
+      <div className="relative h-40 sm:h-52 short:h-28 overflow-hidden rounded-md border border-outline-variant/20 group">
+        <StadiumIllustration
+          seed={teamInfo?.id}
+          weather={homeWeather}
+          capacity={stadiumCapacity}
+          primary={teamInfo?.color_primary}
+          secondary={teamInfo?.color_secondary}
+          occupancy={occupancyPct != null ? occupancyPct / 100 : undefined}
+          mood={teamInfo?.fans_mood ?? null}
+          className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-[1.02]"
+        />
+
         </div>
-      </div>
-
       {/* ── DUAS COLUNAS (desktop) ────────────────────────────────── */}
       <div className="grid gap-4 short:gap-2 lg:grid-cols-2 lg:items-start">
         <div className="space-y-4 short:space-y-2">
