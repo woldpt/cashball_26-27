@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { SEASON_LABEL } from "../../constants/index.js";
 import { usePrefersReducedMotion } from "../../hooks/usePrefersReducedMotion.js";
 import {
+	SHOWCASE_FINAL_HOLD,
 	SHOWCASE_LIVE,
 	SHOWCASE_MINUTE_TICK,
 	SHOWCASE_START_MINUTE,
 } from "./landingShowcase.js";
+
+/** Quantos eventos (os mais recentes) cabem no cartão. */
+const VISIBLE_EVENTS = 3;
 
 /** Argumentos de venda em uma linha, sob o parágrafo do hero. */
 const HERO_CHIPS = [
@@ -18,25 +22,37 @@ const HERO_CHIPS = [
 /**
  * Coluna esquerda do hero: marca compacta (para mobile landscape, onde o
  * header está escondido), título e o jogo em direto da montra — teatro com
- * temporizador sobre fixtures estáticas, não é simulação. Com
- * `prefers-reduced-motion`, o minuto fica estático.
+ * temporizador sobre fixtures estáticas, não é simulação: os eventos entram
+ * quando o relógio lá chega, o resultado deriva deles e, após o apito
+ * final, o direto recomeça. Com `prefers-reduced-motion`, mostra o jogo
+ * acabado e parado.
  *
  * @returns {JSX.Element}
  */
 const HeroSection = () => {
 	const reducedMotion = usePrefersReducedMotion();
-	const [minute, setMinute] = useState(SHOWCASE_START_MINUTE);
+	// Passa dos 90 durante a pausa do apito final; o ecrã fica nos 90.
+	const [tick, setTick] = useState(SHOWCASE_START_MINUTE);
 
 	useEffect(() => {
 		if (reducedMotion) return;
 		const id = setInterval(
-			() => setMinute((m) => (m >= 90 ? 90 : m + 1)),
+			() =>
+				setTick((m) =>
+					m >= 90 + SHOWCASE_FINAL_HOLD ? SHOWCASE_START_MINUTE : m + 1,
+				),
 			SHOWCASE_MINUTE_TICK,
 		);
 		return () => clearInterval(id);
 	}, [reducedMotion]);
 
-	const { home, away, homeGoals, awayGoals, events } = SHOWCASE_LIVE;
+	const minute = reducedMotion ? 90 : Math.min(tick, 90);
+	const { home, away, events } = SHOWCASE_LIVE;
+	const happened = events.filter((e) => e.minute <= minute);
+	const homeGoals = happened.filter((e) => e.side === "home").length;
+	const awayGoals = happened.filter((e) => e.side === "away").length;
+	const recent = happened.slice(-VISIBLE_EVENTS).reverse();
+	const finished = minute >= 90;
 
 	return (
 		<motion.div
@@ -82,12 +98,12 @@ const HeroSection = () => {
 				<div aria-hidden className="top-light" />
 				<div className="px-4 short:px-3 py-2.5 short:py-1.5 flex items-center justify-between bg-surface-container-high/50">
 					<span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-primary">
-						<span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-						Direto · Jornada 9
+						<span className={`w-1.5 h-1.5 rounded-full bg-primary ${finished ? "" : "motion-safe:animate-pulse"}`} />
+						{finished ? "Final" : "Direto"} · Jornada 9
 					</span>
 					<span
 						role="timer"
-						aria-label={`Demonstração: minuto ${minute}, segunda parte`}
+						aria-label={`Demonstração: minuto ${minute}, ${homeGoals}–${awayGoals}`}
 						className="text-sm font-headline font-black tabular-nums text-on-surface"
 					>
 						{minute}&apos;
@@ -107,21 +123,51 @@ const HeroSection = () => {
 							<span className="flex-1 min-w-0 truncate text-sm font-bold text-on-surface">
 								{team.name}
 							</span>
-							<span className="font-headline font-black text-2xl tabular-nums text-on-surface">
-								{i === 0 ? homeGoals : awayGoals}
+							<span className="relative font-headline font-black text-2xl tabular-nums text-on-surface">
+								{/* Remonta a cada golo: o número entra a brilhar em primary */}
+								<motion.span
+									key={i === 0 ? homeGoals : awayGoals}
+									className="inline-block"
+									initial={
+										reducedMotion
+											? false
+											: { scale: 1.5, color: "var(--color-primary)" }
+									}
+									animate={{ scale: 1, color: "var(--color-on-surface)" }}
+									transition={{ duration: 0.8, ease: "easeOut" }}
+								>
+									{i === 0 ? homeGoals : awayGoals}
+								</motion.span>
 							</span>
 						</div>
 					))}
-					<div className="mt-2 pt-2 border-t border-outline-variant/10 space-y-1">
-						{events.map(({ minute: m, text }) => (
-							<p key={m} className="text-xs text-on-surface-variant">
-								<span className="font-black tabular-nums text-tertiary mr-1.5">
-									{m}&apos;
-								</span>
-								{text}
-							</p>
-						))}
+					{/* Mais recente em cima; altura fixa para o cartão não saltar */}
+					<div className="mt-2 pt-2 border-t border-outline-variant/10 space-y-1 h-[4.5rem] overflow-hidden">
+						<AnimatePresence initial={false}>
+							{recent.map(({ minute: m, text, side }) => (
+								<motion.p
+									key={m}
+									layout
+									initial={{ opacity: 0, y: -6 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ duration: 0.4 }}
+									className={`text-xs truncate ${side ? "text-on-surface font-bold" : "text-on-surface-variant"}`}
+								>
+									<span className="font-black tabular-nums text-tertiary mr-1.5">
+										{m}&apos;
+									</span>
+									{text}
+								</motion.p>
+							))}
+						</AnimatePresence>
 					</div>
+				</div>
+				{/* Progresso do jogo (0–90') */}
+				<div aria-hidden className="h-0.5 bg-outline-variant/15">
+					<div
+						className="h-full bg-primary transition-[width] duration-700 ease-out"
+						style={{ width: `${(minute / 90) * 100}%` }}
+					/>
 				</div>
 				{/* Landscape: só o marcador, sem eventos */}
 				<div className="hidden short:flex items-center gap-2 px-3 py-1.5">

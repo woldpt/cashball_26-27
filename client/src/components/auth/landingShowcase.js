@@ -8,11 +8,14 @@
  * dispara `requestPlayerHistory`.
  */
 
-/** Minuto inicial do direto simulado. */
-export const SHOWCASE_START_MINUTE = 63;
+/** Minuto inicial do direto simulado (1–1, mesmo antes da reviravolta). */
+export const SHOWCASE_START_MINUTE = 61;
 
 /** Relógio do direto simulado: de quanto em quanto o minuto avança (ms). */
-export const SHOWCASE_MINUTE_TICK = 4000;
+export const SHOWCASE_MINUTE_TICK = 2500;
+
+/** Ticks parados no apito final antes de o direto recomeçar. */
+export const SHOWCASE_FINAL_HOLD = 3;
 
 /**
  * Plantel fictício para as `PlayerRow` da montra (um por posição-chave).
@@ -118,17 +121,20 @@ export const SHOWCASE_SQUAD = [
 /**
  * Jogo em direto da montra (teatro com temporizador — não é simulação).
  *
- * @type {{ home: { short: string, name: string, color: string }, away: { short: string, name: string, color: string }, homeGoals: number, awayGoals: number, events: Array<{ minute: number, text: string }> }}
+ * O resultado deriva dos eventos com `side` (golos) já ocorridos.
+ *
+ * @type {{ home: { short: string, name: string, color: string }, away: { short: string, name: string, color: string }, events: Array<{ minute: number, text: string, side?: "home"|"away" }> }}
  */
 export const SHOWCASE_LIVE = {
 	home: { short: "EST", name: "Estrela do Vale", color: "#e9c349" },
 	away: { short: "CAR", name: "UD Carvalhal", color: "#3b82f6" },
-	homeGoals: 2,
-	awayGoals: 1,
 	events: [
-		{ minute: 23, text: "Golo! Fagulha abre o marcador de cabeça." },
-		{ minute: 55, text: "Empata o Carvalhal na sequência de um canto." },
-		{ minute: 64, text: "Golo! Lume vira o jogo de fora da área." },
+		{ minute: 23, side: "home", text: "Golo! Fagulha abre o marcador de cabeça." },
+		{ minute: 55, side: "away", text: "Empata o Carvalhal na sequência de um canto." },
+		{ minute: 64, side: "home", text: "Golo! Lume vira o jogo de fora da área." },
+		{ minute: 78, text: "Amarelo para Pedreira, que trava o contra-ataque." },
+		{ minute: 86, text: "Ao poste! O Carvalhal esteve a um palmo do empate." },
+		{ minute: 90, text: "Apito final — três pontos para o Estrela." },
 	],
 };
 
