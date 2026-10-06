@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { readableColor } from "../../utils/colorHelpers.js";
 import { TeamCrest } from "../shared/TeamCrest.jsx";
-import { Panel } from "../shared/Panel.jsx";
+import { TransferHeader } from "../transfers/TransferChrome.jsx";
 import { TabBar } from "../shared/TabBar.jsx";
 
 const ROUND_NAMES = [
@@ -403,7 +403,7 @@ function MatchRow({ match, myTeamId, players, onOpenTeam }) {
 
   return (
     <div
-      className={`relative flex items-center gap-3 px-4 py-3 rounded-md border border-outline-variant/25 bg-surface-container transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30 ${
+      className={`relative flex items-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/25 bg-gradient-to-r from-surface-container-high/60 via-surface-container to-surface-container-high/60 transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30 ${
         isMyMatch
           ? "border-primary/40 bg-primary/10"
           : ""
@@ -573,91 +573,69 @@ export function CupBracketPage({
   })();
   const hasQF = (rounds.find((r) => r.round === QF_ROUND)?.matches?.length || 0) > 0;
 
+  const myMatch = rounds
+    .find((r) => r.round === currentRound)
+    ?.matches?.find((m) => me?.teamId && (m.homeTeam?.id === me.teamId || m.awayTeam?.id === me.teamId));
+
   return (
     <div className="space-y-5">
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
-      <Panel
+      <TransferHeader
         icon="emoji_events"
+        kicker={`Taça de Portugal · Temporada ${bracketData.season}`}
         title="Árvore de Knockout"
-        meta={`Taça de Portugal · Temporada ${bracketData.season}`}
+        valueLabel="Rondas"
+        valueClass="text-amber-400"
+        budget={completedRounds}
+        format={(n) => `${n}/${totalRounds}`}
+        chips={[
+          champion
+            ? { label: "campeão", value: champion.name, tone: "warn", icon: "emoji_events" }
+            : { label: "em curso", tone: "good", icon: "sports_soccer" },
+          ...(myMatch
+            ? [{ label: myMatch.played ? "o teu jogo: jogado" : "o teu jogo: por jogar", tone: "neutral", icon: "flag" }]
+            : []),
+        ]}
       >
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5">
-            {champion ? (
-              <>
-                <TeamCrest team={champion} size="w-5 h-5 text-[9px]" />
-                <TeamName
-                  team={champion}
-                  onOpenTeam={onOpenTeamSquad}
-                  className="text-left text-[9px] font-black uppercase tracking-wider"
-                  style={{ color: readableColor(champion.color_primary) }}
-                />
-                <span className="text-[8px] text-amber-400/60 font-bold">
-                  Campeão
+        <TabBar
+          tabs={ROUND_KEYS.map((r) => {
+            const rd = rounds.find((x) => x.round === r);
+            const hasData = (rd?.matches?.length || 0) > 0;
+            const allPlayed = hasData && rd.matches.every((m) => m.played);
+            return {
+              key: String(r),
+              label: (
+                <span className="inline-flex items-center gap-1">
+                  {allPlayed && currentRound !== r && (
+                    <span className="material-symbols-outlined text-[10px] leading-none text-primary/60">
+                      check
+                    </span>
+                  )}
+                  {ROUND_SHORT[r]}
                 </span>
-              </>
-            ) : (
-              <span className="text-[9px] text-on-surface-variant/40 font-bold uppercase tracking-wider">
-                Em curso
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: totalRounds }).map((_, i) => (
-              <div
-                key={i}
-                className={`rounded-full transition-all ${
-                  i < completedRounds
-                    ? "bg-amber-400 w-2 h-2"
-                    : i === completedRounds
-                      ? "bg-amber-400/40 w-2 h-2 animate-pulse"
-                      : "bg-outline-variant/30 w-1.5 h-1.5"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </Panel>
-
-      {/* ── ROUND TABS ──────────────────────────────────────────────────────── */}
-      <TabBar
-        tabs={ROUND_KEYS.map((r) => {
-          const rd = rounds.find((x) => x.round === r);
-          const hasData = (rd?.matches?.length || 0) > 0;
-          const allPlayed = hasData && rd.matches.every((m) => m.played);
-          return {
-            key: String(r),
-            label: (
-              <span className="inline-flex items-center gap-1">
-                {allPlayed && currentRound !== r && (
-                  <span className="material-symbols-outlined text-[10px] leading-none text-primary/60">
-                    check
-                  </span>
-                )}
-                {ROUND_SHORT[r]}
-              </span>
-            ),
-          };
-        })}
-        active={String(currentRound)}
-        onChange={(k) => {
-          const n = Number(k);
-          if ((rounds.find((x) => x.round === n)?.matches?.length || 0) > 0) {
-            setSelectedRound(n);
-          }
-        }}
-        disabledKeys={ROUND_KEYS
-          .filter(
-            (r) => (rounds.find((x) => x.round === r)?.matches?.length || 0) === 0,
-          )
-          .map(String)}
-        className="overflow-x-auto hide-scrollbar [&>button]:shrink-0"
-      />
+              ),
+            };
+          })}
+          active={String(currentRound)}
+          onChange={(k) => {
+            const n = Number(k);
+            if ((rounds.find((x) => x.round === n)?.matches?.length || 0) > 0) {
+              setSelectedRound(n);
+            }
+          }}
+          disabledKeys={ROUND_KEYS
+            .filter(
+              (r) => (rounds.find((x) => x.round === r)?.matches?.length || 0) === 0,
+            )
+            .map(String)}
+          className="overflow-x-auto hide-scrollbar [&>button]:shrink-0"
+        />
+      </TransferHeader>
 
       {/* ── DESKTOP BRACKET TREE (rounds 3-5 only) ──────────────────────────── */}
       {currentRound >= 3 && hasQF && (
         <div className="hidden lg:block">
-          <div className="bg-surface-container rounded-md border border-outline-variant/15 px-6 pt-3 pb-6">
+          <div className="bg-surface-container-low rounded-xl border border-outline-variant/20 shadow-sm shadow-black/30 px-6 pt-3 pb-6">
             <BracketTree
               rounds={rounds}
               myTeamId={me?.teamId}
@@ -670,12 +648,12 @@ export function CupBracketPage({
       {/* ── MATCH LIST ──────────────────────────────────────────────────────── */}
       <div className="space-y-2">
         <div className="flex items-center gap-3 px-1 mb-1">
-          <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40">
+          <span className="text-[11px] font-headline font-black uppercase tracking-widest text-on-surface-variant">
             {ROUND_NAMES[currentRound]}
           </span>
           <div className="flex-1 h-px bg-outline-variant/15" />
           {currentRoundData && (
-            <span className="text-[9px] text-on-surface-variant/30 font-bold shrink-0">
+            <span className="text-[10px] text-on-surface-variant font-black tabular-nums shrink-0">
               {currentRoundData.matches.filter((m) => m.played).length} /{" "}
               {currentRoundData.matches.length} jogados
             </span>
@@ -705,11 +683,11 @@ export function CupBracketPage({
       {currentRound === 1 && bracketData.exemptTeams?.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-3 px-1 mb-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40">
+            <span className="text-[11px] font-headline font-black uppercase tracking-widest text-on-surface-variant">
               Isentas · passam aos 16 avos
             </span>
             <div className="flex-1 h-px bg-outline-variant/15" />
-            <span className="text-[9px] text-on-surface-variant/30 font-bold shrink-0">
+            <span className="text-[10px] text-on-surface-variant font-black tabular-nums shrink-0">
               {bracketData.exemptTeams.length} equipas
             </span>
           </div>

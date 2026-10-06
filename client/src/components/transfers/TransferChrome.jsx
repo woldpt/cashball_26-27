@@ -29,12 +29,13 @@ const CHIP_TONE = {
  * @param {number} props.budget - valor em destaque (saldo do treinador por defeito).
  * @param {string} [props.kicker] - sobretítulo (por defeito «Transferências»).
  * @param {string} [props.valueLabel] - rótulo do valor (por defeito «Saldo»).
+ * @param {(n: number) => string} [props.format] - formatação do valor (por defeito moeda).
  * @param {string} [props.valueClass] - cor do valor (por defeito verde/`error`).
  * @param {Array<{label: string, value?: import("react").ReactNode, tone?: "neutral"|"good"|"bad"|"warn", icon?: string}>} [props.chips]
  * @param {import("react").ReactNode} [props.children]
  * @returns {JSX.Element}
  */
-export function TransferHeader({ icon, title, budget = 0, kicker = "Transferências", valueLabel = "Saldo", valueClass, chips = [], children }) {
+export function TransferHeader({ icon, title, budget = 0, kicker = "Transferências", valueLabel = "Saldo", valueClass, format = formatCurrency, chips = [], children }) {
   return (
     <header className="relative overflow-hidden rounded-md border border-outline-variant/20 bg-surface-container-low shadow-sm shadow-black/30">
       <div aria-hidden className="top-light" />
@@ -67,7 +68,7 @@ export function TransferHeader({ icon, title, budget = 0, kicker = "Transferênc
             className={`mt-1 font-headline font-black tracking-tighter tabular-nums leading-none text-lg sm:text-3xl ${budget < 0 ? "text-error" : valueClass || "text-emerald-400"}`}
             style={{ textShadow: "0 0 18px currentColor" }}
           >
-            <CountUp value={budget} format={formatCurrency} />
+            <CountUp value={budget} format={format} />
           </p>
         </div>
       </div>
