@@ -1,6 +1,6 @@
 # Plano — novas notícias do Jornal
 
-> Decidido com o utilizador em 2026-10-06. Cada fase é um commit.
+> **Estado: feito** (e4bf26f8 · 58c78277 · cliente no commit seguinte). Decidido com o utilizador em 2026-10-06.
 
 ## Âmbito
 

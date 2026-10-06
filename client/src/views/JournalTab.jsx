@@ -30,7 +30,7 @@ import { PostMatchPitch } from "../components/shared/PostMatchPitch.jsx";
 import { SponsorChooseModal } from "../components/shared/SponsorChooseModal.jsx";
 import { flagSummary, searchText } from "./journal/utils.jsx";
 import { ArticleMeta, CategoryAccentBar, RichNewsText, RichParagraphs } from "./journal/ArticleBody.jsx";
-import { CupDrawIntro, CupDrawTable, LeagueFinalTable, WeeklyFinanceTable } from "./journal/ArticleTables.jsx";
+import { CupDrawIntro, CupDrawTable, LeagueFinalTable, TrainingReportTable, WeeklyFinanceTable } from "./journal/ArticleTables.jsx";
 import { ArticleActionBar } from "./journal/ArticleActions.jsx";
 import { NewsMedia } from "./journal/NewsMedia.jsx";
 import { TopicList } from "./journal/TopicList.jsx";
@@ -319,6 +319,11 @@ export function JournalTab({
                     teams={teams}
                     onOpenTeamSquad={onOpenTeamSquad}
                   />
+                )}
+
+                {/* Tabela do relatório de treino (skill) */}
+                {selected.newsType === "training_report" && (
+                  <TrainingReportTable rows={selected.facts?.rows} />
                 )}
 
                 {/* Tabela do resumo financeiro semanal */}

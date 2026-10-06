@@ -369,3 +369,40 @@ export function WeeklyFinanceTable({ facts }) {
     </>
   );
 }
+
+/**
+ * Tabela do relatório de treino (`training_report`): quem subiu/desceu de
+ * `skill` face à semana anterior, ganhos primeiro.
+ * @param {{ rows?: Array<{id: number, name: string, position?: string, from: number, to: number}> }} props
+ * @returns {JSX.Element|null}
+ */
+export function TrainingReportTable({ rows }) {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  return (
+    <JournalTable caption="Evolução de skill na semana">
+      <thead>
+        <tr className={THEAD_ROW_CLS}>
+          <Th>Jogador</Th>
+          <Th align="center">Pos.</Th>
+          <Th align="right">Skill</Th>
+          <Th align="right">Δ</Th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => {
+          const d = r.to - r.from;
+          return (
+            <tr key={r.id} className="border-t border-outline-variant/15 odd:bg-surface-container/15">
+              <Td className="font-bold">{r.name}</Td>
+              <Td align="center" className="text-on-surface-variant">{r.position || "—"}</Td>
+              <Td align="right" className="text-on-surface-variant">{r.from} → {r.to}</Td>
+              <Td align="right" className={`font-black ${d > 0 ? "text-emerald-400" : "text-error"}`}>
+                {d > 0 ? "+" : "−"}{Math.abs(d)}
+              </Td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </JournalTable>
+  );
+}

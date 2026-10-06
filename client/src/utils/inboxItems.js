@@ -117,6 +117,23 @@ function moodSeed(mood) {
 }
 
 /**
+ * Desfecho da eliminatória da Taça (o rescaldo da Taça guarda sempre um
+ * vencedor, mesmo nos penáltis).
+ * @param {object} mood contexto final do jogo (source «cup»)
+ * @returns {string}
+ */
+function cupOutcomeLine(mood) {
+  const isFinal = /^final\b/i.test(String(mood?.roundLabel || "").trim());
+  const pens = mood?.penalties ? " nos penáltis" : "";
+  if (mood?.outcome === "win") {
+    return isFinal
+      ? `A Taça é nossa${pens}! O clube conquista o troféu e escreve o seu nome na história da competição.`
+      : `Passamos${pens} à próxima eliminatória da Taça.`;
+  }
+  return `A Taça termina aqui${pens}: o clube está eliminado da competição.`;
+}
+
+/**
  * Cria o corpo editorial da reação pós-jogo sem inventar estatísticas.
  * @param {object} mood contexto final do jogo
  * @returns {string}
@@ -141,6 +158,7 @@ export function buildMoodNewsBody(mood) {
 
   return [
     `${round} terminou com um ${score} frente a ${opponent}. ${first}`,
+    ...(mood?.source === "cup" ? [cupOutcomeLine(mood)] : []),
     second,
     `${closing}${revenue}`,
   ].join("\n\n");
@@ -195,6 +213,9 @@ export function parsePostMatchRecap(n) {
       ticketRevenue: r.ticketRevenue,
       // Classificação 0–10 por participante (notícias antigas: null → sem pitch).
       ratings: Array.isArray(r.ratings) ? r.ratings : null,
+      source: r.source,
+      mom: r.mom && r.mom.playerId ? r.mom : null,
+      penalties: r.penalties === true,
     };
     return { mood, key: r.key };
   } catch {
@@ -233,16 +254,31 @@ export function buildMoodNewsArticle(mood) {
     mood?.opponentTeamId != null && mood?.opponentName
       ? { id: mood.opponentTeamId, label: mood.opponentName }
       : null;
+  // Homem do Jogo: linha final do corpo + cartão do jogador (posição vinda do pitch).
+  const mom = mood?.mom
+    ? {
+        id: mood.mom.playerId,
+        label: mood.mom.playerName,
+        position:
+          (Array.isArray(mood?.ratings) &&
+            mood.ratings.find((r) => r.id === mood.mom.playerId)?.position) ||
+          "ATA",
+      }
+    : null;
+  const momPrefix = "\n\nHomem do Jogo: ";
   return {
     title,
-    body,
+    body: mom ? `${body}${momPrefix}${mom.label}.` : body,
     titleParts: opponent
       ? linkFirstMention(title, partTeam(opponent))
       : [partText(title)],
-    bodyParts: opponent
-      ? linkFirstMention(body, partTeam(opponent))
-      : [partText(body)],
-    media: { player: null, teams: opponent ? [opponent] : [] },
+    bodyParts: [
+      ...(opponent
+        ? linkFirstMention(body, partTeam(opponent))
+        : [partText(body)]),
+      ...(mom ? [partText(momPrefix), partPlayer(mom), partText(".")] : []),
+    ],
+    media: { player: mom, teams: opponent ? [opponent] : [] },
     // Pitch de classificações no fim do corpo (null quando não há dados).
     pitch:
       Array.isArray(mood?.ratings) && mood.ratings.length > 0
@@ -286,6 +322,8 @@ export function newsCategory(n) {
     t === "academy" ||
     t === "injury" ||
     t === "suspension" ||
+    t === "training_report" ||
+    t === "milestone" ||
     t === "renegotiation" ||
     t === "contract_request"
   )
@@ -690,6 +728,55 @@ function weeklyFinanceArticle(n) {
   };
 }
 /**
+ * Relatório semanal de treino (`training_report`): quem subiu/desceu de
+ * `skill`. As linhas vão em `facts.rows` para a tabela do leitor.
+ * @param {object} n linha `training_report`
+ */
+function trainingReportArticle(n) {
+  const facts = parseNewsFacts(n);
+  const owner = newsTeam(n?.team_id, n?.team_name);
+  const rows = Array.isArray(facts?.rows) ? facts.rows : [];
+  const ups = rows.filter((r) => r.to > r.from).length;
+  const downs = rows.length - ups;
+  const plural = (c, one, many) => `${c} ${c === 1 ? one : many}`;
+  const parts = [];
+  if (ups > 0) parts.push(`${plural(ups, "jogador subiu", "jogadores subiram")} de skill`);
+  if (downs > 0) parts.push(`${plural(downs, "jogador desceu", "jogadores desceram")}`);
+  const title = n?.title || "Relatório de treino da semana";
+  const body = rows.length
+    ? `Balanço da semana no relvado e no treino: ${parts.join(" e ")}. A tabela mostra a evolução de cada um face à semana anterior.`
+    : "Sem alterações de skill esta semana.";
+  return {
+    ...makeArticle([partText(title)], [partText(body)], null, owner ? [owner] : [], null),
+    facts: { rows },
+  };
+}
+
+/**
+ * Marcos de jogadores (`milestone`): hat-trick ou golos de carreira.
+ * @param {object} n linha `milestone`
+ */
+function milestoneArticle(n) {
+  const facts = parseNewsFacts(n) || {};
+  const owner = newsTeam(n?.team_id, n?.team_name);
+  const player = newsPlayer(n);
+  const name = n?.player_name || "O jogador";
+  const p = player ? partPlayer(player) : partText(name);
+  const body =
+    facts.kind === "hattrick"
+      ? `${name} fez ${facts.goals >= 4 ? `${facts.goals} golos` : "um hat-trick"}${facts.opponentName ? ` frente a ${facts.opponentName}` : ""} e foi a figura do jogo. Noites assim ficam na memória da bancada.`
+      : `${name} chega aos ${facts.goals ?? n?.amount} golos de carreira — um número redondo para um marcador que o clube aprendeu a respeitar.`;
+  const title = String(n?.title || "");
+  return makeArticle(
+    player ? linkFirstMention(title, p) : [partText(title)],
+    player ? linkFirstMention(body, p) : [partText(body)],
+    player,
+    owner ? [owner] : [],
+    null,
+  );
+}
+
+/**
  * Textos de lesão com gravidade e total de semanas (engine: grave = 3+ sem).
  * @returns {{title: string, body: string}}
  */
@@ -819,6 +906,8 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   if (String(n?.type || "") === "sponsor_offer") return sponsorOfferArticle(n);
   if (String(n?.type || "") === "league_final") return leagueFinalArticle(n, viewerTeamId);
   if (String(n?.type || "") === "weekly_finance") return weeklyFinanceArticle(n);
+  if (String(n?.type || "") === "training_report") return trainingReportArticle(n);
+  if (String(n?.type || "") === "milestone") return milestoneArticle(n);
   if (String(n?.type || "") === "injury" || String(n?.type || "") === "suspension")
     return medicalArticle(n);
   const player = newsPlayer(n);
