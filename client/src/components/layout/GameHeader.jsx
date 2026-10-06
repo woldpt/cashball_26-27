@@ -168,7 +168,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
           <img
             src={teamInfo.crest}
             alt=""
-            className="absolute left-0 top-1/2 h-[320%] w-auto max-w-none -translate-x-1/4 -translate-y-1/2 -rotate-[10deg] opacity-30"
+            className="absolute left-0 top-1/2 h-[320%] w-auto max-w-none -translate-x-1/4 -translate-y-1/2 -rotate-[10deg] opacity-50"
           />
         </div>
       )}
