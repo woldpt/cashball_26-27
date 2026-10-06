@@ -223,31 +223,6 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                   center
                 />
               )}
-              <button
-                type="button"
-                data-tour="nav-play"
-                onClick={cta.onClick}
-                className={`ml-2 flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 ${
-                  cta.state === "waiting"
-                    ? "bg-black/30 text-on-surface border border-primary/60"
-                    : cta.state === "active"
-                      ? "bg-primary text-on-primary ring-2 ring-white/40"
-                      : "bg-primary text-on-primary shadow-lg shadow-black/30 hover:brightness-110"
-                }`}
-              >
-                <span aria-hidden className={`material-symbols-outlined text-[18px] leading-none ${cta.state === "waiting" ? "text-primary" : ""}`}>
-                  {cta.icon}
-                </span>
-                {cta.label}
-                {cta.totalCoaches > 1 && (
-                  <span
-                    className="tabular-nums rounded-full bg-black/25 px-1.5 py-0.5 text-[10px]"
-                    title="Treinadores prontos"
-                  >
-                    {cta.readyCount}/{cta.totalCoaches}
-                  </span>
-                )}
-              </button>
             </div>
           )}
 
@@ -491,6 +466,35 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             )}
             </AnimatePresence>
           </div>
+
+          {/* JOGAR: sempre o último, à direita */}
+          {!isMatchInProgress && (
+            <button
+              type="button"
+              data-tour="nav-play"
+              onClick={cta.onClick}
+              className={`ml-2 hidden lg:flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 ${
+                cta.state === "waiting"
+                  ? "bg-black/30 text-on-surface border border-primary/60"
+                  : cta.state === "active"
+                    ? "bg-primary text-on-primary ring-2 ring-white/40"
+                    : "bg-primary text-on-primary shadow-lg shadow-black/30 hover:brightness-110"
+              }`}
+            >
+              <span aria-hidden className={`material-symbols-outlined text-[18px] leading-none ${cta.state === "waiting" ? "text-primary" : ""}`}>
+                {cta.icon}
+              </span>
+              {cta.label}
+              {cta.totalCoaches > 1 && (
+                <span
+                  className="tabular-nums rounded-full bg-black/25 px-1.5 py-0.5 text-[10px]"
+                  title="Treinadores prontos"
+                >
+                  {cta.readyCount}/{cta.totalCoaches}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </header>
