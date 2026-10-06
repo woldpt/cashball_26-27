@@ -1,6 +1,6 @@
-// Regressão das funções puras da vista live (feed, remates, cansaço, multiplex).
+// Regressão das funções puras da vista live (feed, remates, cansaço).
 import assert from "node:assert/strict";
-import { liveFeed, liveScore, liveShots, otherGoals, tiredPlayers } from "./liveHelpers.js";
+import { liveFeed, liveScore, liveShots, tiredPlayers } from "./liveHelpers.js";
 
 const events = [
   { minute: 1, type: "weather", team: null, emoji: "☀️", text: "[1'] ☀️ Sol radioso." },
@@ -42,23 +42,5 @@ const lineup = [
 ];
 assert.deepEqual(tiredPlayers(lineup, events, 40).map((p) => p.id), [4, 1]);
 assert.deepEqual(tiredPlayers(lineup, events, 20).map((p) => p.id), [3, 4]);
-
-// Multiplex: exclui o meu jogo, resultado corrido por golo, mais recente primeiro.
-const fixtures = [
-  { homeTeamId: 1, awayTeamId: 2, events },
-  {
-    homeTeamId: 3,
-    awayTeamId: 4,
-    events: [
-      { minute: 70, type: "goal", team: "away", playerName: "Z" },
-      { minute: 5, type: "goal", team: "home", playerName: "X" },
-    ],
-  },
-];
-const goals = otherGoals(fixtures, 60, (f) => f.homeTeamId === 1);
-assert.equal(goals.length, 1);
-assert.deepEqual([goals[0].minute, goals[0].home, goals[0].away], [5, 1, 0]);
-const all = otherGoals(fixtures, 90, () => false);
-assert.deepEqual(all.map((g) => [g.minute, g.home, g.away]), [[70, 1, 1], [50, 2, 1], [30, 1, 1], [20, 1, 0], [5, 1, 0]]);
 
 console.log("liveHelpers: OK");

@@ -7,14 +7,13 @@ import { CupFinalStage } from "./CupFinalStage.jsx";
 import { LiveFixtureRow } from "./LiveFixtureRow.jsx";
 import { LivePitchStrip } from "./LivePitchStrip.jsx";
 import { LiveStandingsPanel } from "./LiveStandings.jsx";
-import { LiveGoalTicker } from "./LiveGoalTicker.jsx";
 import { isDrawnAt90, liveScore } from "./liveHelpers.js";
 
 /* ── LiveView — tab "live": a jornada a decorrer ─────────────────────────
  *
- * Linha 1: o meu jogo (hero) + classificação virtual e Multiplex ao lado.
+ * Linha 1: o meu jogo (hero) + classificação virtual ao lado.
  * Linha 2: a minha divisão aberta; as outras recolhidas (abertas se houver
- * treinador humano). Taça: hero + Multiplex + restantes jogos da ronda.
+ * treinador humano). Taça: hero + restantes jogos da ronda.
  * Quando o marcador do hero sai do ecrã, um marcador compacto fica preso ao
  * topo (o contentor é `overflow-clip`, que não quebra o `sticky`).
  */
@@ -157,17 +156,7 @@ export function LiveView() {
     !!matchResults && !!myMatch && !(isCupExtraTime && !isDrawnAt90(myMatch));
   const myDiv = teamById(me.teamId)?.division;
   const showStandings = !isCupMatch && results.length > 0;
-  const showTicker = results.length > 1;
-  const sideColumn = showStandings || showTicker;
-  const ticker = (
-    <LiveGoalTicker
-      fixtures={results}
-      teams={teams}
-      liveMinute={liveMinute}
-      skip={isMine}
-      onOpenDetail={openDetail}
-    />
-  );
+  const sideColumn = showStandings;
 
   return (
     <div
@@ -207,7 +196,7 @@ export function LiveView() {
           />
         </div>
       ) : (
-        /* ── LINHA 1: O MEU JOGO + CLASSIFICAÇÃO VIRTUAL / MULTIPLEX ── */
+        /* ── LINHA 1: O MEU JOGO + CLASSIFICAÇÃO VIRTUAL ── */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
           <div className={sideColumn ? "lg:col-span-2" : "lg:col-span-3"}>
             {matchResults && (
@@ -248,7 +237,6 @@ export function LiveView() {
                 />
               </div>
             )}
-            {showTicker && ticker}
           </div>
           )}
         </div>
