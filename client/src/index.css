@@ -32,6 +32,8 @@
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
   /* ── Stitch: Pitch Master 98 — color tokens ─────────────────── */
+  /* Fundo sólido da página (= body). `bg-bg`/`from-bg` da landing. */
+  --color-bg: #131313;
   --color-surface: color-mix(in srgb, #131313 90%, transparent);
   /* Painéis com 10% de transparência: a foto da tab sugere-se por trás
      sem tirar leitura ao texto. Os ~352 usos herdam via tokens. */
