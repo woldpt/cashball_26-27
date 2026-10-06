@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { PitchFormation } from "../../match/shared/PitchFormation.jsx";
-import { PITCH_POS_COLORS } from "../../match/matchConstants.js";
+import { PITCH_POS_COLORS, THREAT_ROLE_META } from "../../match/matchConstants.js";
 
 /**
  * Mini-campo com a formação provável do adversário — reutiliza o relvado
@@ -8,12 +8,13 @@ import { PITCH_POS_COLORS } from "../../match/matchConstants.js";
  * Diagnóstico: se a formação chega sem jogadores renderizáveis (payload
  * inesperado), regista a forma do payload na consola e mostra um fallback
  * visível em vez de um relvado vazio.
- * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null }} props
+ * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null, threats?: Array<{ id: number|null, role: string }> }} props
  * @returns {JSX.Element|null}
  */
 export const OpponentFormation = memo(function OpponentFormation({
   formation,
   teamColor,
+  threats = [],
 }) {
   if (!formation || !formation.formation) return null;
   const rows = { ATA: [], MED: [], DEF: [], GR: [] };
@@ -35,6 +36,9 @@ export const OpponentFormation = memo(function OpponentFormation({
       }),
     );
   }
+  const threatIcons = new Map(
+    threats.filter((t) => t.id != null).map((t) => [Number(t.id), THREAT_ROLE_META[t.role]?.icon ?? "❗"]),
+  );
   return (
     <div className="min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col">
       <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15 lg:shrink-0">
@@ -52,6 +56,7 @@ export const OpponentFormation = memo(function OpponentFormation({
             posColors={PITCH_POS_COLORS}
             teamColor={teamColor}
             showFatigue={false}
+            threatIcons={threatIcons}
           />
         </div>
       ) : (

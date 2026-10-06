@@ -102,6 +102,7 @@ export function MatchBriefing() {
                 <OpponentFormation
                   formation={vm.formation}
                   teamColor={vm.opponentColor}
+                  threats={vm.threats}
                 />
               ) : (
                 <VenueFallback venue={vm.venue} />

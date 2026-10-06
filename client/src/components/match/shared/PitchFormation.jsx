@@ -61,8 +61,8 @@ function usePlayerBadges(events, liveMinute) {
 /* ── Marcador de jogador (em campo) ──────────────────────────────────────
  * Cara do jogador (PlayerAvatar) com anel na cor da posição, placard com
  * nome + skill e badges de eventos da Live (golos, cartões). */
-/** player, teamColor, badges {goals,yellow,red}|undefined, starColor, count, showFatigue, selected, isPreview, onClick. */
-export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badges, starColor = "amber-400", count = 1, showFatigue = true, selected = false, isPreview = false, onClick = null }) {
+/** player, teamColor, badges {goals,yellow,red}|undefined, starColor, count, showFatigue, selected, isPreview, threatIcon (emoji de ameaça), onClick. */
+export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badges, starColor = "amber-400", count = 1, showFatigue = true, selected = false, isPreview = false, threatIcon = null, onClick = null }) {
   const accent = POSITION_ACCENT_HEX?.[player.position] || "#94a3b8";
   const compact = count >= 4;
   const avatarCls = compact ? "w-8 h-8" : "w-10 h-10";
@@ -96,7 +96,9 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
           className="rounded-full overflow-hidden"
           title={POSITION_FULL_LABELS[player.position]}
           style={{
-            boxShadow: `0 0 0 2px ${accent}, 0 0 12px ${accent}66, 0 4px 10px rgba(0,0,0,0.6)`,
+            boxShadow: threatIcon
+              ? "0 0 0 2px #fbbf24, 0 0 16px #fbbf24aa, 0 4px 10px rgba(0,0,0,0.6)"
+              : `0 0 0 2px ${accent}, 0 0 12px ${accent}66, 0 4px 10px rgba(0,0,0,0.6)`,
           }}
         >
           <PlayerAvatar
@@ -127,6 +129,14 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
               />
             )}
           </div>
+        )}
+        {threatIcon && (
+          <span
+            className="absolute -top-1.5 -left-2 w-5 h-5 rounded-full bg-amber-400 text-[11px] flex items-center justify-center border border-black/40 shadow-md pointer-events-none"
+            title="Ameaça do adversário"
+          >
+            {threatIcon}
+          </span>
         )}
         {/* Sigla da posição */}
         <span
@@ -160,7 +170,7 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
 });
 
 /* ── Linha de jogadores ────────────────────────────────────────────────── */
-export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, showFatigue = true, onPlayerClick = null, selectedId = null, previewId = null }) {
+export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, showFatigue = true, onPlayerClick = null, selectedId = null, previewId = null, threatIcons = null }) {
   if (!players || players.length === 0) return null;
   return (
     <div
@@ -178,6 +188,7 @@ export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, s
           showFatigue={showFatigue}
           selected={selectedId != null && player?.id != null && Number(player.id) === Number(selectedId)}
           isPreview={previewId != null && player?.id != null && Number(player.id) === Number(previewId)}
+          threatIcon={player?.id != null ? threatIcons?.get(Number(player.id)) : null}
           onClick={onPlayerClick ? () => onPlayerClick(player) : null}
         />
       ))}
@@ -186,7 +197,7 @@ export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, s
 }
 
 /* ── PitchFormation — relvado broadcast com os 11 ──────────────────────── */
-/** rows {GR,DEF,MED,ATA}, events+liveMinute (badges live), teamColor (camisola), posColors (legado), starColor, withOverlay, showFatigue, onPlayerClick, selectedId, previewId. */
+/** rows {GR,DEF,MED,ATA}, events+liveMinute (badges live), teamColor (camisola), posColors (legado), starColor, withOverlay, showFatigue, onPlayerClick, selectedId, previewId, threatIcons (Map id→emoji, marca ameaças). */
 export function PitchFormation({
   rows,
   events,
@@ -199,6 +210,7 @@ export function PitchFormation({
   onPlayerClick = null,
   selectedId = null,
   previewId = null,
+  threatIcons = null,
 }) {
   void posColors;
   const badgesById = usePlayerBadges(events, liveMinute);
@@ -217,6 +229,7 @@ export function PitchFormation({
           onPlayerClick={onPlayerClick}
           selectedId={selectedId}
           previewId={previewId}
+          threatIcons={threatIcons}
         />
       ))}
       {withOverlay && (
