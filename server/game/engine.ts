@@ -59,7 +59,6 @@ import {
   secondHalfTacticPhrase,
   styleDisplayLabel,
   tacticChangePhrase,
-  noSubInjuryPhrase,
   computeMatchOdds,
   bettingPhrase,
 } from "./commentary";
@@ -1133,16 +1132,6 @@ async function applyInjuryEvent({
   if (!canMakeSubstitution(fixture, teamId)) {
     // Notifica o treinador que a equipa passa a jogar com menos um jogador.
     io.to(game.roomCode).emit("substitutionCapReached", { teamId });
-    // O toast pode passar despercebido: sem janela de escolha, o treinador tem
-    // de saber explicitamente que o lesado sai sem reposição.
-    const capTeamName =
-      teamSide === "home"
-        ? fixture.homeTeam?.name || String(teamId)
-        : fixture.awayTeam?.name || String(teamId);
-    io.to(game.roomCode).emit("systemMessage", {
-      text: noSubInjuryPhrase(injuredPlayer.name, capTeamName),
-      broadcast: true,
-    });
     removeFromPitch({
       fixture,
       game,

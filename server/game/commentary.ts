@@ -1601,16 +1601,10 @@ function tacticChangePhrase(teamName: string, formation: string, style: string):
   return `🔄 ${teamName} muda para ${formation} (${styleDisplayLabel(style)})`;
 }
 
-/** Lesão sem reposição (subs esgotadas) — aviso explícito ao treinador. */
-function noSubInjuryPhrase(name: string, teamName: string): string {
-  return `🚑 ${name} (${teamName}) sai sem reposição — substituições esgotadas. A equipa joga com menos um.`;
-}
-
 export {
   pickPhrase,
   styleDisplayLabel,
   tacticChangePhrase,
-  noSubInjuryPhrase,
   goalPhrase,
   ownGoalPhrase,
   penaltyGoalPhrase,
