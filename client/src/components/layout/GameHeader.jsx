@@ -110,7 +110,7 @@ function BalanceSpark({ points }) {
   const line = xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const [lx, ly] = xy[xy.length - 1];
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 text-primary drop-shadow-[0_3px_4px_rgba(0,0,0,0.55)]" role="img" aria-label="Evolução do saldo">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 text-primary" role="img" aria-label="Evolução do saldo">
       <polygon points={`${P},${H} ${line} ${lx.toFixed(1)},${H}`} fill="currentColor" opacity="0.15" />
       <polyline points={line} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
       <circle cx={lx} cy={ly} r="3.5" fill="currentColor" />
