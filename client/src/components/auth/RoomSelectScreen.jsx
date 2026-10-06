@@ -646,11 +646,7 @@ const RoomSelectScreen = ({
 						<button
 							onClick={handleJoin}
 							disabled={!roomCode || joining}
-							className={`relative overflow-hidden disabled:bg-surface-bright disabled:text-on-surface-variant/40 py-3 sm:py-4 short:py-2 px-6 sm:px-8 rounded-md font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full short:w-auto ${
-								joinMode === "saved-game"
-									? "bg-tertiary hover:brightness-110 text-on-tertiary"
-									: "bg-primary hover:brightness-110 text-on-primary"
-							}`}
+							className="relative overflow-hidden disabled:bg-surface-bright disabled:text-on-surface-variant/40 py-3 sm:py-4 short:py-2 px-6 sm:px-8 rounded-md font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full short:w-auto bg-primary hover:brightness-110 text-on-primary"
 						>
 							<span className="relative z-10">{ctaLabel}</span>
 							<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
