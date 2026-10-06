@@ -1,8 +1,8 @@
 /**
  * JournalTab — a caixa de entrada do treinador (hub estilo CM2001).
  *
- * Tópicos à esquerda e detalhe à direita no desktop, sem filtros de categoria
- * (só a pesquisa). A notícia mais antiga
+ * Estilo FM2005 no desktop: caixa de entrada baixa e larga em cima, leitor
+ * em largura total por baixo; sem filtros de categoria (só a pesquisa). A notícia mais antiga
  * por ler fica seleccionada (sem a marcar como lida) e o artigo tem
  * «Ler próxima». Só o clique na linha, o «Ler próxima» ou o Enter
  * marcam como lida.
@@ -25,7 +25,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useInbox } from "../hooks/useInbox.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
-import { Badge } from "../components/shared/Badge.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { PostMatchPitch } from "../components/shared/PostMatchPitch.jsx";
 import { SponsorChooseModal } from "../components/shared/SponsorChooseModal.jsx";
 import { flagSummary, searchText } from "./journal/utils.jsx";
@@ -128,18 +128,50 @@ export function JournalTab({
 
   return (
     <div className="space-y-2 short:space-y-1.5 lg:flex lg:h-[calc(100dvh-var(--header-h)-3rem)] lg:flex-col">
-      {/* ── Barra de título ─────────────────────────────────────────── */}
-      <div className="rounded-sm bg-surface-container border border-outline-variant/20 px-3 py-2 short:py-1.5 flex items-center justify-between gap-2">
-        <h1 className="flex min-w-0 items-center gap-2 font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
-          <span aria-hidden className="material-symbols-outlined text-[20px]">newspaper</span>
-          <span className="truncate">Jornal do Clube</span>
-        </h1>
-        {inbox.unreadCount > 0 && (
-          <Badge variant="neutral" size="md">
-            {inbox.unreadCount} nova{inbox.unreadCount === 1 ? "" : "s"}
-          </Badge>
-        )}
-      </div>
+      {/* ── Topo: por ler em destaque + barra de ações (estilo FM) ───── */}
+      <TransferHeader
+        icon="newspaper"
+        kicker="Clube"
+        title="Jornal"
+        valueLabel="Por ler"
+        valueClass={inbox.unreadCount > 0 ? "text-primary" : "text-on-surface-variant"}
+        budget={inbox.unreadCount}
+        format={(n) => String(Math.round(n))}
+        chips={[
+          { label: "mensagens", value: inbox.items.length, tone: "neutral", icon: "mail" },
+          ...(inbox.redFlags > 0
+            ? [{ label: inbox.redFlags === 1 ? "pendência" : "pendências", value: inbox.redFlags, tone: "bad", icon: "flag" }]
+            : []),
+          ...(query ? [{ label: "resultados", value: visible.length, tone: "warn", icon: "search" }] : []),
+        ]}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="journal-topic-search" className="sr-only">
+            Pesquisar notícias
+          </label>
+          <input
+            id="journal-topic-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Pesquisar (jogadores, equipas)…"
+            className="min-w-0 flex-1 basis-48 rounded-full border border-outline-variant/30 bg-surface px-3 py-1.5 text-xs font-bold text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary/60 focus:outline-none"
+          />
+          <Button
+            size="sm"
+            onClick={() => {
+              selectNextUnread();
+              if (!window.matchMedia("(min-width: 1024px)").matches) setMobileDetail(true);
+            }}
+            disabled={!inbox.hasNextUnread}
+          >
+            Próxima por ler
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => inbox.markAllRead()} disabled={!hasUnreadNonFlag}>
+            Marcar tudo como lido
+          </Button>
+        </div>
+      </TransferHeader>
 
       {/* Pendências: uma faixa só, com atalho para a primeira */}
       {firstFlag && (
@@ -159,23 +191,20 @@ export function JournalTab({
         </div>
       )}
 
-      <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
-        {/* ── Coluna esquerda: Tópicos ───────────────────────────────── */}
-        <div className={mobileDetail ? "max-lg:hidden lg:contents" : "contents"}>
+      <div className="grid gap-2 lg:flex lg:flex-1 lg:min-h-0 lg:flex-col">
+        {/* ── Inbox (em cima, ~6 linhas) ─────────────────────────────── */}
+        <div className={`${mobileDetail ? "max-lg:hidden " : ""}lg:flex lg:h-64 lg:shrink-0 lg:flex-col`}>
         <TopicList
           inbox={inbox}
           selected={selected}
           visible={visible}
           query={query}
-          search={search}
-          onSearchChange={setSearch}
           onSelectItem={handleSelectItem}
           onPreviewItem={inbox.preview}
-          hasUnreadNonFlag={hasUnreadNonFlag}
         />
         </div>
 
-        {/* ── Coluna direita: Detalhe do artigo ──────────────────────── */}
+        {/* ── Leitor (por baixo, largura total) ──────────────────────── */}
         <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col`}>
           <Button
             variant="ghost"

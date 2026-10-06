@@ -1,6 +1,7 @@
 /**
- * Coluna de tópicos do Jornal: pesquisa, lista agrupada por semana,
- * «Marcar tudo como lido» e épocas antigas. «Ler próxima» vive no artigo.
+ * Caixa de entrada do Jornal: lista agrupada por semana e épocas antigas.
+ * A pesquisa e as ações («Próxima por ler», «Marcar tudo como lido») vivem
+ * na barra do `TransferHeader`; «Ler próxima» também no artigo.
  */
 import { EmptyState } from "../../components/shared/EmptyState.jsx";
 import { Button } from "../../components/shared/Button.jsx";
@@ -23,11 +24,8 @@ function formatGroupLabel(date) {
  *   selected?: object|null,
  *   visible: Array,
  *   query: string,
- *   search: string,
- *   onSearchChange?: Function,
- *   onSelectItem?: Function,
- *   onPreviewItem?: Function,
- *   hasUnreadNonFlag?: boolean
+  *   onSelectItem?: Function,
+ *   onPreviewItem?: Function
  * }} props
  * @returns {JSX.Element}
  */
@@ -36,11 +34,8 @@ export function TopicList({
   selected,
   visible,
   query,
-  search,
-  onSearchChange,
   onSelectItem,
   onPreviewItem,
-  hasUnreadNonFlag,
 }) {
   // Setas/j/k movem foco e seleção sem marcar como lida (só o clique e o
   // Enter marcam). Roving tabindex: o Tab entra pelo item ativo.
@@ -65,27 +60,7 @@ export function TopicList({
     buttons[next]?.focus();
   };
   return (
-    <section aria-label="Tópicos" className="min-w-0 space-y-2 rounded-sm bg-surface-container/40 p-2 lg:flex lg:min-h-0 lg:flex-col">
-      <div className="rounded-sm bg-surface-container-high/50 px-2 py-1.5 transition-colors focus-within:bg-surface-container-high">
-        <label htmlFor="journal-topic-search" className="sr-only">
-          Pesquisar notícias
-        </label>
-        <input
-          id="journal-topic-search"
-          type="search"
-          value={search}
-          onChange={(event) => onSearchChange?.(event.target.value)}
-          placeholder="Pesquisar notícias (jogadores, equipas)…"
-          className="w-full bg-transparent text-xs font-bold text-on-surface outline-none placeholder:text-on-surface-variant/70"
-        />
-        {query && (
-          <p className="mt-1 text-[9px] font-bold text-on-surface-variant">
-            {visible.length} resultado{visible.length !== 1 ? "s" : ""} para{" "}
-            <span className="text-on-surface font-black">{search.trim()}</span>
-          </p>
-        )}
-      </div>
-
+    <section aria-label="Tópicos" className="min-w-0 space-y-2 rounded-sm bg-surface-container/40 p-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
       {/* ── Lista ───────────────────────────────────────────────── */}
       {visible.length === 0 ? (
         <EmptyState
@@ -174,13 +149,6 @@ export function TopicList({
         </ol>
       )}
 
-      {hasUnreadNonFlag && (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => inbox.markAllRead()}>
-            Marcar tudo como lido
-          </Button>
-        </div>
-      )}
       {inbox.hasOlderSeasons && (
         <div className="flex justify-center">
           <Button
