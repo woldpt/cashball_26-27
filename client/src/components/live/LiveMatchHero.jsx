@@ -470,12 +470,14 @@ export function LiveMatchHero({
               .trim();
             if (!phrase) return null;
             const tier = COMMENTARY_EFFECTS[latestWithText.type] || null;
-            // Chance: cor da equipa que criou o lance + alinhamento ao lado dela
+            // Cor (aclarada) da equipa do lance; chance alinha ao lado dela
             // (casa → esquerda, fora → direita); o pulse segue a mesma cor.
-            const chanceSide = latestWithText.type === "chance" ? resolveSide(latestWithText) : null;
-            const chanceColor = chanceSide
-              ? teamTextColor(chanceSide === "away" ? aInfo : hInfo)
+            const eventSide = resolveSide(latestWithText);
+            const chanceSide = latestWithText.type === "chance" ? eventSide : null;
+            const teamColor = eventSide === "home" || eventSide === "away"
+              ? teamTextColor(eventSide === "away" ? aInfo : hInfo)
               : null;
+            const chanceColor = teamColor && `color-mix(in srgb, ${teamColor} 60%, white)`;
             const effectCls = tier?.effect
               ? `commentary-effect commentary-effect--${tier.effect}`
               : "";
@@ -487,10 +489,13 @@ export function LiveMatchHero({
                   : tier?.effect
                     ? "0.6s"
                     : undefined,
+              // contorno escuro: legível sobre a chuva do WeatherOverlay
+              // (filter, não text-shadow — o pulse anima o text-shadow).
+              filter: "drop-shadow(0 1px 1px rgb(0 0 0 / 0.9)) drop-shadow(0 0 4px rgb(0 0 0 / 0.6))",
             };
             if (chanceColor) {
               phraseStyle.color = chanceColor;
-              phraseStyle["--pulse-color"] = `${chanceColor}73`;
+              phraseStyle["--pulse-color"] = `color-mix(in srgb, ${chanceColor} 45%, transparent)`;
             } else if (tier?.effect === "pulse" && tier.pulseColor) {
               phraseStyle["--pulse-color"] = tier.pulseColor;
             }
