@@ -310,6 +310,11 @@ ${player.isUnavailable ? "opacity-50" : ""}
 ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
 `}
     >
+      <span
+        className={`w-8 shrink-0 text-center rounded-md py-0.5 text-[9px] font-black leading-none text-black/80 ${pos.bg ?? "bg-gray-500"}`}
+      >
+        {player.position}
+      </span>
       <PlayerAvatar player={player} />
       <span className="flex-1 min-w-0 text-xs font-semibold text-[#e8e8e8] truncate leading-none">
         {onClick ? (
