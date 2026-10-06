@@ -323,60 +323,6 @@ export function liveScore(events, liveMinute) {
   return { home, away };
 }
 
-/* Lances que contam como remate (o `team` é sempre o lado que ataca). O
- * auto-golo não conta: o `team` dele é o beneficiado, não quem rematou. */
-const SHOT_TYPES = new Set([
-  "goal", "penalty_goal", "chance", "near_miss", "penalty_miss",
-  "var_disallowed", "var_goal_pending",
-]);
-
-/**
- * Remates por equipa até ao minuto.
- *
- * @param {Array<{minute:number,type:string,team:string}>|null|undefined} events
- * @param {number} liveMinute
- * @returns {{home:number, away:number}}
- */
-export function liveShots(events, liveMinute) {
-  let home = 0;
-  let away = 0;
-  for (const e of events || []) {
-    if ((e.minute ?? -1) > liveMinute || !SHOT_TYPES.has(e.type)) continue;
-    if (e.team === "home") home += 1;
-    else if (e.team === "away") away += 1;
-  }
-  return { home, away };
-}
-
-/**
- * Jogadores em campo mais cansados (perda de skill em jogo ≥ `minLoss`),
- * do mais para o menos cansado. O lineup ao vivo mantém `fatigueLoss` em dia
- * a cada minuto e as trocas em campo reaproveitam a posição (`is_starter`).
- *
- * @param {Array<{id:number,name:string,is_starter?:boolean,fatigueLoss?:number}>|null|undefined} lineup
- * @param {Array<{minute:number,type:string,playerId?:number}>|null|undefined} events
- * @param {number} liveMinute
- * @param {number} [minLoss]
- * @param {number} [limit]
- * @returns {Array<{id:number,name:string,fatigueLoss:number}>}
- */
-export function tiredPlayers(lineup, events, liveMinute, minLoss = 3, limit = 2) {
-  const sentOff = new Set(
-    (events || [])
-      .filter((e) => e.type === "red" && e.minute <= liveMinute)
-      .map((e) => e.playerId),
-  );
-  return (lineup || [])
-    .filter(
-      (p) =>
-        p.is_starter !== false &&
-        !sentOff.has(p.id) &&
-        Number(p.fatigueLoss ?? 0) >= minLoss,
-    )
-    .sort((a, b) => b.fatigueLoss - a.fatigueLoss)
-    .slice(0, limit);
-}
-
 /* "[23'] ⚽ Frase" → ícone + frase. O ícone só é separado quando o 1.º
  * token não começa por letra/número (as mudanças táticas não trazem emoji). */
 const COMMENTARY_RE = /^\[(?:\d+'|HT)\]\s*(?:([^\p{L}\p{N}\s"“«'(]\S*)\s+)?(.*)$/su;

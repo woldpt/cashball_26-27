@@ -6,7 +6,7 @@ import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { useKitClash } from "../../hooks/useKitClash.js";
 import { Button } from "../shared/Button.jsx";
-import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, liveFeed, liveScore, matchEventIcon, parseOdds, resolveEventSide, teamTextColor, tiredPlayers } from "./liveHelpers.js";
+import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, liveFeed, liveScore, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
 
 /* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
 const PAUSE_TEXT = {
@@ -170,11 +170,6 @@ export function LiveMatchHero({
   const homeEvents = sideEvents("home");
   const awayEvents = sideEvents("away");
 
-  // Dados para decidir: cansaço da minha equipa.
-  const tired =
-    isPlayingMatch && (homeIsMine || awayIsMine)
-      ? tiredPlayers(homeIsMine ? myMatch.homeLineup : myMatch.awayLineup, matchEvents, liveMinute)
-      : [];
   const canSub = isPlayingMatch && !isMatchActionPending;
 
   return (
@@ -418,10 +413,7 @@ export function LiveMatchHero({
           </div>
         </div>
 
-        {/* ── Dados para decidir + ação principal ── */}
-        <MatchStats
-          tired={tired}
-        />
+        {/* ── Ação principal ── */}
         {!readOnly && (
           <Button
             variant={canSub ? "primary" : "secondary"}
@@ -479,31 +471,6 @@ export function ScoreKit({ team, isMine, coach, away = false }) {
         >
           {coach.name}
         </span>
-      )}
-    </div>
-  );
-}
-
-/* ── MatchStats — alerta de cansaço da minha equipa ──── */
-/**
- * @param {Object} props
- * @param {Array<{id:number,name:string,fatigueLoss:number}>} props.tired
- * @returns {JSX.Element|null}
- */
-function MatchStats({ tired }) {
-  if (!tired.length) return null;
-  return (
-    <div className="w-full max-w-2xl mt-3 px-1 flex flex-col gap-2">
-      {tired.length > 0 && (
-        <p
-          className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-amber-300"
-          title="Perda de qualidade por cansaço neste jogo"
-        >
-          <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">battery_alert</span>
-          <span className="min-w-0 truncate">
-            Cansados: {tired.map((p) => `${p.name} −${p.fatigueLoss}`).join(" · ")}
-          </span>
-        </p>
       )}
     </div>
   );
