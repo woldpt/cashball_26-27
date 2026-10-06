@@ -7,6 +7,7 @@ import {
   RefWeatherBar,
 } from "../../shared/index.js";
 import { TeamCrest } from "../../../live/TeamCrest.jsx";
+import { BadgeSkills } from "../../../shared/BadgeSkills.jsx";
 
 function EventList({ events, hInfo, aInfo }) {
   if (events.length === 0) {
@@ -214,7 +215,7 @@ export function AdversarioPanel({
 /* ── Coluna de posição: header + lista de jogadores ─────────────────── */
 function PositionColumn({ posStyle, players, label }) {
   return (
-    <div className="rounded-md border border-outline-variant/15 overflow-hidden">
+    <div className="flex flex-col rounded-md border border-outline-variant/15 overflow-hidden">
       {/* Header com cor da posição */}
       <div
         className={`shrink-0 flex items-center justify-between px-2.5 py-1.5 border-b ${posStyle.badgeBorder} bg-gradient-to-r ${posStyle.bgGrad} to-transparent`}
@@ -229,7 +230,7 @@ function PositionColumn({ posStyle, players, label }) {
         </span>
       </div>
       {/* Lista de jogadores */}
-      <div className="p-1.5 space-y-1 min-h-[2rem]">
+      <div className="flex-1 flex flex-col justify-center p-1.5 space-y-1 min-h-[2rem]">
         {players.map((p) => (
           <OpponentGridCard
             key={p.id ?? p.name}
@@ -266,6 +267,7 @@ function BenchChip({ player, posStyle }) {
           <span className="ml-0.5 text-amber-400" aria-label="Craque">★</span>
         )}
       </span>
+      <BadgeSkills skill={player.skill} hideStats size="sm" />
     </div>
   );
 }
