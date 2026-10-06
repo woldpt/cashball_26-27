@@ -1,35 +1,27 @@
 /**
  * TransferHub — Mercado de transferências (compra de jogadores).
- * Estilo cromo face única idêntico ao AuctionCard: faixa por posição,
- * herói com halo + BadgeSkills, tiles Jogos/Golos e rodapé de ação único.
+ * Topo comum (TransferHeader: saldo + filtros) e cromos compactos com a cabeça
+ * partilhada com os Leilões (TransferCardHead) e um "bilhete" de negócio:
+ * preço, pechincha face ao valor, peso no saldo e ação.
  */
 import { memo, useContext, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { TeamLink } from "../shared/TeamLink.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
-import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
-import { BadgeSkills } from "../shared/BadgeSkills.jsx";
 import { Badge } from "../shared/Badge.jsx";
 import { StarMark } from "../shared/PlayerStatusBadges.jsx";
-import { StatTile } from "../shared/StatTile.jsx";
 import { Panel } from "../shared/Panel.jsx";
 import { TabBar } from "../shared/TabBar.jsx";
 import { EmptyState } from "../shared/EmptyState.jsx";
-import { hexToRgba } from "../../utils/colorHelpers.js";
+import { BudgetMeter, FilterChip, TransferCardHead, TransferHeader } from "../transfers/TransferChrome.jsx";
+import { staggerItemProps } from "../../motion.js";
 import {
-  FLAG_TO_COUNTRY,
   POSITION_GLOW_CLASS,
   POSITION_BG_GRADIENT_CLASS,
   POSITION_BAR_CLASS,
   POSITION_ACCENT_HEX,
 } from "../../constants/index.js";
-
-
-function statusConfig(status) {
-  if (status === "auction") return { label: "Leilão", variant: "info" };
-  if (status === "fixed") return { label: "À Venda", variant: "sold" };
-  return { label: "Sem Lista", variant: "neutral" };
-}
 
 const POSITIONS = ["GR", "DEF", "MED", "ATA"];
 
@@ -119,11 +111,6 @@ function TransferRow({ rec, teams = [], onOpenPlayer }) {
       >
         {rec.position}
       </span>
-      {srcLabel && (
-        <span className="shrink-0 text-[8px] font-black uppercase tracking-widest px-1 py-px rounded-sm border border-outline-variant/20 text-on-surface-variant">
-          {srcLabel}
-        </span>
-      )}
       <div className="min-w-0 flex-1">
         {canOpen ? (
           <button
@@ -142,6 +129,11 @@ function TransferRow({ rec, teams = [], onOpenPlayer }) {
           </p>
         )}
         <p className="mt-0.5 flex items-center gap-1 text-[9px] text-zinc-500 leading-tight min-w-0">
+          {srcLabel && (
+            <span className="shrink-0 text-[8px] font-black uppercase tracking-widest px-1 py-px rounded-sm border border-outline-variant/20 text-on-surface-variant">
+              {srcLabel}
+            </span>
+          )}
           <TeamMark team={sellerTeam} name={originName} />
           <span className="truncate" title={originName}>
             <TeamLink teamId={rec.seller_team_id}>{originName}</TeamLink>
@@ -168,12 +160,36 @@ function TransferRow({ rec, teams = [], onOpenPlayer }) {
   );
 }
 
+/**
+ * DealTag — preço face ao valor do jogador («−25% do valor» é pechincha).
+ * @param {{ pct: number }} props
+ */
+function DealTag({ pct }) {
+  if (pct === 0) {
+    return <span className="text-[9px] font-black uppercase tracking-wider text-on-surface-variant">ao valor</span>;
+  }
+  const bargain = pct < 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border text-[10px] font-black uppercase tracking-wider tabular-nums ${
+        bargain
+          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/35"
+          : "bg-amber-500/12 text-amber-300 border-amber-500/30"
+      }`}
+      title="Preço comparado com o valor de mercado do jogador"
+    >
+      <span className="material-symbols-outlined text-[13px] leading-none w-[1em] overflow-hidden">{bargain ? "trending_down" : "trending_up"}</span>
+      {bargain ? "−" : "+"}
+      {Math.abs(pct)}% do valor
+    </span>
+  );
+}
+
 const MarketCard = memo(function MarketCard({
   player,
   budget,
   me,
   teams,
-  teamColorById,
   isSameTeamId,
   onOpenDetails,
   onBuy,
@@ -184,206 +200,123 @@ const MarketCard = memo(function MarketCard({
 }) {
   const price = player.marketPrice ?? 0;
   const affordable = budget >= price;
-  const status = statusConfig(player.transfer_status);
   const isListed = player.transfer_status === "fixed";
   const isOwn = isSameTeamId(player.team_id, me?.teamId);
-  const isSuspended = (player.suspension_until_matchweek ?? 0) > nowIdx;
-  const isInjured = (player.injury_until_matchweek ?? 0) > nowIdx;
-
+  const suspLeft = (player.suspension_until_matchweek ?? 0) - nowIdx;
+  const injLeft = (player.injury_until_matchweek ?? 0) - nowIdx;
   const posHex = POSITION_ACCENT_HEX[player.position] || "#94a3b8";
-  const countryName = FLAG_TO_COUNTRY?.[player.nationality] || player.nationality || "";
+  const value = Number(player.value) || 0;
+  const dealPct = value > 0 ? Math.round((price / value - 1) * 100) : null;
 
   const sellerTeam =
     (teams || []).find((t) => Number(t.id) === Number(player.team_id)) || null;
-  const sellerCrest = sellerTeam?.crest || player.team_crest || null;
-  const sellerName = sellerTeam?.name || player.team_name || null;
-  const teamLabel = player.team_name
-    ? player.transfer_status === "auction" && player.isExClub
-      ? `ex-${player.team_name}`
-      : player.team_name
-    : sellerName || "Sem clube";
+  const teamLabel = player.team_name || sellerTeam?.name || "Sem clube";
+
+  const askBuy = () =>
+    setGameDialog({
+      mode: "confirm",
+      title: `Comprar ${player.name}`,
+      description: `${player.position} · Qualidade ${player.skill} · Preço: ${formatCurrency(price)}`,
+      confirmLabel: "Confirmar Compra",
+      onConfirm: () => onBuy(player.id),
+      onCancel: () => {},
+    });
 
   return (
     <article
-      className={`relative flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[player.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg cursor-pointer ${POSITION_GLOW_CLASS[player.position] || ""}`}
+      className={`relative flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[player.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${POSITION_GLOW_CLASS[player.position] || ""}`}
     >
-      {/* Faixa da posição */}
       <div className={`h-1 shrink-0 bg-gradient-to-r ${POSITION_BAR_CLASS[player.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`} />
 
-      {/* Header: selo posição + estado + símbolo clube.
-          flex-wrap: em larguras muito estreitas (320px) com muitos selos
-          (posição + à venda + estrela + suspenso/lesionado + clube) o header
-          partia para a direita em overflow-hidden — passa a quebrar linha. */}
-      <div className="px-3 short:px-2 pt-2.5 short:pt-1.5 flex flex-wrap items-center gap-1.5 short:gap-1">
-        <Badge
-          size="sm"
-          style={{
-            background: hexToRgba(posHex, 0.15),
-            color: posHex,
-            borderColor: hexToRgba(posHex, 0.35),
-          }}
-        >
-          {player.position}
-        </Badge>
-        <Badge variant={status.variant} size="sm">
-          {status.label}
-        </Badge>
-        {isOwn && <Badge variant="info" size="sm" title="Jogador do teu plantel">Teu</Badge>}
-        {!!player.is_star && (player.position === "MED" || player.position === "ATA") && <StarMark />}
-        {isSuspended && <Badge variant="suspended">🟥 {(player.suspension_until_matchweek ?? 0) - nowIdx + 1}J</Badge>}
-        {isInjured && <Badge variant="injured">🩹 {(player.injury_until_matchweek ?? 0) - nowIdx + 1}J</Badge>}
-        <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
-          {teamLabel}
-        </span>
-        {sellerTeam || sellerCrest ? (
-          sellerCrest ? (
-            <img
-              src={sellerCrest}
-              alt={sellerName || teamLabel}
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
-              className="w-6 h-6 object-contain rounded-sm p-0.5 shrink-0 border border-outline-variant/20 shadow-md"
-              style={{ backgroundColor: sellerTeam?.color_primary || teamColorById.get(Number(player.team_id)) || "#333" }}
-              loading="lazy"
-              title={sellerName || teamLabel}
-            />
+      <TransferCardHead
+        player={player}
+        team={sellerTeam}
+        teamId={player.team_id}
+        teamLabel={teamLabel}
+        onOpen={() => onOpenDetails(player)}
+        badges={
+          <>
+            {isOwn && <Badge variant="info" size="sm" title="Jogador do teu plantel">Teu</Badge>}
+            {!isListed && <Badge variant="neutral" size="sm">Sem lista</Badge>}
+            {!!player.is_star && (player.position === "MED" || player.position === "ATA") && <StarMark className="ml-0" />}
+            {suspLeft > 0 && <Badge variant="suspended">🟥 {suspLeft + 1}J</Badge>}
+            {injLeft > 0 && <Badge variant="injured">🩹 {injLeft + 1}J</Badge>}
+          </>
+        }
+      />
+
+      <p className="px-3 short:px-2 mt-2 text-[10px] text-on-surface-variant tabular-nums">
+        <b className="text-on-surface font-black">{player.games_played ?? 0}</b> jogos ·{" "}
+        <b className="text-emerald-400 font-black">{player.goals ?? 0}</b> golos ·{" "}
+        <b className="text-on-surface font-black">{formatCurrency(player.wage || 0)}</b>/sem
+      </p>
+
+      {/* Bilhete do negócio: preço, pechincha, peso no saldo e ação */}
+      <div className="mt-auto pt-3 short:pt-2 px-2 pb-2">
+        <div className="rounded-lg border border-outline-variant/15 bg-surface/60 p-2.5 short:p-2 space-y-2">
+          <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
+            <div className="min-w-0">
+              <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">Preço</p>
+              <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base ${isOwn || affordable ? "text-on-surface" : "text-rose-400"}`}>
+                {formatCurrency(price)}
+              </p>
+            </div>
+            {dealPct != null && <DealTag pct={dealPct} />}
+          </div>
+          {!isOwn && isListed && <BudgetMeter price={price} budget={budget} />}
+
+          {isOwn ? (
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => onRemove(player)}
+                className="flex-1 min-h-10 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 border border-outline-variant/30 bg-surface text-on-surface-variant"
+              >
+                Retirar
+              </button>
+              <button
+                type="button"
+                onClick={() => onAuction(player)}
+                className="flex-1 min-h-10 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 inline-flex items-center justify-center gap-1"
+                style={{ background: posHex, color: "#0d0d14" }}
+              >
+                <span className="material-symbols-outlined text-[16px] leading-none w-[1em] overflow-hidden">gavel</span>
+                Leiloar
+              </button>
+            </div>
+          ) : !isListed ? (
+            <p className="min-h-10 flex items-center justify-center rounded-lg border border-dashed border-outline-variant/25 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">
+              Sem transferência
+            </p>
           ) : (
-            <span
-              className="w-6 h-6 rounded-sm flex items-center justify-center font-black text-[8px] leading-none shrink-0 border border-outline-variant/20"
+            <button
+              type="button"
+              onClick={askBuy}
+              disabled={!affordable}
+              className="w-full min-h-10 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 inline-flex items-center justify-center gap-1.5 disabled:opacity-35 disabled:cursor-not-allowed"
               style={{
-                backgroundColor: sellerTeam?.color_primary || teamColorById.get(Number(player.team_id)) || "#333",
-                color: sellerTeam?.color_secondary || "#fff",
+                background: affordable ? posHex : "transparent",
+                color: affordable ? "#0d0d14" : posHex,
+                border: `1px solid ${posHex}`,
+                boxShadow: affordable ? `0 6px 18px -8px ${posHex}` : "none",
               }}
-              title={sellerName || teamLabel}
             >
-              {(sellerName || teamLabel).substring(0, 3).toUpperCase()}
-            </span>
-          )
-        ) : null}
-      </div>
-
-      {/* Herói: avatar com halo + BadgeSkills */}
-      <div
-        className="mx-3 short:mx-2 mt-2 short:mt-1 rounded-lg flex flex-col items-center pt-3 short:pt-2 pb-2.5 short:pb-1.5 px-2 short:px-1.5"
-        style={{ background: `radial-gradient(ellipse 90% 100% at 50% 0%, ${hexToRgba(posHex, 0.22)} 0%, transparent 70%)` }}
-      >
-        <div className="relative">
-          <div
-            className="rounded-full"
-            style={{ boxShadow: `0 0 0 2px rgba(10,10,16,0.9), 0 0 0 4px ${posHex}, 0 0 22px ${hexToRgba(posHex, 0.45)}` }}
-          >
-            <PlayerAvatar
-              seed={player.id}
-              position={player.position}
-              teamColor={posHex}
-              nationality={player.nationality}
-              size="lg"
-              photo={player.photo || null}
-            />
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => onOpenDetails(player)}
-          title="Ver detalhes do jogador"
-          className="mt-2 short:mt-1 font-headline font-black text-on-surface text-base short:text-sm leading-tight truncate max-w-full bg-transparent cursor-pointer hover:underline underline-offset-2"
-        >
-          {player.name}
-        </button>
-        <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
-          {[player.nationality, countryName].filter(Boolean).join(" · ")}
-        </p>
-        <BadgeSkills
-          className="mt-2 short:mt-1"
-          skill={player.skill}
-          form={player.form}
-          morale={player.morale}
-          resistance={player.resistance}
-          aggressiveness={player.aggressiveness}
-        />
-      </div>
-
-      {/* Preço + salário */}
-      <div className="px-4 short:px-2 mt-3 short:mt-2 flex items-end justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">Preço</p>
-          <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base ${affordable ? "text-on-surface" : "text-rose-400"}`}>
-            {formatCurrency(price)}
-          </p>
-          <p className="text-[9px] text-zinc-500 truncate max-w-[130px]">
-            {isListed ? (affordable ? "disponível" : "saldo insuficiente") : "sem lista"}
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/60">Salário/sem</p>
-          <p className="font-mono text-[11px] text-zinc-300 tabular-nums">{formatCurrency(player.wage || 0)}</p>
-        </div>
-      </div>
-
-      {/* Mini-stats */}
-      <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-2 gap-1.5 short:gap-1">
-        <StatTile label="Jogos">
-          <span className="tabular-nums">{player.games_played ?? 0}</span>
-        </StatTile>
-        <StatTile label="Golos">
-          <span className="tabular-nums">{player.goals ?? 0}</span>
-        </StatTile>
-      </div>
-
-      {/* Rodapé único */}
-      <div className="px-3 short:px-2 py-3 short:py-2 mt-auto">
-        {isOwn ? (
-          <div className="flex gap-1.5 short:gap-1">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove(player);
-              }}
-              className="flex-1 py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 border border-outline-variant/30 bg-surface text-on-surface-variant"
-            >
-              Retirar
+              <span className="material-symbols-outlined text-[16px] leading-none w-[1em] overflow-hidden">{affordable ? "shopping_cart" : "block"}</span>
+              {affordable ? "Comprar" : "Saldo insuficiente"}
             </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAuction(player);
-              }}
-              className="flex-1 py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
-              style={{ background: posHex, color: "#0d0d14" }}
-            >
-              Leiloar
-            </button>
-          </div>
-        ) : !isListed ? (
-          <div className="rounded-lg py-2 text-center border border-outline-variant/15 bg-surface/40">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sem transferência</p>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setGameDialog({
-                mode: "confirm",
-                title: `Comprar ${player.name}`,
-                description: `${player.position} · Qualidade ${player.skill} · Preço: ${formatCurrency(price)}`,
-                confirmLabel: "Confirmar Compra",
-                onConfirm: () => onBuy(player.id),
-                onCancel: () => {},
-              });
-            }}
-            disabled={!affordable}
-            className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ background: posHex, color: "#0d0d14" }}
-          >
-            {affordable ? `Comprar · ${formatCurrency(price)}` : "Saldo insuficiente"}
-          </button>
-        )}
+          )}
+        </div>
       </div>
     </article>
   );
 });
+
+// Ordenação em linguagem de treinador (o "piores primeiro" nunca é o que se procura).
+const SORT_TABS = [
+  { key: "quality-desc", label: "Melhores" },
+  { key: "price-asc", label: "Baratos" },
+  { key: "price-desc", label: "Caros" },
+];
 
 /**
  * @param {{
@@ -431,16 +364,6 @@ export function TransferHub({
   const game = useContext(GameContext);
   const nowIdx = game?.calendarIndex ?? matchweekCount;
 
-  const teamColorById = useMemo(() => {
-    const map = new Map();
-    for (let i = 0; i < (teams || []).length; i += 1) {
-      const t = teams[i];
-      if (!t) continue;
-      map.set(Number(t.id), t.color_primary || t.colorPrimary || null);
-    }
-    return map;
-  }, [teams]);
-
   // Histórico: omitir vendas por leilão (só listagens Mercado/cláusula/NPC),
   // porque as vendas de leilão já aparecem no separador "Leilões" (Recentes).
   const historyRecords = useMemo(() => {
@@ -486,102 +409,104 @@ export function TransferHub({
     );
   }, [players, search]);
 
+  const listed = visible.filter((p) => p.transfer_status === "fixed");
+  const affordableCount = listed.filter((p) => budget >= (p.marketPrice ?? 0)).length;
+  const bargainCount = listed.filter((p) => p.value > 0 && (p.marketPrice ?? 0) < p.value).length;
+
   return (
-    <div className="flex flex-col gap-4 short:gap-2">
-    <Panel title="Mercado de Transferências" meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""} · ${formatCurrency(budget)}`}>
-      <div className="p-3 md:p-4 short:p-2">
-        {/* Search + filters */}
-        <TabBar
-          size="sm"
-          expand
-          tabs={posTabs}
-          active={marketPositionFilter}
-          onChange={setMarketPositionFilter}
-          className="mb-2 short:mb-1.5"
-        />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 short:gap-1.5 mb-4 short:mb-2">
-          <div className="relative md:col-span-2">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-sm select-none pointer-events-none">
+    <div className="flex flex-col gap-3 sm:gap-4 short:gap-2">
+      <TransferHeader
+        icon="swap_horiz"
+        title="Mercado"
+        budget={budget}
+        chips={[
+          { value: listed.length, label: "à venda", icon: "sell" },
+          { value: affordableCount, label: "cabem no saldo", tone: "good", icon: "savings" },
+          ...(bargainCount > 0 ? [{ value: bargainCount, label: "abaixo do valor", tone: "warn", icon: "local_fire_department" }] : []),
+        ]}
+      >
+        <TabBar size="sm" expand tabs={posTabs} active={marketPositionFilter} onChange={setMarketPositionFilter} />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[160px]">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-[18px] w-[1em] overflow-hidden select-none pointer-events-none">
               search
             </span>
             <input
               type="text"
-              className="w-full bg-surface border border-outline-variant/30 rounded-sm pl-9 pr-4 py-2.5 short:py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/30 text-on-surface"
-              placeholder="Pesquisar jogador, clube ou nacionalidade…"
+              className="w-full min-h-10 bg-surface border border-outline-variant/30 rounded-lg pl-10 pr-4 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/40 text-on-surface"
+              placeholder="Jogador, clube ou nacionalidade…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Pesquisar no mercado"
             />
           </div>
-          <select
-            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
-            value={marketSort}
-            onChange={(e) => setMarketSort(e.target.value)}
-            aria-label="Ordenar mercado"
-          >
-            <option value="quality-desc">Qualidade ↓</option>
-            <option value="quality-asc">Qualidade ↑</option>
-            <option value="price-asc">Preço ↑</option>
-            <option value="price-desc">Preço ↓</option>
-          </select>
-          <label className="flex items-center gap-2 px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface-variant cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={!!showOwnMarketPlayers}
-              onChange={(e) => setShowOwnMarketPlayers?.(e.target.checked)}
-              className="w-4 h-4 accent-emerald-500"
-            />
-            Mostrar só os meus à venda
-          </label>
+          <FilterChip active={!!showOwnMarketPlayers} onChange={(v) => setShowOwnMarketPlayers?.(v)} icon="person">
+            Os meus
+          </FilterChip>
+          <TabBar size="sm" expand tabs={SORT_TABS} active={marketSort} onChange={setMarketSort} className="w-full sm:w-72 sm:order-first" />
         </div>
+      </TransferHeader>
 
+      <div className={`grid grid-cols-1 gap-3 sm:gap-4 items-start ${historyRecords.length > 0 ? "xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
         {visible.length === 0 ? (
-          <EmptyState
-            icon="sync"
-            title="Sem jogadores disponíveis"
-            description="Os jogadores colocados em transferência aparecem aqui."
-          />
+          <div className="rounded-md bg-surface-container">
+            <EmptyState
+              icon={showOwnMarketPlayers ? "person_off" : "storefront"}
+              title={showOwnMarketPlayers ? "Não tens jogadores à venda" : "Mercado vazio"}
+              description={
+                showOwnMarketPlayers
+                  ? "Põe um jogador à venda a partir do Plantel."
+                  : search.trim()
+                    ? "Nenhum jogador corresponde à pesquisa."
+                    : "Os jogadores colocados em transferência aparecem aqui."
+              }
+            />
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 short:gap-2">
-            {visible.map((player) => (
-              <MarketCard
-                key={player.id}
-                player={player}
-                budget={budget}
-                me={me}
-                teams={teams}
-                teamColorById={teamColorById}
-                isSameTeamId={isSameTeamId}
-                onOpenDetails={onOpenPlayerHistory}
-                onBuy={buyPlayer}
-                onAuction={listPlayerAuction}
-                onRemove={removeFromTransferList}
-                setGameDialog={setGameDialog}
-                nowIdx={nowIdx}
-              />
+          /* auto-fill: as colunas nascem da largura (evita a armadilha sm>md/lg do STYLE §7). */
+          <div className="grid gap-2.5 sm:gap-3 short:gap-2 [grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))]">
+            {visible.map((player, i) => (
+              <motion.div key={player.id} className="min-w-0 flex flex-col [&>article]:flex-1" {...staggerItemProps(i)}>
+                  <MarketCard
+                    player={player}
+                    budget={budget}
+                    me={me}
+                    teams={teams}
+                    isSameTeamId={isSameTeamId}
+                    onOpenDetails={onOpenPlayerHistory}
+                    onBuy={buyPlayer}
+                    onAuction={listPlayerAuction}
+                    onRemove={removeFromTransferList}
+                    setGameDialog={setGameDialog}
+                    nowIdx={nowIdx}
+                  />
+              </motion.div>
             ))}
           </div>
         )}
-      </div>
-    </Panel>
 
-    {/* ── Histórico de transferências concluídas (época atual, sem leilões) ── */}
-    {historyRecords.length > 0 && (
-      <Panel
-        title="Histórico de Transferências"
-        meta={`${historyRecords.length} ${historyRecords.length === 1 ? "transferência" : "transferências"}`}
-      >
-        <div className="flex flex-col gap-1.5 max-h-80 overflow-y-auto pr-1">
-          {historyRecords.slice(0, 12).map((rec, i) => (
-            <TransferRow
-              key={rec.id ?? `${rec.player_id}-${rec.amount}-${i}`}
-              rec={rec}
-              teams={teams}
-              onOpenPlayer={onOpenPlayerHistory}
-            />
-          ))}
-        </div>
-      </Panel>
-    )}
+        {/* ── Histórico de transferências concluídas (época atual, sem leilões) ── */}
+        {historyRecords.length > 0 && (
+          <aside className="xl:sticky xl:top-0">
+            <Panel
+              title="Últimos negócios"
+              icon="history"
+              meta={`${historyRecords.length}`}
+            >
+              <div className="flex flex-col gap-1.5 max-h-80 xl:max-h-[70vh] overflow-y-auto pr-1">
+                {historyRecords.slice(0, 12).map((rec, i) => (
+                  <TransferRow
+                    key={rec.id ?? `${rec.player_id}-${rec.amount}-${i}`}
+                    rec={rec}
+                    teams={teams}
+                    onOpenPlayer={onOpenPlayerHistory}
+                  />
+                ))}
+              </div>
+            </Panel>
+          </aside>
+        )}
+      </div>
     </div>
   );
 }

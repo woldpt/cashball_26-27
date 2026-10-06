@@ -1,14 +1,6 @@
-import { useMemo } from "react";
 import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
-import {
-  LiveMatchHero,
-  CupFinalStage,
-  LiveFixtureRow,
-  LivePitchStrip,
-  LiveStandingsPanel,
-  isDrawnAt90,
-} from "./components/live/index.js";
+import { LiveView } from "./components/live/index.js";
 import { StandingsTab } from "./views/StandingsTab.jsx";
 import { BracketTab } from "./views/BracketTab.jsx";
 import { CalendarioTab } from "./views/CalendarioTab.jsx";
@@ -38,23 +30,11 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     // active tab + helpers de navegação usados aqui
     activeTab,
     // match ao vivo / simulação
-    matchResults,
     allMatchResults,
-    matchAction,
     matchweekCount,
     calendarIndex,
     currentJornada,
-    cupMatchRoundName,
-    substitutionPause,
-    liveMinute,
-    isPlayingMatch,
-    isMatchActionPending,
-    isMatchInProgress,
-    showHalftimePanel,
-    isLiveSimulation,
     standingsStale,
-    goalFlashRef,
-    finalWhistle,
     // equipas / plantel
     teams,
     teamInfo,
@@ -63,9 +43,6 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     mySquad,
     annotatedSquad,
     me,
-    myMatch,
-    isCupMatch,
-    isCupExtraTime,
     // classificações / palmarés / histórico
     prevStandings,
     topScorers,
@@ -76,7 +53,6 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     clubNews,
     // taça
     cupBracketData,
-    cupRoundResults,
     // calendário
     calendarData,
     nextMatchSummary,
@@ -138,8 +114,6 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     // dialog
     setGameDialog,
     setTransferProposalModal,
-    setShowMatchDetail,
-    setMatchDetailFixture,
   } = useGame();
 
   // Equipa técnica (funcionários): estado do meu clube, partilhado pelo
@@ -153,275 +127,9 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
     fire: fireStaff,
   } = useStaffState();
 
-  // Jogo ao vivo que envolve pelo menos um coach humano (sala multiplayer).
-  // Set memorizado: o sortHumanFirst corre O(n log n) comparações por render.
-  const humanTeamIds = useMemo(
-    () => new Set(players.map((p) => p.teamId)),
-    [players],
-  );
-  const isHumanFixture = (m) =>
-    humanTeamIds.has(m?.homeTeamId) || humanTeamIds.has(m?.awayTeamId);
-  // MOM do meu jogo: a liga já traz `mom` no fixture final (matchResults);
-  // na Taça o fixture (matchResults simplificado) não traz — procurar no
-  // payload da ronda (cupRoundResults.results).
-  const myMatchMom = useMemo(() => {
-    if (myMatch?.mom) return myMatch.mom;
-    if (!isCupMatch || !myMatch || !cupRoundResults?.results) return null;
-    const row = cupRoundResults.results.find(
-      (r) =>
-        Number(r.homeTeamId) === Number(myMatch.homeTeamId) &&
-        Number(r.awayTeamId) === Number(myMatch.awayTeamId),
-    );
-    return row?.mom || null;
-  }, [myMatch, isCupMatch, cupRoundResults]);
-
-  const sortHumanFirst = (a, b) =>
-    Number(isHumanFixture(b)) - Number(isHumanFixture(a));
-
-  // Final da Taça: palco de gala quer participes quer não. Sem o teu jogo,
-  // a fixture da final (results[0] — a final é sempre jogo único).
-  // Quem joga um amigável nessa semana vê o seu jogo, não o palco.
-  const isCupFinal =
-    isCupMatch && cupMatchRoundName === "Final" && !myMatch?.isFriendly;
-  const finalFixture = isCupFinal
-    ? (myMatch ??
-        matchResults?.results?.find((r) => !r.isFriendly) ??
-        null)
-    : null;
-  // MOM da final (para o palco): a mesma lookup do teu jogo, mas sobre a
-  // fixture da final — quando participas, coincide com myMatchMom.
-  const finalMom = useMemo(() => {
-    if (!isCupFinal || !finalFixture || !cupRoundResults?.results)
-      return null;
-    const row = cupRoundResults.results.find(
-      (r) =>
-        Number(r.homeTeamId) === Number(finalFixture.homeTeamId) &&
-        Number(r.awayTeamId) === Number(finalFixture.awayTeamId),
-    );
-    return row?.mom || null;
-  }, [isCupFinal, finalFixture, cupRoundResults]);
-
   return (
     <>
-                    {activeTab === "live" && (matchResults || matchAction) && (
-                      <div
-                        className={`bg-surface-container text-on-surface font-body p-3 sm:p-6 border border-outline-variant/20 shadow-sm relative overflow-hidden${isMatchInProgress ? " rounded-lg" : " min-h-150 rounded-lg"}`}
-                      >
-                        {/* ── FINAL DA TAÇA: palco de gala (participes ou não) ── */}
-                        {isCupFinal && finalFixture ? (
-                          <div className="mb-3">
-                            <CupFinalStage
-                              finalFixture={finalFixture}
-                              mom={finalMom}
-                              teams={teams}
-                              players={players}
-                              me={me}
-                              liveMinute={liveMinute}
-                              isPlayingMatch={isPlayingMatch}
-                              isMatchActionPending={isMatchActionPending}
-                              cupMatchRoundName={cupMatchRoundName}
-                              substitutionPause={substitutionPause}
-                              goalFlashRef={goalFlashRef}
-                              isCupExtraTime={isCupExtraTime}
-                              matchResults={matchResults}
-                              finalWhistle={finalWhistle}
-                              readOnly={!myMatch}
-                              onScoreClick={
-                                myMatch
-                                  ? () => {
-                                      if (
-                                        isPlayingMatch &&
-                                        !isMatchActionPending
-                                      ) {
-                                        socket.emit("request_substitution");
-                                      } else {
-                                        setMatchDetailFixture(myMatch);
-                                        setShowMatchDetail(true);
-                                      }
-                                    }
-                                  : undefined
-                              }
-                            />
-                          </div>
-                        ) : (
-                        <>
-                        {/* ── ROW 1: MY GAME + VIRTUAL CLASSIFICATION ── */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
-                          <div
-                            className={`${isCupMatch ? "lg:col-span-3" : "lg:col-span-2"}`}
-                          >
-                            {/* ── HERO: MY MATCH ─────────────────────── */}
-                            {matchResults && (
-                              <LiveMatchHero
-                                myMatch={myMatch}
-                                mom={myMatchMom}
-                                teams={teams}
-                                players={players}
-                                me={me}
-                                liveMinute={liveMinute}
-                                isPlayingMatch={isPlayingMatch}
-                                isMatchActionPending={isMatchActionPending}
-                                isCupMatch={isCupMatch}
-                                cupMatchRoundName={cupMatchRoundName}
-                                substitutionPause={substitutionPause}
-                                goalFlashRef={goalFlashRef}
-                                isCupExtraTime={isCupExtraTime}
-                                matchResults={matchResults}
-                                finalWhistle={finalWhistle}
-                                onScoreClick={() => {
-                                  if (isPlayingMatch && !isMatchActionPending) {
-                                    socket.emit("request_substitution");
-                                  } else {
-                                    setMatchDetailFixture(myMatch);
-                                    setShowMatchDetail(true);
-                                  }
-                                }}
-                              />
-                            )}
-                          </div>
-                          {/* ── VIRTUAL CLASSIFICATION COLUMN ── */}
-                          {!isCupMatch && matchResults?.results && (
-                            <div className="lg:col-span-1 min-h-0">
-                              <LiveStandingsPanel
-                                teams={teams}
-                                matchResults={matchResults}
-                                liveMinute={liveMinute}
-                                myTeamId={me.teamId}
-                                teamForms={teamForms}
-                                applyLiveResults={
-                                  standingsStale ||
-                                  isLiveSimulation ||
-                                  showHalftimePanel
-                                }
-                              />
-                            </div>
-                          )}
-                        </div>
-                        </>
-                        )}
-
-                        {/* ── ROW 2: ALL DIVISIONS ── */}
-                        {!isCupMatch &&
-                          (() => {
-                            const myDiv = teams.find(
-                              (t) => t.id === me.teamId,
-                            )?.division;
-                            const allDivs = [1, 2, 3, 4];
-                            return (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
-                                {allDivs.map((div) => {
-                                  const isMyDiv = div === myDiv;
-                                  const divMatches = matchResults.results
-                                    .filter(
-                                      (m) =>
-                                        teams.find((t) => t.id === m.homeTeamId)
-                                          ?.division === div,
-                                    )
-                                    .filter(
-                                      (m) =>
-                                        m.homeTeamId !== me.teamId &&
-                                        m.awayTeamId !== me.teamId,
-                                    )
-                                    .sort(sortHumanFirst);
-                                  return (
-                                    <div
-                                      key={div}
-                                      className="flex flex-col gap-2"
-                                    >
-                                      <div
-                                        className={`px-3 py-2 rounded-t-md border-b-2 bg-surface-container-high ${
-                                          isMyDiv
-                                            ? "border-primary/60"
-                                            : "border-outline-variant/20"
-                                        }`}
-                                      >
-                                        <h3
-                                          className={`font-headline font-extrabold text-[9px] sm:text-[10px] lg:text-[11px] tracking-tighter uppercase ${
-                                            isMyDiv
-                                              ? "text-primary"
-                                              : "text-on-surface/50"
-                                          }`}
-                                        >
-                                          {DIVISION_NAMES[div] || `Div ${div}`}
-                                          <span className="ml-1 text-on-surface/30">
-                                            {divMatches.length}
-                                          </span>
-                                          {isMyDiv && (
-                                            <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary text-[7px] font-black uppercase tracking-widest border border-primary/30">
-                                              A tua divisão
-                                            </span>
-                                          )}
-                                        </h3>
-                                      </div>
-                                      <div className="flex flex-col gap-1.5">
-                                        {divMatches.length === 0 ? (
-                                          <div className="text-[10px] text-on-surface-variant/30 px-3 py-2 text-center italic">
-                                            Sem jogos
-                                          </div>
-                                        ) : (
-                                          divMatches.map((match) => (
-                                            <LiveFixtureRow
-                                              key={`${match.homeTeamId}-${match.awayTeamId}`}
-                                              match={match}
-                                              teams={teams}
-                                              players={players}
-                                              liveMinute={liveMinute}
-                                              goalFlashRef={goalFlashRef}
-                                              isPlayingMatch={isPlayingMatch}
-                                              onOpenDetail={() => {
-                                                setMatchDetailFixture(match);
-                                                setShowMatchDetail(true);
-                                              }}
-                                            />
-                                          ))
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })()}
-
-                        {/* ── CUP MULTIVIEW (rondas anteriores; a final tem palco próprio) ── */}
-                        {isCupMatch && !isCupFinal && matchResults?.results && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {matchResults.results
-                              .filter(
-                                (m) =>
-                                  m.homeTeamId !== me.teamId &&
-                                  m.awayTeamId !== me.teamId,
-                              )
-                              .filter((m) => {
-                                // Após os 90': só mostra jogos ainda no prolongamento (empatados aos 90)
-                                if (liveMinute <= 90) return true;
-                                return isDrawnAt90(m);
-                              })
-                              .sort(sortHumanFirst)
-                              .map((match) => (
-                                <LiveFixtureRow
-                                  key={`${match.homeTeamId}-${match.awayTeamId}`}
-                                  match={match}
-                                  teams={teams}
-                                  players={players}
-                                  liveMinute={liveMinute}
-                                  goalFlashRef={goalFlashRef}
-                                  isPlayingMatch={isPlayingMatch}
-                                  onOpenDetail={() => {
-                                    setMatchDetailFixture(match);
-                                    setShowMatchDetail(true);
-                                  }}
-                                />
-                              ))}
-                          </div>
-                        )}
-                        {myMatch && (
-                          <LivePitchStrip
-                            emoji={myMatch.events?.find((e) => e.type === "weather")?.emoji}
-                          />
-                        )}
-                      </div>
-                    )}
+                    {activeTab === "live" && <LiveView />}
 
                     {activeTab === "standings" && (
                       <StandingsTab
