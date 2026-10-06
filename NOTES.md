@@ -3,6 +3,11 @@
 - Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.
 - Testado: typecheck, lint/check:types, connect-smoke + script sobre BD de sala (duplicados, final, par humano, NPC).
 
+## Deploy v26.10.24 no rick (2026-10-06)
+- Jornal com nova UI/UX: lista com ícones de categoria agrupados por semana, faixa única de pendências, artigo com kicker e manchete maior, vista de detalhe no mobile.
+- Direto: comentário na cor aclarada da equipa com contorno legível à chuva; meteorologia em ecrã inteiro só com o jogo vivo.
+- Corrigidos: lesionados/expulsos filtrados por id do plantel; moral e agressividade nos cartões das substituições forçadas; `backend Healthy`.
+
 ## Deploy v26.10.23 no rick (2026-10-06)
 - Redesenho da landing: estádio em festa no hero, montra com golo ao vivo, cartão de auth, montra em três blocos e «como funciona» com CTA final.
 - Estádio procedural: bancadas laterais em perspetiva, identidade por clube via seed, nuvens por clube e focos noturnos, meteo da jornada no céu; chuva em mosaico SVG (perf).
