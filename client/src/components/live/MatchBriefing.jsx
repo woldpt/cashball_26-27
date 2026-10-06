@@ -6,6 +6,7 @@ import {
   buildBriefingViewModel,
   DuelHero,
   PrepCtaCard,
+  PrepStickyBar,
   CompareRadar,
   StadiumCard,
   OpponentFormation,
@@ -159,6 +160,7 @@ export function MatchBriefing() {
           </>
         )}
       </div>
+      <PrepStickyBar onAdvance={advance} />
     </div>
   );
 }
