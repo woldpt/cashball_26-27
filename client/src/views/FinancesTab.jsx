@@ -3,8 +3,7 @@ import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { socket } from "../socket.js";
 import { TeamLink } from "../components/shared/TeamLink.jsx";
 import { formatCurrency } from "../utils/formatters.js";
-import { CountUp } from "../components/shared/CountUp.jsx";
-import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { Button } from "../components/shared/Button.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { BalanceLineChart } from "../components/shared/BalanceLineChart.jsx";
@@ -401,36 +400,29 @@ export function FinancesTab({
 
   return (
     <div className="space-y-4 short:space-y-2">
-      {/* ── Resumo ─────────────────────────────────────────────────────── */}
-      {/* Telemóvel: saldo em largura total e os outros dois lado a lado (em 3
-          colunas o texto cortava). Tamanhos em base → sm → xl (STYLE.md §7). */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
-        <SummaryWidget
-          label="Saldo atual"
-          value={<CountUp value={currentBudget} format={formatCurrency} />}
-          sub={`Época ${seasonYear}`}
-          className="col-span-2 sm:col-span-1"
-          valueClass="text-3xl sm:text-2xl xl:text-3xl short:!text-lg"
-          accentClass={currentBudget >= 0 ? "border-primary" : "border-error"}
-          valueColorClass={currentBudget >= 0 ? "text-primary" : "text-error"}
-        />
-        <SummaryWidget
-          label="Resultado"
-          value={<CountUp value={seasonResult} format={signed} />}
-          sub={`Época · ${weeksElapsed}/${SEASON_WEEKS} semanas`}
-          valueClass="text-lg sm:text-2xl xl:text-3xl short:!text-sm"
-          accentClass={seasonResult >= 0 ? "border-tertiary" : "border-error"}
-          valueColorClass={seasonResult >= 0 ? "text-tertiary" : "text-error"}
-        />
-        <SummaryWidget
-          label="Previsão"
-          value={<CountUp value={projection.projectedEndBudget} format={signed} />}
-          sub={`Fim de época · faltam ${projection.remainingWeeks} sem.`}
-          valueClass="text-lg sm:text-2xl xl:text-3xl short:!text-sm"
-          accentClass={projection.projectedEndBudget >= 0 ? "border-tertiary" : "border-error"}
-          valueColorClass={projection.projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}
-        />
-      </div>
+      <TransferHeader
+        icon="account_balance_wallet"
+        kicker={`Clube · Época ${seasonYear}`}
+        title="Finanças"
+        budget={currentBudget}
+        chips={[
+          {
+            label: `resultado · ${weeksElapsed}/${SEASON_WEEKS} sem.`,
+            value: signed(seasonResult),
+            tone: seasonResult >= 0 ? "good" : "bad",
+            icon: "trending_up",
+          },
+          {
+            label: `previsão fim de época · faltam ${projection.remainingWeeks} sem.`,
+            value: signed(projection.projectedEndBudget),
+            tone: projection.projectedEndBudget >= 0 ? "good" : "bad",
+            icon: "query_stats",
+          },
+          ...(loanAmount > 0
+            ? [{ label: "dívida", value: formatCurrency(loanAmount), tone: "warn", icon: "account_balance" }]
+            : []),
+        ]}
+      />
 
       {/* lg: 6 colunas — gráfico (4) + salários/empréstimos (2) em cima, a
           esticar à mesma altura; Receitas e Despesas a 50/50 por baixo. No

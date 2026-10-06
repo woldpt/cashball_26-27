@@ -11,7 +11,7 @@ import {
 } from "../constants/index.js";
 import { staffRoleMeta } from "../constants/staff.js";
 import { Panel } from "../components/shared/Panel.jsx";
-import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 
 const TRAINING_FOCUS_STORAGE_BASE_KEY = "cashball_training_focus";
@@ -540,55 +540,23 @@ export function TrainingTab({ me, matchweek, staff = null }) {
 
   return (
     <div className="space-y-4 short:space-y-2">
-      {/* ── Resumo ──────────────────────────────────────────────────────── */}
-      {/* Telemóvel: o foco ocupa a linha toda e os dois números ficam lado a
-          lado por baixo (em 2 colunas o 3.º cartão ficava órfão). */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
-        <SummaryWidget
-          label="Foco atual"
-          value={
-            <span className="inline-flex items-center gap-2">
-              {focusMeta && (
-                <span
-                  aria-hidden
-                  className={`material-symbols-outlined text-[22px] sm:text-[26px] short:text-[16px] ${focusStyle.text}`}
-                >
-                  {focusMeta.icon}
-                </span>
-              )}
-              {savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
-            </span>
-          }
-          sub={focusMeta?.description || "Escolhe um foco abaixo"}
-          compactMobile
-          className="col-span-2 sm:col-span-1"
-          valueClass="text-lg sm:text-2xl short:!text-sm"
-          accentClass={focusStyle ? focusStyle.border : "border-outline-variant"}
-        />
-        <SummaryWidget
-          label="Evolução"
-          value={
-            <>
-              <span className="text-emerald-400">+{gains}</span>
-              <span className="text-on-surface-variant/40"> / </span>
-              <span className="text-error">−{losses}</span>
-            </>
-          }
-          sub="níveis"
-          compactMobile
-          valueClass="text-lg sm:text-2xl short:!text-sm"
-          accentClass="border-emerald-400"
-        />
-        <SummaryWidget
-          label="Jogadores"
-          value={visiblePlayerCount}
-          sub="com mudanças"
-          compactMobile
-          valueClass="text-lg sm:text-2xl short:!text-sm"
-          accentClass="border-tertiary"
-          valueColorClass="text-tertiary"
-        />
-      </div>
+      <TransferHeader
+        icon="fitness_center"
+        kicker={`Clube · Jornada ${matchweek}`}
+        title="Treino"
+        valueLabel="Evolução (níveis)"
+        valueClass="text-emerald-400"
+        budget={gains - losses}
+        format={(n) => `${n > 0 ? "+" : ""}${n}`}
+        chips={[
+          savedTraining
+            ? { label: getTrainingLabel(savedTraining), tone: "neutral", icon: focusMeta?.icon }
+            : { label: "sem foco — escolhe abaixo", tone: "warn", icon: "fitness_center" },
+          { label: "ganhos", value: `+${gains}`, tone: "good" },
+          { label: "perdas", value: `−${losses}`, tone: "bad" },
+          { label: "jogadores com mudanças", value: visiblePlayerCount },
+        ]}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 short:gap-2 items-start">
         {/* ── Seletor do foco ───────────────────────────────────────────── */}
