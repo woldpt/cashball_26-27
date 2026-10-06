@@ -85,7 +85,7 @@ export function RoomHub() {
   return (
     <div
       ref={roomHubRef}
-      className="fixed top-[var(--header-h)] right-4 z-[160] flex flex-col items-end gap-2"
+      className="fixed inset-x-0 bottom-0 sm:inset-x-auto sm:bottom-auto sm:top-[var(--header-h)] sm:right-4 z-[160] flex flex-col items-end"
     >
       <AnimatePresence initial={false}>
         {roomHubOpen && (

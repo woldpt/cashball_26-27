@@ -1,14 +1,20 @@
 import { socket } from "../../socket.js";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
+import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { useGame } from "../../contexts/GameContext.jsx";
-import { panelRight } from "../../motion.js";
+import { panelRight, sheetUp } from "../../motion.js";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 import { CoachRow } from "./CoachRow.jsx";
 import { ChatMessages } from "./ChatMessages.jsx";
 import { InviteControls } from "./InviteControls.jsx";
 
 const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
+
+// Mobile (< sm): folha inferior; desktop: painel que entra da direita.
+const isMobileViewport = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 639px)").matches;
 
 // Janela entre envios — alinhada com o rate limit do servidor (1 msg/s).
 const SEND_GAP_MS = 1000;
@@ -52,6 +58,9 @@ export function RoomHubPanel({
   } = useGame();
 
   const [copied, setCopied] = useState(false);
+  const [showCoaches, setShowCoaches] = useState(false);
+  const [showQuick, setShowQuick] = useState(false);
+  const [anim] = useState(() => (isMobileViewport() ? sheetUp : panelRight));
   const copiedTimer = useRef(null);
   const lastSendRef = useRef(0);
 
@@ -185,197 +194,248 @@ export function RoomHubPanel({
     { key: "global", label: "Global", unread: unreadGlobal },
   ];
 
-  const closeBtn = (
-    <button
-      onClick={() => setRoomHubOpen(false)}
-      className="w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors"
-    >
-      ✕ Fechar
-    </button>
-  );
-
   const canKickHere = myName === roomCreator && calendarIndex === 0;
+  const onlineCount = coaches.filter((c) => c.online).length;
 
   return (
     <motion.div
       key="room-hub-panel"
       role="dialog"
       aria-label="Sala e conversa"
-      initial={panelRight.initial}
-      animate={panelRight.animate}
-      exit={panelRight.exit}
-      transition={panelRight.transition}
-      className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40 bg-surface-container text-on-surface h-[min(480px,calc(100dvh-5rem))]"
-      style={{
-        width: "min(580px, calc(100vw - 2rem))",
-      }}
+      initial={anim.initial}
+      animate={anim.animate}
+      exit={anim.exit}
+      transition={anim.transition}
+      className="flex flex-col w-full h-[85dvh] rounded-t-2xl sm:w-[640px] sm:max-w-[calc(100vw-2rem)] sm:h-[min(520px,calc(100dvh-5rem))] sm:rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40 bg-surface-container text-on-surface"
     >
-      {/* ── Coluna Esquerda: Sala + Coaches ── */}
-      <div className="w-full sm:w-[200px] shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-outline-variant/20 bg-surface-container-low">
-        {/* Room info */}
-        <div className="px-3 py-2.5 flex flex-col gap-1 shrink-0 border-b border-outline-variant/20">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant truncate">
-              {me.roomName || me.roomCode}
-            </span>
-            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest shrink-0 ml-1">
-              {coaches.filter((c) => c.online).length}/{coaches.length}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="font-mono text-[10px] font-black text-primary tracking-widest">
-              {me.roomCode?.toUpperCase()}
-            </span>
-            <button
-              onClick={copyRoomCode}
-              className="text-[8px] font-black uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700"
-              title="Copiar código de convite"
-            >
-              {copied ? "Copiado ✓" : "Copiar"}
-            </button>
-          </div>
+      {/* ── Cabeçalho: sala, código, fechar ── */}
+      <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 bg-surface-container-high/50 border-b border-outline-variant/20">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase truncate">
+            {me.roomName || me.roomCode}
+          </h2>
+          <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+            <span className="text-emerald-400 tabular-nums">
+              {onlineCount}/{coaches.length}
+            </span>{" "}
+            online
+          </p>
         </div>
-
-        {/* Players list */}
-        {/* max-h proporcional (16dvh) em vez de 160px fixos: em alturas
-          curtas (landscape, h=375) o painel tem só ~295px e 160px de
-          lista deixavam o input fora do ecrã. */}
-        <div className="flex-1 max-h-[16dvh] sm:max-h-none overflow-y-auto divide-y divide-outline-variant/10">
-          {coaches.map((coach) => (
-            <CoachRow
-              key={coach.name}
-              coach={coach}
-              coachTeam={
-                coach.teamId ? teamById.get(String(coach.teamId)) : null
-              }
-              seed={coachAvatarSeed(
-                coach.name,
-                myName,
-                avatarSeed,
-                coachAvatarSeeds,
-              )}
-              coachAvatars={coachAvatars}
-              backendUrl={backendUrl}
-              isMe={coach.name === myName}
-              isAdmin={coach.name === roomCreator}
-              canKick={canKickHere && coach.name !== myName}
-              canInvite={inviteCandidate(coach.name)}
-              invite={inviteState[`${myRoom}:${coach.name}`]}
-              onInvite={sendRoomInvite}
-              onKick={kickCoach}
-            />
-          ))}
-        </div>
-
-        {/* Close button — desktop: fundo da coluna esquerda (no mobile vai para o fundo do painel) */}
-        <div className="hidden sm:block px-3 py-2 shrink-0 border-t border-outline-variant/20">
-          {closeBtn}
-        </div>
+        <button
+          onClick={copyRoomCode}
+          title="Copiar código de convite"
+          aria-label="Copiar código de convite"
+          className="shrink-0 flex items-center gap-1 rounded-md border border-outline-variant/30 bg-surface-container px-2 py-1 font-mono text-[11px] font-black tracking-widest text-primary hover:border-primary/50 transition-colors"
+        >
+          {copied ? "Copiado" : me.roomCode?.toUpperCase()}
+          <span className="material-symbols-outlined text-[14px] leading-none">
+            {copied ? "check" : "content_copy"}
+          </span>
+        </button>
+        <button
+          onClick={() => setRoomHubOpen(false)}
+          aria-label="Fechar"
+          className="shrink-0 grid place-items-center size-7 rounded-md text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors"
+        >
+          <span className="material-symbols-outlined text-[20px] leading-none">
+            close
+          </span>
+        </button>
       </div>
 
-      {/* ── Coluna Direita: Chat ── */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        {/* Room/Global sub-tabs */}
-        <div className="flex shrink-0 border-b border-outline-variant/20 bg-surface-container-low">
-          {tabs.map(({ key, label, unread }) => (
-            <button
-              key={key}
-              onClick={() => setChatSubTab(key)}
-              className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest transition-colors ${
-                chatSubTab === key
-                  ? "text-primary"
-                  : "text-on-surface-variant hover:text-on-surface"
-              }`}
-            >
-              {label}
-              {unread > 0 && (
-                <span className="ml-1.5 inline-block min-w-4 px-1 rounded-full bg-primary text-on-primary text-[9px] font-black">
-                  {unread > 9 ? "9+" : unread}
+      <div className="flex-1 min-h-0 flex flex-col sm:flex-row">
+        {/* ── Coaches ── */}
+        <div className="shrink-0 flex flex-col sm:w-[220px] sm:min-h-0 border-b sm:border-b-0 sm:border-r border-outline-variant/20 bg-surface-container-low">
+          {/* Mobile: faixa de avatares que expande a lista */}
+          <button
+            onClick={() => setShowCoaches((v) => !v)}
+            aria-expanded={showCoaches}
+            className="sm:hidden flex items-center gap-2 px-4 py-2"
+          >
+            <div className="flex -space-x-2 min-w-0">
+              {coaches.slice(0, 8).map((c) => (
+                <span
+                  key={c.name}
+                  className={`relative rounded-full ring-2 ring-surface-container-low ${c.online ? "" : "opacity-50"}`}
+                >
+                  <CoachAvatar
+                    name={c.name}
+                    seed={coachAvatarSeed(
+                      c.name,
+                      myName,
+                      avatarSeed,
+                      coachAvatarSeeds,
+                    )}
+                    teamColor={
+                      c.teamId
+                        ? teamById.get(String(c.teamId))?.color_primary
+                        : undefined
+                    }
+                    size="w-7 h-7"
+                    coachAvatars={coachAvatars}
+                    backendUrl={backendUrl}
+                  />
                 </span>
-              )}
-            </button>
-          ))}
+              ))}
+            </div>
+            <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+              Coaches
+            </span>
+            <span className="material-symbols-outlined text-[18px] leading-none text-on-surface-variant">
+              {showCoaches ? "expand_less" : "expand_more"}
+            </span>
+          </button>
+
+          <div
+            className={`${showCoaches ? "block" : "hidden"} sm:block max-h-[30dvh] sm:max-h-none sm:flex-1 overflow-y-auto divide-y divide-outline-variant/10`}
+          >
+            {coaches.map((coach) => (
+              <CoachRow
+                key={coach.name}
+                coach={coach}
+                coachTeam={
+                  coach.teamId ? teamById.get(String(coach.teamId)) : null
+                }
+                seed={coachAvatarSeed(
+                  coach.name,
+                  myName,
+                  avatarSeed,
+                  coachAvatarSeeds,
+                )}
+                coachAvatars={coachAvatars}
+                backendUrl={backendUrl}
+                isMe={coach.name === myName}
+                isAdmin={coach.name === roomCreator}
+                canKick={canKickHere && coach.name !== myName}
+                canInvite={inviteCandidate(coach.name)}
+                invite={inviteState[`${myRoom}:${coach.name}`]}
+                onInvite={sendRoomInvite}
+                onKick={kickCoach}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Global players online list */}
-        {chatSubTab === "global" && globalPlayers.length > 0 && (
-          <div className="shrink-0 border-b border-outline-variant/20 bg-surface-container-low">
-            <div className="flex items-center gap-1.5 px-3 py-1.5">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                {globalPlayers.length} online
-              </span>
-            </div>
-            <div
-              className="flex flex-wrap gap-1.5 px-3 pb-2 overflow-y-auto"
-              style={{ maxHeight: 72 }}
-            >
+        {/* ── Chat ── */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+          {/* Sala / Global */}
+          <div
+            role="tablist"
+            className="flex shrink-0 border-b border-outline-variant/20 bg-surface-container-low"
+          >
+            {tabs.map(({ key, label, unread }) => (
+              <button
+                key={key}
+                role="tab"
+                aria-selected={chatSubTab === key}
+                onClick={() => setChatSubTab(key)}
+                className={`relative flex-1 py-2 text-[10px] font-black uppercase tracking-widest transition-colors ${
+                  chatSubTab === key
+                    ? "text-primary"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                {label}
+                {key === "global" && globalPlayers.length > 0 && (
+                  <span className="ml-1 font-bold tabular-nums text-on-surface-variant">
+                    · {globalPlayers.length}
+                  </span>
+                )}
+                {unread > 0 && (
+                  <span className="ml-1.5 inline-block min-w-4 px-1 rounded-full bg-primary text-on-primary text-[9px] font-black">
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+                {chatSubTab === key && (
+                  <motion.span
+                    layoutId="room-hub-tab-underline"
+                    className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary"
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Coaches online (Global) — convidar quem está noutra sala */}
+          {chatSubTab === "global" && globalPlayers.length > 0 && (
+            <div className="shrink-0 max-h-[72px] overflow-y-auto flex flex-wrap gap-1.5 px-3 py-2 border-b border-outline-variant/20 bg-surface-container-low">
               {globalPlayers.map((p) => (
                 <span
                   key={p.name}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-container text-on-surface border border-outline-variant/30"
                 >
+                  <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
                   <span className="truncate">{p.name}</span>
                   {inviteCandidate(p.name) && (
-                    <span className="inline-flex items-center gap-1">
-                      <InviteControls
-                        coachName={p.name}
-                        invite={inviteState[`${myRoom}:${p.name}`]}
-                        onInvite={sendRoomInvite}
-                      />
-                    </span>
+                    <InviteControls
+                      coachName={p.name}
+                      invite={inviteState[`${myRoom}:${p.name}`]}
+                      onInvite={sendRoomInvite}
+                    />
                   )}
                 </span>
               ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {chatSubTab === "room" && (
-          <div className="shrink-0 flex items-center gap-1.5 px-3 py-2 overflow-x-auto border-b border-outline-variant/20 bg-surface-container-low">
-            {QUICK_MESSAGES.map((msg) => (
+          <ChatMessages channel={chatSubTab} systemMessages={systemMessages} />
+
+          {/* Respostas rápidas (só na sala) — abertas a pedido para poupar altura */}
+          {chatSubTab === "room" && showQuick && (
+            <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto border-t border-outline-variant/20 bg-surface-container-low">
+              {QUICK_MESSAGES.map((msg) => (
+                <button
+                  key={msg}
+                  onClick={() => emitChat(msg)}
+                  className="shrink-0 px-2.5 py-0.5 rounded-full text-xs bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/20 transition-colors"
+                >
+                  {msg}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input */}
+          <div className="flex items-center gap-2 px-3 py-2.5 shrink-0 border-t border-outline-variant/20 bg-surface-container-low">
+            {chatSubTab === "room" && (
               <button
-                key={msg}
-                onClick={() => emitChat(msg)}
-                className="shrink-0 px-2.5 py-1 rounded-full text-xs bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/20 transition-colors"
+                onClick={() => setShowQuick((v) => !v)}
+                aria-label="Respostas rápidas"
+                aria-pressed={showQuick}
+                className={`shrink-0 grid place-items-center size-8 rounded-lg transition-colors ${
+                  showQuick
+                    ? "bg-primary/20 text-primary"
+                    : "text-on-surface-variant hover:bg-surface-container-high"
+                }`}
               >
-                {msg}
+                <span className="material-symbols-outlined text-[20px] leading-none">
+                  add_reaction
+                </span>
               </button>
-            ))}
+            )}
+            <input
+              type="text"
+              value={chatInput}
+              aria-label="Escreve uma mensagem"
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) sendChat();
+              }}
+              placeholder="Escreve uma mensagem…"
+              maxLength={500}
+              className="min-w-0 flex-1 bg-surface-container text-on-surface text-sm px-3 py-1.5 rounded-lg outline-none placeholder:text-on-surface-variant/50 border border-outline-variant/30 focus:border-primary/60 transition-colors"
+            />
+            <button
+              onClick={sendChat}
+              disabled={!chatInput.trim()}
+              aria-label="Enviar mensagem"
+              className="shrink-0 p-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-30 hover:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-[18px] leading-none">
+                send
+              </span>
+            </button>
           </div>
-        )}
-
-        <ChatMessages channel={chatSubTab} systemMessages={systemMessages} />
-
-        {/* Input */}
-        <div className="flex items-center gap-2 px-3 py-2.5 shrink-0 border-t border-outline-variant/20 bg-surface-container-low">
-          <input
-            type="text"
-            value={chatInput}
-            aria-label="Escreve uma mensagem"
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) sendChat();
-            }}
-            placeholder="Escreve uma mensagem…"
-            maxLength={500}
-            className="min-w-0 flex-1 bg-surface-container text-on-surface text-sm px-3 py-1.5 rounded-lg outline-none placeholder:text-on-surface-variant/50 border border-outline-variant/30 focus:border-primary/60 transition-colors"
-          />
-          <button
-            onClick={sendChat}
-            disabled={!chatInput.trim()}
-            aria-label="Enviar mensagem"
-            className="shrink-0 p-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-30 hover:opacity-90 transition-opacity"
-          >
-            <span className="material-symbols-outlined text-[18px] leading-none">
-              send
-            </span>
-          </button>
-        </div>
-
-        {/* Close button — mobile: fundo do painel, abaixo do input */}
-        <div className="sm:hidden px-3 py-2.5 shrink-0 border-t border-outline-variant/20 bg-surface-container-low">
-          {closeBtn}
         </div>
       </div>
     </motion.div>

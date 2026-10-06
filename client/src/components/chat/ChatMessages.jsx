@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, startTransition } from "react";
+import { socket } from "../../socket.js";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { isSameDay, formatChatDay } from "../../utils/formatters.js";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
@@ -42,10 +43,24 @@ export function ChatMessages({ channel, systemMessages }) {
     coachAvatarSeeds,
     backendUrl,
     chatMessagesRef,
+    roomRoster,
+    teams,
   } = useGame();
   const myName = me?.name ?? "";
   const stickRef = useRef(true);
   const [hasNew, setHasNew] = useState(false);
+  // Histórico a caminho: evita piscar "sem mensagens" antes da resposta.
+  const [loaded, setLoaded] = useState(false);
+
+  // Cor do clube por coach (só conhecemos os da sala; os do Global ficam neutros).
+  const colorByCoach = useMemo(() => {
+    const colorByTeam = new Map(
+      (teams || []).map((t) => [String(t.id), t.color_primary]),
+    );
+    return new Map(
+      (roomRoster || []).map((c) => [c.name, colorByTeam.get(String(c.teamId))]),
+    );
+  }, [roomRoster, teams]);
 
   const activeMessages = channel === "room" ? roomMessages : globalMessages;
 
@@ -60,10 +75,22 @@ export function ChatMessages({ channel, systemMessages }) {
     [channel, activeMessages, systemMessages],
   );
 
-  // Ao trocar de canal volta a colar ao fundo.
+  // Ao trocar de canal volta a colar ao fundo e espera o histórico (máx. 3 s).
   useEffect(() => {
     stickRef.current = true;
-    startTransition(() => setHasNew(false));
+    startTransition(() => {
+      setHasNew(false);
+      setLoaded(false);
+    });
+    const done = (res) => {
+      if (!res || res.channel === channel) startTransition(() => setLoaded(true));
+    };
+    socket.on("chatHistory", done);
+    const t = setTimeout(done, 3000);
+    return () => {
+      socket.off("chatHistory", done);
+      clearTimeout(t);
+    };
   }, [channel]);
 
   // Só salta para o fim se o utilizador já lá estava (ou se a mensagem é sua);
@@ -100,31 +127,51 @@ export function ChatMessages({ channel, systemMessages }) {
         className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5"
       >
         {merged.length === 0 ? (
-          <p className="text-center text-on-surface-variant text-xs italic mt-8">
-            {channel === "room"
-              ? "Nenhuma mensagem nesta sala ainda."
-              : "Nenhuma mensagem global ainda."}
-          </p>
+          loaded ? (
+            <div className="flex flex-col items-center gap-2 mt-10 text-on-surface-variant/60">
+              <span className="material-symbols-outlined text-[36px] leading-none">
+                {channel === "room" ? "forum" : "public"}
+              </span>
+              <p className="text-xs">
+                {channel === "room"
+                  ? "Ainda ninguém falou nesta sala."
+                  : "Ainda ninguém falou no chat global."}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 pt-2" aria-hidden="true">
+              {[60, 40, 70].map((w, i) => (
+                <div
+                  key={i}
+                  className={`h-8 rounded-xl bg-surface-container-high/60 animate-pulse ${i === 1 ? "self-end" : ""}`}
+                  style={{ width: `${w}%` }}
+                />
+              ))}
+            </div>
+          )
         ) : (
           merged.map((msg, i) => {
             const prev = merged[i - 1];
             const next = merged[i + 1];
             const isNewDay = !prev || !isSameDay(prev.timestamp, msg.timestamp);
             const dayDivider = isNewDay && (
-              <div className="flex justify-center py-2">
-                <span className="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-surface-container text-on-surface-variant truncate max-w-full">
-                  {formatChatDay(msg.timestamp)}
-                </span>
+              <div className="flex items-center gap-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant/70">
+                <span className="h-px flex-1 bg-outline-variant/20" />
+                <span className="truncate">{formatChatDay(msg.timestamp)}</span>
+                <span className="h-px flex-1 bg-outline-variant/20" />
               </div>
             );
             if (msg.system) {
               return (
                 <div key={msg.id}>
                   {dayDivider}
-                  <div className="text-center text-[10px] italic text-on-surface-variant/50 py-1">
-                    {msg.message} —{" "}
+                  <div className="flex items-center justify-center gap-1 py-1 text-[10px] text-on-surface-variant/60">
+                    <span className="material-symbols-outlined text-[12px] leading-none">
+                      info
+                    </span>
+                    <span className="italic">{msg.message}</span>
                     <span className="text-[9px]">
-                      {formatChatTime(msg.timestamp)}
+                      · {formatChatTime(msg.timestamp)}
                     </span>
                   </div>
                 </div>
@@ -143,7 +190,14 @@ export function ChatMessages({ channel, systemMessages }) {
                   className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
                 >
                   {!isOwn && isFirst && (
-                    <span className="text-[10px] text-on-surface-variant font-semibold px-1">
+                    <span
+                      className="text-[10px] text-on-surface-variant font-black px-1"
+                      style={
+                        colorByCoach.get(msg.coachName)
+                          ? { color: colorByCoach.get(msg.coachName) }
+                          : undefined
+                      }
+                    >
                       {msg.coachName}
                     </span>
                   )}
@@ -170,8 +224,8 @@ export function ChatMessages({ channel, systemMessages }) {
                     <div
                       className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug break-words ${
                         isOwn
-                          ? "bg-primary text-on-primary rounded-br-sm"
-                          : "bg-surface-container-high text-on-surface rounded-bl-sm"
+                          ? `bg-primary text-on-primary ${isLast ? "rounded-br-sm" : ""}`
+                          : `bg-surface-container-high text-on-surface ${isLast ? "rounded-bl-sm" : ""}`
                       }`}
                     >
                       {msg.message}
