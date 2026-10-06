@@ -1,5 +1,12 @@
 import { socket } from "../../socket.js";
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  startTransition,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { panelRight } from "../../motion.js";
@@ -13,6 +20,10 @@ const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
 const MAX_SYSTEM_MESSAGES = 50;
 // Janela entre envios — alinhada com o rate limit do servidor (1 msg/s).
 const SEND_GAP_MS = 1000;
+// Mensagens do mesmo coach até este intervalo agrupam-se (sem repetir nome/avatar).
+const GROUP_GAP_MS = 2 * 60 * 1000;
+// Distância ao fundo (px) até à qual o scroll "cola" às mensagens novas.
+const STICK_PX = 80;
 // Quanto tempo um estado de convite fica visível antes de voltar a "Convidar".
 const INVITE_TTL_MS = { sent: 30000, error: 5000, accepted: 8000, declined: 6000 };
 
@@ -74,6 +85,9 @@ export function RoomHub() {
   const [copied, setCopied] = useState(false);
   const copiedTimer = useRef(null);
   const lastSendRef = useRef(0);
+  const systemSeqRef = useRef(0);
+  const stickRef = useRef(true);
+  const [hasNew, setHasNew] = useState(false);
   // Convites de sala (como no RoomSelectScreen): `${roomCode}:${coach}` → { status, msg }
   const [inviteState, setInviteState] = useState({});
   const inviteTimersRef = useRef({});
@@ -155,7 +169,12 @@ export function RoomHub() {
       if (!text) return;
       setSystemMessages((prev) => [
         ...prev.slice(-(MAX_SYSTEM_MESSAGES - 1)),
-        { id: Date.now() + Math.random(), text, timestamp: Date.now() },
+        {
+          id: `sys-${systemSeqRef.current++}`,
+          system: true,
+          message: text,
+          timestamp: Date.now(),
+        },
       ]);
     };
 
@@ -190,6 +209,49 @@ export function RoomHub() {
   }, [roomHubOpen, chatSubTab]);
 
   const activeMessages = chatSubTab === "room" ? roomMessages : globalMessages;
+
+  // Mensagens de sistema só existem na sala; intercaladas por hora.
+  const merged = useMemo(
+    () =>
+      chatSubTab === "room" && systemMessages.length > 0
+        ? [...activeMessages, ...systemMessages].sort(
+            (a, b) => a.timestamp - b.timestamp,
+          )
+        : activeMessages,
+    [chatSubTab, activeMessages, systemMessages],
+  );
+
+  // Ao abrir / trocar de canal volta a colar ao fundo.
+  useEffect(() => {
+    stickRef.current = true;
+    startTransition(() => setHasNew(false));
+  }, [roomHubOpen, chatSubTab]);
+
+  // Só salta para o fim se o utilizador já lá estava (ou se a mensagem é sua);
+  // caso contrário mostra o pill "Novas mensagens" em vez de roubar o scroll.
+  useEffect(() => {
+    const el = chatMessagesRef?.current;
+    if (!roomHubOpen || !el) return;
+    const last = merged[merged.length - 1];
+    if (stickRef.current || last?.coachName === myName) {
+      el.scrollTo({ top: el.scrollHeight });
+      startTransition(() => setHasNew(false));
+    } else if (last) {
+      startTransition(() => setHasNew(true));
+    }
+  }, [merged, roomHubOpen, myName, chatMessagesRef]);
+
+  const onMessagesScroll = (e) => {
+    const el = e.currentTarget;
+    stickRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < STICK_PX;
+    if (stickRef.current) setHasNew(false);
+  };
+
+  const scrollToEnd = () => {
+    const el = chatMessagesRef?.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  };
 
   const emitChat = useCallback(
     (text) => {
@@ -606,87 +668,117 @@ export function RoomHub() {
               )}
 
               {/* Messages */}
-              <div
-                ref={chatMessagesRef}
-                className="flex-1 overflow-y-auto px-3 py-3 space-y-2"
-                style={{ scrollBehavior: "smooth" }}
-              >
-                {chatSubTab === "room" &&
-                  systemMessages.map((sm) => (
-                    <div
-                      key={sm.id}
-                      className="text-center text-[10px] italic text-on-surface-variant/50 py-1"
-                    >
-                      {sm.text} —{" "}
-                      <span className="text-[9px]">
-                        {formatChatTime(sm.timestamp)}
-                      </span>
-                    </div>
-                  ))}
-                {activeMessages.length === 0 &&
-                (chatSubTab !== "room" || systemMessages.length === 0) ? (
-                  <p className="text-center text-on-surface-variant text-xs italic mt-8">
-                    {chatSubTab === "room"
-                      ? "Nenhuma mensagem nesta sala ainda."
-                      : "Nenhuma mensagem global ainda."}
-                  </p>
-                ) : (
-                  activeMessages.map((msg, i) => {
-                    const isOwn = msg.coachName === myName;
-                    const prev = activeMessages[i - 1];
-                    const isNewDay =
-                      !prev || !isSameDay(prev.timestamp, msg.timestamp);
-                    return (
-                      <div key={msg.id} className="flex flex-col gap-0.5">
-                        {isNewDay && (
-                          <div className="flex justify-center py-2">
-                            <span className="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-surface-container text-on-surface-variant truncate max-w-full">
-                              {formatChatDay(msg.timestamp)}
-                            </span>
-                          </div>
-                        )}
-                        <div
-                          className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
-                        >
-                          {!isOwn && (
-                            <span className="text-[10px] text-on-surface-variant font-semibold px-1">
-                              {msg.coachName}
-                            </span>
-                          )}
-                          <div
-                            className={`flex items-start gap-1.5 ${isOwn ? "justify-end" : ""}`}
-                          >
-                            {!isOwn && (
-                              <CoachAvatar
-                                name={msg.coachName}
-                                seed={coachAvatarSeed(
-                                  msg.coachName,
-                                  myName,
-                                  avatarSeed,
-                                  coachAvatarSeeds,
-                                )}
-                                size="w-6 h-6"
-                                coachAvatars={coachAvatars}
-                                backendUrl={backendUrl}
-                              />
-                            )}
-                            <div
-                              className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug break-words ${
-                                isOwn
-                                  ? "bg-primary text-on-primary rounded-br-sm"
-                                  : "bg-surface-container-high text-on-surface rounded-bl-sm"
-                              }`}
-                            >
-                              {msg.message}
-                            </div>
-                          </div>
-                          <span className="text-[9px] text-on-surface-variant px-1">
-                            {formatChatTime(msg.timestamp)}
+              <div className="relative flex-1 min-h-0 flex flex-col">
+                <div
+                  ref={chatMessagesRef}
+                  onScroll={onMessagesScroll}
+                  className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5"
+                >
+                  {merged.length === 0 ? (
+                    <p className="text-center text-on-surface-variant text-xs italic mt-8">
+                      {chatSubTab === "room"
+                        ? "Nenhuma mensagem nesta sala ainda."
+                        : "Nenhuma mensagem global ainda."}
+                    </p>
+                  ) : (
+                    merged.map((msg, i) => {
+                      const prev = merged[i - 1];
+                      const next = merged[i + 1];
+                      const isNewDay =
+                        !prev || !isSameDay(prev.timestamp, msg.timestamp);
+                      const dayDivider = isNewDay && (
+                        <div className="flex justify-center py-2">
+                          <span className="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-surface-container text-on-surface-variant truncate max-w-full">
+                            {formatChatDay(msg.timestamp)}
                           </span>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                      if (msg.system) {
+                        return (
+                          <div key={msg.id}>
+                            {dayDivider}
+                            <div className="text-center text-[10px] italic text-on-surface-variant/50 py-1">
+                              {msg.message} —{" "}
+                              <span className="text-[9px]">
+                                {formatChatTime(msg.timestamp)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      const isOwn = msg.coachName === myName;
+                      const sameGroup = (a, b) =>
+                        a &&
+                        b &&
+                        !a.system &&
+                        !b.system &&
+                        a.coachName === b.coachName &&
+                        b.timestamp - a.timestamp < GROUP_GAP_MS &&
+                        isSameDay(a.timestamp, b.timestamp);
+                      const isFirst = !sameGroup(prev, msg);
+                      const isLast = !sameGroup(msg, next);
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex flex-col gap-0.5 ${isFirst ? "pt-1.5" : ""}`}
+                        >
+                          {dayDivider}
+                          <div
+                            className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
+                          >
+                            {!isOwn && isFirst && (
+                              <span className="text-[10px] text-on-surface-variant font-semibold px-1">
+                                {msg.coachName}
+                              </span>
+                            )}
+                            <div
+                              className={`flex items-start gap-1.5 ${isOwn ? "justify-end" : ""}`}
+                            >
+                              {!isOwn &&
+                                (isFirst ? (
+                                  <CoachAvatar
+                                    name={msg.coachName}
+                                    seed={coachAvatarSeed(
+                                      msg.coachName,
+                                      myName,
+                                      avatarSeed,
+                                      coachAvatarSeeds,
+                                    )}
+                                    size="w-6 h-6"
+                                    coachAvatars={coachAvatars}
+                                    backendUrl={backendUrl}
+                                  />
+                                ) : (
+                                  <span className="w-6 shrink-0" />
+                                ))}
+                              <div
+                                className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug break-words ${
+                                  isOwn
+                                    ? "bg-primary text-on-primary rounded-br-sm"
+                                    : "bg-surface-container-high text-on-surface rounded-bl-sm"
+                                }`}
+                              >
+                                {msg.message}
+                              </div>
+                            </div>
+                            {isLast && (
+                              <span className="text-[9px] text-on-surface-variant px-1">
+                                {formatChatTime(msg.timestamp)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                {hasNew && (
+                  <button
+                    onClick={scrollToEnd}
+                    className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-on-primary shadow-md shadow-black/50 active:scale-95"
+                  >
+                    ↓ Novas mensagens
+                  </button>
                 )}
               </div>
 

@@ -42,7 +42,7 @@ Ficheiro: `client/src/components/chat/RoomHub.jsx` (728 linhas, 1 componente). R
 - Fundir `systemMessages` + `activeMessages` por `timestamp` num único `useMemo`; ids por contador.
 - Agrupar mensagens consecutivas do mesmo coach (<2 min): nome/avatar/hora só na primeira/última.
 - Scroll inteligente: só auto-scroll se estava a ≤80 px do fundo; senão pill "↓ Novas mensagens". (Toca em `GameContext.jsx:980` — mover a lógica para o RoomHub e remover o effect de lá.)
-- Não repetir `getChatHistory` se o canal já tem mensagens.
+- ~~Não repetir `getChatHistory`~~ — adiado: arriscaria histórico velho após reconexão; o custo é um pedido por abertura.
 
 **Fase 3 — Split + performance (1 commit)**
 - `RoomHub` fica casca (`roomHubOpen` → `null` antes de qualquer `useMemo` caro, painel num filho `RoomHubPanel` só montado aberto).

@@ -978,12 +978,6 @@ year: seasonYear,
 
 	// ── Chat / RoomHub effects ──────────────────────────────────────────────
 	useEffect(() => {
-		if (chatMessagesRef.current) {
-			chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
-		}
-	}, [roomMessages, globalMessages, roomHubOpen]);
-
-	useEffect(() => {
 		if (!roomHubOpen) return;
 		startTransition(() => {
 			setChatPeekState(null);
