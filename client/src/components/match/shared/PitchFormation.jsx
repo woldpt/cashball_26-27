@@ -5,34 +5,33 @@ import { PlayerAvatar } from "../../shared/PlayerAvatar.jsx";
 import { Stars } from "../../shared/Stars.jsx";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
 
-/* ── Relvado broadcast ───────────────────────────────────────────────────
- * Faixas de corte (mowing stripes) + foco de luz no topo + vinheta nas
- * bordas para aspeto de transmissão TV. Centralizado aqui para que todos
- * os usos (jogo próprio, spectate, pré-jogo) partilhem o mesmo visual. */
-const TURF_BACKGROUND = [
-  "radial-gradient(ellipse 90% 45% at 50% 0%, rgba(255,255,255,0.09) 0%, transparent 60%)",
-  "repeating-linear-gradient(180deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 40px, transparent 40px, transparent 80px)",
-  "linear-gradient(180deg, #0a5a16 0%, #0d6b1d 45%, #0a5a16 100%)",
-].join(", ");
+/* ── Relvado ─────────────────────────────────────────────────────────────
+ * Estilo partilhado com o pitch das Táticas (TacticsView): verde escuro em
+ * gradiente radial, sem faixas de corte, linhas discretas e escurecimento
+ * para baixo. Centralizado aqui para que todos os usos o partilhem. */
+export const TURF_BACKGROUND = "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)";
+export const TURF_OVERLAY_CLASS = "bg-linear-to-b from-black/5 via-transparent to-black/25";
 
-/* ── Linhas do relvado (SVG nítido, estilo broadcast) ──────────────────── */
+/* ── Linhas do relvado (SVG, simétrico) ────────────────────────────────── */
 const PITCH_SVG = (
-  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 315 560" preserveAspectRatio="none" aria-hidden="true">
-    <rect x="10" y="10" width="295" height="540" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" rx="3" />
-    <line x1="10" y1="280" x2="305" y2="280" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-    <circle cx="157" cy="280" r="50" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
-    <circle cx="157" cy="280" r="3.5" fill="rgba(255,255,255,0.45)" />
-    <rect x="25" y="10" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
-    <rect x="85" y="10" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="1" />
-    <circle cx="157" cy="115" r="2.5" fill="rgba(255,255,255,0.35)" />
-    <rect x="25" y="400" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
-    <rect x="85" y="510" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="1" />
-    <circle cx="157" cy="445" r="2.5" fill="rgba(255,255,255,0.35)" />
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 315 560" preserveAspectRatio="none" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="2.2" aria-hidden="true">
+    <rect x="15" y="15" width="285" height="530" rx="2" />
+    <line x1="15" y1="280" x2="300" y2="280" />
+    <circle cx="157" cy="280" r="42" />
+    <rect x="62" y="15" width="191" height="123" />
+    <rect x="108" y="15" width="99" height="63" />
+    <rect x="62" y="422" width="191" height="123" />
+    <rect x="108" y="482" width="99" height="63" />
+    <g fill="rgba(255,255,255,0.2)" stroke="none">
+      <circle cx="157" cy="280" r="2.5" />
+      <circle cx="157" cy="104" r="2.5" />
+      <circle cx="157" cy="456" r="2.5" />
+    </g>
   </svg>
 );
 
 /* ── Posições das linhas ───────────────────────────────────────────────── */
-const ROW_POSITIONS = { GR: "7%", DEF: "30%", MED: "55%", ATA: "80%" };
+const ROW_POSITIONS = { ATA: "7%", MED: "30%", DEF: "55%", GR: "80%" };
 
 /**
  * Estatísticas por jogador a partir dos eventos visíveis (golos, cartões).
@@ -233,7 +232,7 @@ export function PitchFormation({
         />
       ))}
       {withOverlay && (
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/45 via-transparent to-white/[0.04]" />
+        <div className={`absolute inset-0 pointer-events-none ${TURF_OVERLAY_CLASS}`} />
       )}
     </div>
   );

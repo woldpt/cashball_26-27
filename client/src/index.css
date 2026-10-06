@@ -174,15 +174,6 @@ body {
   background-size: 40px 40px;
 }
 
-/* Atmospheric pitch glow */
-.pitch-glow {
-  background: radial-gradient(
-    ellipse at 50% 60%,
-    rgba(0, 65, 43, 0.18) 0%,
-    transparent 65%
-  );
-}
-
 /* Fundo fotográfico da tab ativa (GroupBackdrop) — imagem escura e
    ligeiramente desfocada atrás da camada .ambient, só para embelezar
    sem tirar leitura. Uma só <img> (a da tab ativa, com fade-in na troca);

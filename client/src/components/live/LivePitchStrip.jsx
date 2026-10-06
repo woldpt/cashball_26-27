@@ -3,14 +3,14 @@ import { EMOJI_TO_CONDITION } from "../match/shared/weatherConditions.js";
 
 /* Tinta por condição: duas tonalidades de relva, véu por cima. */
 const TINT = {
-  default: { g1: "#1f6b2a", g2: "#24782f", veil: "transparent" },
-  sol: { g1: "#2f8a35", g2: "#36993c", veil: "rgba(255,200,90,0.12)" },
-  chuva: { g1: "#175a24", g2: "#1b6629", veil: "rgba(20,30,50,0.25)" },
-  chuva_forte: { g1: "#124a1d", g2: "#155422", veil: "rgba(10,15,30,0.4)" },
-  neve: { g1: "#5d8466", g2: "#688f71", veil: "rgba(230,240,255,0.15)" },
-  frio: { g1: "#22654a", g2: "#277055", veil: "rgba(150,190,255,0.12)" },
-  nevoeiro: { g1: "#2c5e33", g2: "#326638", veil: "rgba(200,210,220,0.35)" },
-  vento: { g1: "#21702c", g2: "#267c32", veil: "transparent" },
+  default: { g1: "#123a0d", g2: "#164512", veil: "transparent" },
+  sol: { g1: "#1a4d14", g2: "#1f5a18", veil: "rgba(255,200,90,0.12)" },
+  chuva: { g1: "#0e3010", g2: "#113a14", veil: "rgba(20,30,50,0.25)" },
+  chuva_forte: { g1: "#0b280d", g2: "#0e3010", veil: "rgba(10,15,30,0.4)" },
+  neve: { g1: "#4a6e52", g2: "#527a5a", veil: "rgba(230,240,255,0.15)" },
+  frio: { g1: "#164a36", g2: "#1a533d", veil: "rgba(150,190,255,0.12)" },
+  nevoeiro: { g1: "#1d4a22", g2: "#22522a", veil: "rgba(200,210,220,0.35)" },
+  vento: { g1: "#14400f", g2: "#184a13", veil: "transparent" },
 };
 
 /* Poças [cx, cy, rx, ry]: zonas de desgaste (áreas, meio-campo). Com chuva
@@ -46,7 +46,7 @@ export function LivePitchStrip({ emoji, inline = false }) {
   const wet = cond === "chuva" || cond === "chuva_forte";
   const heavy = cond === "chuva_forte";
   const snowy = cond === "neve" || cond === "frio";
-  const line = "rgba(255,255,255,0.55)";
+  const line = "rgba(255,255,255,0.25)";
   return (
     <>
     {!inline && <div aria-hidden="true" className="lg:hidden h-16" />}

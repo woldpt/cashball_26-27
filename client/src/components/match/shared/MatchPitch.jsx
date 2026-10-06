@@ -17,7 +17,7 @@ export function MatchPitch({ rows, posColors, starColor, events, liveMinute, tea
 
   return (
     <div
-      className={`relative w-full max-w-[280px] mx-auto md:mx-0 md:w-auto md:h-full md:max-w-full rounded-md overflow-hidden border border-white/15 bg-surface-container shadow-[0_0_36px_rgba(5,67,14,0.45)] ${className}`}
+      className={`relative w-full max-w-[280px] mx-auto md:mx-0 md:w-auto md:h-full md:max-w-full rounded-2xl overflow-hidden border border-outline-variant/25 bg-surface-container ${className}`}
       style={{ aspectRatio: "9/16" }}
     >
       {isEmpty ? (

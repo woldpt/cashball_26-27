@@ -315,9 +315,9 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const CONCRETE_LO = night ? "#2b3648" : "#64748b";
   const ROOF_HI = night ? "#5b6b80" : "#f1f5f9";
   const ROOF_LO = night ? "#1b2434" : "#94a3b8";
-  const GRASS_A = night ? "#1f7a3d" : "#22c55e";
-  const GRASS_B = night ? "#186233" : "#16a34a";
-  const GRASS_BASE = night ? "#0b2a16" : "#14532d";
+  const GRASS_A = night ? "#164512" : "#1f5c1a";
+  const GRASS_B = night ? "#123a0d" : "#194d15";
+  const GRASS_BASE = night ? "#071a08" : "#0c2d0a";
   const HAZE_OP = night ? 0.12 : 0.4;
 
   // ── Multidão ─────────────────────────────────────────────────────

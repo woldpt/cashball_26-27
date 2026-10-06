@@ -13,6 +13,7 @@ import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
 import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
 import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
+import { TURF_BACKGROUND, TURF_OVERLAY_CLASS } from "../components/match/shared/PitchFormation.jsx";
 import { BadgeSkills } from "../components/shared/BadgeSkills.jsx";
 
 /** Cores por posição */
@@ -688,8 +689,7 @@ function Pitch() {
         className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 short:max-h-[38dvh] ${dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" ? "ring-2 ring-[#4ade80]/40 shadow-lg shadow-[#4ade80]/10" : ""}`}
         style={{
           aspectRatio: "9/12",
-          background:
-            "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
+          background: TURF_BACKGROUND,
         }}
         onDragOver={(e) => {
           e.preventDefault();
@@ -744,7 +744,7 @@ function Pitch() {
           />
         </svg>
 
-        <div className="absolute inset-0 bg-linear-to-b from-black/5 via-transparent to-black/25 pointer-events-none" />
+        <div className={`absolute inset-0 pointer-events-none ${TURF_OVERLAY_CLASS}`} />
 
         {/* Jogadores no campo */}
         {rows.map((rowPlayers, ri) =>

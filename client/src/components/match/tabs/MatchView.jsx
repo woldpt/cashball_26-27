@@ -101,7 +101,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
           {/* Pitch + Bench side by side on desktop */}
           <div className="flex flex-col md:flex-row gap-4 p-4 md:flex-1 md:min-h-0">
             {/* Pitch */}
-            <div className="relative w-full max-w-[280px] mx-auto rounded-md overflow-hidden border border-white/10 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)] md:w-auto md:h-full md:max-w-full">
+            <div className="relative w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden border border-outline-variant/25 md:w-auto md:h-full md:max-w-full">
               {hasLineups ? (
                 <MatchPitch rows={rows} posColors={posColors} showFatigue={showFatigue} events={evts} liveMinute={liveMinute} teamColor={(pitchSide === "home" ? hInfo : aInfo)?.color_primary} weatherEmoji={weatherEvent?.emoji} />
               ) : (
@@ -176,7 +176,7 @@ function SpectatePitchCard({ side, team, lineup, posColors, events, liveMinute, 
       {/* Pitch */}
       <div className="flex-1 min-h-0 p-2 sm:p-3 flex items-center justify-center">
         <div
-          className="relative w-full max-w-[280px] mx-auto rounded-md overflow-hidden border border-white/10 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)] lg:mx-0 lg:w-auto lg:h-full lg:max-w-full"
+          className="relative w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden border border-outline-variant/25 lg:mx-0 lg:w-auto lg:h-full lg:max-w-full"
           style={{ aspectRatio: "9/16" }}
         >
           {starters.length === 0 ? (
