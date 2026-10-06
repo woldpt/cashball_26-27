@@ -247,4 +247,6 @@ Scout, Mercado e Leilões deram origem ao **padrão visual preferido** para pág
 | `OtherSquadsTab` (Resumo) | Posição | Chips pontos/V-E-D/plantel/troféus; substitui os `SummaryWidget` |
 | `TeamHistoryView` | Troféus | Chips épocas/melhor/V-E-D; substitui os `SummaryWidget` |
 
+**Exceção deliberada:** `ClubTab` mantém o seu hero próprio (brasão + lavagem na cor do clube + faixa de 4 números), porque a identidade do clube é o tema da página; segue os mesmos tokens (`rounded-md`, `top-light`, números `font-headline`).
+
 Páginas novas ou redesenhadas começam aqui, não no `SummaryWidget` (§3, legado).
