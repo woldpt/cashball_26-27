@@ -1,6 +1,10 @@
+import { StadiumIllustration } from "../shared/StadiumIllustration.jsx";
+import { SHOWCASE_LIVE } from "./landingShowcase.js";
+
 /**
- * Camadas decorativas fixas do fundo: os mesmos brilhos ténues do jogo
- * (primary/tertiary sobre o fundo escuro) mais a linha de meio-campo em giz.
+ * Camadas decorativas fixas do fundo: o estádio em festa da equipa da casa
+ * da montra, atenuado e fundido no fundo escuro, mais os brilhos ténues do
+ * jogo (primary/tertiary).
  * Puramente visual — `pointer-events-none` e `aria-hidden` para não
  * interferir com conteúdo nem leitores de ecrã.
  *
@@ -8,10 +12,18 @@
  */
 const LandingBackground = () => (
 	<div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-		{/* Linha de meio-campo + círculo central em giz */}
-		<div className="absolute inset-y-[-10%] left-1/2 w-px bg-on-surface/[0.07]" />
-		<div className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-on-surface/[0.07]" />
-		<div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-on-surface/[0.06]" />
+		{/* Estádio cheio por trás do hero — atenuado para o texto ler por cima */}
+		<div className="absolute inset-x-0 top-0 h-[80vh] [mask-image:linear-gradient(to_bottom,black_45%,transparent)]">
+			<StadiumIllustration
+				capacity={60000}
+				mood={45}
+				seed={7}
+				primary={SHOWCASE_LIVE.home.color}
+				secondary="#1f2937"
+				className="h-full w-full opacity-25"
+			/>
+			<div className="absolute inset-0 bg-gradient-to-r from-bg/70 via-transparent to-transparent" />
+		</div>
 		{/* Brilhos do jogo: contentor primário em cima, terciário num canto */}
 		<div
 			className="absolute inset-0"

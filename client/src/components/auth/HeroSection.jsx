@@ -8,6 +8,13 @@ import {
 	SHOWCASE_START_MINUTE,
 } from "./landingShowcase.js";
 
+/** Argumentos de venda em uma linha, sob o parágrafo do hero. */
+const HERO_CHIPS = [
+	{ icon: "groups", label: "Multijogador em tempo real" },
+	{ icon: "gavel", label: "Leilões e mercado" },
+	{ icon: "emoji_events", label: "Liga e taças" },
+];
+
 /**
  * Coluna esquerda do hero: marca compacta (para mobile landscape, onde o
  * header está escondido), título e o jogo em direto da montra — teatro com
@@ -48,15 +55,27 @@ const HeroSection = () => {
 				</span>
 			</div>
 
-			<h1 className="font-headline font-black leading-none tracking-tighter mb-4 short:mb-2 text-[min(3.25rem,calc((100vw-3rem)/6))] sm:text-6xl lg:text-[4.5rem] short:text-[clamp(1.4rem,4.5vw,2.2rem)] text-on-surface">
+			<h1 className="font-headline font-black leading-none tracking-tighter mb-4 short:mb-2 text-[min(3.25rem,calc((100vw-3rem)/6))] sm:text-6xl xl:text-[5.5rem] short:text-[clamp(1.4rem,4.5vw,2.2rem)] text-on-surface">
 				O balneário
 				<span className="block text-primary">é teu.</span>
 			</h1>
 
-			<p className="text-base text-on-surface-variant leading-relaxed mb-6 max-w-md short:hidden">
+			<p className="text-base sm:text-lg text-on-surface-variant leading-relaxed mb-5 max-w-md short:hidden">
 				O sorteio dá-te o clube — gere o plantel e o orçamento, monta a
 				tática e depois sofre os 90 minutos com os outros treinadores.
 			</p>
+
+			<ul className="flex flex-wrap gap-2 mb-8 short:hidden">
+				{HERO_CHIPS.map(({ icon, label }) => (
+					<li
+						key={label}
+						className="flex items-center gap-1.5 rounded-full border border-outline-variant/30 bg-surface-container/70 backdrop-blur px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant"
+					>
+						<span className="material-symbols-outlined text-[14px] leading-none text-primary">{icon}</span>
+						{label}
+					</li>
+				))}
+			</ul>
 
 			{/* Direto da montra — cartão de jogo com pele do jogo */}
 			<div className="relative w-full max-w-md short:max-w-none bg-surface-container rounded-md overflow-hidden border border-outline-variant/25">
