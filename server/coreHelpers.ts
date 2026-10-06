@@ -987,6 +987,10 @@ export interface PostMatchRecap {
   year?: number;
   /** Classificação 0–10 dos participantes (pitch do artigo no Jornal). */
   ratings?: RatingRow[];
+  /** Homem do Jogo da própria equipa (ver `computeMoms`). */
+  mom?: { playerId: number; playerName: string } | null;
+  /** Eliminatória da Taça decidida nos penáltis. */
+  penalties?: boolean;
 }
 
 /**
@@ -1018,6 +1022,8 @@ export function logPostMatchRecap(game: ActiveGame, recap: PostMatchRecap) {
     // Omitido quando vazio: JSON.stringify dropa `undefined` e as notícias
     // antigas (sem ratings) caem no render simples do cliente.
     ratings: recap.ratings?.length ? recap.ratings : undefined,
+    mom: recap.mom ? { playerId: recap.mom.playerId, playerName: recap.mom.playerName } : undefined,
+    penalties: recap.penalties ? true : undefined,
   };
   const title =
     `Rescaldo: ${recap.teamName || "A equipa"} ${recap.myGoals}–${recap.oppGoals} ${recap.opponentName || ""}`.trim();

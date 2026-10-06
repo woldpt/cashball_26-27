@@ -2234,6 +2234,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				const cAway = cupDivOf.get(Number(fixture.awayTeamId));
 				const cupKey = `cup:${season}:${round}`;
 				const cupRatings = computeMatchRatings(fixture);
+				const cupMoms = computeMoms(fixture.events || [], fixture.homeLineup || [], fixture.awayLineup || []);
 				logPostMatchRecap(game, {
 					teamId: fixture.homeTeamId,
 					teamName: cHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
@@ -2246,6 +2247,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					roundLabel,
 					key: cupKey,
 					ratings: cupRatings.home,
+					mom: cupMoms.home,
+					penalties: !!fixture._decidedByPenalties,
 					ticketRevenue: cupHomeShare,
 					myDivision: cHome?.division ?? null,
 					opponentDivision: cAway?.division ?? null,
@@ -2263,6 +2266,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					roundLabel,
 					key: cupKey,
 					ratings: cupRatings.away,
+					mom: cupMoms.away,
+					penalties: !!fixture._decidedByPenalties,
 					ticketRevenue: cupAwayShare,
 					myDivision: cAway?.division ?? null,
 					opponentDivision: cHome?.division ?? null,
@@ -2634,6 +2639,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				const fAway = friendlyTeamOf.get(Number(fixture.awayTeamId));
 				const friendlyKey = `friendly:${game.season}:${game.matchweek}`;
 				const friendlyRatings = computeMatchRatings(fixture);
+				const friendlyMoms = computeMoms(fixture.events || [], fixture.homeLineup || [], fixture.awayLineup || []);
 				persistLastRatings(game.db, fixture);
 				logPostMatchRecap(game, {
 					teamId: fixture.homeTeamId,
@@ -2647,6 +2653,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					roundLabel: "Amigável",
 					key: friendlyKey,
 					ratings: friendlyRatings.home,
+					mom: friendlyMoms.home,
 					ticketRevenue: homeShare,
 					myDivision: fHome?.division ?? null,
 					opponentDivision: fAway?.division ?? null,
@@ -2664,6 +2671,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					roundLabel: "Amigável",
 					key: friendlyKey,
 					ratings: friendlyRatings.away,
+					mom: friendlyMoms.away,
 					ticketRevenue: awayShare,
 					myDivision: fAway?.division ?? null,
 					opponentDivision: fHome?.division ?? null,
