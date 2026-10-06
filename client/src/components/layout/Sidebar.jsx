@@ -104,7 +104,7 @@ export function Sidebar({ scrollToTop }) {
     <div className={isMatchInProgress ? "hidden" : "contents"}>
       <nav
         aria-label="Navegação principal"
-        className="hidden lg:flex [grid-area:nav] relative z-(--z-sidebar) min-h-0 flex-col bg-surface-container-high border-r border-outline-variant/15"
+        className="group/nav hidden lg:flex [grid-area:nav] relative z-(--z-sidebar) min-h-0 flex-col bg-surface-container-high border-r border-outline-variant/15"
       >
         {/* Bola de encolher — sobreposta ao centro da linha direita da barra. */}
         <button
@@ -135,9 +135,9 @@ export function Sidebar({ scrollToTop }) {
           }
           aria-expanded={!sidebarCollapsed}
           aria-disabled={isMatchInProgress || undefined}
-          className={`absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant/50 transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
+          className={`absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant opacity-0 group-hover/nav:opacity-100 focus-visible:opacity-100 transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
             isMatchInProgress
-              ? "opacity-40 cursor-not-allowed"
+              ? "group-hover/nav:opacity-40 cursor-not-allowed"
               : "hover:text-on-surface hover:border-primary/50 hover:bg-surface-container-highest"
           }`}
         >
