@@ -454,6 +454,7 @@ export function OtherSquadsTab({
           }}
         >
           <StadiumIllustration
+            seed={selectedTeam?.id}
             capacity={selectedTeam?.stadium_capacity || 10000}
             primary={selectedTeam?.color_primary}
             secondary={selectedTeam?.color_secondary}

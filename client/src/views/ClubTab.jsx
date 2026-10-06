@@ -536,6 +536,7 @@ export function ClubTab({
         <div className="bg-surface-container rounded-md border border-outline-variant/25 overflow-hidden flex flex-col">
           <div className="h-24 sm:h-28 short:h-16 relative flex items-end overflow-hidden">
             <StadiumIllustration
+              seed={teamInfo?.id}
               capacity={teamInfo?.stadium_capacity || 10000}
               primary={teamInfo?.color_primary}
               secondary={teamInfo?.color_secondary}

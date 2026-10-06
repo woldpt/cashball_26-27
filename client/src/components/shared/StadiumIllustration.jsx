@@ -49,6 +49,7 @@ import { FANS_MOOD_HIGH, FANS_MOOD_LOW } from "../../constants/index.js";
  *   occupancy?: number|null,
  *   mood?: number|null,
  *   shot?: string,
+ *   seed?: number|string|null,
  * }} props
  */
 
@@ -56,6 +57,8 @@ import { FANS_MOOD_HIGH, FANS_MOOD_LOW } from "../../constants/index.js";
 // `mood`: escala real 1–50. <23 faroeste, 23–37 neutro, ≥38 festa.
 // `null` = neutro (comportamento anterior).
 // `shot`: "wide" (default, cards) ou "close" (hero do StadiumTab).
+// `seed`: id da equipa — escolhe o estilo (cobertura, torres, faixa pintada,
+// lado do sol). Nunca o tamanho: esse é só da lotação. `null` = desenho base.
 
 // ── Helpers de cor (determinísticos, sem dependências) ──────────────
 const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
@@ -126,6 +129,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   occupancy = null,
   mood = null,
   shot = "wide",
+  seed = null,
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const gid = (n) => `s${uid}-${n}`;
@@ -138,6 +142,9 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const home = parseColor(primary) ? primary : "#4ade80";
   const away = parseColor(secondary) ? secondary : "#f8fafc";
 
+  // Estilo por clube: 0 sem seed (desenho base), estável entre renders.
+  const seedN = Number(seed);
+  const style = (k) => (seed == null || !Number.isFinite(seedN) ? 1 : hash01(seedN * 7.13 + k));
   const tiers = cap >= 50000 ? 3 : cap >= 30000 ? 2 : 1;
   const roofed = cap >= 15000;
   const grandRoof = cap >= 50000;
@@ -152,6 +159,11 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const capIn = noCaps ? 0 : CAP_INSET;
   // Placas LED na base do muro: a partir de 10k (um pelado de campo não).
   const led = cap >= 10000;
+  // Variantes por clube (só 15–50k: o telão dos grandes precisa do arco).
+  const flatRoof = roofed && !screen && style(1) < 0.4;
+  const towers = roofed && !screen && style(2) < 0.5;
+  const seatStripe = !bare && style(3) < 0.35;
+  const sunLeft = style(4) < 0.5;
 
   // ── Escala de largura: os estádios pequenos ocupam menos espaço ──
   // 0.50× no pelado (≤5k) e cresce sem degraus até 1× aos 50k; depois
@@ -219,7 +231,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   // Cobertura: 16 de base, esticada com `bulk` (o colossal precisa de
   // altura para o telão caber dentro do arco) e limitada para nunca sair
   // mais de 8 unidades acima do zero do canvas.
-  const canopyH = Math.min(16 + (bulk - 1) * 62, roofEdgeY + 8);
+  const canopyH = flatRoof ? 4 : Math.min(16 + (bulk - 1) * 62, roofEdgeY + 8);
   const roofTopY = roofEdgeY - canopyH;
   // Pala: avança para lá da bancada com o corpo (nos pequeños deixava de
   // cobrir a bancada toda e ficava a flutuar sobre o nada).
@@ -239,7 +251,10 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   // O frame começa onde a cobertura deixa de precisar de céu: 40
   // unidades mortas cortadas em condições normais, mais espaço no
   // colossal. O céu é desenhado de 0 a H, por isso nunca há limbo.
-  const frameTop = Math.min(SKY_TRIM, roofTopY - 6);
+  // Torres de canto (variante): a cabeça fica acima da cobertura.
+  const towerTop = roofTopY + 6;
+  const lightTop = towers ? towerTop : poleTop;
+  const frameTop = Math.min(SKY_TRIM, roofTopY - 6, towers ? towerTop - 28 : Infinity);
   // Plano aproximado (`shot="close"`): nos estádios sem cobertura o topo
   // desce para as colinas (92 em vez de 40) e a largura aperta-se à
   // bancada; com cobertura mantém o plano largo (o telão precisa de ar).
@@ -662,10 +677,15 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       {/* Céu diurno / nocturno */}
       <rect x="0" y="0" width={W} height={H} fill={url("sky")} />
       {/* Sol (ou lua) com halo */}
-      <circle cx={688} cy={SUN_CY} r={30} fill={url("sun")} />
-      <circle cx={688} cy={SUN_CY} r={12} fill={night ? "#e2e8f0" : "#fde047"} opacity="0.95" />
+      <circle cx={sunLeft ? 112 : 688} cy={SUN_CY} r={30} fill={url("sun")} />
+      <circle cx={sunLeft ? 112 : 688} cy={SUN_CY} r={12} fill={night ? "#e2e8f0" : "#fde047"} opacity="0.95" />
       {/* Nuvens (suaves) */}
-      <g fill={CLOUD} opacity={CLOUD_OP} filter={url("blur")}>
+      <g
+        fill={CLOUD}
+        opacity={CLOUD_OP}
+        filter={url("blur")}
+        transform={sunLeft ? `translate(${W} 0) scale(-1 1)` : undefined}
+      >
         <ellipse cx={140} cy={66} rx={36} ry={10} />
         <ellipse cx={168} cy={60} rx={24} ry={8} />
         <ellipse cx={430} cy={62} rx={30} ry={8} />
@@ -682,15 +702,15 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       {/* Torres de luz baixas (só nos pequenos com cobertura por fazer,
           sem o pelado) — mais baixas e junto às bancadas, à escala.
           À noite acendem (o brilho é o que se vê). */}
-      {!roofed && !bare &&
-        [standX0 - CAP_INSET - 4, standX1 + CAP_INSET + 4].map((x) => (
+      {((!roofed && !bare) || towers) &&
+        (towers ? [wallX0 - 40, wallX1 + 40] : [standX0 - CAP_INSET - 4, standX1 + CAP_INSET + 4]).map((x) => (
           <g key={`light-${Math.round(x)}`}>
-            <rect x={x - 3} y={poleTop} width={6} height={PITCH_TOP - poleTop} fill="#475569" />
-            <rect x={x - 28} y={poleTop - 22} width={56} height={22} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
+            <rect x={x - 3} y={lightTop} width={6} height={PITCH_TOP - lightTop} fill="#475569" />
+            <rect x={x - 28} y={lightTop - 22} width={56} height={22} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
             {[-18, -6, 6, 18].map((dx) => (
               <g key={`lamp-${dx}`}>
-                <circle cx={x + dx} cy={poleTop - 11} r={10} fill={url("lamp")} opacity={night ? 0.9 : 0.5} />
-                <circle cx={x + dx} cy={poleTop - 11} r={5} fill={night ? "#fef9c3" : "#e2e8f0"} stroke="#64748b" strokeWidth="1" />
+                <circle cx={x + dx} cy={lightTop - 11} r={10} fill={url("lamp")} opacity={night ? 0.9 : 0.5} />
+                <circle cx={x + dx} cy={lightTop - 11} r={5} fill={night ? "#fef9c3" : "#e2e8f0"} stroke="#64748b" strokeWidth="1" />
               </g>
             ))}
           </g>
@@ -752,6 +772,17 @@ export const StadiumIllustration = memo(function StadiumIllustration({
                 strokeWidth="1.5"
               />
               {rowLines(seatTop, seatBottom)}
+              {/* Faixa pintada nos assentos (variante por clube) */}
+              {seatStripe && (
+                <rect
+                  x={standX0}
+                  y={(seatTop + seatBottom) / 2 - 1.5}
+                  width={standX1 - standX0}
+                  height={3}
+                  fill={away}
+                  opacity="0.55"
+                />
+              )}
               {crowdDots(seatTop, seatBottom, 100 + i * 1000, i)}
               {/* Vomitórios: escadas que dividem a bancada em setores */}
               {Array.from({ length: aisleCount }, (_, a) => (a + 1) / (aisleCount + 1)).map((f) => {

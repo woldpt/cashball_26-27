@@ -112,6 +112,7 @@ export function StadiumTab({
         {/* Coluna B: foto do estádio */}
         <div className="relative h-40 sm:h-auto sm:min-h-52 short:h-28 overflow-hidden order-1 sm:order-2 group">
           <StadiumIllustration
+            seed={teamInfo?.id}
             capacity={stadiumCapacity}
             primary={teamInfo?.color_primary}
             secondary={teamInfo?.color_secondary}

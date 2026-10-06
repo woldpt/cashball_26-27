@@ -18,14 +18,14 @@ const { renderToStaticMarkup } = await import("react-dom/server");
 const out = process.env.SVG_OUT;
 if (out) mkdirSync(out, { recursive: true });
 for (const capacity of [0, 3000, 5000, 10000, 15000, 30000, 50000, 80000, 120000, NaN]) {
-  for (const mood of [10, 30, 50]) {
+  for (const [mood, seed] of [[10, null], [30, null], [50, null], [30, 1], [30, 2], [30, 3], [30, 8], [30, 12], [50, "x"]]) {
     const svg = renderToStaticMarkup(
-      createElement(StadiumIllustration, { capacity, mood, primary: "#c8102e", secondary: "#ffffff" }),
+      createElement(StadiumIllustration, { capacity, mood, seed, primary: "#c8102e", secondary: "#ffffff" }),
     );
-    assert(!svg.includes("NaN"), `NaN cap=${capacity} mood=${mood}`);
+    assert(!svg.includes("NaN"), `NaN cap=${capacity} mood=${mood} seed=${seed}`);
     const dots = (svg.match(/<circle/g) || []).length;
     assert(dots <= 1300, `pontos=${dots} cap=${capacity} mood=${mood}`);
-    if (out) writeFileSync(`${out}/s-${capacity}-${mood}.svg`, svg);
+    if (out) writeFileSync(`${out}/s-${capacity}-${mood}${seed == null ? "" : `-${seed}`}.svg`, svg);
   }
 }
 console.log("ok");
