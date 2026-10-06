@@ -302,7 +302,7 @@ export function LiveMatchHero({
               }
               aria-disabled={readOnly || undefined}
               tabIndex={readOnly ? -1 : undefined}
-              className={`shrink-0 flex flex-col items-center justify-center px-1.5 min-[430px]:px-2.5 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 ${readOnly ? "cursor-default" : "cursor-pointer group"}`}
+              className={`shrink-0 flex flex-col items-center justify-center px-1.5 min-[430px]:px-2.5 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 ${readOnly ? "cursor-default" : "relative cursor-pointer group"}`}
             >
               {phaseAnnounce ? (
                 <div
@@ -313,11 +313,17 @@ export function LiveMatchHero({
                   {phaseAnnounce}
                 </div>
               ) : (
-              <div key={`${score.home}-${score.away}`} className="goal-shake font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap">
+              <div key={`${score.home}-${score.away}`} className={`${canSub && !readOnly ? "group-hover:invisible " : ""}goal-shake font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap`}>
                 <span style={flashStyle(myHomeFlashing)}>{score.home}</span>
                 <span className="text-on-surface/20 text-xl sm:text-3xl">:</span>
                 <span style={flashStyle(myAwayFlashing)}>{score.away}</span>
               </div>
+              )}
+              {canSub && !readOnly && !phaseAnnounce && (
+                <span aria-hidden className="absolute inset-x-0 top-2 hidden group-hover:flex items-center justify-center gap-1.5 font-headline font-black text-xl sm:text-3xl uppercase tracking-[0.15em] text-primary">
+                  <span className="material-symbols-outlined text-[1.1em] leading-none">swap_horiz</span>
+                  Pausa
+                </span>
               )}
               <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-on-surface-variant/70 mt-1 tabular-nums truncate max-w-full">
                 {liveMinute > 90 ? "Prol. " : ""}
