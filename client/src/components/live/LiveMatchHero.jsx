@@ -1,6 +1,7 @@
 import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
+import { LivePitchStrip } from "./LivePitchStrip.jsx";
 import { usePhaseAnnounce, PreMatchIntro, FinalWhistleStamp, WeatherOverlay } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
@@ -173,7 +174,9 @@ export function LiveMatchHero({
   const canSub = isPlayingMatch && !isMatchActionPending;
 
   return (
-    <div className="relative overflow-hidden rounded-lg bg-surface-container-low border border-outline-variant/10">
+    <div className="relative overflow-hidden rounded-lg bg-surface-container-low border border-outline-variant/10 lg:h-full">
+      {/* Campo em perspetiva no espaço livre do fundo (desktop) */}
+      <LivePitchStrip inline emoji={weatherEvent?.emoji} />
       {/* ── Luz das equipas: casa à esquerda · fora à direita (estática) ── */}
       <div
         aria-hidden

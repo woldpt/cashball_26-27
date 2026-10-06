@@ -37,9 +37,10 @@ const DUST = [
  * o espaçador evita que tape o fim da lista.
  * @param {Object} props
  * @param {string} [props.emoji] Emoji do evento `weather`.
+ * @param {boolean} [props.inline] Desktop: preenche o fundo do cartão pai (absolute) em vez de ficar fixa no ecrã.
  * @returns {JSX.Element}
  */
-export function LivePitchStrip({ emoji }) {
+export function LivePitchStrip({ emoji, inline = false }) {
   const cond = EMOJI_TO_CONDITION[emoji];
   const t = TINT[cond] || TINT.default;
   const wet = cond === "chuva" || cond === "chuva_forte";
@@ -48,10 +49,14 @@ export function LivePitchStrip({ emoji }) {
   const line = "rgba(255,255,255,0.55)";
   return (
     <>
-    <div aria-hidden="true" className="lg:hidden h-16" />
+    {!inline && <div aria-hidden="true" className="lg:hidden h-16" />}
     <div
       aria-hidden="true"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 h-[calc(4rem+env(safe-area-inset-bottom))] overflow-hidden border-t border-outline-variant/30 pointer-events-none"
+      className={
+        inline
+          ? "hidden lg:block absolute bottom-0 left-0 right-0 z-0 h-40 overflow-hidden pointer-events-none"
+          : "lg:hidden fixed bottom-0 left-0 right-0 z-40 h-[calc(4rem+env(safe-area-inset-bottom))] overflow-hidden border-t border-outline-variant/30 pointer-events-none"
+      }
       style={{
         perspective: "220px",
         maskImage: "linear-gradient(transparent 40%, #000 90%)",
