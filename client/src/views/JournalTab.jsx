@@ -12,7 +12,7 @@
  * respostas reutilizam os fluxos existentes (diálogo do agente, emits).
  *
  * O detalhe segue registo de imprensa clássica: manchete em tinta forte,
- * entrada com capitular, coluna de leitura centrada (`max-w-prose`),
+ * entrada com capitular, leitura em largura total, como no FM,
  * filetes a separar corpo e ações; links de entidades em pílula para nunca
  * colarem às margens e tabelas centradas. A ação vive numa barra única
  * sticky no fundo do artigo (pendências, botões do tipo ou «Resolvido»).
@@ -243,7 +243,7 @@ export function JournalTab({
                 {/* Coluna de leitura: meta, manchete, corpo e ações com
                     largura de imprensa, centrada; tabelas centram-se a si */}
                 <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-                <div className="mx-auto w-full max-w-prose">
+                <div className="w-full">
                 {/* Metadados: categoria e data */}
                 <ArticleMeta item={selected} catLabel={labelOf(selected.cat)} />
 
@@ -339,7 +339,7 @@ export function JournalTab({
                 </div>
 
                 {/* Rodapé fixo no fundo do cartão: mais recente / mais antiga + próxima por ler */}
-                <div className="mx-auto mt-2 w-full max-w-prose shrink-0 border-t border-outline-variant/25 pt-3">
+                <div className="mt-2 w-full shrink-0 border-t border-outline-variant/25 pt-3">
                 <div className="flex items-center justify-between gap-2">
                   <Button
                     variant="ghost"
