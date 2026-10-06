@@ -1,23 +1,19 @@
 import { useState, useEffect, useContext } from "react";
-import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { TeamLink } from "../shared/TeamLink.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
 import { BidForm } from "./BidForm.jsx";
 import {
-  FLAG_TO_COUNTRY,
   AUCTION_BID_STEP,
   POSITION_GLOW_CLASS,
   POSITION_BG_GRADIENT_CLASS,
   POSITION_BAR_CLASS,
   POSITION_ACCENT_HEX,
 } from "../../constants/index.js";
-import { BadgeSkills } from "../shared/BadgeSkills.jsx";
 import { Badge } from "../shared/Badge.jsx";
 import { StarMark } from "../shared/PlayerStatusBadges.jsx";
-import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
-import { StatTile } from "../shared/StatTile.jsx";
-import { hexToRgba } from "../../utils/colorHelpers.js";
+import { BudgetMeter, TransferCardHead } from "../transfers/TransferChrome.jsx";
+import { auctionStanding } from "../../utils/auctionStanding.js";
 
 function useCountdown(endsAt) {
   const [secs, setSecs] = useState(null);
@@ -50,7 +46,7 @@ function AuctionRing({ secs, urgent }) {
   const pct = secs <= RING_WINDOW ? Math.max(0, secs / RING_WINDOW) : 1;
   const color = urgent ? "var(--color-error)" : "var(--color-primary)";
   return (
-    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden className="shrink-0">
+    <svg width="18" height="18" viewBox="0 0 26 26" aria-hidden className="shrink-0">
       <circle cx="13" cy="13" r="10" fill="none" stroke={color} strokeWidth="3" opacity="0.2" />
       <circle
         cx="13"
@@ -69,27 +65,31 @@ function AuctionRing({ secs, urgent }) {
   );
 }
 
+const STANDING = {
+  leader: { label: "A liderar", icon: "emoji_events", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/35", ring: "ring-2 ring-emerald-400/70" },
+  outbid: { label: "Superado · licita de novo", icon: "trending_down", cls: "bg-rose-500/15 text-rose-300 border-rose-500/35", ring: "ring-2 ring-rose-500/70" },
+  seller: { label: "O teu jogador", icon: "sell", cls: "bg-indigo-500/15 text-indigo-300 border-indigo-500/35", ring: "" },
+};
+
 /**
- * AuctionCard — cromo de leilão (face única).
- *
- * De cima para baixo: faixa da posição · selo de posição + vendedor ·
- * herói (avatar com halo) · nome · BadgeSkills · faixa de urgência (countdown
- * gigante) · preço (lance atual + base/salário) · mini-stats · licitação.
- * A cor de destaque deriva sempre da posição (POSITION_*).
+ * AuctionCard — cromo de leilão (face única), mesma cabeça do Mercado
+ * (TransferCardHead). Contagem decrescente em chip no canto + barra que
+ * esvazia no último minuto; fita com a posição do treinador; "bilhete" com o
+ * lance e a licitação numa linha.
  */
 export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket, onOpenDetails }) {
   const nowIdx = useContext(GameContext)?.calendarIndex ?? matchweekCount;
 
   const secs = useCountdown(auction.closed || auction.paused ? null : auction.endsAt);
   const posHex = POSITION_ACCENT_HEX[auction.position] || "#94a3b8";
-  const countryName = FLAG_TO_COUNTRY?.[auction.nationality] || auction.nationality || "";
 
-  const isSeller = auction.sellerTeamId === me?.teamId;
-  const isLeader = auction.currentHighBidTeamId === me?.teamId;
   const isClosed = !!auction.closed;
   const isPaused = !isClosed && !!auction.paused;
   const urgent = !isClosed && !isPaused && secs != null && secs <= 15;
   const hasBid = auction.currentHighBidTeamId != null;
+  const standing = isClosed ? null : auctionStanding(auction, me?.teamId);
+  const st = standing ? STANDING[standing] : null;
+  const budget = teamInfo?.budget || 0;
 
   const highBidTeam = auction.currentHighBidTeamId
     ? (teams || []).find((t) => t.id === auction.currentHighBidTeamId)
@@ -100,13 +100,34 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
     : auction.startingPrice;
 
   const sellerTeam = (teams || []).find((t) => Number(t.id) === Number(auction.sellerTeamId)) || null;
-  const sellerCrest = sellerTeam?.crest || auction.team_crest || null;
   const sellerName = sellerTeam?.name || auction.team_name || null;
   const teamLabel = auction.team_name
     ? auction.isExClub
       ? `ex-${auction.team_name}`
       : auction.team_name
     : sellerName || "Sem clube";
+  const suspLeft = (auction.suspension_until_matchweek ?? 0) - nowIdx;
+  const injLeft = (auction.injury_until_matchweek ?? 0) - nowIdx;
+  const lastMinutePct = secs != null && secs <= RING_WINDOW ? (secs / RING_WINDOW) * 100 : null;
+
+  const corner = isClosed ? (
+    <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">Encerrado</span>
+  ) : isPaused ? (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-outline-variant/30 bg-surface/70 text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
+      <span className="material-symbols-outlined text-[13px] leading-none w-[1em] overflow-hidden">pause</span>
+      Pausa
+    </span>
+  ) : (
+    <span
+      className={`inline-flex items-center gap-1 pl-1 pr-2 py-0.5 rounded-full border font-mono font-black tabular-nums text-[12px] leading-none ${
+        urgent ? "border-error/60 bg-error-container/60 text-error animate-pulse" : "border-outline-variant/30 bg-surface/70 text-on-surface"
+      }`}
+      title={urgent ? "A terminar!" : "Tempo restante"}
+    >
+      <AuctionRing secs={secs} urgent={urgent} />
+      {formatSecs(secs)}
+    </span>
+  );
 
   return (
     <div
@@ -119,212 +140,104 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           onOpenDetails?.(auction);
         }
       }}
-      className={`relative flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[auction.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg cursor-pointer ${POSITION_GLOW_CLASS[auction.position] || ""}`}
+      className={`relative h-full flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[auction.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer ${POSITION_GLOW_CLASS[auction.position] || ""} ${st?.ring || ""}`}
     >
-      {/* Faixa da posição (linguagem PlayerRow, na horizontal) */}
-      <div className={`h-1 shrink-0 bg-gradient-to-r ${POSITION_BAR_CLASS[auction.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`} />
-
-      {/* Selo de posição + vendedor + histórico */}
-      <div className="px-3 short:px-2 pt-2.5 short:pt-1.5 flex items-center gap-1.5 short:gap-1">
-        <Badge
-          size="sm"
-          style={{
-            background: hexToRgba(posHex, 0.15),
-            color: posHex,
-            borderColor: hexToRgba(posHex, 0.35),
-          }}
-        >
-          {auction.position}
-        </Badge>
-        {!!auction.is_star && (auction.position === "MED" || auction.position === "ATA") && (
-          <StarMark />
-        )}
-        {(auction.suspension_until_matchweek ?? 0) > nowIdx && (
-          <Badge variant="suspended">🟥 {(auction.suspension_until_matchweek ?? 0) - nowIdx + 1}J</Badge>
-        )}
-        {(auction.injury_until_matchweek ?? 0) > nowIdx && (
-          <Badge variant="injured">🩹 {(auction.injury_until_matchweek ?? 0) - nowIdx + 1}J</Badge>
-        )}
-        <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
-          <TeamLink teamId={auction.sellerTeamId}>{teamLabel}</TeamLink>
-        </span>
-        {sellerTeam || sellerCrest ? (
-          sellerCrest ? (
-            <img
-              src={sellerCrest}
-              alt={sellerName || teamLabel}
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
-              className="w-6 h-6 object-contain rounded-sm p-0.5 shrink-0 border border-outline-variant/20 shadow-md"
-              style={{ backgroundColor: sellerTeam?.color_primary || "#333" }}
-              loading="lazy"
-              title={sellerName || teamLabel}
-            />
-          ) : (
-            <span
-              className="w-6 h-6 rounded-sm flex items-center justify-center font-black text-[8px] leading-none shrink-0 border border-outline-variant/20"
-              style={{
-                backgroundColor: sellerTeam?.color_primary || "#333",
-                color: sellerTeam?.color_secondary || "#fff",
-              }}
-              title={sellerName || teamLabel}
-            >
-              {(sellerName || teamLabel).substring(0, 3).toUpperCase()}
-            </span>
-          )
-        ) : null}
-      </div>
-
-      {/* Herói: avatar com halo + BadgeSkills */}
-      <div
-        className="mx-3 short:mx-2 mt-2 short:mt-1 rounded-lg flex flex-col items-center pt-3 short:pt-2 pb-2.5 short:pb-1.5 px-2 short:px-1.5"
-        style={{ background: `radial-gradient(ellipse 90% 100% at 50% 0%, ${hexToRgba(posHex, 0.22)} 0%, transparent 70%)` }}
-      >
-        <div className="relative">
-          <div
-            className="rounded-full"
-            style={{ boxShadow: `0 0 0 2px rgba(10,10,16,0.9), 0 0 0 4px ${posHex}, 0 0 22px ${hexToRgba(posHex, 0.45)}` }}
-          >
-            <PlayerAvatar
-              seed={auction.playerId}
-              position={auction.position}
-              teamColor={posHex}
-              nationality={auction.nationality}
-              size="lg"
-              photo={auction.photo || null}
+      {/* Faixa da posição + barra do último minuto (esvazia até ao fecho) */}
+      <div className={`relative h-1 shrink-0 bg-gradient-to-r ${POSITION_BAR_CLASS[auction.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`}>
+        {lastMinutePct != null && (
+          <div className="absolute inset-0 bg-surface/80">
+            <div
+              className="h-full bg-error"
+              style={{ width: `${lastMinutePct}%`, transition: "width 0.5s linear", boxShadow: "0 0 8px var(--color-error)" }}
             />
           </div>
-        </div>
-        <p className="mt-2 short:mt-1 font-headline font-black text-on-surface text-base short:text-sm leading-tight truncate max-w-full">
-          <PlayerLink playerId={auction.playerId}>{auction.name}</PlayerLink>
-        </p>
-        <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
-          {[auction.nationality, countryName].filter(Boolean).join(" · ")}
-        </p>
-        <BadgeSkills
-          className="mt-2 short:mt-1"
-          skill={auction.skill}
-          form={auction.form}
-          morale={auction.morale}
-          resistance={auction.resistance}
-          aggressiveness={auction.aggressiveness}
-        />
-      </div>
-
-      {/* Faixa de urgência: countdown gigante */}
-      <div className="px-3 short:px-2 mt-2 short:mt-1.5">
-        {isClosed ? (
-          <div className="rounded-lg border border-outline-variant/15 bg-surface/50 py-2 text-center">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Leilão encerrado</p>
-          </div>
-        ) : isPaused ? (
-          <div className="rounded-lg border border-outline-variant/15 bg-surface/50 py-2 text-center">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center justify-center gap-1">
-              <span className="material-symbols-outlined text-sm leading-none">pause_circle</span>
-              Em pausa · retoma no apito final
-            </p>
-          </div>
-        ) : (
-          <div
-            className={`rounded-lg border py-1.5 text-center transition-colors ${urgent ? "border-error/50 bg-error-container/40 animate-pulse" : "border-outline-variant/15 bg-surface/50"}`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <AuctionRing secs={secs} urgent={urgent} />
-              <div>
-                <p className={`font-mono font-black tabular-nums leading-none text-[26px] short:text-lg ${urgent ? "text-error" : "text-on-surface"}`}>
-                  {formatSecs(secs)}
-                </p>
-                <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70 mt-0.5">
-                  {urgent ? "a terminar!" : "restantes"}
-                </p>
-              </div>
-            </div>
-          </div>
         )}
       </div>
 
-      {/* Preço: lance atual em destaque + base/salário */}
-      {!isClosed && !isPaused && (
-        <div className="px-4 short:px-2 mt-2 short:mt-1.5 flex items-end justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">
-              {hasBid ? "Lance atual" : "Preço base"}
-            </p>
-            <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base ${isLeader ? "text-emerald-400" : "text-on-surface"}`}>
-              {formatCurrency(hasBid ? auction.currentHighBid : auction.startingPrice)}
-            </p>
-            <p className="text-[9px] text-zinc-500 truncate max-w-[130px]">
-              {hasBid
-                ? isLeader
-                  ? "és tu que lideras"
-                  : highBidTeam?.name || `Equipa ${auction.currentHighBidTeamId}`
-                : "sem lances ainda"}
-            </p>
-          </div>
-          <div className="text-right shrink-0">
-            {hasBid && (
-              <>
-                <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/60">Base</p>
-                <p className="font-mono text-[11px] text-zinc-400 tabular-nums">{formatCurrency(auction.startingPrice)}</p>
-              </>
-            )}
-            <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/60 mt-1">Salário/sem</p>
-            <p className="font-mono text-[11px] text-zinc-300 tabular-nums">{formatCurrency(auction.wage || 0)}</p>
-          </div>
-        </div>
-      )}
+      <TransferCardHead
+        player={{ ...auction, id: auction.playerId }}
+        team={sellerTeam}
+        teamId={auction.sellerTeamId}
+        teamLabel={teamLabel}
+        onOpen={() => onOpenDetails?.(auction)}
+        corner={corner}
+        badges={
+          <>
+            {!!auction.is_star && (auction.position === "MED" || auction.position === "ATA") && <StarMark className="ml-0" />}
+            {suspLeft > 0 && <Badge variant="suspended">🟥 {suspLeft + 1}J</Badge>}
+            {injLeft > 0 && <Badge variant="injured">🩹 {injLeft + 1}J</Badge>}
+          </>
+        }
+      />
 
-      {/* Mini-stats do cromo */}
-      {!isClosed && !isPaused && (
-        <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-2 gap-1.5 short:gap-1">
-          <StatTile label="Jogos">
-            <span className="tabular-nums">{auction.games_played ?? 0}</span>
-          </StatTile>
-          <StatTile label="Golos">
-            <span className="tabular-nums">{auction.goals ?? 0}</span>
-          </StatTile>
-        </div>
-      )}
+      <p className="px-3 short:px-2 mt-2 text-[10px] text-on-surface-variant tabular-nums">
+        <b className="text-on-surface font-black">{auction.games_played ?? 0}</b> jogos ·{" "}
+        <b className="text-emerald-400 font-black">{auction.goals ?? 0}</b> golos ·{" "}
+        <b className="text-on-surface font-black">{formatCurrency(auction.wage || 0)}</b>/sem
+      </p>
 
-      {/* Zona de ação */}
-      <div className="px-3 short:px-2 py-3 short:py-2 mt-auto">
-        {isClosed ? (
-          <div className="text-center py-1">
-            {auction.result?.sold ? (
-              <p className="font-headline font-black text-emerald-400 text-xs uppercase">
+      {/* Bilhete: lance atual + licitação */}
+      <div className="mt-auto pt-2.5 short:pt-1.5 px-2 pb-2 space-y-1.5">
+        {st && (
+          <div className={`flex items-center justify-center gap-1.5 rounded-md border py-1 text-[10px] font-black uppercase tracking-widest ${st.cls}`}>
+            <span className="material-symbols-outlined text-[14px] leading-none w-[1em] overflow-hidden">{st.icon}</span>
+            {st.label}
+          </div>
+        )}
+        <div className="rounded-lg border border-outline-variant/15 bg-surface/60 p-2.5 short:p-2 space-y-2">
+          {isClosed ? (
+            auction.result?.sold ? (
+              <p className="text-center font-headline font-black text-emerald-400 text-xs uppercase">
                 Vendido a <TeamLink teamId={auction.result.buyerTeamId}>{auction.result.buyerTeamName}</TeamLink> · {formatCurrency(auction.result.finalBid)}
               </p>
             ) : (
-              <p className="font-headline font-black text-zinc-500 text-xs uppercase">Sem licitações</p>
-            )}
-          </div>
-        ) : isPaused ? (
-          <div className="rounded-lg py-2 text-center border border-outline-variant/15 bg-surface/40">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-              Pausado durante o jogo
-            </p>
-          </div>
-        ) : isSeller ? (
-          <div className="rounded-lg py-2 text-center border border-indigo-500/25 bg-indigo-500/10">
-            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">O teu jogador · em leilão</p>
-          </div>
-        ) : isLeader ? (
-          <div className="rounded-lg py-2 text-center border border-emerald-500/25 bg-emerald-500/10">
-            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">A liderar</p>
-            <p className="font-mono font-black text-white text-sm tabular-nums mt-0.5">
-              {formatCurrency(auction.currentHighBid)}
-            </p>
-          </div>
-        ) : (
-          <div onClick={(e) => e.stopPropagation()}>
-            <BidForm
-              playerId={auction.playerId}
-              minBid={minBid}
-              budget={teamInfo?.budget || 0}
-              socket={socket}
-              accentHex={posHex}
-            />
-          </div>
-        )}
+              <p className="text-center font-headline font-black text-zinc-500 text-xs uppercase">Sem licitações</p>
+            )
+          ) : (
+            <>
+              <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
+                <div className="min-w-0">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">
+                    {hasBid ? "Lance atual" : "Preço base"}
+                  </p>
+                  <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base ${standing === "leader" ? "text-emerald-400" : standing === "outbid" ? "text-rose-400" : "text-on-surface"}`}>
+                    {formatCurrency(hasBid ? auction.currentHighBid : auction.startingPrice)}
+                  </p>
+                  <p className="text-[9px] text-on-surface-variant truncate max-w-[180px]">
+                    {hasBid
+                      ? standing === "leader"
+                        ? "és tu que lideras"
+                        : highBidTeam?.name || `Equipa ${auction.currentHighBidTeamId}`
+                      : "sem lances ainda"}
+                  </p>
+                </div>
+                {hasBid && (
+                  <div className="text-right shrink-0">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/60">Base</p>
+                    <p className="font-mono text-[11px] text-on-surface-variant tabular-nums">{formatCurrency(auction.startingPrice)}</p>
+                  </div>
+                )}
+              </div>
+
+              {isPaused ? (
+                <p className="min-h-10 flex items-center justify-center rounded-lg border border-dashed border-outline-variant/25 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">
+                  Pausado · retoma no apito final
+                </p>
+              ) : standing === "seller" || standing === "leader" ? null : (
+                <div onClick={(e) => e.stopPropagation()} className="space-y-2">
+                  <BudgetMeter price={minBid} budget={budget} />
+                  <BidForm
+                    playerId={auction.playerId}
+                    minBid={minBid}
+                    budget={budget}
+                    socket={socket}
+                    accentHex={posHex}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

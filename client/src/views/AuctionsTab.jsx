@@ -1,21 +1,20 @@
 /**
  * AuctionsTab — Página de leilões ativos e recentes.
- * Aplica o design system da STYLE.md: tokens semânticos, cards com header,
- * grid responsivo e estados vazios padronizados.
+ * Topo comum das transferências (saldo + chips «a liderar»/«superado») com os
+ * filtros; «Em curso» ordenado pelo fim mais próximo; «Recentes» numa coluna
+ * lateral no desktop e por baixo no telemóvel.
  *
- * Scroll: a página é full-bleed com UM único scroll (a raiz é o contentor).
- * O topo (widgets mini + filtro) e os painéis "Em curso"/"Recentes" rolam
- * juntos — sem áreas de scroll internas.
+ * Scroll: a página é full-bleed com UM único scroll (a raiz é o contentor) —
+ * sem áreas de scroll internas.
  */
-import { formatCurrency } from "../utils/formatters.js";
 import { AuctionCard } from "../components/auctions/AuctionCard.jsx";
 import { AuctionResultRow } from "../components/auctions/AuctionResultRow.jsx";
-import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
-import { getTeamColor } from "../utils/teamHelpers.js";
+import { FilterChip, TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { POSITIONS } from "../utils/playerHelpers.js";
+import { auctionStanding, sortByEnding } from "../utils/auctionStanding.js";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { staggerItemProps } from "../motion.js";
@@ -34,16 +33,15 @@ export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me
   }, [highlightAuctionId, activeAuctions.length]);
 
   const matchesPos = (a) => positionFilter === "all" || a.position === positionFilter;
-  // "Os meus": vendo ou licitei (em curso, via histórico) ou comprei (recentes, via resultado).
+  // "Os meus": vendo ou licitei (em curso) ou comprei (recentes, via resultado).
   const matchesOwn = (a) => {
     if (!showOwnOnly) return true;
     if (me?.teamId == null) return false;
-    const mine = Number(me.teamId);
-    if (Number(a.sellerTeamId) === mine) return true;
-    if ((a.auction_bid_history || []).some((b) => Number(b.teamId ?? b.team_id) === mine)) return true;
-    return Number(a.result?.buyerTeamId) === mine;
+    if (auctionStanding(a, me.teamId)) return true;
+    return Number(a.result?.buyerTeamId) === Number(me.teamId);
   };
-  const liveAll = activeAuctions.filter((a) => !a.closed && matchesPos(a));
+  const openAll = activeAuctions.filter((a) => !a.closed);
+  const liveAll = sortByEnding(openAll.filter(matchesPos));
   // Recentes: mais recentes primeiro (defesa — a ordem do servidor é de
   // inserção, que já é cronológica, mas não contractual).
   const closedAll = activeAuctions
@@ -51,6 +49,10 @@ export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me
     .sort((a, b) => (b.closedMatchweek ?? 0) - (a.closedMatchweek ?? 0));
   const live = liveAll.filter(matchesOwn);
   const closed = closedAll.filter(matchesOwn);
+
+  const standings = openAll.map((a) => auctionStanding(a, me?.teamId));
+  const leading = standings.filter((s) => s === "leader").length;
+  const outbid = standings.filter((s) => s === "outbid").length;
 
   const positionTabs = [
     { key: "all", label: `Todas · ${activeAuctions.length}` },
@@ -60,117 +62,100 @@ export function AuctionsTab({ activeAuctions = [], highlightAuctionId = null, me
     })),
   ];
 
-  const teamColorById = new Map(
-    teams.map((t) => [Number(t.id), t.color_primary ?? getTeamColor(t.id)])
-  );
-
   return (
     /* Scroll único da página: topo + painéis rolam juntos (sem overflow interno). */
     <div className="flex flex-col flex-1 min-h-0 overflow-y-auto overscroll-contain">
-      {/* ── Topo compacto: 3 widgets mini em linha em qualquer ecrã ─────── */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 short:gap-1 p-2 sm:p-4 short:p-1.5 pb-1.5 short:pb-1 shrink-0">
-        <SummaryWidget
-          label="Leilões a decorrer"
-          value={liveAll.length}
-          valueClass="text-[11px] sm:text-2xl min-w-0 truncate"
-          mini
-        />
-        <SummaryWidget
-          label="Leilões recentes"
-          value={closedAll.length}
-          accentClass="border-tertiary"
-          valueClass="text-[11px] sm:text-2xl min-w-0 truncate"
-          mini
-        />
-        <SummaryWidget
-          label="Caixa disponível"
-          value={formatCurrency(teamInfo?.budget || 0)}
-          accentClass="border-emerald-500"
-          valueClass="text-[10px] sm:text-xl min-w-0 truncate"
-          mini
-        />
-      </div>
+      <div className="p-2 sm:p-4 short:p-1.5 flex flex-col gap-3 sm:gap-4 short:gap-2">
+        <TransferHeader
+          icon="gavel"
+          title="Leilões"
+          budget={teamInfo?.budget || 0}
+          chips={[
+            { value: openAll.length, label: "a decorrer", icon: "timer" },
+            ...(leading > 0 ? [{ value: leading, label: "a liderar", tone: "good", icon: "emoji_events" }] : []),
+            ...(outbid > 0 ? [{ value: outbid, label: "superado", tone: "bad", icon: "trending_down" }] : []),
+          ]}
+        >
+          {activeAuctions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <TabBar tabs={positionTabs} active={positionFilter} onChange={setPositionFilter} expand className="flex-1 min-w-[260px]" />
+              <FilterChip active={showOwnOnly} onChange={setShowOwnOnly} icon="person">
+                Os meus
+              </FilterChip>
+            </div>
+          )}
+        </TransferHeader>
 
-      {/* ── Filtro de posição: chips (padrão TabBar, como MySquadTab) ───── */}
-      {activeAuctions.length > 0 && (
-        <div className="px-2 sm:px-4 short:px-2 pb-1.5 short:pb-1 shrink-0">
-          <TabBar tabs={positionTabs} active={positionFilter} onChange={setPositionFilter} expand />
-          <label className="flex items-center gap-2 px-1 py-2 text-[11px] font-bold text-on-surface-variant cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showOwnOnly}
-              onChange={(e) => setShowOwnOnly(e.target.checked)}
-              className="w-4 h-4 accent-emerald-500"
+        {live.length === 0 && closed.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center rounded-md bg-surface-container">
+            <EmptyState
+              icon="gavel"
+              title={activeAuctions.length > 0 ? "Sem leilões com estes filtros" : "Sem leilões a mostrar"}
+              description={
+                activeAuctions.length > 0
+                  ? showOwnOnly
+                    ? "Ajusta a posição ou desliga «Os meus»."
+                    : "Escolhe outra posição no filtro."
+                  : "Quando um clube colocar um jogador em leilão, aparece aqui."
+              }
             />
-            Mostrar só os meus
-          </label>
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className={`grid grid-cols-1 gap-3 sm:gap-4 items-start ${closed.length > 0 && live.length > 0 ? "xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+            {live.length > 0 && (
+              <section className="min-w-0">
+                <h2 className="mb-2 flex items-center gap-2 px-1 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">
+                  <span className="relative flex w-2 h-2">
+                    <span className="absolute inset-0 rounded-full bg-error animate-ping opacity-60" />
+                    <span className="relative w-2 h-2 rounded-full bg-error" />
+                  </span>
+                  Em curso · {live.length}
+                </h2>
+                {/* auto-fill: colunas pela largura (evita a armadilha sm>md/lg do STYLE §7). */}
+                <div className="grid gap-2.5 sm:gap-3 short:gap-2 [grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))]">
+                  {live.map((auction, i) => (
+                    <motion.div
+                      key={auction.playerId}
+                      id={`auction-${auction.playerId}`}
+                      className={`min-w-0 ${Number(auction.playerId) === Number(highlightAuctionId) ? "rounded-xl ring-2 ring-amber-400 scroll-mt-4" : ""}`}
+                      {...staggerItemProps(i)}
+                    >
+                      <AuctionCard
+                        auction={auction}
+                        me={me}
+                        teams={teams}
+                        teamInfo={teamInfo}
+                        matchweekCount={matchweekCount}
+                        socket={socket}
+                        onOpenDetails={onOpenPlayerHistory}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-      {/* ── Painéis empilhados no scroll único da página ────────────────── */}
-      {(live.length > 0 || closed.length > 0) && (
-        <div className="px-2 sm:px-4 short:px-2 pb-4 short:pb-2 space-y-2 sm:space-y-3 short:space-y-2">
-          {live.length > 0 && (
-            <Panel title="Em curso" meta={`${live.length} ${live.length === 1 ? "leilão" : "leilões"}`}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 short:gap-2">
-                {live.map((auction, i) => (
-                  <motion.div
-                    key={auction.playerId}
-                    id={`auction-${auction.playerId}`}
-                    className={Number(auction.playerId) === Number(highlightAuctionId) ? "rounded-xl ring-2 ring-amber-400 scroll-mt-4" : undefined}
-                    {...staggerItemProps(i)}
-                  >
-                    <AuctionCard
-                      auction={auction}
-                      me={me}
-                      teams={teams}
-                      teamInfo={teamInfo}
-                      matchweekCount={matchweekCount}
-                      socket={socket}
-                      teamColorById={teamColorById}
-                      onOpenDetails={onOpenPlayerHistory}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            </Panel>
-          )}
-
-          {closed.length > 0 && (
-            <Panel title="Recentes" meta={`${closed.length} ${closed.length === 1 ? "leilão" : "leilões"}`}>
-              <div className="flex flex-col gap-1.5">
-                {closed.map((auction, i) => (
-                  <motion.div key={auction.playerId} {...staggerItemProps(i)}>
-                    <AuctionResultRow
-                      auction={auction}
-                      teams={teams}
-                      currentMatchweek={matchweekCount + 1}
-                      onOpenPlayer={onOpenPlayerHistory}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            </Panel>
-          )}
-        </div>
-      )}
-
-      {/* ── Empty state ──────────────────────────────────────────────── */}
-      {live.length === 0 && closed.length === 0 && (
-        <div className="flex-1 flex items-center justify-center p-3 md:p-4 short:p-2">
-          <EmptyState
-            icon="balance"
-            title={activeAuctions.length > 0 ? "Sem leilões para esta posição" : "Sem leilões a mostrar"}
-            description={
-              activeAuctions.length > 0
-                ? showOwnOnly
-                  ? "Ajusta a posição ou desmarca «Mostrar só os meus»."
-                  : "Escolhe outra posição no filtro."
-                : "Quando um clube colocar um jogador em leilão, aparece aqui."
-            }
-          />
-        </div>
-      )}
+            {closed.length > 0 && (
+              <aside className="min-w-0 xl:sticky xl:top-0">
+                <Panel title="Recentes" icon="history" meta={`${closed.length}`}>
+                  <div className="flex flex-col gap-1.5">
+                    {closed.map((auction, i) => (
+                      <motion.div key={auction.playerId} {...staggerItemProps(i)}>
+                        <AuctionResultRow
+                          auction={auction}
+                          teams={teams}
+                          currentMatchweek={matchweekCount + 1}
+                          onOpenPlayer={onOpenPlayerHistory}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </Panel>
+              </aside>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

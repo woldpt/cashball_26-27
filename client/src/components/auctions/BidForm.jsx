@@ -71,42 +71,76 @@ export function BidForm({ playerId, minBid, budget, socket, accentHex = "#94a3b8
 		);
 	}, [bidInput, minBid, playerId, budget, socket, onPlaced]);
 
+	// Atalhos de valor: mínimo e +5%/+10% sobre o mínimo (arredondados ao passo).
+	const quick = [
+		{ label: "Mín.", amount: minBid },
+		{ label: "+5%", amount: Math.ceil((minBid * 1.05) / AUCTION_BID_STEP) * AUCTION_BID_STEP },
+		{ label: "+10%", amount: Math.ceil((minBid * 1.1) / AUCTION_BID_STEP) * AUCTION_BID_STEP },
+	];
+
 	return (
 		<div className="flex flex-col gap-1.5">
-			<div
-				className="flex items-center rounded-lg overflow-hidden border bg-surface/60"
-				style={{ borderColor: `${accentHex}66` }}
-			>
-				<span className="material-symbols-outlined text-base px-2.5 shrink-0" style={{ color: accentHex }}>
-					currency_exchange
-				</span>
-				<input
-					ref={inputRef}
-					type="number"
-					inputMode="numeric"
-					min={minBid}
-					value={bidInput}
-					onChange={(e) => {
-						setBidInput(e.target.value);
-						setBidError("");
-					}}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") handleBid();
-					}}
-					className="flex-1 min-w-0 bg-transparent py-2 pr-3 text-white font-mono text-xs outline-none"
-					aria-label="Valor do lance"
-				/>
+			<div className="flex items-stretch gap-1.5">
+				<div
+					className="flex-1 min-w-0 flex items-center rounded-lg overflow-hidden border bg-surface/80 focus-within:ring-1"
+					style={{ borderColor: `${accentHex}66`, "--tw-ring-color": accentHex }}
+				>
+					<input
+						ref={inputRef}
+						type="number"
+						inputMode="numeric"
+						min={minBid}
+						step={AUCTION_BID_STEP}
+						value={bidInput}
+						onChange={(e) => {
+							setBidInput(e.target.value);
+							setBidError("");
+						}}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") handleBid();
+						}}
+						className="flex-1 min-w-0 bg-transparent py-2 pl-3 text-on-surface font-mono font-black text-sm tabular-nums outline-none"
+						aria-label="Valor do lance"
+					/>
+					<span className="pr-3 text-on-surface-variant font-mono text-xs">€</span>
+				</div>
+				<button
+					type="button"
+					onClick={handleBid}
+					className="shrink-0 min-h-10 px-4 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 inline-flex items-center gap-1"
+					style={{ background: accentHex, color: "#0d0d14", boxShadow: `0 6px 18px -8px ${accentHex}` }}
+				>
+					<span className="material-symbols-outlined text-[16px] leading-none w-[1em] overflow-hidden">gavel</span>
+					Licitar
+				</button>
 			</div>
+			<div className="flex items-center gap-1">
+				{quick.map((q) => {
+					const on = Number(bidInput) === q.amount;
+					return (
+						<button
+							key={q.label}
+							type="button"
+							onClick={() => {
+								setBidInput(String(q.amount));
+								setBidError("");
+							}}
+							title={formatCurrency(q.amount)}
+							className={`flex-1 min-h-8 rounded-md border text-[10px] font-black uppercase tracking-wider tabular-nums transition-colors ${
+								on ? "text-on-surface" : "border-outline-variant/25 text-on-surface-variant hover:text-on-surface"
+							}`}
+							style={on ? { borderColor: accentHex, background: `${accentHex}22` } : undefined}
+						>
+							{q.label}
+						</button>
+					);
+				})}
+			</div>
+			<p className="text-[9px] text-on-surface-variant tabular-nums">
+				Lance mínimo <b className="text-on-surface font-black">{formatCurrency(minBid)}</b>
+			</p>
 			{bidError && <p className="text-[10px] text-red-400 font-bold">{bidError}</p>}
 			{bidSuccess && <p className="text-[10px] text-emerald-400 font-bold">Lance registado!</p>}
-			<button
-				type="button"
-				onClick={handleBid}
-				className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
-				style={{ background: accentHex, color: "#0d0d14" }}
-			>
-				Licitar · mín. {formatCurrency(minBid)}
-			</button>
 		</div>
 	);
 }
