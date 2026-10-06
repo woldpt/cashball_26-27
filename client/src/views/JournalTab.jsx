@@ -127,7 +127,7 @@ export function JournalTab({
   );
 
   return (
-    <div className="space-y-2 short:space-y-1.5 lg:flex lg:h-[calc(100dvh-var(--header-h)-3rem)] lg:flex-col">
+    <div className="space-y-2 short:space-y-1.5">
       {/* ── Topo: por ler em destaque + barra de ações (estilo FM) ───── */}
       <TransferHeader
         icon="newspaper"
@@ -191,9 +191,9 @@ export function JournalTab({
         </div>
       )}
 
-      <div className="grid gap-2 lg:flex lg:flex-1 lg:min-h-0 lg:flex-col">
+      <div className="grid gap-2">
         {/* ── Inbox (em cima, ~6 linhas) ─────────────────────────────── */}
-        <div className={`${mobileDetail ? "max-lg:hidden " : ""}lg:flex lg:h-64 lg:shrink-0 lg:flex-col`}>
+        <div className={`${mobileDetail ? "max-lg:hidden " : ""}lg:flex lg:h-[clamp(9rem,30dvh,16rem)] lg:shrink-0 lg:flex-col`}>
         <TopicList
           inbox={inbox}
           selected={selected}
@@ -205,7 +205,7 @@ export function JournalTab({
         </div>
 
         {/* ── Leitor (por baixo, largura total) ──────────────────────── */}
-        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col`}>
+        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2`}>
           <Button
             variant="ghost"
             size="sm"
@@ -235,14 +235,14 @@ export function JournalTab({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="relative rounded-md border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden"
+                className="relative rounded-md border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:min-h-[22rem]"
               >
                 {/* Faixa lateral: categoria, ou error nas pendências */}
                 <CategoryAccentBar category={selected.cat} urgent={selected.redFlag} />
 
                 {/* Coluna de leitura: meta, manchete, corpo e ações com
                     largura de imprensa, centrada; tabelas centram-se a si */}
-                <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+                <div>
                 <div className="w-full max-w-5xl">
                 {/* Metadados: categoria e data */}
                 <ArticleMeta item={selected} catLabel={labelOf(selected.cat)} />
