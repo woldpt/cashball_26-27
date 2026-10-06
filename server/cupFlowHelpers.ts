@@ -31,6 +31,7 @@ import { getTeamsWithCoachNames, logClubNews, logMatchMedicalNews, logPostMatchR
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
+import { logProgressNews } from "./progressNewsHelpers";
 import { computeMoms } from "./game/mom";
 import { computeMatchRatings, persistLastRatings } from "./game/ratings";
 import { maybeNotifyWaiting } from "./push";
@@ -1463,6 +1464,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		const completedCalendarIndex = game.calendarIndex;
 		try {
 			await applyTrainingBonuses(game, fixtures, completedCalendarIndex);
+			await logProgressNews(game, fixtures, completedCalendarIndex);
 		} catch (trainErr) {
 			console.error(
 				`[${game.roomCode}] training (${label}): error applying bonuses:`,

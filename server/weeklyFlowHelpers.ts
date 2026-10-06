@@ -16,6 +16,7 @@ import {
   cmGoleadaText,
 } from "./cmNews";
 import { ensureNpcStaff, fetchStaffSalaryTotals } from "./staffHelpers";
+import { logProgressNews } from "./progressNewsHelpers";
 import {
   SEASON_CALENDAR,
   DIVISION_NAMES,
@@ -1506,6 +1507,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               .then(() =>
                 applyTrainingBonuses(game, fixtures, completedCalendarIndex),
               )
+              .then(() => logProgressNews(game, fixtures, completedCalendarIndex))
               .then(async () => {
                 if (seasonDone) {
                   try {
