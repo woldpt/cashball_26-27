@@ -443,7 +443,7 @@ export function LiveMatchHero({
 
         {/* ── Feed de lances (mais recente em cima) ── */}
         <LiveFeed
-          feed={liveFeed(matchEvents, liveMinute)}
+          feed={liveFeed(matchEvents, liveMinute).slice(0, 2)}
           resolveSide={resolveSide}
           hInfo={hInfo}
           aInfo={aInfo}
@@ -566,7 +566,7 @@ function LiveFeed({ feed, resolveSide, hInfo, aInfo }) {
     <ol
       aria-label="Lances do jogo"
       aria-live="polite"
-      className="w-full max-w-2xl mt-4 max-h-64 overflow-y-auto flex flex-col gap-1 pr-1"
+      className="w-full max-w-2xl mt-4 flex flex-col gap-1"
     >
       {feed.map((row, i) => {
         const e = row.event;
