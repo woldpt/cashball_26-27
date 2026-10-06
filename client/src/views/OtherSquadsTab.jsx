@@ -612,7 +612,7 @@ export function OtherSquadsTab({
       ? weatherForFixture(calendarData.season, calendarData.matchweek, selectedTeam.id, nextMatch.opponentId)
       : null;
 
-  );
+  const trophies = clubHistoryTeamId === selectedTeam?.id ? clubHistory?.trophies ?? [] : [];
   const brand = teamRow?.sponsorBrand;
   // A linha da classificação não traz a capacidade — cai no clube clicado.
   const capacity =
