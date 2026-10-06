@@ -864,7 +864,6 @@ export function TacticsView() {
     nextMatchSummary,
     players,
     me,
-    activeTab,
     showHalftimePanel,
     isPlayingMatch,
     isCupMatch,
@@ -1296,40 +1295,6 @@ export function TacticsView() {
             </div>
           </div>
         ))}
-
-      {/* Mobile FAB */}
-      {(() => {
-        const fabHalftime = showHalftimePanel && !isPlayingMatch;
-        const fabCupSpec = nextMatchSummary?.isCup && !nextMatchOpponent;
-        if (showBriefing) return null;
-        if (settled) return null;
-        if (activeTab !== "tactic") return null;
-        if (mobileSubMenu) return null; // não sobrepor o fly-up do menu mobile
-        if (!fabHalftime && !fabCupSpec && !isLineupComplete) return null;
-        const fabIcon = fabHalftime
-          ? "skip_next"
-          : fabCupSpec
-            ? "arrow_forward"
-            : "play_arrow";
-        return (
-          <button
-            data-tour="tactic-play-fab"
-            onClick={fabHalftime ? handleHalftimeReady : handleReady}
-            className={`xl:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!settled ? "animate-heartbeat" : ""}`}
-            style={{
-              background:
-                "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3) 0%, transparent 70%), #22c55e",
-              boxShadow:
-                "0 0 40px 8px rgba(34,197,94,0.4), 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25)",
-            }}
-          >
-            <span className="absolute inset-0 rounded-full bg-[#4ade80]/25 animate-ping" />
-            <span className="material-symbols-outlined text-[28px] text-white drop-shadow-lg relative z-10 leading-none">
-              {fabIcon}
-            </span>
-          </button>
-        );
-      })()}
 
       {/* Modal de espera multiplayer — aparece após confirmar táctica */}
       {/* Espectador eliminado da Taça: só precisa de ficar ready para avançar;
