@@ -1,3 +1,8 @@
+## Deploy v26.10.27 no rick (2026-10-06)
+- Push + tag `v26.10.27` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.27` (rodapé da landing).
+- Sem mudanças de código além do bump — deploy de rotina.
+
 ## Deploy v26.10.26 no rick (2026-10-06)
 - Push + tag `v26.10.26` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
 - `APP_VERSION` bumpado para `v26.10.26` (rodapé da landing).
