@@ -358,7 +358,6 @@ export const MODAL_Z = {
 	postMatch: 210,
 	boardWarning: 220,
 	default: 200,
-	admin: 300,
 	adminDialog: 310,
 	dismissal: 9999,
 };

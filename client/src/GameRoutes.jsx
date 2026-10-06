@@ -16,6 +16,7 @@ import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { AuctionsTab } from "./views/AuctionsTab.jsx";
 import { ScoutView } from "./views/ScoutView.jsx";
 import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
+import { AdminPage } from "./pages/AdminPage.jsx";
 import { useStaffState } from "./hooks/useStaffState.js";
 import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
@@ -384,6 +385,10 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                           })
                         }
                       />
+                    )}
+
+                    {activeTab === "admin" && (
+                      <AdminPage onBack={() => navigateTab("club")} />
                     )}
 
                     {activeTab === "user_settings" && (

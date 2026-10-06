@@ -150,7 +150,6 @@ export function GameProvider({
 	const [coachMarketReport, setCoachMarketReport] = useState(null);
 	const [seasonEndModal, setSeasonEndModal] = useState(null);
 	// ── Admin panel ──
-	const [adminPanelOpen, setAdminPanelOpen] = useState(false);
 	const [adminUsers, setAdminUsers] = useState([]);
 	// ── User dropdown ──
 	const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -1909,8 +1908,6 @@ year: seasonYear,
 		seasonEndModal,
 		setSeasonEndModal,
 		// Admin
-		adminPanelOpen,
-		setAdminPanelOpen,
 		adminUsers,
 		setAdminUsers,
 		// User dropdown
@@ -2084,7 +2081,7 @@ pendingRoomInvite, setPendingRoomInvite, onAcceptRoomInvite, cupDraw, setCupDraw
 		cupDrawRevealIdx, setCupDrawRevealIdx, cupRoundResults, cupResultsFilter, setCupResultsFilter, cupPenaltyPopup,
 		setCupPenaltyPopup, cupPenaltyKickIdx, setCupPenaltyKickIdx, pendingCupRoundResults, welcomeModal, setWelcomeModal,
 		jobOfferModal, setJobOfferModal, dismissalModal, setDismissalModal, boardWarning, setBoardWarning,
-		coachMarketReport, setCoachMarketReport, seasonEndModal, setSeasonEndModal, adminPanelOpen, setAdminPanelOpen,
+		coachMarketReport, setCoachMarketReport, seasonEndModal, setSeasonEndModal,
 		adminUsers, setAdminUsers, userDropdownOpen, setUserDropdownOpen, isCupMatch, calendarIndex,
 		cupPreMatch, cupMatchRoundName, currentCupRound, cupExtraTimeBadge, isCupExtraTime, cupActiveTeamIds,
 		palmares, palmaresTeamId, clubHistory, clubHistoryTeamId, clubNews, playerHistoryModal,

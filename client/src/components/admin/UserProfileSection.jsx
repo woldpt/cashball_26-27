@@ -45,7 +45,7 @@ export function UserProfileSection({ user, onRenamed, onDeleted }) {
       setError(result?.error ?? "Erro ao guardar.");
       return;
     }
-    // Com rename o painel remonta com o novo nome (key no AdminPanel): a
+    // Com rename o painel remonta com o novo nome (key na AdminPage): a
     // própria mudança é a confirmação. Sem rename, fica a linha de estado.
     if (!nameChanged) {
       setNotice(`Perfil guardado: ${(result.changes || []).join("; ")}.`);

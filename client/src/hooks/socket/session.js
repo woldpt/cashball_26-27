@@ -282,7 +282,7 @@ export function registerSessionListeners(handlers, refs, ctx) {
 			},
 		});
 	});
-	// adminUsersUpdated is handled directly by AdminPanel.jsx via its own socket.on.
+	// adminUsersUpdated is handled directly by AdminPage via its own socket.on.
 	// No listener needed here — registering a no-op was wasting a listener slot.
 	// Foto/seed de avatar alterados por outro coach: merge sem refresh.
 	socket.on("coachAvatarUpdated", (data) => {

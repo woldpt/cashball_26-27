@@ -21,7 +21,6 @@ import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
 import { MatchPage } from "./components/match/MatchPage.jsx";
 import { RoomHub } from "./components/chat/RoomHub.jsx";
 import { RoomSettings } from "./components/room/RoomSettings.jsx";
-import { AdminPanel } from "./components/admin/AdminPanel.jsx";
 
 /**
  * GameOverlays — monta todos os overlays do jogo (modais de evento, ecrã de
@@ -32,7 +31,6 @@ import { AdminPanel } from "./components/admin/AdminPanel.jsx";
 export function GameOverlays() {
   const {
     activeTab,
-    adminPanelOpen,
     backendUrl,
     buyPlayer,
     coachAvatars,
@@ -88,7 +86,6 @@ export function GameOverlays() {
     simSpeed,
     season,
     seasonEndModal,
-    setAdminPanelOpen,
     setCoachMarketReport,
     setCupDrawRevealIdx,
     setCupPenaltyKickIdx,
@@ -419,11 +416,6 @@ export function GameOverlays() {
       />
 
       <RoomHub />
-
-      <AdminPanel
-        open={adminPanelOpen}
-        onClose={() => setAdminPanelOpen(false)}
-      />
 
       <RoomSettings
         open={roomSettingsOpen}

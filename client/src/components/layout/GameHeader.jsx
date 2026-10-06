@@ -154,7 +154,6 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     unreadGlobal,
     chatPeek,
     setRoomSettingsOpen,
-    setAdminPanelOpen,
     userDropdownOpen,
     setUserDropdownOpen,
     financeData,
@@ -613,7 +612,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                       role="menuitem"
                       onClick={() => {
                         setUserDropdownOpen(false);
-                        setAdminPanelOpen(true);
+                        navigateTab("admin");
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-amber-400 hover:bg-amber-500/10 transition-colors text-left"
                     >

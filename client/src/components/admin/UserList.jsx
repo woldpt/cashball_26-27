@@ -93,7 +93,7 @@ export function UserList({ users, loading = false, selectedName = null, onSelect
 
     // Quando embutido em scroll único (disableInternalScroll), não cria
     // contentor com overflow próprio — a lista expande na vertical e o
-    // scroll é gerido pelo ancestral (AdminPanel). Evita scroll dentro de scroll.
+    // scroll é gerido pelo ancestral (AdminPage). Evita scroll dentro de scroll.
     if (disableInternalScroll) {
       return (
         <div className="flex flex-col">
