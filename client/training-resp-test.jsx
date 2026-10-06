@@ -1,12 +1,34 @@
 // TrainingTab mobile responsiveness harness — renders the REAL TrainingTab
 // with fixture data and self-reports overflow measurements.
 // NOT part of the app; used only for verification.
-// Nota: o socket não responde em headless → histórico fica em EmptyState
-// (estado real de montagem). O foco pré-definido via localStorage testa o
-// badge "Ativo" (card mais alto) na grelha de opções.
+// O socket é substituído por um stub que responde aos pedidos de treino com
+// um relatório (nomes compridos, subidas e descidas nas 3 colunas). O foco
+// pré-definido via localStorage testa o selo "Ativo" na grelha de opções.
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
+import { socket } from "./src/socket.js";
 import { TrainingTab } from "./src/views/TrainingTab.jsx";
+
+const r = (player_id, player_name, position, attribute, old_value, new_value) => ({
+  player_id, player_name, position, attribute, old_value, new_value, calendar_index: 6,
+});
+const HISTORY = [
+  r(1, "Rui Patrício", "GR", "form", 12, 13),
+  r(2, "Pedro Miguel Vasconcelos Ferreira", "DEF", "skill", 41, 42),
+  r(2, "Pedro Miguel Vasconcelos Ferreira", "DEF", "form", 15, 14),
+  r(2, "Pedro Miguel Vasconcelos Ferreira", "DEF", "resistance", 30, 29),
+  r(3, "Zé Tó", "DEF", "skill", 38, 39),
+  r(4, "Bernardo Silva", "MED", "resistance", 31, 30),
+  r(5, "Gonçalo Ramos", "ATA", "form", 10, 12),
+];
+socket.emit = (event, ...args) => {
+  const ack = args.at(-1);
+  if (typeof ack !== "function") return socket;
+  if (event === "getTrainingFocus") ack("Defesas");
+  else if (event === "getTrainingHistory") ack(HISTORY);
+  else ack(true);
+  return socket;
+};
 
 localStorage.setItem("cashball_training_focus", "Defesas");
 

@@ -7,8 +7,8 @@ import {
   POSITION_BG_GRADIENT_CLASS,
   POSITION_BAR_CLASS,
   POSITION_BORDER_CLASS,
+  POSITION_BADGE_BG_CLASS,
 } from "../constants/index.js";
-import { Badge } from "../components/shared/Badge.jsx";
 import { staffRoleMeta } from "../constants/staff.js";
 import { Panel } from "../components/shared/Panel.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
@@ -66,37 +66,38 @@ function readStoredTrainingFocus(roomCode) {
 const TRAINING_META = {
   GR: {
     label: "Guarda-redes",
-    description: "Melhorar skill dos GR",
+    description: "Skill dos guarda-redes",
     icon: "sports_soccer",
     pos: "GR",
     attr: "skill",
   },
   Defesas: {
     label: "Defesas",
-    description: "Melhorar skill dos defensas",
+    description: "Skill dos defesas",
     icon: "security",
     pos: "DEF",
     attr: "skill",
   },
   Médios: {
     label: "Médios",
-    description: "Melhorar skill dos médios",
+    description: "Skill dos médios",
     icon: "pivot_table_chart",
     pos: "MED",
     attr: "skill",
   },
   Avançados: {
     label: "Avançados",
-    description: "Melhorar skill dos avançados",
+    description: "Skill dos avançados",
     icon: "target",
     pos: "ATA",
     attr: "skill",
   },
   Forma: {
     label: "Forma",
-    description: "Melhorar forma geral",
+    description: "Forma dos jogadores",
     icon: "favorite",
     attr: "form",
+    chip: "bg-orange-400/20",
     bar: "from-orange-300 via-orange-400 to-orange-600",
     glow: "hover:border-orange-400/70 hover:shadow-orange-400/30",
     bgGrad: "from-orange-500/8",
@@ -105,9 +106,10 @@ const TRAINING_META = {
   },
   Resistência: {
     label: "Resistência",
-    description: "Melhorar resistência",
+    description: "Resistência física",
     icon: "bolt",
     attr: "resistance",
+    chip: "bg-purple-400/20",
     bar: "from-purple-300 via-purple-400 to-purple-600",
     glow: "hover:border-purple-400/70 hover:shadow-purple-400/30",
     bgGrad: "from-purple-500/8",
@@ -117,6 +119,12 @@ const TRAINING_META = {
 };
 
 const TRAINING_OPTIONS = Object.keys(TRAINING_META);
+
+// Dois grupos no seletor: skill por posição e condição física.
+const TRAINING_GROUPS = [
+  { label: "Posições · skill", keys: TRAINING_OPTIONS.filter((k) => TRAINING_META[k].pos) },
+  { label: "Físico", keys: TRAINING_OPTIONS.filter((k) => !TRAINING_META[k].pos) },
+];
 
 const POSITION_LABELS = {
   GR: "Guarda-redes",
@@ -146,6 +154,7 @@ function getMeta(key) {
     bgGrad: pos ? POSITION_BG_GRADIENT_CLASS[pos] : m.bgGrad,
     text: pos ? POSITION_TEXT_CLASS[pos] : m.text,
     border: pos ? POSITION_BORDER_CLASS[pos] : m.border,
+    chip: pos ? POSITION_BADGE_BG_CLASS[pos] : m.chip,
   };
 }
 
@@ -153,68 +162,91 @@ function getTrainingLabel(trainingKey) {
   return TRAINING_META[trainingKey]?.label || trainingKey;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   Card de opção de treino — agora com faixa lateral, glow e
-   gradiente de fundo, alinhado com PlayerRow (STYLE.md §4).
-   ═══════════════════════════════════════════════════════════════ */
-function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, pending, onClick }) {
+/**
+ * Cartão de opção de treino: faixa lateral + ícone em chip na cor do foco
+ * (STYLE.md §4). Ícone por cima do título para caber a 320px em 2 colunas.
+ * @param {{
+ *   optionKey: string,
+ *   isSaved: boolean,
+ *   justSaved: boolean,
+ *   loading: boolean,
+ *   pending: boolean,
+ *   onClick: () => void,
+ * }} props
+ * @returns {JSX.Element}
+ */
+function TrainingOptionCard({ optionKey, isSaved, justSaved, loading, pending, onClick }) {
   const meta = TRAINING_META[optionKey];
   const style = getMeta(optionKey);
-  const isSelected = selected === optionKey;
 
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={loading}
-      aria-pressed={isSelected}
-      className={`relative group flex items-stretch rounded-lg overflow-hidden border-2 transition-all duration-200 text-left ${
-        isSelected
-          ? `${style.border} bg-primary/10 text-on-surface shadow-lg`
-          : `border-outline-variant/25 bg-gradient-to-r ${style.bgGrad} via-surface-container/70 to-surface/30 ${style.glow} shadow-sm shadow-black/30 hover:border-outline-variant/50`
+      aria-pressed={isSaved}
+      className={`relative group flex items-stretch rounded-lg overflow-hidden border text-left transition-all duration-200 bg-gradient-to-r ${style.bgGrad} via-surface-container/70 to-surface/30 ${
+        isSaved
+          ? `${style.border} shadow-lg shadow-black/40`
+          : `border-outline-variant/25 shadow-sm shadow-black/30 hover:-translate-y-px hover:shadow-lg ${style.glow}`
       } ${loading ? `cursor-not-allowed ${pending ? "" : "opacity-50"}` : "cursor-pointer"} ${isSaved && justSaved ? "training-saved-pulse" : ""}`}
     >
       {/* Faixa lateral colorida */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${style.bar}`} />
 
-      <div className="flex-1 p-4 short:p-2.5">
-        <div className="flex items-start justify-between mb-2 short:mb-1">
-          <div className={`font-black text-sm short:text-xs ${isSelected ? "text-on-surface" : style.text}`}>
+      <div className="flex-1 min-w-0 p-3 short:p-2 flex flex-col gap-2 short:gap-1">
+        <div className="flex items-start justify-between gap-2">
+          <span
+            aria-hidden
+            className={`inline-flex h-9 w-9 short:h-7 short:w-7 items-center justify-center rounded-md ${style.chip}`}
+          >
+            <span className={`material-symbols-outlined text-[20px] short:text-[16px] ${style.text}`}>
+              {meta.icon}
+            </span>
+          </span>
+          {pending ? (
+            <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+              <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+              A guardar
+            </span>
+          ) : isSaved ? (
+            <span
+              className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-widest ${
+                justSaved ? "text-emerald-400" : style.text
+              }`}
+            >
+              <span
+                className="material-symbols-outlined text-[16px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                check_circle
+              </span>
+              {justSaved ? "Guardado" : "Ativo"}
+            </span>
+          ) : null}
+        </div>
+        <div className="min-w-0">
+          <div
+            className={`font-black font-headline text-sm short:text-xs tracking-tight leading-tight ${
+              isSaved ? "text-on-surface" : style.text
+            }`}
+          >
             {meta.label}
           </div>
-          <span
-            className={`material-symbols-outlined text-[20px] short:text-[16px] shrink-0 transition-colors ${
-              isSelected ? "text-on-surface" : "text-on-surface-variant group-hover:text-on-surface"
-            }`}
-          >
-            {meta.icon}
-          </span>
+          <div className="text-[11px] short:text-[10px] text-on-surface-variant leading-snug mt-0.5">
+            {meta.description}
+          </div>
         </div>
-        <div className="text-xs short:text-[10px] text-on-surface-variant">{meta.description}</div>
-
-        {pending && (
-          <div className="text-xs short:text-[10px] font-black mt-2 short:mt-1 flex items-center gap-1 text-on-surface-variant">
-            <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
-            A guardar…
-          </div>
-        )}
-        {isSaved && !pending && (
-          <div
-            className={`text-xs short:text-[10px] font-black mt-2 short:mt-1 flex items-center gap-1 ${
-              justSaved ? "text-emerald-400" : "text-primary"
-            }`}
-          >
-            <span className="material-symbols-outlined text-[14px]">check_circle</span>
-            {justSaved ? "Guardado!" : "Ativo"}
-          </div>
-        )}
       </div>
     </button>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   DeltaCell — agora como Badge estilo §5 do STYLE.md.
-   ═══════════════════════════════════════════════════════════════ */
+/**
+ * Nível depois do treino + variação num chip compacto (cabe em 48px).
+ * @param {{ record?: { old_value: number, new_value: number } }} props
+ * @returns {JSX.Element}
+ */
 function DeltaCell({ record }) {
   if (!record) {
     return <span className="text-on-surface-variant/30 tabular-nums">—</span>;
@@ -229,12 +261,14 @@ function DeltaCell({ record }) {
       <span className="text-sm font-black tabular-nums text-on-surface">
         {record.new_value}
       </span>
-      <Badge variant={isUp ? "success" : "error"}>
-        <span className="material-symbols-outlined text-[10px] leading-none align-middle mr-0.5">
-          {isUp ? "arrow_upward" : "arrow_downward"}
-        </span>
+      <span
+        className={`rounded px-1 py-px text-[9px] font-black tabular-nums leading-none ${
+          isUp ? "bg-emerald-500/15 text-emerald-400" : "bg-error/15 text-error"
+        }`}
+      >
+        {isUp ? "+" : "−"}
         {Math.abs(delta)}
-      </Badge>
+      </span>
     </span>
   );
 }
@@ -276,11 +310,11 @@ function AttrHeader({ highlightAttr, highlightClass }) {
     return "text-on-surface-variant/70";
   };
   return (
-    <div className="flex justify-end gap-2 pl-1 pr-3 short:pr-2">
+    <div className="flex justify-end gap-1 sm:gap-2 pl-1 pr-3 short:pr-2">
       {ATTR_COLUMNS.map((col) => (
         <span
           key={col.key}
-          className={`min-w-[64px] text-center text-[10px] font-black uppercase tracking-widest ${cls(col.key)}`}
+          className={`w-12 sm:w-16 text-center text-[10px] font-black uppercase tracking-widest ${cls(col.key)}`}
         >
           {col.label}
         </span>
@@ -320,9 +354,9 @@ function PlayerReportRow({ player, position }) {
         </span>
 
         {/* Separador + deltas */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {ATTR_COLUMNS.map((col) => (
-            <div key={col.key} className="flex justify-center min-w-[64px]">
+            <div key={col.key} className="flex justify-center w-12 sm:w-16">
               <DeltaCell record={byAttr[col.key]} />
             </div>
           ))}
@@ -333,10 +367,9 @@ function PlayerReportRow({ player, position }) {
 }
 
 /**
- * Linha da equipa técnica no card «Como funciona?»: mostra quem está a ajudar
- * este treino (o Treinador Auxiliar acelera o progresso de skill e o
- * Preparador Físico mexe na forma/resistência). Sem funcionários, não aparece
- * nada — a explicação base fica como estava.
+ * Equipa técnica que ajuda o treino (o Treinador Auxiliar acelera a skill,
+ * o Preparador Físico mexe na forma/resistência…), em chips. Sem
+ * funcionários não aparece nada.
  *
  * @param {{ staff: object|null }} props
  * @returns {JSX.Element|null}
@@ -345,24 +378,26 @@ function StaffTrainingNote({ staff }) {
   const members = staff?.members || [];
   if (members.length === 0) return null;
   return (
-    <li className="flex items-start gap-2">
-      <span className="text-tertiary shrink-0">★</span>
-      <span>
-        {members.map((m, i) => {
+    <div className="space-y-1.5">
+      <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+        Equipa técnica
+      </h3>
+      <ul className="flex flex-wrap gap-1.5">
+        {members.map((m) => {
           const meta = staffRoleMeta(m.role);
           return (
-            <span key={m.role}>
-              {i > 0 && " · "}
-              <span className="font-black text-on-surface">
-                {meta.label} (nível {m.level})
-              </span>
-              {" — "}
-              {meta.effect(m.effect)}
-            </span>
+            <li
+              key={m.role}
+              className="inline-flex flex-wrap items-baseline gap-x-1.5 rounded-md border border-outline-variant/25 bg-surface-container-high/50 px-2 py-1 text-[10px] text-on-surface-variant"
+            >
+              <span className="font-black text-on-surface">{meta.label}</span>
+              <span className="font-black text-amber-400 tabular-nums">N{m.level}</span>
+              <span className="text-tertiary font-bold">{meta.effect(m.effect)}</span>
+            </li>
           );
         })}
-      </span>
-    </li>
+      </ul>
+    </div>
   );
 }
 
@@ -505,31 +540,33 @@ export function TrainingTab({ me, matchweek, staff = null }) {
 
   return (
     <div className="space-y-4 short:space-y-2">
-      {/* ── Summary Widgets ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 short:gap-2">
+      {/* ── Resumo ──────────────────────────────────────────────────────── */}
+      {/* Telemóvel: o foco ocupa a linha toda e os dois números ficam lado a
+          lado por baixo (em 2 colunas o 3.º cartão ficava órfão). */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
         <SummaryWidget
-          label="Foco Atual"
-          value={savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
-          sub={focusMeta?.description}
+          label="Foco atual"
+          value={
+            <span className="inline-flex items-center gap-2">
+              {focusMeta && (
+                <span
+                  aria-hidden
+                  className={`material-symbols-outlined text-[22px] sm:text-[26px] short:text-[16px] ${focusStyle.text}`}
+                >
+                  {focusMeta.icon}
+                </span>
+              )}
+              {savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
+            </span>
+          }
+          sub={focusMeta?.description || "Escolhe um foco abaixo"}
           compactMobile
+          className="col-span-2 sm:col-span-1"
           valueClass="text-lg sm:text-2xl short:!text-sm"
           accentClass={focusStyle ? focusStyle.border : "border-outline-variant"}
-        >
-          {focusMeta && focusStyle && (
-            <span
-              aria-hidden
-              className={`absolute top-2 right-2 short:top-1 short:right-1 inline-flex items-center justify-center rounded-full bg-surface-bright p-1.5 short:p-1 border shadow-sm ${focusStyle.border}`}
-            >
-              <span
-                className={`material-symbols-outlined text-[18px] short:text-[14px] ${focusStyle.text}`}
-              >
-                {focusMeta.icon}
-              </span>
-            </span>
-          )}
-        </SummaryWidget>
+        />
         <SummaryWidget
-          label="Melhorias / Quedas"
+          label="Evolução"
           value={
             <>
               <span className="text-emerald-400">+{gains}</span>
@@ -537,12 +574,15 @@ export function TrainingTab({ me, matchweek, staff = null }) {
               <span className="text-error">−{losses}</span>
             </>
           }
+          sub="níveis"
           compactMobile
           valueClass="text-lg sm:text-2xl short:!text-sm"
+          accentClass="border-emerald-400"
         />
         <SummaryWidget
-          label="Jogadores Treinados"
+          label="Jogadores"
           value={visiblePlayerCount}
+          sub="com mudanças"
           compactMobile
           valueClass="text-lg sm:text-2xl short:!text-sm"
           accentClass="border-tertiary"
@@ -550,77 +590,78 @@ export function TrainingTab({ me, matchweek, staff = null }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 short:gap-2">
-        {/* ── TRAINING SELECTION PANEL ──────────────────────────────────── */}
-        <Panel title="Foco de Treino" meta={`Jornada ${matchweek}`} padded={false}>
-          <div className="p-3 md:p-4 short:p-2 short:space-y-2 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 short:gap-2 items-start">
+        {/* ── Seletor do foco ───────────────────────────────────────────── */}
+        <Panel title="Foco de Treino" icon="fitness_center" meta={`Jornada ${matchweek}`}>
+          <div className="space-y-4 short:space-y-2">
             {error && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-error-container/30 border border-error/40 text-error text-xs font-black uppercase tracking-widest">
+              <div
+                role="alert"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-error-container/30 border border-error/40 text-error text-xs font-black uppercase tracking-widest"
+              >
                 <span className="material-symbols-outlined text-sm">error</span>
                 {error}
               </div>
             )}
 
-            <div
-              className="grid grid-cols-2 gap-3 short:gap-2"
-              role="group"
-              aria-label="Escolha o foco de treino"
-            >
-              {TRAINING_OPTIONS.map((key) => (
-                <TrainingOptionCard
-                  key={savedTraining === key ? `foco-${savedTick}` : key}
-                  optionKey={key}
-                  selected={savedTraining}
-                  isSaved={savedTraining === key}
-                  justSaved={saved}
-                  loading={loading}
-                  pending={pendingKey === key}
-                  onClick={() => handleSetTraining(key)}
-                />
+            <div className="space-y-3 short:space-y-2" role="group" aria-label="Escolha o foco de treino">
+              {TRAINING_GROUPS.map((group) => (
+                <div key={group.label} className="space-y-1.5">
+                  <h3 className="px-0.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                    {group.label}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 short:gap-1.5">
+                    {group.keys.map((key) => (
+                      <TrainingOptionCard
+                        key={savedTraining === key ? `foco-${savedTick}` : key}
+                        optionKey={key}
+                        isSaved={savedTraining === key}
+                        justSaved={saved}
+                        loading={loading}
+                        pending={pendingKey === key}
+                        onClick={() => handleSetTraining(key)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
 
-            {/* Info card — alinhado com design system */}
-            <div className="bg-surface-container-high/50 rounded-lg p-4 short:p-2.5 border border-outline-variant/25">
-              <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-on-surface-variant shrink-0 mt-0.5">
-                  info
+            <StaffTrainingNote staff={staff} />
+
+            {/* Regras — fechadas por defeito (no telemóvel ocupavam meio ecrã) */}
+            <details className="group rounded-lg border border-outline-variant/25 bg-surface-container-high/40">
+              <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 short:py-1.5 text-xs font-black text-on-surface [&::-webkit-details-marker]:hidden">
+                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">info</span>
+                Como funciona?
+                <span className="material-symbols-outlined ml-auto text-[18px] text-on-surface-variant transition-transform group-open:rotate-180">
+                  expand_more
                 </span>
-                <div>
-                  <h3 className="font-black text-on-surface mb-2 text-sm">
-                    Como funciona?
-                  </h3>
-                  <ul className="text-xs text-on-surface-variant space-y-1.5">
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">→</span>
-                      Escolha um foco no início da jornada (liga ou taça)
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">→</span>
-                      Apenas jogadores que jogaram beneficiam
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">→</span>
-                      Aplicado automaticamente após a jornada
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">→</span>
-                      Atributos não treinados (forma/resistência) degradam-se com o tempo
-                    </li>
-                    <StaffTrainingNote staff={staff} />
-                  </ul>
-                </div>
-              </div>
-            </div>
+              </summary>
+              <ul className="space-y-1.5 border-t border-outline-variant/15 px-3 py-2.5 text-xs text-on-surface-variant">
+                {[
+                  "Escolhe um foco no início da jornada (liga ou taça).",
+                  "Só os jogadores que jogaram beneficiam.",
+                  "É aplicado automaticamente depois da jornada.",
+                  "Forma e resistência não treinadas descem com o tempo.",
+                ].map((text) => (
+                  <li key={text} className="flex items-start gap-2">
+                    <span className="text-primary">→</span>
+                    {text}
+                  </li>
+                ))}
+              </ul>
+            </details>
           </div>
         </Panel>
 
         {/* ── TRAINING HISTORY PANEL ───────────────────────────────────── */}
         <Panel
-          title="Relatório do Último Treino"
+          title="Último Treino"
+          icon="monitoring"
           meta={
             historyCalendarIndex != null
-              ? `evento #${historyCalendarIndex + 1}`
+              ? `Semana ${historyCalendarIndex + 1}`
               : undefined
           }
         >
@@ -636,26 +677,23 @@ export function TrainingTab({ me, matchweek, staff = null }) {
               description="Nenhum atributo mudou de nível — os jogadores podem ter atingido o limite de potencial, forma ou resistência."
             />
           ) : (
-            <div className="space-y-5 short:space-y-3">
+            <div className="space-y-4 short:space-y-2">
               {orderedGroups.map(({ position, players }) => {
                 const posText =
                   POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
                 const posLabel = POSITION_LABELS[position] || position;
 
                 return (
-                  <div key={position} className="space-y-2 short:space-y-1">
-                    {/* Header do grupo */}
-                    <h3
-                      className={`font-black flex items-center gap-2 text-sm ${posText}`}
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        group
+                  <section key={position} aria-label={posLabel} className="space-y-1.5 short:space-y-1">
+                    {/* Cabeçalho do grupo (igual ao do plantel) */}
+                    <div className="flex items-center gap-2 px-1">
+                      <h3 className={`text-[10px] font-black uppercase tracking-widest ${posText}`}>
+                        {posLabel}
+                      </h3>
+                      <span className="text-[9px] text-on-surface-variant/70 font-bold tabular-nums">
+                        {players.length} {players.length === 1 ? "jogador" : "jogadores"}
                       </span>
-                      {posLabel}
-                      <Badge variant="neutral" size="sm">
-                        {players.length} jogadores
-                      </Badge>
-                    </h3>
+                    </div>
 
                     {/* Lista de cards */}
                     <div className="space-y-1.5">
@@ -671,7 +709,7 @@ export function TrainingTab({ me, matchweek, staff = null }) {
                         />
                       ))}
                     </div>
-                  </div>
+                  </section>
                 );
               })}
             </div>
