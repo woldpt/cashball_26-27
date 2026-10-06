@@ -60,3 +60,18 @@ Reações a mensagens, @menções, markdown, paginação do histórico, mensagen
 
 ## Verificação
 `npm run check:types` + `npm run build` no client; teste manual: 2 sessões (enviar rápido, convite ignorado, mensagem de 500 chars sem espaços, kick no lobby, mobile 375 px).
+
+## Fase 5 — Layout gráfico (acrescentada)
+
+Problemas: painel 580×480 de duas colunas apertadas (lista a 200 px com 4 linhas de texto por coach); hierarquia plana (tudo `text-[8–10px]`, mesmo peso); sem identidade de clube; bolhas genéricas; cabeçalho da sala sem título; botões Fechar/Kick/Copiar/Convidar cada um com a sua linguagem.
+
+1. **Cabeçalho único** (full-width, `bg-surface-container-high/50`, como o Panel do STYLE §3): título `font-headline font-black text-tertiary uppercase` = nome da sala; à direita chip do código (`font-mono`, clique = copiar, "Copiado ✓" in-place) e `✕` ícone (`close`) — remove o botão "Fechar" grande das duas colunas/mobile.
+2. **Lista de coaches → rows compactas** (padrão PlayerRow §4): faixa lateral `w-1` na cor do clube (`color_primary`), avatar 32 px com dot de estado, nome (`text-xs font-black`) + clube na cor dele numa linha só; estado como chip `§5` (`Pronto`/`A pensar`/`Offline`) em vez de texto 8 px; Admin como badge ★; kick e convidar passam a menu `⋯`/ação aparece no hover/foco (sempre visível no mobile).
+3. **Ações de convite** num só botão pequeno por estado (`Convidar` → `A convidar…` → `Enviado` → `Aceitou/Recusou`), sem o texto "Noutra Sala" ao lado (vai para tooltip/chip único `Noutra sala`).
+4. **Chat**: bolhas com cauda só na última do grupo, próprias em `bg-primary`, outras em `surface-container-high`; nome do autor na cor do clube; hora só no hover (desktop) / última do grupo; separador de dia como linha fina com texto, não pill; mensagens de sistema como linha centrada com ícone `info`.
+5. **Quick-messages** passam a barra acima do input (ao lado do input, scroll horizontal), não uma faixa própria sob as tabs → liberta ~40 px de altura para mensagens.
+6. **Tabs Sala/Global** como segmented control com underline animado (`layoutId` framer-motion, já instalado) e badge de não-lidas; Global mostra "N online" no próprio tab.
+7. **Dimensões**: desktop `w-[640px]` com coluna esquerda `220px`; mobile = folha inferior (`sheetUp` de `motion.js`, `h-[85dvh]`) com a lista de coaches colapsável em faixa horizontal de avatares no topo (toque num avatar = expandir). Substitui o empilhamento atual `max-h-[16dvh]`.
+8. **Estados vazios** com ícone + frase (`forum`, `groups`) em vez de itálico solto; skeleton curto enquanto `getChatHistory` responde.
+
+Verificação visual: screenshots 1280×800, 768×1024, 375×667 e landscape 667×375 (altura crítica), tema atual.
