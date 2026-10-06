@@ -3,6 +3,11 @@
 - Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.
 - Testado: typecheck, lint/check:types, connect-smoke + script sobre BD de sala (duplicados, final, par humano, NPC).
 
+## Deploy v26.10.23 no rick (2026-10-06)
+- Redesenho da landing: estádio em festa no hero, montra com golo ao vivo, cartão de auth, montra em três blocos e «como funciona» com CTA final.
+- Estádio procedural: bancadas laterais em perspetiva, identidade por clube via seed, nuvens por clube e focos noturnos, meteo da jornada no céu; chuva em mosaico SVG (perf).
+- Briefing destaca equipas com treinador humano; aviso de meteo em resistência baixa; nome da sala nas notificações; `backend Healthy`.
+
 ## Deploy v26.10.22 no rick (2026-10-05)
 - Estádio: cabeçalho em duas colunas com foto e nome longo a quebrar; campo em perspetiva com poças onduladas, neve acumulada e topo desvanecido.
 - Finanças: bilheteiras líquidas, saldo previsto semana a semana, Resultado da Época com rubricas reais e gráfico de 25 semanas.
