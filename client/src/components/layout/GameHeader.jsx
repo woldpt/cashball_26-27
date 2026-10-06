@@ -9,6 +9,7 @@ import { isAdminCoach } from "../admin/adminApi.js";
 import { rankStandings } from "../../utils/standingsRank.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { usePlayCta } from "./usePlayCta.js";
+import { socket } from "../../socket.js";
 
 const compactEuros = new Intl.NumberFormat("pt-PT", {
   notation: "compact",
@@ -87,6 +88,37 @@ function HeaderStat({ label, value, ink, title, center = false }) {
 }
 
 /**
+ * Mini-gráfico do saldo: linha + área sobre os últimos pontos de `balanceHistory`,
+ * com o último ponto realçado. Sem libs — SVG com viewBox fixo.
+ *
+ * @param {Object} props
+ * @param {Array<{balance: number}>} props.points Saldo por jornada (do mais antigo ao mais recente).
+ * @returns {JSX.Element}
+ */
+function BalanceSpark({ points }) {
+  const W = 240;
+  const H = 64;
+  const P = 6;
+  const vals = points.map((p) => p.balance);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min || 1;
+  const xy = vals.map((v, i) => [
+    P + (i * (W - 2 * P)) / Math.max(1, vals.length - 1),
+    H - P - ((v - min) / span) * (H - 2 * P),
+  ]);
+  const line = xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const [lx, ly] = xy[xy.length - 1];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 text-primary" role="img" aria-label="Evolução do saldo">
+      <polygon points={`${P},${H} ${line} ${lx.toFixed(1)},${H}`} fill="currentColor" opacity="0.15" />
+      <polyline points={line} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={lx} cy={ly} r="3.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+/**
  * Barra da jornada: o meu clube, o próximo jogo (ou o relógio do direto),
  * orçamento, posição, o botão JOGAR com o estado da jornada, sala/chat e
  * menu do utilizador. Lê tudo do `useGame()`; só recebe callbacks de fora.
@@ -125,9 +157,11 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     setAdminPanelOpen,
     userDropdownOpen,
     setUserDropdownOpen,
+    financeData,
   } = useGame();
   const cta = usePlayCta(scrollToTop);
   const [standingsOpen, setStandingsOpen] = useState(false);
+  const [budgetOpen, setBudgetOpen] = useState(false);
 
   // Dropdown do utilizador fecha com Escape (a saída animada trata o AnimatePresence no JSX).
   useEffect(() => {
@@ -140,11 +174,15 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
   }, [userDropdownOpen, setUserDropdownOpen]);
 
   useEffect(() => {
-    if (!standingsOpen) return;
-    const onKey = (e) => e.key === "Escape" && setStandingsOpen(false);
+    if (!standingsOpen && !budgetOpen) return;
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      setStandingsOpen(false);
+      setBudgetOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [standingsOpen]);
+  }, [standingsOpen, budgetOpen]);
 
   // Texto sobre a cor do clube (o fundo do header é a cor primária).
   const ink = teamInfo?.color_secondary || "var(--color-on-surface)";
@@ -217,12 +255,88 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
         <div className="flex items-center gap-1 shrink-0 ml-auto md:col-start-3 md:justify-self-end">
           {!isMatchInProgress && (
             <div className="hidden lg:flex items-center gap-1 mr-1">
-              <HeaderStat
-                label="Orçamento"
-                value={compactEuros.format(budget)}
-                title={formatCurrency(budget)}
-                ink={ink}
-              />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!budgetOpen && me?.teamId) socket.emit("requestFinanceData", { teamId: me.teamId });
+                    setBudgetOpen((v) => !v);
+                  }}
+                  aria-haspopup="dialog"
+                  aria-expanded={budgetOpen}
+                  title="Ver evolução do saldo"
+                  className="rounded-lg hover:bg-white/10 transition-colors py-0.5"
+                >
+                  <HeaderStat
+                    label="Orçamento"
+                    value={compactEuros.format(budget)}
+                    title={formatCurrency(budget)}
+                    ink={ink}
+                  />
+                </button>
+                <AnimatePresence initial={false}>
+                  {budgetOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-(--z-header-scrim)"
+                        onClick={() => setBudgetOpen(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="absolute right-0 top-full mt-2 w-72 bg-surface-container border border-outline-variant/30 rounded-lg shadow-xl overflow-hidden z-(--z-header-menu)"
+                        role="dialog"
+                        aria-label="Evolução do saldo"
+                      >
+                        {(() => {
+                          const hist = (financeData?.balanceHistory || []).slice(-10);
+                          const delta = hist.length > 1 ? hist[hist.length - 1].balance - hist[hist.length - 2].balance : 0;
+                          return (
+                            <div className="px-3 pt-3 pb-2">
+                              <div className="flex items-baseline justify-between">
+                                <span className="text-lg font-headline font-black tabular-nums text-on-surface">
+                                  {formatCurrency(budget)}
+                                </span>
+                                {hist.length > 1 && (
+                                  <span className={`text-xs font-black tabular-nums ${delta >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                    {delta >= 0 ? "▲ +" : "▼ "}
+                                    {compactEuros.format(delta)}
+                                  </span>
+                                )}
+                              </div>
+                              {hist.length > 1 ? (
+                                <>
+                                  <BalanceSpark points={hist} />
+                                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">
+                                    <span>{hist[0].label}</span>
+                                    <span>{hist[hist.length - 1].label}</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="py-4 text-center text-xs text-on-surface-variant/70">
+                                  {financeData?.balanceHistory ? "Ainda sem histórico." : "A carregar…"}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBudgetOpen(false);
+                            navigateTab("finances");
+                            scrollToTop();
+                          }}
+                          className="w-full border-t border-outline-variant/20 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-surface-bright transition-colors"
+                        >
+                          Ver finanças
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
               {position > 0 && (
                 <div className="relative">
                   <button
