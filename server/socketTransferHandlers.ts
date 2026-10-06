@@ -126,11 +126,8 @@ export function registerTransferSocketHandlers(
           ? player.team_id
           : null;
 
-      const listedPrice =
-        player.transfer_status && player.transfer_status !== "none"
-          ? player.transfer_price || Math.round(player.value * 0.8)
-          : Math.round(player.value * 1.2);
-      const price = listedPrice;
+      // Só listados chegam aqui (os "none" são recusados acima).
+      const price = player.transfer_price || Math.round(player.value * 0.8);
 
       if (team.budget < price) {
         socket.emit("systemMessage", "Não tens fundo de maneio suficiente!");
