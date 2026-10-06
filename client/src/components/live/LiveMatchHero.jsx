@@ -202,7 +202,11 @@ export function LiveMatchHero({
         className="absolute inset-0 pointer-events-none"
         style={{ boxShadow: "inset 0 0 90px rgba(0,0,0,0.42)" }}
       />
-      {weatherEvent && <WeatherOverlay emoji={weatherEvent.emoji} fullscreen />}
+      {/* Ecrã inteiro só com o jogo vivo: depois do apito passava por trás
+          dos modais pós-jogo (sorteio da Taça) através do fundo translúcido. */}
+      {weatherEvent && (isPlayingMatch || finalWhistle) && (
+        <WeatherOverlay emoji={weatherEvent.emoji} fullscreen />
+      )}
       {/* marcas de água dos emblemas (laterais, escuras e desvanecidas) */}
       {!hideScoreboard && hInfo?.crest && (
         <img
