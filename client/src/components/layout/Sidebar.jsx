@@ -135,13 +135,13 @@ export function Sidebar({ scrollToTop }) {
           }
           aria-expanded={!sidebarCollapsed}
           aria-disabled={isMatchInProgress || undefined}
-          className={`absolute -right-3 top-1/2 -translate-y-1/2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-surface-container-highest border border-outline-variant/40 text-on-surface-variant shadow-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
+          className={`absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant/50 transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
             isMatchInProgress
               ? "opacity-40 cursor-not-allowed"
-              : "hover:text-on-surface hover:border-primary/50"
+              : "hover:text-on-surface hover:border-primary/50 hover:bg-surface-container-highest"
           }`}
         >
-          <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">
+          <span aria-hidden className="material-symbols-outlined text-[14px] leading-none">
             {sidebarCollapsed ? "chevron_right" : "chevron_left"}
           </span>
         </button>
