@@ -16,6 +16,7 @@ import {
   DEFAULT_SIM_SPEED,
   LOAN_INTEREST_RATE,
   MAX_BENCH_SIZE,
+  TRANSFER_CLAUSE_MULT,
   TRANSFER_LISTED_PRICE_MULT,
   SEASON_CALENDAR,
   SEASON_JORNADAS,
@@ -1686,8 +1687,8 @@ year: seasonYear,
 		const getPlayerPrice = (player) => {
 			const isListed = player.transfer_status && player.transfer_status !== "none";
 			return isListed
-				? player.transfer_price || player.value * 0.75
-				: player.value * 1.2;
+				? player.transfer_price || Math.round((player.value || 0) * TRANSFER_LISTED_PRICE_MULT)
+				: Math.round((player.value || 0) * TRANSFER_CLAUSE_MULT);
 		};
 		const comparePlayers = (a, b) => {
 			if (marketSort === "price-asc") return getPlayerPrice(a) - getPlayerPrice(b);
