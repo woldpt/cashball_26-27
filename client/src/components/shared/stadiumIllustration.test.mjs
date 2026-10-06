@@ -28,4 +28,9 @@ for (const capacity of [0, 3000, 5000, 10000, 15000, 30000, 50000, 80000, 120000
     if (out) writeFileSync(`${out}/s-${capacity}-${mood}${seed == null ? "" : `-${seed}`}.svg`, svg);
   }
 }
+for (const weather of ["sol", "chuva", "chuva_forte", "vento", "frio", "nevoeiro", "neve", "x"]) {
+  const svg = renderToStaticMarkup(createElement(StadiumIllustration, { capacity: 30000, weather }));
+  assert(!svg.includes("NaN"), `NaN weather=${weather}`);
+  if (out) writeFileSync(`${out}/w-${weather}.svg`, svg);
+}
 console.log("ok");

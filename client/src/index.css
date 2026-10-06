@@ -643,7 +643,24 @@ body {
   transform-origin: left center;
   animation: stadium-flag-wave 0.9s ease-in-out infinite alternate;
 }
+/* Meteo: o padrão tem período 20 (user units) — deslizar 20 fecha o ciclo. */
+@keyframes stadium-fall {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(0, 20px);
+  }
+}
+.stadium-rain {
+  animation: stadium-fall 0.35s linear infinite;
+}
+.stadium-snow {
+  animation: stadium-fall 2.4s linear infinite;
+}
 @media (prefers-reduced-motion: reduce) {
+  .stadium-rain,
+  .stadium-snow,
   .stadium-weed,
   .stadium-sway,
   .stadium-flicker,

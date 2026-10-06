@@ -1,5 +1,6 @@
 import { socket } from "../socket.js";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
+import { useTactics } from "../contexts/TacticsContext.jsx";
 import { DIVISION_NAMES, STADIUM_EXPANSION_COST as EXPANSION_COST } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { getFansMoodLabel } from "../utils/morale.js";
@@ -25,6 +26,10 @@ export function StadiumTab({
   financeData,
   setGameDialog,
 }) {
+  // Meteo da jornada no céu do estádio: só se o próximo jogo for em casa.
+  const { nextMatchSummary } = useTactics();
+  const homeWeather =
+    nextMatchSummary?.venue === "Casa" ? nextMatchSummary.weatherForecast?.condition ?? null : null;
   const stadiumCapacity = teamInfo?.stadium_capacity || 10000;
   const division = teamInfo?.division || 1;
   const fansMood = teamInfo?.fans_mood ?? 30;
@@ -113,6 +118,7 @@ export function StadiumTab({
         <div className="relative h-40 sm:h-auto sm:min-h-52 short:h-28 overflow-hidden order-1 sm:order-2 group">
           <StadiumIllustration
             seed={teamInfo?.id}
+            weather={homeWeather}
             capacity={stadiumCapacity}
             primary={teamInfo?.color_primary}
             secondary={teamInfo?.color_secondary}

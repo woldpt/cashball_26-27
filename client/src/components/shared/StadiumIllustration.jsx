@@ -50,6 +50,7 @@ import { FANS_MOOD_HIGH, FANS_MOOD_LOW } from "../../constants/index.js";
  *   mood?: number|null,
  *   shot?: string,
  *   seed?: number|string|null,
+ *   weather?: string|null,
  * }} props
  */
 
@@ -59,6 +60,8 @@ import { FANS_MOOD_HIGH, FANS_MOOD_LOW } from "../../constants/index.js";
 // `shot`: "wide" (default, cards) ou "close" (hero do StadiumTab).
 // `seed`: id da equipa — escolhe o estilo (cobertura, torres, faixa pintada,
 // lado do sol). Nunca o tamanho: esse é só da lotação. `null` = desenho base.
+// `weather`: condição da previsão da jornada (`sol`, `chuva`, `chuva_forte`,
+// `vento`, `frio`, `nevoeiro`, `neve`). `null`/`sol` = céu limpo.
 
 // ── Helpers de cor (determinísticos, sem dependências) ──────────────
 const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
@@ -130,6 +133,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   mood = null,
   shot = "wide",
   seed = null,
+  weather = null,
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const gid = (n) => `s${uid}-${n}`;
@@ -281,13 +285,30 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     ((GOAL_BOT - y) / (GOAL_BOT - GOAL_TOP)) * (goalHalfBot - goalHalfTop);
 
   // ── Paleta por variante (dia / noite) ───────────────────────────
-  const SKY = night ? ["#0a1020", "#16233c", "#24334f"] : ["#38bdf8", "#bae6fd", "#e0f2fe"];
+  // Meteo da jornada: céu encoberto, precipitação e nevoeiro por cima da
+  // cena (a noite de faroeste continua a mandar nas cores do céu).
+  const rain = weather === "chuva" || weather === "chuva_forte";
+  const storm = weather === "chuva_forte";
+  const snow = weather === "neve";
+  const fog = weather === "nevoeiro";
+  const overcast = rain || snow || fog;
+  const SKY = night
+    ? ["#0a1020", "#16233c", "#24334f"]
+    : storm
+      ? ["#334155", "#64748b", "#94a3b8"]
+      : overcast
+        ? ["#7b8ba1", "#b8c4d2", "#dbe2ea"]
+        : weather === "frio"
+          ? ["#7dd3fc", "#e0f2fe", "#f8fafc"]
+          : ["#38bdf8", "#bae6fd", "#e0f2fe"];
   const HILL_FAR = night ? "#0d1424" : "#aebfd0";
   const HILL_NEAR = night ? "#0f1a2c" : "#8fa8bf";
   const HILL_GREEN_FAR = night ? "#111c30" : "#a8bda4";
   const HILL_GREEN = night ? "#132032" : "#93a88f";
-  const CLOUD = night ? "#334155" : "#ffffff";
-  const CLOUD_OP = night ? 0.5 : 0.85;
+  const CLOUD = night ? "#334155" : storm ? "#475569" : overcast ? "#cbd5e1" : "#ffffff";
+  const CLOUD_OP = night ? 0.5 : overcast ? 0.95 : 0.85;
+  // Vento estica as nuvens; o céu encoberto engrossa-as.
+  const cloudScale = weather === "vento" ? [1.8, 0.7] : overcast ? [1.6, 1.5] : [1, 1];
   const HILL_OP = night ? 0.75 : 0.38;
   const HILL_OP_NEAR = night ? 0.9 : 0.55;
   const CONCRETE_HI = night ? "#7f8fa6" : "#cbd5e1";
@@ -669,6 +690,19 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         <clipPath id={gid("pitchClip")}>
           <polygon points={`${400 - farHalf},${PITCH_TOP} ${400 + farHalf},${PITCH_TOP} ${W},${PITCH_BOT} 0,${PITCH_BOT}`} />
         </clipPath>
+        <linearGradient id={gid("fog")} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#e2e8f0" stopOpacity="0.25" />
+          <stop offset="60%" stopColor="#e2e8f0" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="#e2e8f0" stopOpacity="0.35" />
+        </linearGradient>
+        <pattern id={gid("rain")} width="20" height="20" patternUnits="userSpaceOnUse">
+          <line x1="4" y1="0" x2="1" y2="9" stroke="#e2e8f0" strokeWidth="1" />
+          <line x1="15" y1="10" x2="12" y2="19" stroke="#e2e8f0" strokeWidth="1" />
+        </pattern>
+        <pattern id={gid("snow")} width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="4" cy="5" r="1.4" fill="#ffffff" />
+          <circle cx="14" cy="15" r="1.1" fill="#ffffff" />
+        </pattern>
         <filter id={gid("blur")}>
           <feGaussianBlur stdDeviation="2.5" />
         </filter>
@@ -676,9 +710,13 @@ export const StadiumIllustration = memo(function StadiumIllustration({
 
       {/* Céu diurno / nocturno */}
       <rect x="0" y="0" width={W} height={H} fill={url("sky")} />
-      {/* Sol (ou lua) com halo */}
-      <circle cx={sunLeft ? 112 : 688} cy={SUN_CY} r={30} fill={url("sun")} />
-      <circle cx={sunLeft ? 112 : 688} cy={SUN_CY} r={12} fill={night ? "#e2e8f0" : "#fde047"} opacity="0.95" />
+      {/* Sol (ou lua) com halo — escondido com o céu encoberto */}
+      {!overcast && (
+        <>
+          <circle cx={sunLeft ? 112 : 688} cy={SUN_CY} r={30} fill={url("sun")} />
+          <circle cx={sunLeft ? 112 : 688} cy={SUN_CY} r={12} fill={night ? "#e2e8f0" : "#fde047"} opacity="0.95" />
+        </>
+      )}
       {/* Nuvens (suaves) */}
       <g
         fill={CLOUD}
@@ -694,7 +732,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         ].map((group, gi) => (
           <g key={`cloud-${gi}`} transform={seed == null ? undefined : `translate(${((style(5 + gi) - 0.5) * 140).toFixed(1)} 0)`}>
             {group.map(([cx, cy, rx, ry]) => (
-              <ellipse key={cx} cx={cx} cy={cy} rx={rx} ry={ry} />
+              <ellipse key={cx} cx={cx} cy={cy} rx={rx * cloudScale[0]} ry={ry * cloudScale[1]} />
             ))}
           </g>
         ))}
@@ -1047,6 +1085,14 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       <rect x="0" y={PITCH_BOT} width={W} height={H - PITCH_BOT} fill={home} />
       <rect x="0" y={PITCH_BOT} width={W} height={H - PITCH_BOT} fill={url("stripShade")} />
       <rect x="0" y={PITCH_BOT} width={W} height={4} fill={away} opacity="0.85" />
+
+      {/* Meteo: nevoeiro (véu), chuva e neve (padrão a cair; só o <g> anima) */}
+      {fog && <rect x="0" y="0" width={W} height={H} fill={url("fog")} />}
+      {(rain || snow) && (
+        <g className={snow ? "stadium-snow" : "stadium-rain"}>
+          <rect x="0" y={-40} width={W} height={H + 40} fill={url(snow ? "snow" : "rain")} opacity={storm ? 0.75 : 0.5} />
+        </g>
+      )}
 
       {/* Vignette subtil de transmissão */}
       <rect x="0" y="0" width={W} height={H} fill={url("vignette")} />

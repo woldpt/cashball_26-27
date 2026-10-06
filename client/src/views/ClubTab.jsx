@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { TeamLink } from "../components/shared/TeamLink.jsx";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
+import { useTactics } from "../contexts/TacticsContext.jsx";
 import { DIVISION_NAMES, WAGE_CAP } from "../constants/index.js";
 import { staffRoleMeta, staffLevelStars } from "../constants/staff.js";
 import { formatCurrency } from "../utils/formatters.js";
@@ -298,6 +299,10 @@ export function ClubTab({
   onHireStaff,
   onFireStaff,
 }) {
+  // Meteo da jornada no céu do estádio: só se o próximo jogo for em casa.
+  const { nextMatchSummary } = useTactics();
+  const homeWeather =
+    nextMatchSummary?.venue === "Casa" ? nextMatchSummary.weatherForecast?.condition ?? null : null;
   // Guarda o URL que falhou (não um booleano) para o fallback fazer reset
   // sozinho quando o escudo mudar — sem useEffect dedicado.
   const [failedCrest, setFailedCrest] = useState(null);
@@ -537,6 +542,7 @@ export function ClubTab({
           <div className="h-24 sm:h-28 short:h-16 relative flex items-end overflow-hidden">
             <StadiumIllustration
               seed={teamInfo?.id}
+              weather={homeWeather}
               capacity={teamInfo?.stadium_capacity || 10000}
               primary={teamInfo?.color_primary}
               secondary={teamInfo?.color_secondary}
