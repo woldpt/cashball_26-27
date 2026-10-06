@@ -6,17 +6,7 @@
 import { EmptyState } from "../../components/shared/EmptyState.jsx";
 import { Button } from "../../components/shared/Button.jsx";
 import { FILTER_TONES } from "./tones.js";
-import { flagSummary, getSnippet, highlightText } from "./utils.jsx";
-
-/**
- * «S5/2026» → «Semana 5 · 2026»; outros formatos passam tal como vêm.
- * @param {string} date
- * @returns {string}
- */
-function formatGroupLabel(date) {
-  const m = /^S(\d+)\/(\d+)$/.exec(String(date ?? ""));
-  return m ? `Semana ${m[1]} · ${m[2]}` : String(date ?? "");
-}
+import { flagSummary, formatGroupLabel, getSnippet, highlightText } from "./utils.jsx";
 
 /**
  * @param {{
@@ -60,7 +50,7 @@ export function TopicList({
     buttons[next]?.focus();
   };
   return (
-    <section aria-label="Tópicos" className="min-w-0 space-y-2 rounded-sm bg-surface-container/40 p-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+    <section aria-label="Tópicos" className="min-w-0 space-y-2 rounded-md bg-surface-container/40 p-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
       {/* ── Lista ───────────────────────────────────────────────── */}
       {visible.length === 0 ? (
         <EmptyState
@@ -73,7 +63,7 @@ export function TopicList({
           }
         />
       ) : (
-        <ol onKeyDown={handleListKeyDown} className="lg:overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:min-h-0 lg:flex-1">
+        <ol onKeyDown={handleListKeyDown} className="lg:overflow-y-auto rounded-md border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:min-h-0 lg:flex-1">
           {visible.map((it, i) => {
             const active = selected?.id === it.id;
             const unread = inbox.isUnread(it);

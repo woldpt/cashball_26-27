@@ -62,9 +62,9 @@ export const LINK_CLS =
 export const TABLE_WRAP_CLS =
   "mt-3 overflow-x-auto rounded-sm border border-outline-variant/20";
 export const TABLE_CLS =
-  "mx-auto w-full max-w-md border-collapse text-sm tabular-nums text-on-surface";
+  "w-full min-w-80 border-collapse text-sm tabular-nums text-on-surface";
 /** Classificação: ocupa a largura toda da coluna (tabelas curtas usam TABLE_CLS). */
 export const TABLE_CLS_WIDE =
-  "mx-auto w-full border-collapse text-sm tabular-nums text-on-surface";
+  "w-full border-collapse text-sm tabular-nums text-on-surface";
 export const THEAD_ROW_CLS =
   "bg-surface-container-high/60 text-[10px] font-black uppercase tracking-widest text-on-surface-variant";

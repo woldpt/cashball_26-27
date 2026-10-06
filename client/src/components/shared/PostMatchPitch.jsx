@@ -30,7 +30,7 @@ export function PostMatchPitch({ players }) {
         ⭐ Classificação do jogo
       </p>
       {/* Altura explícita: o PitchFormation usa h-full e não resolve contra min-h. */}
-      <div className="relative w-full rounded-2xl overflow-hidden border border-outline-variant/25 h-[420px] short:h-[300px]">
+      <div className="relative w-full max-w-3xl rounded-2xl overflow-hidden border border-outline-variant/25 h-[420px] short:h-[300px]">
         <PitchFormation
           rows={rows}
           posColors={PITCH_POS_COLORS}

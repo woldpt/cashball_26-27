@@ -151,3 +151,13 @@ export function splitPartsByParagraphs(parts) {
   }
   return paragraphs.filter((p) => p.length > 0);
 }
+
+/**
+ * «S5/2026» → «Semana 5 · 2026»; outros formatos passam tal como vêm.
+ * @param {string} date
+ * @returns {string}
+ */
+export function formatGroupLabel(date) {
+  const m = /^S(\d+)\/(\d+)$/.exec(String(date ?? ""));
+  return m ? `Semana ${m[1]} · ${m[2]}` : String(date ?? "");
+}

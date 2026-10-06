@@ -30,7 +30,7 @@ export function Td({ children, align = "left", className = "", ...rest }) {
  */
 export function JournalTable({ children, caption, wide = false }) {
   return (
-    <div className={TABLE_WRAP_CLS}>
+    <div className={`${TABLE_WRAP_CLS} ${wide ? "" : "w-fit max-w-full"}`}>
       <table className={wide ? TABLE_CLS_WIDE : TABLE_CLS}>
         {caption && <caption className="sr-only">{caption}</caption>}
         {children}
@@ -122,7 +122,7 @@ export function LeagueFinalTable({ rows, teams, viewerTeamId, onOpenTeamSquad })
           })}
         </tbody>
       </JournalTable>
-      <p className="mt-1 text-center text-[10px] font-bold text-on-surface-variant">
+      <p className="mt-1 text-left text-[10px] font-bold text-on-surface-variant">
         <span className="text-emerald-400">▌</span> subida · <span className="text-error">▌</span> descida
       </p>
     </>

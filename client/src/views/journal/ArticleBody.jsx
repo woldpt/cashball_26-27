@@ -3,7 +3,7 @@
  * registo de imprensa clássica e o cromo do detalhe (faixa + metadados).
  */
 import { FILTER_TONES, LINK_CLS, TITLE_LINK_CLS } from "./tones.js";
-import { highlightText, splitPartsByParagraphs, teamFromRef } from "./utils.jsx";
+import { formatGroupLabel, highlightText, splitPartsByParagraphs, teamFromRef } from "./utils.jsx";
 
 /** A capitular exige uma entrada com algum fôlego — em avisos de uma linha
  * ficaria desproporcional. */
@@ -128,7 +128,7 @@ export function CategoryAccentBar({ category, urgent }) {
   const tone = FILTER_TONES[category] || FILTER_TONES.all;
   return (
     <div
-      className={`absolute left-0 top-0 bottom-0 w-1 ${urgent ? "bg-error" : tone.bar} rounded-l-sm`}
+      className={`absolute left-0 top-0 bottom-0 w-1 ${urgent ? "bg-error" : tone.bar} rounded-l-md`}
       aria-hidden
     />
   );
@@ -149,7 +149,7 @@ export function ArticleMeta({ item, catLabel }) {
         <span aria-hidden className="material-symbols-outlined text-[16px]">{tone.icon}</span>
         {catLabel || item.cat}
       </span>
-      {item.date && <span className="text-on-surface-variant tabular-nums">{item.date}</span>}
+      {item.date && <span className="text-on-surface-variant tabular-nums">{formatGroupLabel(item.date)}</span>}
     </div>
   );
 }

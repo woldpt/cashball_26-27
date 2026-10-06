@@ -175,7 +175,7 @@ export function JournalTab({
 
       {/* Pendências: uma faixa só, com atalho para a primeira */}
       {firstFlag && (
-        <div className="flex items-center gap-2 rounded-sm border border-error/40 bg-error/10 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-md border border-error/40 bg-error/10 px-3 py-1.5">
           <span aria-hidden className="material-symbols-outlined text-[18px] text-error">flag</span>
           <p className="min-w-0 flex-1 text-[11px] font-bold text-error">
             {inbox.redFlags === 1
@@ -216,7 +216,7 @@ export function JournalTab({
           </Button>
           <AnimatePresence>
             {!selected && (
-              <div className="rounded-sm border border-outline-variant/20 bg-surface-container px-4 py-8">
+              <div className="rounded-md border border-outline-variant/20 bg-surface-container px-4 py-8">
                 <EmptyState
                   icon="newspaper"
                   title={query ? "Nenhuma notícia encontrada" : "Nada para ler"}
@@ -235,7 +235,7 @@ export function JournalTab({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="relative rounded-sm border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden"
+                className="relative rounded-md border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden"
               >
                 {/* Faixa lateral: categoria, ou error nas pendências */}
                 <CategoryAccentBar category={selected.cat} urgent={selected.redFlag} />
