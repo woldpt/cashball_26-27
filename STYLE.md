@@ -1,6 +1,6 @@
 # STYLE.md — CashBall · Design System
 
-> Referência única de estilo. Componentes partilhados: §10 (usá-los sempre). Exemplo completo: `client/src/views/MySquadTab.jsx`. **Estilo preferido para páginas novas: §16 (Transferências).**
+> Referência única de estilo. Componentes partilhados: §10 (usá-los sempre). Exemplo completo: `client/src/views/MySquadTab.jsx` (lista) · `components/transfers/TransferChrome.jsx` (topo). **Estilo preferido para páginas novas: §16 (Transferências).**
 
 ## 1. Cores semânticas (tokens CSS)
 
@@ -217,11 +217,11 @@ o `TeamKit` cai para o `TeamCrest` em vez de deixar vazio.
 - **Efeitos:** flash de golo, aura de liderança e meteo; sem marcas de água no hero (ficam para o palco da final).
 - **Marcador fixo:** `sticky` de altura 0 no topo do contentor (`overflow-clip`, nunca `overflow-hidden`, que parte o sticky), visível quando o marcador do hero sai do ecrã.
 
-## 16. Transferências (Scout · Mercado · Leilões) — estilo de referência
+## 16. Estilo de referência (nascido nas Transferências)
 
-Estas três páginas são o **padrão visual preferido** para páginas novas ou redesenhadas: topo com identidade, cromos compactos com leitura de relance, filtros em pílula. Peças em `components/transfers/TransferChrome.jsx` — reutilizar, não re-criar.
+Scout, Mercado e Leilões deram origem ao **padrão visual preferido** para páginas novas ou redesenhadas: topo com identidade, cromos compactos com leitura de relance, filtros em pílula. Peças em `components/transfers/TransferChrome.jsx` — reutilizar, não re-criar.
 
-- **`TransferHeader`** (topo de página): cartão `rounded-md border-outline-variant/20 bg-surface-container-low` com brilho da cor primária + relvado em `repeating-linear-gradient` (decoração `aria-hidden`); ícone em quadrado `bg-primary/15 border-primary/30`, kicker `text-[10px] tracking-[0.25em]`, título `font-headline font-black uppercase`, **o número que decide a ação em grande à direita** (saldo, `text-3xl`, `textShadow` de glow, `CountUp`; `error` se negativo), chips de contexto por baixo e barra de filtros em `border-t` dentro do mesmo cartão (`children`).
+- **`TransferHeader`** (topo de página; props opcionais `kicker`, `valueLabel`, `valueClass`, `format` para o valor não ter de ser saldo/moeda): cartão `rounded-md border-outline-variant/20 bg-surface-container-low` com brilho da cor primária + relvado em `repeating-linear-gradient` (decoração `aria-hidden`); ícone em quadrado `bg-primary/15 border-primary/30`, kicker `text-[10px] tracking-[0.25em]`, título `font-headline font-black uppercase`, **o número que decide a ação em grande à direita** (saldo, `text-3xl`, `textShadow` de glow, `CountUp`; `error` se negativo), chips de contexto por baixo e barra de filtros em `border-t` dentro do mesmo cartão (`children`).
 - **Chips** (`CHIP_TONE`): pílula `rounded-full border text-[10px] font-black uppercase tracking-wider`, tons `neutral|good|bad|warn` = `{emerald|rose|amber}-500/12` + texto `-300` + borda `/30`.
 - **`FilterChip`**: toggle em pílula (`min-h-9`, `aria-pressed`); ativo = `bg-primary/20 border-primary/60` + glow primário e `check_circle`. Substitui checkboxes e selects soltos.
 - **`TransferCardHead`** (cromo): `rounded-xl`, gradiente de posição (`POSITION_BG_GRADIENT_CLASS`) + barra de topo `h-1` (`POSITION_BAR_CLASS`), avatar com anel da cor da posição + selo da posição, **posição em marca-d'água** (`text-6xl`, opacity .07), nome `font-headline font-black uppercase`, clube com brasão, `BadgeSkills`. Hover `-translate-y-0.5 shadow-lg`.
@@ -229,3 +229,17 @@ Estas três páginas são o **padrão visual preferido** para páginas novas ou 
 - **Estado de relance**: fita/chip no topo do cromo (a liderar = emerald, superado = rose, anel `st.ring`), contagem no canto, ordem pelo mais urgente; ações com o **preço no botão** (Licitar/Comprar/Proposta) e atalhos de valor (mín./+5%/+10%).
 - **Mobile**: cromos compactos (nada de um ecrã por cromo); no `PlayerRow` com ações, estas descem para a linha de baixo. Variante `short:` para ecrãs baixos.
 - **Regra geral:** número-chave visível no topo, estado por cor semântica (emerald bom · rose mau · amber aviso), pílulas em vez de controlos nativos, decoração só `aria-hidden`.
+
+**Páginas que já seguem o estilo** (todas com `TransferHeader` no topo):
+
+| Página | Valor em destaque | Notas |
+|---|---|---|
+| Scout · Mercado · Leilões | Saldo | Cromos, `FilterChip`, `BudgetMeter` |
+| `MySquadTab` (Plantel) | Massa salarial/sem | Pílulas de posição + ordenação no cabeçalho; barra de % salarial por grupo (substitui o gráfico do §6) |
+| `CupBracketPage` | Rondas `n/6` | Tabs de ronda no cabeçalho; chips campeão/o teu jogo |
+| `LeagueStandings` | Jornada `n/30` | Tabelas `rounded-xl` |
+| `CalendarioTab` | Jogos `n/total` | Chips V/E/D; filtros no cabeçalho |
+| `TrainingTab` | Evolução líquida (níveis) | Chips foco/ganhos/perdas |
+| `FinancesTab` | Saldo | Chips resultado/previsão/dívida; substitui os `SummaryWidget` |
+
+Páginas novas ou redesenhadas começam aqui, não no `SummaryWidget` (§3, legado).
