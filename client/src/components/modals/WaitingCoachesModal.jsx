@@ -1,13 +1,44 @@
 import { motion } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { socket } from "../../socket.js";
 import { MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { Badge } from "../shared/Badge.jsx";
+import { Button } from "../shared/Button.jsx";
+import { ChatMessages } from "../chat/ChatMessages.jsx";
+import { ChatComposer } from "../chat/ChatComposer.jsx";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
-import { isSameDay, formatChatDay } from "../../utils/formatters.js";
+
+// Estado → apresentação (objetos estáticos, sem alocar por linha).
+const STATUS = {
+  ready: {
+    label: "Pronto ✅",
+    variant: "success",
+    ring: "ring-emerald-400/70",
+    dot: "bg-emerald-400",
+    seg: "bg-emerald-400",
+  },
+  thinking: {
+    label: "A pensar 🧠",
+    variant: "warning",
+    ring: "ring-amber-400/60 animate-pulse",
+    dot: "bg-amber-400",
+    seg: "bg-amber-400/70 animate-pulse",
+  },
+  offline: {
+    label: "Offline",
+    variant: "error",
+    ring: "ring-error/40",
+    dot: "bg-error/70",
+    seg: "bg-error/50",
+  },
+};
+const STATUS_ORDER = { ready: 0, thinking: 1, offline: 2 };
+
+// Referência estável (o chat da espera não mostra anúncios de sistema).
+const NO_SYSTEM_MESSAGES = [];
 
 /**
  * Modal exibido após o coach confirmar a táctica (multiplayer),
@@ -34,15 +65,11 @@ export function WaitingCoachesModal({
     lockedCoaches,
     awaitingCoaches,
     me,
-    roomMessages,
-    chatInput,
-    setChatInput,
     avatarSeed,
     coachAvatars,
     coachAvatarSeeds,
     backendUrl,
   } = useGame();
-  const chatScrollRef = useRef(null);
 
   // Refrescar histórico da sala ao abrir o modal
   useEffect(() => {
@@ -50,37 +77,14 @@ export function WaitingCoachesModal({
     socket.emit("getChatHistory", { channel: "room" });
   }, [visible]);
 
-  // Autoscroll quando chegam novas mensagens
-  useEffect(() => {
-    const el = chatScrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [roomMessages]);
-
   // Só mostrar se lockedCoaches >= 2 (multiplayer) e visible
   if (!visible || lockedCoaches.length < 2) return null;
-
-  const sendChat = () => {
-    const trimmed = (chatInput || "").trim();
-    if (!trimmed) return;
-    socket.emit("sendChatMessage", { channel: "room", message: trimmed });
-    setChatInput("");
-  };
-
-  const formatChatTime = (ts) => {
-    const d = new Date(ts);
-    return d.toLocaleTimeString("pt-PT", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   /** @param {string} coachName */
   const getCoachData = (coachName) => {
     const online = players.find((p) => p.name === coachName);
     if (online) {
-      const team = teams.find(
-        (t) => String(t.id) === String(online.teamId),
-      );
+      const team = teams.find((t) => String(t.id) === String(online.teamId));
       return {
         name: coachName,
         teamName: team?.name ?? "—",
@@ -92,36 +96,37 @@ export function WaitingCoachesModal({
     // Offline ou estado desconhecido (incluído em lockedCoaches mas não em players)
     return {
       name: coachName,
-      teamName: (awaitingCoaches ?? []).includes(coachName) ? "Desconectado" : "Ausente",
+      teamName: (awaitingCoaches ?? []).includes(coachName)
+        ? "Desconectado"
+        : "Ausente",
       teamColor: null,
       status: "offline",
       isMe: coachName === me?.name,
     };
   };
 
-  const coaches = lockedCoaches
-    .map(getCoachData)
-    .filter(Boolean)
-    // ordenar: ready primeiro, depois thinking, depois offline; tu no topo
-    .sort((a, b) => {
-      if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
-      const order = { ready: 0, thinking: 1, offline: 2 };
-      return (order[a.status] ?? 3) - (order[b.status] ?? 3);
-    });
+  // Tu no topo; depois prontos → a pensar → offline.
+  const coaches = lockedCoaches.map(getCoachData).sort((a, b) => {
+    if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
+    return (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3);
+  });
 
+  const total = coaches.length;
   const readyCount = coaches.filter((c) => c.status === "ready").length;
-  const totalHuman = coaches.length;
-  const allReady = readyCount === totalHuman;
+  const allReady = readyCount === total;
+  const pending = coaches.filter((c) => c.status !== "ready");
+  const absent = coaches.filter((c) => c.status === "offline");
 
-  const STATUS_MAP = {
-    ready: { label: "Pronto ✅", dot: "bg-emerald-400", text: "text-emerald-400" },
-    thinking: {
-      label: "Queimando Neurónios 🧠",
-      dot: "bg-amber-400",
-      text: "text-amber-400",
-    },
-    offline: { label: "Offline ⚫", dot: "bg-gray-600", text: "text-gray-500" },
-  };
+  const headline = allReady
+    ? "Todos prontos!"
+    : pending.length === 1
+      ? `À espera de ${pending[0].name}`
+      : `À espera de ${pending.length} coaches`;
+  const subline = allReady
+    ? "O jogo vai começar…"
+    : pending.length === 1
+      ? "O jogo começa quando estiver pronto."
+      : pending.map((c) => c.name).join(", ");
 
   return (
     <ModalShell
@@ -135,232 +140,169 @@ export function WaitingCoachesModal({
         backdropFilter: "blur(8px)",
       }}
     >
-      {/* Grid overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 2px 2px, rgba(34,197,94,0.15) 1px, transparent 0)",
-          backgroundSize: "24px 24px",
-        }}
-      />
-
       <motion.div
-        className="relative flex flex-col min-h-0 min-[560px]:min-h-[420px] max-h-[90dvh] w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
+        className="relative flex flex-col w-full h-[min(560px,90dvh)] bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
         initial={{ scale: 0.93, y: 24 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.93, y: 24 }}
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
       >
-            {/* Cabeçalho */}
-            <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/15">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">⏳</span>
-                <div>
-                  <h2 className="text-sm font-black text-on-surface uppercase tracking-wide">
-                    A Aguardar Coaches
-                  </h2>
-                  <p className="text-[10px] text-on-surface-variant/60 font-bold">
-                    {readyCount}/{totalHuman} prontos
-                  </p>
-                </div>
-              </div>
-              {/* Indicador de pulso enquanto espera */}
-              {!allReady && (
-                <div className="flex items-center gap-1.5">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                  </span>
-                  <span className="text-[9px] text-on-surface-variant/50 font-bold uppercase tracking-widest">
-                    Aguardando
-                  </span>
-                </div>
-              )}
+        {/* ── Hero: estado da espera + progresso ── */}
+        <div
+          role="status"
+          aria-live="polite"
+          className="shrink-0 px-4 pt-4 pb-3 bg-surface-container-high/50 border-b border-outline-variant/15"
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className={`grid place-items-center size-10 shrink-0 rounded-full ${
+                allReady
+                  ? "bg-emerald-500/20 text-emerald-400"
+                  : "bg-amber-500/15 text-amber-400"
+              }`}
+            >
+              <span
+                className={`material-symbols-outlined text-[24px] leading-none ${
+                  allReady ? "" : "animate-pulse"
+                }`}
+              >
+                {allReady ? "check_circle" : "hourglass_top"}
+              </span>
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-black font-headline tracking-tight text-on-surface uppercase truncate">
+                {headline}
+              </h2>
+              <p className="text-[11px] font-bold text-on-surface-variant truncate">
+                {subline}
+              </p>
             </div>
+            <div className="shrink-0 text-right font-headline font-black tabular-nums leading-none">
+              <span
+                className={`text-3xl ${allReady ? "text-emerald-400" : "text-tertiary"}`}
+              >
+                {readyCount}
+              </span>
+              <span className="text-lg text-on-surface-variant">/{total}</span>
+            </div>
+          </div>
+          {/* Um segmento por coach */}
+          <div className="mt-3 flex gap-1" aria-hidden="true">
+            {coaches.map((c) => (
+              <span
+                key={c.name}
+                className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${(STATUS[c.status] ?? STATUS.thinking).seg}`}
+              />
+            ))}
+          </div>
+        </div>
 
-            {/* Lista de coaches + Chat: lado a lado em landscape (telemóvel
-                horizontal incluído) e desktop; empilhado em mobile vertical.
-                A altura total é limitada à viewport (max-h-full no card) e
-                cada coluna faz scroll interno (flex-1 + min-h-0). */}
-            <div className="flex-1 min-h-0 flex flex-col min-[560px]:flex-row min-[560px]:max-h-[60vh] min-[560px]:overflow-hidden">
-            {/* Lista de coaches */}
-            <div className="divide-y divide-outline-variant/10 flex-1 min-h-0 overflow-y-auto max-h-[45vh] min-[560px]:max-h-[60vh]">
-              {coaches.map((coach) => {
-                const st = STATUS_MAP[coach.status] || STATUS_MAP.thinking;
-                return (
-                  <div
-                    key={coach.name}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors"
+        {/* Regra do congelamento: com um coach ausente o jogo não avança. */}
+        {absent.length > 0 && (
+          <div className="shrink-0 flex items-center gap-2 px-4 py-2 bg-error-container/30 border-b border-error/20 text-[11px] font-bold text-error">
+            <span className="material-symbols-outlined text-[16px] leading-none">
+              wifi_off
+            </span>
+            <span className="min-w-0">
+              {absent.map((c) => c.name).join(", ")} sem ligação — o jogo fica
+              em pausa até regressar.
+            </span>
+          </div>
+        )}
+
+        {/* Coaches + chat: lado a lado a partir de 560 px (inclui telemóvel
+            em landscape), empilhados em mobile vertical; cada coluna faz
+            scroll interno. */}
+        <div className="flex-1 min-h-0 flex flex-col min-[560px]:flex-row">
+          {/* Coaches */}
+          <div className="shrink-0 max-h-[34%] min-[560px]:max-h-none min-[560px]:w-[290px] overflow-y-auto divide-y divide-outline-variant/10 border-b min-[560px]:border-b-0 min-[560px]:border-r border-outline-variant/15">
+            {coaches.map((coach) => {
+              const st = STATUS[coach.status] ?? STATUS.thinking;
+              return (
+                <div
+                  key={coach.name}
+                  className={`relative flex items-center gap-3 py-2.5 pl-4 pr-3 ${
+                    coach.status === "offline" ? "opacity-70" : ""
+                  }`}
+                >
+                  <span
+                    className="absolute inset-y-1.5 left-0 w-1 rounded-r bg-outline-variant/30"
+                    style={
+                      coach.teamColor
+                        ? { backgroundColor: coach.teamColor }
+                        : undefined
+                    }
+                  />
+                  <span
+                    className={`relative shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-surface-container ${st.ring}`}
                   >
-                    {/* Dot + avatar area */}
-                    <div className="relative shrink-0">
-                      <CoachAvatar
-                        name={coach.name}
-                        seed={coachAvatarSeed(
-                          coach.name,
-                          me?.name,
-                          avatarSeed,
-                          coachAvatarSeeds,
-                        )}
-                        teamColor={coach.teamColor}
-                        size="w-9 h-9"
-                        coachAvatars={coachAvatars}
-                        backendUrl={backendUrl}
-                      />
-                      <span
-                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface ${st.dot}`}
-                      />
-                    </div>
-
-                    {/* Nome + equipa */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-on-surface truncate">
-                          {coach.name}
-                        </span>
-                        {coach.isMe && <Badge variant="sold">Tu</Badge>}
-                      </div>
-                      <span className="text-[10px] text-on-surface-variant/60 font-bold truncate block">
-                        {coach.teamName}
+                    <CoachAvatar
+                      name={coach.name}
+                      seed={coachAvatarSeed(
+                        coach.name,
+                        me?.name,
+                        avatarSeed,
+                        coachAvatarSeeds,
+                      )}
+                      teamColor={coach.teamColor}
+                      size="w-9 h-9"
+                      coachAvatars={coachAvatars}
+                      backendUrl={backendUrl}
+                    />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-black text-on-surface truncate">
+                        {coach.name}
                       </span>
+                      {coach.isMe && <Badge variant="info">Tu</Badge>}
                     </div>
-
-                    {/* Status badge */}
                     <span
-                      className={`shrink-0 text-[9px] font-black uppercase tracking-wide ${st.text}`}
+                      className="block text-[11px] font-bold truncate text-on-surface-variant"
+                      style={
+                        coach.teamColor ? { color: coach.teamColor } : undefined
+                      }
                     >
-                      {st.label}
+                      {coach.teamName}
                     </span>
                   </div>
-                );
-              })}
-            </div>
+                  <Badge variant={st.variant}>{st.label}</Badge>
+                </div>
+              );
+            })}
+          </div>
 
-            {/* Chat rápido da sala */}
-            <div className="flex-1 min-h-0 max-h-[45vh] min-[560px]:max-h-[60vh] min-[560px]:flex-none min-[560px]:w-72 min-[560px]:shrink-0 flex flex-col bg-surface-container-high border-t border-outline-variant/15 min-[560px]:border-t-0 min-[560px]:border-l">
-              <div className="shrink-0 flex items-center gap-1.5 px-4 pt-2 pb-1">
-                <span className="text-xs">💬</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
-                  Chat da sala
-                </span>
-              </div>
-              <div className="px-3 pb-1 flex-1 flex flex-col min-h-0">
-                <div
-                  ref={chatScrollRef}
-                  className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1"
-                  style={{ scrollBehavior: "smooth" }}
-                >
-                  {roomMessages.length === 0 ? (
-                    <p className="text-center text-[10px] italic text-on-surface-variant/50 mt-6">
-                      Nenhuma mensagem nesta sala ainda.
-                    </p>
-                  ) : (
-                    roomMessages.map((msg, i) => {
-                      const isOwn = msg.coachName === me?.name;
-                      const prev = roomMessages[i - 1];
-                      const isNewDay =
-                        !prev || !isSameDay(prev.timestamp, msg.timestamp);
-                      return (
-                        <div key={msg.id ?? i} className="flex flex-col gap-0.5">
-                          {isNewDay && (
-                            <div className="flex justify-center py-1.5">
-                              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-surface-container text-on-surface-variant truncate max-w-full">
-                                {formatChatDay(msg.timestamp)}
-                              </span>
-                            </div>
-                          )}
-                          <div
-                            className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
-                          >
-                            {!isOwn && (
-                              <span className="text-[9px] text-on-surface-variant/70 font-semibold px-1">
-                                {msg.coachName}
-                              </span>
-                            )}
-                            <div className={`flex items-start gap-1.5 ${isOwn ? "justify-end" : ""}`}>
-                              {!isOwn && (
-                                <CoachAvatar
-                                  name={msg.coachName}
-                                  seed={coachAvatarSeed(
-                                    msg.coachName,
-                                    me?.name,
-                                    avatarSeed,
-                                    coachAvatarSeeds,
-                                  )}
-                                  size="w-6 h-6"
-                                  coachAvatars={coachAvatars}
-                                  backendUrl={backendUrl}
-                                />
-                              )}
-                              <div
-                                className={`max-w-[85%] px-2.5 py-1 rounded-lg text-xs leading-snug ${
-                                  isOwn
-                                    ? "bg-primary text-on-primary rounded-br-sm"
-                                    : "bg-surface-container-highest text-on-surface rounded-bl-sm"
-                                }`}
-                              >
-                                {msg.message}
-                              </div>
-                            </div>
-                            <span className="text-[8px] text-on-surface-variant/50 px-1">
-                              {formatChatTime(msg.timestamp)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-                <div className="shrink-0 flex items-center gap-2 py-2">
-                  <input
-                    type="text"
-                    aria-label="Mensagem do chat da sala"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") sendChat();
-                    }}
-                    placeholder="Conversa rápida…"
-                    maxLength={500}
-                    className="flex-1 bg-surface-container text-on-surface text-xs px-3 py-1.5 rounded-lg outline-none placeholder:text-on-surface-variant/50 border border-outline-variant/30 focus:border-primary/60 transition-colors"
-                  />
-                  <button
-                    onClick={sendChat}
-                    aria-label="Enviar mensagem"
-                    disabled={!(chatInput || "").trim()}
-                    className="shrink-0 p-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-30 hover:opacity-90 transition-opacity"
-                  >
-                    <span className="material-symbols-outlined text-[16px] leading-none">
-                      send
-                    </span>
-                  </button>
-                </div>
-              </div>
+          {/* Chat da sala */}
+          <div className="flex-1 min-h-0 min-w-0 flex flex-col bg-surface-container-low">
+            <div className="shrink-0 flex items-center gap-1.5 px-4 py-2 border-b border-outline-variant/15">
+              <span className="material-symbols-outlined text-[16px] leading-none text-on-surface-variant">
+                forum
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                Chat da sala
+              </span>
             </div>
-            </div>
+            <ChatMessages channel="room" systemMessages={NO_SYSTEM_MESSAGES} />
+            <ChatComposer channel="room" placeholder="Conversa rápida…" />
+          </div>
+        </div>
 
-            {/* Rodapé */}
-            <div className="shrink-0 px-4 py-2.5 border-t border-outline-variant/15 space-y-2">
-              <p className="text-[10px] text-on-surface-variant/60 font-bold text-center">
-                {allReady
-                  ? "Todos prontos! O jogo vai começar..."
-                  : "O jogo começa quando todos estiverem prontos."}
-              </p>
-              {canCancel ? (
-                <button
-                  onClick={onCancel}
-                  className="w-full py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md bg-surface-container-high text-on-surface-variant/70 hover:bg-surface-bright hover:text-on-surface active:scale-[0.97] transition-all"
-                >
-                  ✕ Cancelar e refazer táctica
-                </button>
-              ) : (
-                <div className="w-full py-2.5 text-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant/50 bg-surface-container-high/40 border border-outline-variant/10 rounded-md">
-                  👁 A observar o jogo
-                </div>
-              )}
-            </div>
-          </motion.div>
+        {/* Rodapé */}
+        <div className="shrink-0 px-4 py-3 border-t border-outline-variant/15">
+          {canCancel ? (
+            <Button variant="secondary" full onClick={onCancel}>
+              ✕ Cancelar e refazer táctica
+            </Button>
+          ) : (
+            <p className="flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant bg-surface-container-high/40 border border-outline-variant/10 rounded-md">
+              <span className="material-symbols-outlined text-[16px] leading-none">
+                visibility
+              </span>
+              A observar o jogo
+            </p>
+          )}
+        </div>
+      </motion.div>
     </ModalShell>
   );
 }
