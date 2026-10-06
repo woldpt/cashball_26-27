@@ -812,6 +812,18 @@ body {
 .wx-sol {
   background: radial-gradient(ellipse at 85% 0%, rgba(255, 224, 130, 0.28), transparent 60%);
 }
+/* Raios: conic-gradient centrado no canto do sol, mascarado para desvanecer. */
+.wx-sol::before {
+  content: "";
+  position: absolute;
+  width: 220%;
+  aspect-ratio: 1;
+  left: -20%;
+  top: -110%;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 235, 160, 0.16) 0 6deg, transparent 6deg 18deg);
+  -webkit-mask-image: radial-gradient(circle, #000, transparent 45%);
+  mask-image: radial-gradient(circle, #000, transparent 45%);
+}
 .wx-chuva { background: rgba(30, 50, 80, 0.12); }
 .wx-chuva_forte { background: rgba(10, 20, 45, 0.3); }
 .wx-neve { background: rgba(220, 235, 255, 0.1); }
@@ -896,8 +908,14 @@ body {
   100% { transform: translate(130vw, 8px); opacity: 0; }
 }
 @keyframes wx-fog-drift {
-  0%, 100% { transform: translateX(-6%); }
-  50% { transform: translateX(6%); }
+  0% { transform: translateX(-18%) scale(0.9); opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { transform: translateX(18%) scale(1.15); opacity: 0.6; }
+}
+@keyframes wx-sun-spin { to { transform: rotate(360deg); } }
+@keyframes wx-sun-pulse {
+  from { transform: scale(0.95); opacity: 0.7; }
+  to { transform: scale(1.1); opacity: 1; }
 }
 @keyframes wx-flash {
   0%, 92%, 96%, 100% { opacity: 0; }
@@ -917,7 +935,9 @@ body {
     left: 0 !important;
     animation: wx-blow calc(var(--wx-dur) * 3s) ease-in-out infinite;
   }
-  .wx-fog { animation: wx-fog-drift 14s ease-in-out infinite; }
+  .wx-sol::before { animation: wx-sun-spin 60s linear infinite; }
+  .wx-sol { animation: wx-sun-pulse 7s ease-in-out infinite alternate; transform-origin: 85% 0%; }
+  .wx-fog { animation: wx-fog-drift calc(var(--wx-dur) * 30s) ease-in-out infinite alternate; }
   .wx-chuva_forte::after {
     content: "";
     position: absolute;
