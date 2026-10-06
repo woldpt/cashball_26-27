@@ -127,7 +127,7 @@ export function JournalTab({
   );
 
   return (
-    <div className="space-y-2 short:space-y-1.5 lg:flex lg:min-h-[calc(100dvh-var(--header-h)-3rem)] lg:flex-col">
+    <div className="space-y-2 short:space-y-1.5 lg:flex lg:h-[calc(100dvh-var(--header-h)-3rem)] lg:flex-col">
       {/* ── Barra de título ─────────────────────────────────────────── */}
       <div className="rounded-sm bg-surface-container border border-outline-variant/20 px-3 py-2 short:py-1.5 flex items-center justify-between gap-2">
         <h1 className="flex min-w-0 items-center gap-2 font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
