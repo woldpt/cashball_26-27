@@ -1,3 +1,9 @@
+## Redesign Clube · Finanças · Treino (2026-10-06)
+- Treino: foco em 2 grupos (Posições/Físico) com ícone por cima, topo sem cartão órfão, «Como funciona?» em `<details>`, relatório com chip de variação compacto. Finanças: topo 1+2 no telemóvel, Receitas/Despesas em `Panel` com ponto da cor da barra e %, painéis do topo esticam à mesma altura. Clube: hero com faixa Moral/Adeptos/Salários/Saldo (sai o cartão de saldo), Estádio/Equipamento/Palmarés à mesma altura, lugares de funcionários em pontos.
+- Fix: diálogo «Liquidar» mostrava `{interestPct}` literal; `ClubTab` recebe `homeWeather` por prop (o `useTactics` partia o harness do Clube, que volta a passar).
+- Testado: lint, check:types, test:mobile club/finances/training PASS 320–430 + capturas 320/390/1440 com a fonte dos ícones; falhas restantes da suite já existiam (assistant, journal, landing, stadiumtab, teamsquad, topwidgets ← `useTactics` do StadiumTab) ou são da outra sessão (zz-ph).
+- Plano em `docs/plans/2026-10-06-clube-financas-treino-redesign.md`.
+
 ## Redesign da vista ao vivo (2026-10-06)
 - `LiveView.jsx` (sai do GameRoutes): botão Substituições, posse/remates/cansaço, feed de lances, Multiplex de golos, outras divisões recolhidas, marcador fixo ao descer; sem marcas de água/vinheta no hero.
 - Fix: `MatchView` passava props erradas ao `PossessionBar` (a posse nunca aparecia).

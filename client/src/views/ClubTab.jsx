@@ -1,12 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { TeamLink } from "../components/shared/TeamLink.jsx";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
-import { useTactics } from "../contexts/TacticsContext.jsx";
-import { DIVISION_NAMES, WAGE_CAP } from "../constants/index.js";
+import { DIVISION_NAMES } from "../constants/index.js";
 import { staffRoleMeta, staffLevelStars } from "../constants/staff.js";
 import { formatCurrency } from "../utils/formatters.js";
-import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
-import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { getMoraleLabel, getMoraleClasses, getFansMoodLabel } from "../utils/morale.js";
 import { TeamKit } from "../components/shared/TeamKit.jsx";
 import { TrophyCabinet } from "../components/shared/TrophyCabinet.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
@@ -88,7 +86,7 @@ function NewsRow({ news }) {
 
       {/* Amount */}
       {news.amount > 0 && (
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 min-w-20">
           <p
             className={`font-headline font-black text-xs tabular-nums ${
               t.credit ? "text-emerald-400" : "text-error"
@@ -143,7 +141,13 @@ function StaffRoleCard({ role, board, member, pending, onHire, onFire }) {
       : `Contratar · ${formatCurrency(fee)}`;
 
   return (
-    <div className="bg-surface-container-high/40 rounded-md border border-outline-variant/25 p-3 short:p-2 flex flex-col gap-2">
+    <div
+      className={`h-full rounded-md border p-3 short:p-2 flex flex-col gap-2 ${
+        member
+          ? "border-primary/30 bg-primary/5"
+          : "border-outline-variant/25 bg-surface-container-high/40"
+      }`}
+    >
       {/* Identificação do papel: caricatura + nome + estado e a descrição por
           baixo. A cara segue o nível: no cartão vazio é o nível escolhido no
           stepper (pré-visualização de quem se vai contratar), no contratado é
@@ -172,7 +176,7 @@ function StaffRoleCard({ role, board, member, pending, onHire, onFire }) {
       </div>
 
       {member ? (
-        <div className="space-y-2">
+        <div className="mt-auto space-y-2">
           <div className="bg-surface-container rounded border border-outline-variant/20 p-2">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-black text-on-surface truncate">
@@ -206,8 +210,16 @@ function StaffRoleCard({ role, board, member, pending, onHire, onFire }) {
           </Button>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="mt-auto space-y-2">
           {/* Escolha do nível (o preço aparece logo abaixo) */}
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="font-black uppercase tracking-widest text-on-surface-variant">
+              Nível
+            </span>
+            <span className="text-amber-400 tracking-tight" aria-hidden>
+              {staffLevelStars(level, board?.maxLevel || 5)}
+            </span>
+          </div>
           <div className="flex items-center gap-1" role="group" aria-label={`Nível do ${meta.label}`}>
             {salaries.map((_, i) => (
               <button
@@ -282,6 +294,7 @@ function StaffRoleCard({ role, board, member, pending, onHire, onFire }) {
  *   staffPending?: boolean,
  *   onHireStaff?: (role: string, level: number) => void,
  *   onFireStaff?: (role: string) => void,
+ *   homeWeather?: string|null,
  * }} props
  */
 export function ClubTab({
@@ -298,23 +311,29 @@ export function ClubTab({
   staffPending = false,
   onHireStaff,
   onFireStaff,
+  homeWeather = null,
 }) {
-  // Meteo da jornada no céu do estádio: só se o próximo jogo for em casa.
-  const { nextMatchSummary } = useTactics();
-  const homeWeather =
-    nextMatchSummary?.venue === "Casa" ? nextMatchSummary.weatherForecast?.condition ?? null : null;
   // Guarda o URL que falhou (não um booleano) para o fallback fazer reset
   // sozinho quando o escudo mudar — sem useEffect dedicado.
   const [failedCrest, setFailedCrest] = useState(null);
   const crestFailed =
     teamInfo?.crest != null && failedCrest === teamInfo.crest;
 
+  const accent = teamInfo?.color_primary || "#4ade80";
   const morale = teamInfo?.morale ?? 25;
-  const moraleLabel = getMoraleLabel(morale).toUpperCase();
   const moraleTone = getMoraleClasses(morale);
+  const fansMood = teamInfo?.fans_mood ?? 30;
+  const fansTone =
+    fansMood >= 35
+      ? { text: "text-tertiary", bar: "bg-tertiary" }
+      : fansMood >= 23
+        ? { text: "text-primary", bar: "bg-primary" }
+        : { text: "text-error", bar: "bg-error" };
   // Massa salarial = plantel + equipa técnica (o painel dos Funcionários
   // detalha a parte dos funcionários).
   const wageBill = (Number(totalWeeklyWage) || 0) + (Number(staff?.salaryWeekly) || 0);
+  const divisionName =
+    DIVISION_NAMES[teamInfo?.division] || `Divisão ${teamInfo?.division ?? "?"}`;
 
   // ── Agrupamento do histórico por ano ───────────────────────────────
   const groupedNews = useMemo(() => {
@@ -369,177 +388,133 @@ export function ClubTab({
     setShowAllYears(false);
   };
 
-  // Detecta se há transferências para o badge "Foco em Transferências"
-  const hasTransfers = useMemo(
-    () =>
-      clubNews?.some(
-        (n) => n.type === "transfer_in" || n.type === "transfer_out",
-      ) ?? false,
-    [clubNews],
-  );
+  // Números do clube na faixa do hero (moral e adeptos levam barra própria).
+  const heroStats = [
+    {
+      label: "Moral do plantel",
+      value: getMoraleLabel(morale),
+      valueClass: moraleTone.text,
+      bar: { pct: morale * 2, className: moraleTone.bar },
+    },
+    {
+      label: "Adeptos",
+      value: getFansMoodLabel(fansMood),
+      valueClass: fansTone.text,
+      bar: { pct: fansMood * 2, className: fansTone.bar },
+    },
+    {
+      label: "Salários / semana",
+      value: formatCurrency(wageBill),
+      valueClass: "text-on-surface",
+      sub: staff?.salaryWeekly > 0 ? "plantel + equipa técnica" : "plantel",
+    },
+    {
+      label: "Saldo",
+      value: formatCurrency(currentBudget),
+      valueClass: currentBudget >= 0 ? "text-primary" : "text-error",
+      sub: loanAmount > 0 ? `dívida ${formatCurrency(loanAmount)}` : "sem dívida",
+    },
+  ];
 
   return (
     <div className="space-y-4 short:space-y-2">
-
-      {/* ── ROW 1: HERO + BUDGET ─────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 short:gap-2">
-
-        {/* Club hero card */}
-        <div className="md:col-span-2 rounded-md border border-outline-variant/25 overflow-hidden relative bg-surface-container">
-          {/* Team colour wash */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: teamInfo?.color_primary
-                ? `linear-gradient(135deg, ${teamInfo.color_primary}22 0%, transparent 60%)`
-                : "linear-gradient(135deg, #2d6a4f22 0%, transparent 60%)",
-            }}
-          />
-          <div className="relative p-3 sm:p-4 short:p-2 short:gap-2 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
-            {/* Badge — crest com fallback para inicial */}
-            {teamInfo?.crest ? (
-              <span
-                className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg shrink-0 border border-white/10 shadow-md ${
-                  crestFailed ? "hidden" : "inline-flex"
-                }`}
-                style={{ backgroundColor: teamInfo?.color_primary || "#333" }}
-              >
-                <img
-                  src={teamInfo.crest}
-                  alt={teamInfo?.name || "crest"}
-                  onError={() => setFailedCrest(teamInfo.crest)}
-                  className="crest-shadow w-full h-full object-contain p-1.5 short:p-1"
-                  loading="lazy"
-                />
-              </span>
-            ) : null}
+      {/* ── HERO: identidade + números do clube ─────────────────────────── */}
+      <section className="relative rounded-md border border-outline-variant/25 overflow-hidden bg-surface-container">
+        <div aria-hidden className="top-light" />
+        {/* Lavagem com a cor do clube */}
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: `linear-gradient(120deg, ${accent}2e 0%, transparent 55%)` }}
+        />
+        <div className="relative p-4 short:p-2.5 flex items-center gap-3 sm:gap-4">
+          {/* Escudo com fallback para a inicial */}
+          {teamInfo?.crest && !crestFailed ? (
+            <span
+              className="inline-flex w-14 h-14 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg shrink-0 border border-white/10 shadow-md"
+              style={{ backgroundColor: accent }}
+            >
+              <img
+                src={teamInfo.crest}
+                alt={teamInfo?.name || "Escudo"}
+                onError={() => setFailedCrest(teamInfo.crest)}
+                className="crest-shadow w-full h-full object-contain p-1.5 short:p-1"
+                loading="lazy"
+              />
+            </span>
+          ) : (
             <div
-              className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg flex items-center justify-center text-xl sm:text-2xl short:text-base font-black shrink-0 border border-white/10 ${
-                !teamInfo?.crest || crestFailed ? "flex" : "hidden"
-              }`}
-              style={{
-                background: teamInfo?.color_primary || "#2a2a2a",
-                color: teamInfo?.color_secondary || "#fff",
-              }}
+              className="w-14 h-14 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg flex items-center justify-center text-2xl short:text-base font-black shrink-0 border border-white/10 shadow-md"
+              style={{ background: accent, color: teamInfo?.color_secondary || "#fff" }}
             >
               {teamInfo?.name?.[0] || "?"}
             </div>
+          )}
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <h1
-                className="font-headline text-lg sm:text-2xl short:text-base font-black tracking-tight leading-none mb-1 short:mb-0.5 truncate text-on-surface"
+          <div className="flex-1 min-w-0">
+            <h1 className="font-headline text-xl sm:text-3xl short:text-base font-black tracking-tight leading-tight truncate text-on-surface">
+              {teamInfo?.name || "—"}
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-black uppercase tracking-widest">
+              <span
+                className="px-2 py-0.5 rounded"
+                style={{ background: `${accent}33`, color: accent }}
               >
-                {teamInfo?.name || "—"}
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 mb-3 short:mb-1.5">
-                <span
-                  className="text-[10px] font-black uppercase px-2 py-0.5 rounded tracking-widest"
-                  style={{
-                    background: teamInfo?.color_primary
-                      ? `${teamInfo.color_primary}33`
-                      : "var(--color-surface-container-high)",
-                    color: teamInfo?.color_primary || "var(--color-on-surface-variant)",
-                  }}
-                >
-                  {DIVISION_NAMES[teamInfo?.division] ||
-                    `Divisão ${teamInfo?.division}`}
-                </span>
-                <span className="text-[10px] text-on-surface-variant">{seasonYear}</span>
-              </div>
-
-              {/* Morale bar */}
-              <div className="max-w-xs sm:max-w-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-                    Moral do Plantel
-                  </span>
-                  <span className={`text-[9px] font-black ${moraleTone.text}`}>
-                    {moraleLabel}
-                  </span>
-                </div>
-                <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${moraleTone.bar}`}
-                    style={{ width: `${morale * 2}%` }}
-                  />
-                </div>
-              </div>
+                {divisionName}
+              </span>
+              <span className="text-on-surface-variant tabular-nums">Época {seasonYear}</span>
             </div>
+          </div>
 
-            {/* Manager */}
-            <div className="shrink-0 text-right hidden sm:block">
-              <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-0.5">
-                Manager
-              </p>
-              <p className="font-headline font-black text-on-surface text-base tracking-tight">
-                {me?.name}
-              </p>
-            </div>
+          <div className="shrink-0 text-right hidden sm:block">
+            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+              Treinador
+            </p>
+            <p className="font-headline font-black text-on-surface text-base tracking-tight">
+              {me?.name}
+            </p>
           </div>
         </div>
 
-        {/* Budget widget */}
-        <SummaryWidget
-          label="Saldo Disponível"
-          value={formatCurrency(currentBudget)}
-          valueClass="text-xl"
-          valueColorClass={
-            currentBudget >= 0 ? "text-on-surface" : "text-error"
-          }
-          className="h-auto"
-          accentStyle={{
-            borderLeftColor: teamInfo?.color_primary || "#4ade80",
-          }}
-        >
-          <div className="flex justify-between items-start mb-2">
-            <span
-              className="material-symbols-outlined text-2xl"
-              style={{ color: teamInfo?.color_primary || "#4ade80" }}
-            >
-              payments
-            </span>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-on-surface-variant">Salários / jornada</span>
-              <span className="tabular-nums font-black text-on-surface">
-                {formatCurrency(wageBill)}
-              </span>
-            </div>
-            <div className="w-full bg-surface-container-high h-1 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${Math.min(100, (wageBill / WAGE_CAP) * 100)}%`,
-                  background: teamInfo?.color_primary || "#4ade80",
-                }}
-              />
-            </div>
-            <div className="flex justify-between text-[9px] pt-0.5">
-              <span
-                className={`font-black ${
-                  currentBudget >= 0 ? "text-emerald-400" : "text-error"
-                }`}
-              >
-                {currentBudget >= 0 ? "ESTÁVEL" : "DÉFICE"}
-              </span>
-              {loanAmount > 0 && (
-                <span className="text-error/70">
-                  Dívida: {formatCurrency(loanAmount)}
-                </span>
+        {/* Faixa de números: 2×2 no telemóvel, 4 em linha a partir de sm */}
+        <dl className="relative grid grid-cols-2 sm:grid-cols-4 gap-px border-t border-outline-variant/15 bg-outline-variant/15">
+          {heroStats.map((st) => (
+            <div key={st.label} className="bg-surface-container/95 px-4 py-3 short:px-3 short:py-1.5 min-w-0">
+              <dt className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant truncate">
+                {st.label}
+              </dt>
+              <dd className={`mt-1 font-headline text-base sm:text-lg short:text-sm font-black tracking-tight tabular-nums truncate ${st.valueClass}`}>
+                {st.value}
+              </dd>
+              {st.bar ? (
+                <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-bright">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${st.bar.className}`}
+                    style={{ width: `${Math.min(100, st.bar.pct)}%` }}
+                  />
+                </div>
+              ) : (
+                <dd className="mt-0.5 text-[9px] font-bold uppercase tracking-wide text-on-surface-variant/70 truncate">
+                  {st.sub}
+                </dd>
               )}
             </div>
-          </div>
-        </SummaryWidget>
-      </div>
+          ))}
+        </dl>
+      </section>
 
-      {/* ── ROW 2: ESTÁDIO + EQUIPAMENTO + PALMARÉS ─────────────────── */}
+      {/* ── ESTÁDIO · EQUIPAMENTO · PALMARÉS (mesma altura) ─────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 short:gap-2">
-
-        {/* Estádio */}
-        <div className="bg-surface-container rounded-md border border-outline-variant/25 overflow-hidden flex flex-col">
-          <div className="h-24 sm:h-28 short:h-16 relative flex items-end overflow-hidden">
+        <Panel
+          title="Estádio"
+          icon="stadium"
+          className="flex flex-col"
+          bodyClassName="flex-1 flex flex-col"
+          padded={false}
+          meta={`${(teamInfo?.stadium_capacity || 10000).toLocaleString("pt-PT")} lugares`}
+        >
+          {/* A ilustração estica até à altura dos vizinhos (sem buraco) */}
+          <div className="relative flex-1 min-h-40 short:min-h-24 overflow-hidden">
             <StadiumIllustration
               seed={teamInfo?.id}
               weather={homeWeather}
@@ -549,71 +524,38 @@ export function ClubTab({
               mood={teamInfo?.fans_mood ?? null}
               className="absolute inset-0 h-full w-full"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-            <div className="relative px-4 pb-3 short:px-3 short:pb-2">
-              <h3 className="font-headline text-base font-black text-white leading-tight drop-shadow">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 px-4 pb-3 short:px-3 short:pb-2">
+              <h3 className="font-headline text-lg short:text-sm font-black text-white leading-tight drop-shadow">
                 {teamInfo?.stadium_name || "Estádio Municipal"}
               </h3>
-              <p
-                className="text-[10px] font-black tracking-widest drop-shadow"
-                style={{ color: teamInfo?.color_primary || "#4ade80" }}
-              >
-                Recinto Principal
+              <p className="text-[10px] font-black uppercase tracking-widest drop-shadow" style={{ color: accent }}>
+                Recinto principal
               </p>
             </div>
           </div>
-          <div className="p-3 short:p-2 grid grid-cols-2 gap-2 short:gap-1.5">
-            <div className="bg-surface-container-high p-2.5 rounded text-center border border-outline-variant/25">
-              <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-0.5">
-                Capacidade
-              </p>
-              <p className="font-headline font-black text-on-surface text-base tabular-nums">
-                {(teamInfo?.stadium_capacity || 10000).toLocaleString("pt-PT")}
-              </p>
-            </div>
-            <div className="bg-surface-container-high p-2.5 rounded text-center border border-outline-variant/25">
-              <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-0.5">
-                Divisão
-              </p>
-              <p
-                className="font-headline font-black text-sm leading-tight mt-0.5"
-                style={{ color: teamInfo?.color_primary || "#4ade80" }}
-              >
-                {DIVISION_NAMES[teamInfo?.division] || "Liga"}
-              </p>
-            </div>
-          </div>
-        </div>
+        </Panel>
 
-        {/* Equipamento */}
-        <div className="bg-surface-container rounded-md border border-outline-variant/25 p-4 short:p-2.5 flex flex-col">
-          <div className="flex justify-between items-center mb-2 short:mb-1">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-              Equipamento
-            </h3>
-            <span className="material-symbols-outlined text-on-surface-variant" aria-hidden>
-              checkroom
-            </span>
-          </div>
-          <div className="flex-1 flex items-center justify-center py-2 short:py-1 min-h-40">
-            <TeamKit team={teamInfo} className="h-40 sm:h-44 short:h-28 object-contain" />
-          </div>
-        </div>
+        <Panel
+          title="Equipamento"
+          icon="checkroom"
+          className="flex flex-col"
+          bodyClassName="flex-1 flex items-center justify-center"
+        >
+          <TeamKit team={teamInfo} className="h-40 sm:h-44 short:h-24 object-contain" />
+        </Panel>
 
-        {/* Palmarés */}
-        <div className="bg-surface-container rounded-lg border border-outline-variant/25 p-4 short:p-2.5 flex flex-col">
-          <div className="flex justify-between items-center mb-4 short:mb-2">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-              Palmarés
-            </h3>
-            <span
-              className="material-symbols-outlined text-amber-400"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              military_tech
-            </span>
-          </div>
-
+        <Panel
+          title="Palmarés"
+          icon="military_tech"
+          className="flex flex-col"
+          bodyClassName="flex-1 flex flex-col"
+          meta={
+            palmaresTeamId === me?.teamId && palmares.trophies?.length > 0
+              ? `${palmares.trophies.length} ${palmares.trophies.length === 1 ? "título" : "títulos"}`
+              : undefined
+          }
+        >
           {palmaresTeamId === me?.teamId && palmares.trophies?.length > 0 ? (
             <TrophyCabinet trophies={palmares.trophies} />
           ) : (
@@ -624,151 +566,153 @@ export function ClubTab({
               className="flex-1"
             />
           )}
-        </div>
+        </Panel>
       </div>
 
-      {/* ── ROW 3: FUNCIONÁRIOS (equipa técnica) ──────────────────── */}
+      {/* ── FUNCIONÁRIOS (equipa técnica) ─────────────────────────────────── */}
       <div data-tour="club-staff">
         <Panel
           title="Funcionários"
           icon="badge"
           meta={
             staff ? (
-              <>
-                {staff.used}/{staff.slots} lugares
+              <span className="flex items-center gap-2">
+                {/* Lugares como pontos: ocupados a cheio, livres vazios */}
+                <span
+                  className="flex items-center gap-1"
+                  role="img"
+                  aria-label={`${staff.used} de ${staff.slots} lugares ocupados`}
+                >
+                  {Array.from({ length: staff.slots || 0 }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`h-2 w-2 rounded-full ${
+                        i < staff.used ? "bg-primary" : "border border-outline-variant/60"
+                      }`}
+                    />
+                  ))}
+                </span>
+                <span className="tabular-nums">
+                  {staff.used}/{staff.slots}
+                </span>
                 {staff.salaryWeekly > 0 && (
-                  // Em telemóvel o salário total (e não o por funcionário, que
-                  // já aparece em cada cartão) empurrava o cabeçalho para 2 linhas.
-                  <span className="hidden sm:inline">
-                    {" · "}
-                    {formatCurrency(staff.salaryWeekly)}/semana
+                  // Em telemóvel o total empurrava o cabeçalho para 2 linhas.
+                  <span className="hidden sm:inline tabular-nums">
+                    · {formatCurrency(staff.salaryWeekly)}/sem
                   </span>
                 )}
-              </>
+              </span>
             ) : undefined
           }
-          padded={false}
         >
-          <div className="p-3 sm:p-4 short:p-2">
-            {staff ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 short:gap-2 items-start">
-                {staff.roles.map((role) => (
-                  <StaffRoleCard
-                    key={role}
-                    role={role}
-                    board={staff}
-                    member={(staff.members || []).find((m) => m.role === role) || null}
-                    pending={staffPending}
-                    onHire={onHireStaff}
-                    onFire={onFireStaff}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-on-surface-variant px-1 py-2">
-                A carregar a equipa técnica…
-              </p>
-            )}
-          </div>
+          {staff ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 short:gap-2">
+              {staff.roles.map((role) => (
+                <StaffRoleCard
+                  key={role}
+                  role={role}
+                  board={staff}
+                  member={(staff.members || []).find((m) => m.role === role) || null}
+                  pending={staffPending}
+                  onHire={onHireStaff}
+                  onFire={onFireStaff}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-on-surface-variant px-1 py-2">
+              A carregar a equipa técnica…
+            </p>
+          )}
         </Panel>
       </div>
 
-      {/* ── ROW 4: HISTÓRICO DO CLUBE (agregado por ano) ───────────── */}
+      {/* ── HISTÓRICO DO CLUBE (agregado por ano) ─────────────────────────── */}
       <Panel
         title="Histórico do Clube"
         icon="newspaper"
         meta={
-          <div className="flex items-center gap-2">
-            {hasTransfers && (
-              <span className="text-[9px] text-amber-400 font-black tracking-[0.2em] uppercase hidden sm:inline">
-                Foco em Transferências
+          clubNews?.length > 0 ? (
+            <span className="flex items-center gap-2">
+              <span className="tabular-nums">
+                {groupedNews.length} época{groupedNews.length !== 1 ? "s" : ""}
               </span>
-            )}
-            {clubNews?.length > 0 && (
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant tabular-nums">
-                {clubNews.length} · {groupedNews.length} época{groupedNews.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
+              {groupedNews.length > 1 && (
+                <button
+                  type="button"
+                  onClick={showAllYears ? collapseAll : expandAll}
+                  aria-label={showAllYears ? "Recolher anos" : "Expandir todos os anos"}
+                  title={showAllYears ? "Recolher anos" : "Expandir tudo"}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {showAllYears ? "unfold_less" : "unfold_more"}
+                  </span>
+                </button>
+              )}
+            </span>
+          ) : undefined
         }
         padded={false}
       >
         {clubNews && clubNews.length > 0 ? (
-          <>
-            {/* Barra de controlo quando há mais do que um ano */}
-            {groupedNews.length > 1 && (
-              <div className="flex justify-end px-3 py-2 border-b border-outline-variant/10 bg-surface-container-high/30">
-                <button
-                  type="button"
-                  onClick={showAllYears ? collapseAll : expandAll}
-                  className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-xs">
-                    {showAllYears ? "unfold_less" : "unfold_more"}
-                  </span>
-                  {showAllYears ? "Recolher anos" : "Expandir tudo"}
-                </button>
-              </div>
-            )}
-
-            <div className="divide-y divide-outline-variant/10">
-              {groupedNews.map(([year, items]) => {
-                const isExpanded = expandedYears.has(year);
-                const isCurrentYear = String(year) === String(seasonYear);
-                return (
-                  <div key={year}>
-                    {/* Cabeçalho do ano */}
-                    <button
-                      type="button"
-                      onClick={() => toggleYear(year)}
-                      className={`w-full flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 text-left transition-colors ${
-                        isExpanded
-                          ? "bg-surface-container-high/60"
-                          : "bg-surface-container-high/20 hover:bg-surface-container-high/40"
+          <div className="divide-y divide-outline-variant/10">
+            {groupedNews.map(([year, items]) => {
+              const isExpanded = expandedYears.has(year);
+              const isCurrentYear = String(year) === String(seasonYear);
+              return (
+                <div key={year}>
+                  {/* Cabeçalho do ano */}
+                  <button
+                    type="button"
+                    onClick={() => toggleYear(year)}
+                    aria-expanded={isExpanded}
+                    className={`w-full min-h-11 flex items-center justify-between px-4 short:px-3 py-2 short:py-1 text-left transition-colors ${
+                      isExpanded
+                        ? "bg-surface-container-high/60"
+                        : "bg-surface-container-high/20 hover:bg-surface-container-high/40"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span
+                        className={`font-headline text-sm font-black tabular-nums ${isCurrentYear ? "text-primary" : "text-on-surface"}`}
+                      >
+                        {year}
+                      </span>
+                      {isCurrentYear && (
+                        <Badge variant="info" size="sm">
+                          Época atual
+                        </Badge>
+                      )}
+                      <span className="text-[10px] font-bold text-on-surface-variant tabular-nums">
+                        {items.length} {items.length === 1 ? "registo" : "registos"}
+                      </span>
+                    </span>
+                    <span
+                      className={`material-symbols-outlined text-[18px] text-on-surface-variant transition-transform ${
+                        isExpanded ? "rotate-180" : ""
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className={`text-xs font-black tabular-nums ${isCurrentYear ? "text-primary" : "text-on-surface"}`}
-                        >
-                          {year}
-                        </span>
-                        {isCurrentYear && (
-                          <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/20">
-                            Época actual
-                          </span>
-                        )}
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant font-black tabular-nums">
-                          {items.length}
-                        </span>
-                      </div>
-                      <span className="flex items-center gap-1 shrink-0 ml-2">
-                        {!isExpanded && items[0] && (
-                          <span className="text-[10px] text-on-surface-variant/60 truncate max-w-[140px] sm:max-w-[220px] hidden sm:inline">
-                            {items[0].title}
-                          </span>
-                        )}
-                        <span className="material-symbols-outlined text-sm text-on-surface-variant">
-                          {isExpanded ? "expand_less" : "expand_more"}
-                        </span>
-                      </span>
-                    </button>
+                      expand_more
+                    </span>
+                  </button>
 
-                    {/* Notícias do ano */}
-                    {isExpanded && (
-                      <div className="divide-y divide-outline-variant/10">
-                        {items.map((news, idx) => (
-                          <NewsRow key={news.id || `${year}-${idx}`} news={news} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
+                  {/* Notícias do ano */}
+                  {isExpanded && (
+                    <div className="divide-y divide-outline-variant/10">
+                      {items.map((news, idx) => (
+                        <NewsRow key={news.id || `${year}-${idx}`} news={news} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <EmptyState icon="newspaper" title="Nenhuma notícia ainda." />
+          <div className="p-3">
+            <EmptyState icon="newspaper" title="Nenhuma notícia ainda." />
+          </div>
         )}
       </Panel>
     </div>

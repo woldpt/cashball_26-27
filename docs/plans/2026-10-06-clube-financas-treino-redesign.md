@@ -1,6 +1,7 @@
 # Redesign — Clube, Finanças e Treino
 
-> Proposta para aprovação. Uma fase por página, um commit por fase.
+> **Estado (2026-10-06): feito** — fases 0–3 (`2b0f8e65` treino, `2b07374c` finanças, clube no commit seguinte).
+> Desvio: nas Finanças os botões do empréstimo ficaram em 2+1 (3 numa linha não cabe a 320px nem na coluna lateral a 1024px).
 > Base: capturas dos harnesses (`finances-resp-test`, `training-resp-test`) a 390 e 1440px
 > e leitura do código. O harness do Clube está partido (ver 0).
 

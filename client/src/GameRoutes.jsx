@@ -195,6 +195,12 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         staffPending={staffPending}
                         onHireStaff={hireStaff}
                         onFireStaff={fireStaff}
+                        // Meteo da jornada no céu do estádio: só se o próximo jogo for em casa.
+                        homeWeather={
+                          nextMatchSummary?.venue === "Casa"
+                            ? nextMatchSummary.weatherForecast?.condition ?? null
+                            : null
+                        }
                       />
                     )}
 
