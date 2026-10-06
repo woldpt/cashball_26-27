@@ -345,6 +345,24 @@ body {
   .duel-vs-pop { animation: duel-vs-pop 0.45s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 }
 
+/* Briefing — barras que crescem, segmentos e cartões em cascata */
+@keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes briefing-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar-grow-l { transform-origin: left; animation: bar-grow 0.7s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .bar-grow-r { transform-origin: right; animation: bar-grow 0.7s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .gauge-seg { transform-origin: left; animation: bar-grow 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .briefing-stagger > * { animation: briefing-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .briefing-stagger > :nth-child(2) { animation-delay: 60ms; }
+  .briefing-stagger > :nth-child(3) { animation-delay: 120ms; }
+  .briefing-stagger > :nth-child(4) { animation-delay: 180ms; }
+  .briefing-stagger > :nth-child(5) { animation-delay: 240ms; }
+  .briefing-stagger > :nth-child(n+6) { animation-delay: 300ms; }
+}
+
 /* Custom scrollbar — thin, non-obtrusive */
 * {
   scrollbar-width: thin;

@@ -40,7 +40,8 @@ export const DifficultyGauge = memo(function DifficultyGauge({
           <div
             key={i}
             aria-hidden
-            className={`h-1.5 lg:h-2.5 flex-1 rounded-full transition-all duration-300 ${
+            style={{ animationDelay: `${i * 70}ms` }}
+            className={`gauge-seg h-1.5 lg:h-2.5 flex-1 rounded-full transition-all duration-300 ${
               i <= filled ? theme.seg : "bg-gray-700/40"
             }`}
           />

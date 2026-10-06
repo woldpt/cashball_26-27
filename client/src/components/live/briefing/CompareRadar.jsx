@@ -65,13 +65,13 @@ const DualBar = memo(function DualBar({
       <div className="mt-0.5 flex gap-1" aria-hidden>
         <div className="flex-1 h-1 rounded-full bg-black/40 overflow-hidden flex justify-end">
           <div
-            className="h-full rounded-full"
+            className="h-full rounded-full bar-grow-r"
             style={{ width: `${Math.round(shareHome * 100)}%`, background: homeBar }}
           />
         </div>
         <div className="flex-1 h-1 rounded-full bg-black/40 overflow-hidden">
           <div
-            className="h-full rounded-full"
+            className="h-full rounded-full bar-grow-l"
             style={{ width: `${Math.round((1 - shareHome) * 100)}%`, background: awayBar }}
           />
         </div>

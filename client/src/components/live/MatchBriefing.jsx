@@ -90,7 +90,7 @@ export function MatchBriefing() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 short:gap-1.5 items-stretch">
+      <div className="briefing-stagger grid grid-cols-1 lg:grid-cols-3 gap-3 short:gap-1.5 items-stretch">
         {vm.hasOpponent ? (
           <>
             <div className="min-w-0 lg:col-span-2">
