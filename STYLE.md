@@ -242,6 +242,7 @@ Scout, Mercado e Leilões deram origem ao **padrão visual preferido** para pág
 | `TrainingTab` | Evolução líquida (níveis) | Chips foco/ganhos/perdas |
 | `FinancesTab` | Saldo | Chips resultado/previsão/dívida; substitui os `SummaryWidget` |
 | `UserSettingsPage` | Troféus | Chips clubes/salas; painéis por baixo |
+| `TacticsView` (fase Tática) | Titulares `n/11` | Chips suplentes/fora; «Voltar ao Briefing» + `PrepStepper` no `children`. Intervalo e jogo ao vivo ficam sem topo |
 | `StadiumTab` | Capacidade | Chips receita máx./adeptos/ocupação; ilustração como faixa por baixo |
 | `OtherSquadsTab` (Resumo) | Posição | Chips pontos/V-E-D/plantel/troféus; substitui os `SummaryWidget` |
 | `TeamHistoryView` | Troféus | Chips épocas/melhor/V-E-D; substitui os `SummaryWidget` |

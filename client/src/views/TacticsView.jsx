@@ -12,6 +12,7 @@ import { WEATHER_LABELS } from "../components/match/matchConstants.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
 import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { BadgeSkills } from "../components/shared/BadgeSkills.jsx";
 
 /** Cores por posição */
@@ -947,25 +948,33 @@ export function TacticsView() {
       {showBriefing && <MatchBriefing />}
 
       {showBackToBriefing && (
-        <div className="bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between gap-2 px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
-            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
-              <span aria-hidden>🎯</span> Tática ·{" "}
-              {nextMatchSummary?.isCup
-                ? (nextMatchSummary?.cupRoundName ?? "Taça")
-                : `Jornada ${nextMatchSummary?.matchweek ?? "—"}`}
-            </span>
-            <PrepStepper current="tactics" />
-          </div>
-          <div className="px-4 short:px-3 py-2 short:py-1">
+        <TransferHeader
+          icon="strategy"
+          kicker={
+            nextMatchSummary?.isCup
+              ? (nextMatchSummary?.cupRoundName ?? "Taça")
+              : `Jornada ${nextMatchSummary?.matchweek ?? "—"}`
+          }
+          title="Tática"
+          valueLabel="Titulares"
+          valueClass={titCount === 11 ? "text-emerald-400" : "text-amber-400"}
+          budget={titCount}
+          format={(n) => `${Math.round(n)}/11`}
+          chips={[
+            { label: "suplentes", value: `${subCount}/${MAX_BENCH_SIZE}`, tone: "neutral" },
+            { label: "fora", value: notCalledCount, tone: notCalledCount ? "warn" : "neutral" },
+          ]}
+        >
+          <div className="flex items-center justify-between gap-2">
             <button
               onClick={() => setPrepPhase("briefing")}
-              className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
             >
-              <span className="text-sm leading-none">←</span> Voltar ao Briefing
+              <span className="material-symbols-outlined text-[16px] leading-none">arrow_back</span> Voltar ao Briefing
             </button>
+            <PrepStepper current="tactics" />
           </div>
-        </div>
+        </TransferHeader>
       )}
 
       {!showBriefing &&
