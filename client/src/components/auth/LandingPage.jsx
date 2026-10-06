@@ -54,11 +54,7 @@ const LandingPage = ({
 	};
 
 	return (
-		<div
-			className={`min-h-screen bg-bg text-on-surface flex flex-col relative overflow-x-clip ${
-				isMode ? "" : "pb-16 short:pb-0"
-			}`}
-		>
+		<div className="min-h-screen bg-bg text-on-surface flex flex-col relative overflow-x-clip">
 			{/* Fundo do jogo — brilhos primary/tertiary + giz */}
 			<LandingBackground />
 
