@@ -251,6 +251,9 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             </div>
           )}
 
+          {/* Slot do botão de continuar do MatchPage (intervalo/pausa) */}
+          <div id="match-cta-slot" className="ml-2 flex items-center" />
+
           {/* RoomHub button — unified: Coaches + Chat */}
           <div className="relative">
           <button

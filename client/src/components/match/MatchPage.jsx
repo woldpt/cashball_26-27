@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect -- snapshot inicial da fila de subs no arranque da pausa */
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { takeover } from "../../motion.js";
 import { MatchView, IntervencaoView } from "./MatchTabs.jsx";
@@ -256,6 +257,27 @@ export function MatchPage({
 			? "lg:left-[var(--sidebar-w-collapsed)]"
 			: "lg:left-[var(--sidebar-w)]";
 
+
+	// Botão de retomar o jogo: portal para o slot do header (onde está o JOGAR).
+	const ctaSlot = document.getElementById("match-cta-slot");
+	const ctaLabel =
+		mode === "halftime"
+			? !canContinue
+				? `⏳ A AGUARDAR ${isFriendly ? "JOGO AMIGÁVEL" : "JOGO DA TAÇA"}...`
+				: isReady
+					? "⏳ A AGUARDAR OUTRO TREINADOR..."
+					: cupPreMatch
+						? `▶ INICIAR JOGO — ${isFriendly ? "AMIGÁVEL" : "TAÇA"}`
+						: isCupMatch && !isFriendly && (liveMinute ?? 0) >= 90 && !isCupExtraTime
+							? "▶ INICIAR PROLONGAMENTO"
+							: isCupMatch && !isFriendly
+								? "▶ 2ª PARTE — TAÇA"
+								: "▶ INICIAR 2ª PARTE"
+			: mode === "action" && isUserSubPause
+				? `▶ CONTINUAR${(() => { const n = confirmedSubs.length - (pauseInitialIdx ?? confirmedSubs.length); return n > 0 ? ` (${n})` : ""; })()}`
+				: null;
+	const ctaDisabled = mode === "halftime" && (!canContinue || isReady);
+
 	// ── Mode-based rendering ──────────────────────────────────────────────
 	const isIntervencao = mode === "halftime" || mode === "action";
 
@@ -452,42 +474,25 @@ export function MatchPage({
 				)}
 			</div>
 
-			{/* ── Footer ── */}
-			{mode === "halftime" && (
-				<button
-					onClick={canContinue ? onReady : undefined}
-					disabled={!canContinue || isReady}
-					className={`shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest transition-all border-t border-outline ${
-						!canContinue
-							? "bg-surface-container-high text-on-surface-variant cursor-not-allowed"
-							: isReady
-								? "bg-surface-container-high text-on-surface-variant"
-								: cupPreMatch
+			{/* ── Footer ── (o botão de continuar vive no header: #match-cta-slot) */}
+			{ctaLabel &&
+				ctaSlot &&
+				createPortal(
+					<button
+						onClick={mode === "halftime" ? onReady : handlePauseContinue}
+						disabled={ctaDisabled}
+						className={`h-9 px-4 rounded-lg text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+							ctaDisabled
+								? "bg-black/30 text-on-surface-variant cursor-not-allowed"
+								: cupPreMatch && mode === "halftime"
 									? "bg-green-600 hover:bg-green-500 text-surface-container-low"
-									: "bg-primary hover:brightness-110 text-on-primary"
-					}`}
-				>
-					{!canContinue
-						? `⏳ A AGUARDAR ${isFriendly ? "JOGO AMIGÁVEL" : "JOGO DA TAÇA"}...`
-						: isReady
-							? "⏳ A AGUARDAR OUTRO TREINADOR..."
-							: cupPreMatch
-								? `▶ INICIAR JOGO — ${isFriendly ? "AMIGÁVEL" : "TAÇA"}`
-								: isCupMatch && !isFriendly && (liveMinute ?? 0) >= 90 && !isCupExtraTime
-									? "▶ INICIAR PROLONGAMENTO"
-									: isCupMatch && !isFriendly
-										? "▶ 2ª PARTE — TAÇA"
-										: "▶ INICIAR 2ª PARTE"}
-				</button>
-			)}
-			{mode === "action" && matchAction?.type === "user_substitution" && (
-				<button
-					onClick={handlePauseContinue}
-					className="shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest bg-primary hover:brightness-110 text-on-primary transition-all border-t border-outline"
-				>
-					▶ CONTINUAR{(() => { const s = pauseInitialIdx ?? confirmedSubs.length; const n = confirmedSubs.length - s; return n > 0 ? ` (${n} troca${n>1?"s":""})` : ""; })()}
-				</button>
-			)}
+									: "bg-primary text-on-primary shadow-lg shadow-black/30 hover:brightness-110"
+						}`}
+					>
+						{ctaLabel}
+					</button>,
+					ctaSlot,
+				)}
 			{mode === "detail" && (
 				<button
 					onClick={onClose}
