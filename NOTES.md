@@ -9,6 +9,11 @@
 - Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.
 - Testado: typecheck, lint/check:types, connect-smoke + script sobre BD de sala (duplicados, final, par humano, NPC).
 
+## Deploy v26.10.25 no rick (2026-10-06)
+- Shell do jogo (GameLayout) passa a CSS grid; barra da jornada com o próximo jogo e JOGAR com estado.
+- Corrigidos: tabela de equipas reenviada no resync; scroll próprio da lista e do artigo no Jornal (desktop); selo de posição colorido no táticas.
+- Plano do shell documentado no STYLE.md; `backend Healthy`.
+
 ## Deploy v26.10.24 no rick (2026-10-06)
 - Jornal com nova UI/UX: lista com ícones de categoria agrupados por semana, faixa única de pendências, artigo com kicker e manchete maior, vista de detalhe no mobile.
 - Direto: comentário na cor aclarada da equipa com contorno legível à chuva; meteorologia em ecrã inteiro só com o jogo vivo.
