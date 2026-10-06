@@ -3,6 +3,11 @@
 - WaitingCoachesModal: hero "À espera de X" + barra segmentada, banner de pausa com coaches offline, reutiliza `ChatMessages`/`ChatComposer`. Planos em `docs/plans/2026-10-06-*`.
 - Testado: lint, check:types, build; harnesses `roomhub-resp-test` e `waiting-coaches-test` PASS em 375×667, 667×375, 768×1024, 1280×800 + capturas revistas (lista de coaches do modal subiu a 40 % da altura no mobile). Fluxo real com 2 sessões por testar.
 
+## Deploy v26.10.31 no rick (2026-10-06)
+- Push + tag `v26.10.31` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.31` (rodapé da landing).
+- Mudações desta ronda: botão «Jogar!» no cabeçalho (sai o «Jogar Jornada» da página), limpeza do `TacticsView`/`IntervencaoView`, `LiveClock` e `commentary.ts`/`engine.ts`.
+
 ## Deploy v26.10.30 no rick (2026-10-06)
 - Push + tag `v26.10.30` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
 - `APP_VERSION` bumpado para `v26.10.30` (rodapé da landing).
