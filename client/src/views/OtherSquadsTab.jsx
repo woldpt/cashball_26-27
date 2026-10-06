@@ -7,6 +7,8 @@ import {
 import { generateLeagueFixtures } from "../utils/fixtures.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
+import { weatherForFixture } from "../utils/weather.js";
+import { useGame } from "../contexts/GameContext.jsx";
 import { rankStandings } from "../utils/standingsRank.js";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
@@ -229,9 +231,13 @@ export function OtherSquadsTab({
 
   // O calendário global só é refrescado ao visitar o Calendário — sem isto,
   // a tab local mostrava estados de uma semana anterior.
+  // O céu do estádio também precisa dele (meteo da jornada): pede-o quando
+  // falta ou está numa jornada anterior.
+  const { calendarIndex } = useGame();
+  const calendarStale = !calendarData || calendarData.calendarIndex !== calendarIndex;
   useEffect(() => {
-    if (activeTab === "calendar") onRequestCalendar?.();
-  }, [activeTab, selectedTeam?.id, onRequestCalendar]);
+    if (activeTab === "calendar" || calendarStale) onRequestCalendar?.();
+  }, [activeTab, selectedTeam?.id, onRequestCalendar, calendarStale]);
 
   const isOwnTeam = isSameTeamId(selectedTeam?.id, me?.teamId);
   const isNpcTeam =
@@ -431,6 +437,13 @@ export function OtherSquadsTab({
     [selectedTeamSquad, squadLoaded],
   );
 
+  // Meteo da jornada (mesma previsão determinística do servidor): só se o
+  // jogo desta jornada for em casa da equipa selecionada.
+  const homeWeather =
+    !calendarStale && nextMatch?.isCurrent && nextMatch.imHome
+      ? weatherForFixture(calendarData.season, calendarData.matchweek, selectedTeam.id, nextMatch.opponentId)
+      : null;
+
   const trophies = clubHistoryTeamId === selectedTeam?.id ? clubHistory?.trophies ?? [] : [];
   const lastTrophySeason = trophies.reduce(
     (max, t) => Math.max(max, t.season ?? 0),
@@ -455,6 +468,7 @@ export function OtherSquadsTab({
         >
           <StadiumIllustration
             seed={selectedTeam?.id}
+            weather={homeWeather}
             capacity={selectedTeam?.stadium_capacity || 10000}
             primary={selectedTeam?.color_primary}
             secondary={selectedTeam?.color_secondary}
