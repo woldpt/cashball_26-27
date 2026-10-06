@@ -242,5 +242,7 @@ Scout, Mercado e Leilões deram origem ao **padrão visual preferido** para pág
 | `TrainingTab` | Evolução líquida (níveis) | Chips foco/ganhos/perdas |
 | `FinancesTab` | Saldo | Chips resultado/previsão/dívida; substitui os `SummaryWidget` |
 | `UserSettingsPage` | Troféus | Chips clubes/salas; painéis por baixo |
+| `OtherSquadsTab` (Resumo) | Posição | Chips pontos/V-E-D/plantel/troféus; substitui os `SummaryWidget` |
+| `TeamHistoryView` | Troféus | Chips épocas/melhor/V-E-D; substitui os `SummaryWidget` |
 
 Páginas novas ou redesenhadas começam aqui, não no `SummaryWidget` (§3, legado).

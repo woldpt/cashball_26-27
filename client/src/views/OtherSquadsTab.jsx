@@ -13,7 +13,7 @@ import { useGame } from "../contexts/GameContext.jsx";
 import { rankStandings } from "../utils/standingsRank.js";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
-import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { StatTile } from "../components/shared/StatTile.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
@@ -612,10 +612,6 @@ export function OtherSquadsTab({
       ? weatherForFixture(calendarData.season, calendarData.matchweek, selectedTeam.id, nextMatch.opponentId)
       : null;
 
-  const trophies = clubHistoryTeamId === selectedTeam?.id ? clubHistory?.trophies ?? [] : [];
-  const lastTrophySeason = trophies.reduce(
-    (max, t) => Math.max(max, t.season ?? 0),
-    0,
   );
   const brand = teamRow?.sponsorBrand;
   // A linha da classificação não traz a capacidade — cai no clube clicado.
@@ -842,52 +838,27 @@ export function OtherSquadsTab({
         ) : activeTab === "summary" ? (
           /* ── RESUMO ─────────────────────────────────────────── */
           <div className="space-y-4 p-3 sm:p-6">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
-              <SummaryWidget
-                compactMobile
-                label="Posição"
-                value={position != null ? `${position}º` : "—"}
-                sub={
-                  DIVISION_NAMES[selectedTeamDivision] ||
-                  `Divisão ${selectedTeamDivision}`
-                }
-                valueClass="text-lg sm:text-2xl"
-                accentClass="border-primary"
-                valueColorClass="text-primary"
-              />
-              <SummaryWidget
-                compactMobile
-                label="Pontos"
-                value={teamRow?.points ?? "—"}
-                sub={
-                  teamRow
-                    ? `${teamRow.wins ?? 0}V ${teamRow.draws ?? 0}E ${teamRow.losses ?? 0}D`
-                    : "—"
-                }
-                valueClass="text-lg sm:text-2xl"
-                accentClass="border-tertiary"
-              />
-              <SummaryWidget
-                compactMobile
-                label="Plantel"
-                value={squadStats ? squadStats.count : "—"}
-                sub={squadStats ? formatCurrency(squadStats.value) : "—"}
-                valueClass="text-lg sm:text-2xl"
-              />
-              <SummaryWidget
-                compactMobile
-                label="Troféus"
-                value={trophies.length}
-                sub={
-                  lastTrophySeason > 0
-                    ? `Último: ${lastTrophySeason}`
-                    : "Sem títulos"
-                }
-                valueClass="text-lg sm:text-2xl"
-                accentClass="border-amber-500"
-                valueColorClass="text-amber-400"
-              />
-            </div>
+            <TransferHeader
+              icon="groups"
+              kicker={DIVISION_NAMES[selectedTeamDivision] || `Divisão ${selectedTeamDivision}`}
+              title="Resumo"
+              valueLabel="Posição"
+              valueClass="text-primary"
+              budget={position ?? 0}
+              format={(n) => (position != null ? `${Math.round(n)}º` : "—")}
+              chips={[
+                { label: "pontos", value: teamRow?.points ?? "—", tone: "neutral", icon: "scoreboard" },
+                ...(teamRow
+                  ? [
+                      { label: "V", value: teamRow.wins ?? 0, tone: "good" },
+                      { label: "E", value: teamRow.draws ?? 0, tone: "warn" },
+                      { label: "D", value: teamRow.losses ?? 0, tone: "bad" },
+                    ]
+                  : []),
+                { label: "plantel", value: squadStats ? `${squadStats.count} · ${formatCurrency(squadStats.value)}` : "—", tone: "neutral" },
+                { label: "troféus", value: trophies.length, tone: trophies.length ? "warn" : "neutral", icon: "emoji_events" },
+              ]}
+            />
 
             <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
               <Panel

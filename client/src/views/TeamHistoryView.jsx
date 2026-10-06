@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Panel } from "../components/shared/Panel.jsx";
-import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
@@ -481,17 +481,6 @@ export function TeamHistoryView({
     return { total: gamesWithOutcome.length, wins, draws, losses };
   }, [gamesWithOutcome]);
 
-  const seasonRange = useMemo(() => {
-    if (seasonRecords.length === 0) return null;
-    const years = seasonRecords.map((r) => r.year);
-    return { min: Math.min(...years), max: Math.max(...years) };
-  }, [seasonRecords]);
-
-  const lastTrophySeason = useMemo(
-    () => trophies.reduce((max, t) => Math.max(max, t.season ?? 0), 0) || null,
-    [trophies],
-  );
-
   const trophySeasons = useMemo(
     () => new Set(trophies.map((t) => t.season).filter((s) => s != null)),
     [trophies],
@@ -688,47 +677,22 @@ export function TeamHistoryView({
   return (
     <div className="space-y-4">
       {/* ── RESUMO ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
-        <SummaryWidget
-          compactMobile
-          label="Épocas"
-          value={seasonRecords.length}
-          sub={
-            seasonRange
-              ? seasonRange.min === seasonRange.max
-                ? `Época ${seasonRange.min}`
-                : `${seasonRange.min}–${seasonRange.max}`
-              : "—"
-          }
-          valueClass="text-lg sm:text-2xl"
-        />
-        <SummaryWidget
-          compactMobile
-          label="Melhor"
-          value={bestSeason ? `${bestSeason.position}º` : "—"}
-          sub={bestSeason ? `Época ${bestSeason.year}` : "—"}
-          valueClass="text-lg sm:text-2xl"
-          accentClass="border-primary"
-          valueColorClass="text-primary"
-        />
-        <SummaryWidget
-          compactMobile
-          label="Jogos"
-          value={summary.total}
-          sub={`${summary.wins}V ${summary.draws}E ${summary.losses}D`}
-          valueClass="text-lg sm:text-2xl"
-          accentClass="border-tertiary"
-        />
-        <SummaryWidget
-          compactMobile
-          label="Troféus"
-          value={trophies.length}
-          sub={lastTrophySeason ? `Último: ${lastTrophySeason}` : "Sem títulos"}
-          valueClass="text-lg sm:text-2xl"
-          accentClass="border-amber-500"
-          valueColorClass="text-amber-400"
-        />
-      </div>
+      <TransferHeader
+        icon="history"
+        kicker="Clube"
+        title="Historial"
+        valueLabel="Troféus"
+        valueClass="text-amber-400"
+        budget={trophies.length}
+        format={(n) => String(Math.round(n))}
+        chips={[
+          { label: "épocas", value: seasonRecords.length, tone: "neutral", icon: "calendar_month" },
+          { label: "melhor", value: bestSeason ? `${bestSeason.position}º · ${bestSeason.year}` : "—", tone: "good" },
+          { label: "V", value: summary.wins, tone: "good" },
+          { label: "E", value: summary.draws, tone: "warn" },
+          { label: "D", value: summary.losses, tone: "bad" },
+        ]}
+      />
 
       {/* ── TRAJETÓRIA + SALA DE TROFÉUS ───────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
