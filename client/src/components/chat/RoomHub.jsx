@@ -11,8 +11,10 @@ const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
 
 // Teto das mensagens de sistema (só vivem em memória enquanto o hub existe).
 const MAX_SYSTEM_MESSAGES = 50;
-// Janela anti-duplo-Enter no envio de mensagens.
-const SEND_GAP_MS = 300;
+// Janela entre envios — alinhada com o rate limit do servidor (1 msg/s).
+const SEND_GAP_MS = 1000;
+// Quanto tempo um estado de convite fica visível antes de voltar a "Convidar".
+const INVITE_TTL_MS = { sent: 30000, error: 5000, accepted: 8000, declined: 6000 };
 
 // Objetos estáticos: getCoachStatus devolve referência sem alocar por linha.
 const STATUS = {
@@ -75,6 +77,21 @@ export function RoomHub() {
   // Convites de sala (como no RoomSelectScreen): `${roomCode}:${coach}` → { status, msg }
   const [inviteState, setInviteState] = useState({});
   const inviteTimersRef = useRef({});
+
+  // Define o estado do convite e agenda o regresso a "Convidar".
+  const setInvite = useCallback((key, state) => {
+    clearTimeout(inviteTimersRef.current[key]);
+    setInviteState((prev) => ({ ...prev, [key]: state }));
+    const ttl = INVITE_TTL_MS[state.status];
+    if (!ttl) return;
+    inviteTimersRef.current[key] = setTimeout(() => {
+      setInviteState((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }, ttl);
+  }, []);
 
   const myName = me?.name ?? "";
   const myRoom = me?.roomCode ?? "";
@@ -154,20 +171,7 @@ export function RoomHub() {
     const onResult = (res) => {
       if (!res || typeof res.roomCode !== "string") return;
       const key = `${res.roomCode}:${res.toCoach}`;
-      setInviteState((prev) => ({
-        ...prev,
-        [key]: { status: res.accepted ? "accepted" : "declined" },
-      }));
-      // Volta a permitir convidar passados alguns segundos após resposta.
-      const delay = res.accepted ? 8000 : 6000;
-      const t = setTimeout(() => {
-        setInviteState((prev) => {
-          const next = { ...prev };
-          delete next[key];
-          return next;
-        });
-      }, delay);
-      inviteTimersRef.current[key] = t;
+      setInvite(key, { status: res.accepted ? "accepted" : "declined" });
     };
     socket.on("roomInviteResult", onResult);
     return () => {
@@ -175,7 +179,7 @@ export function RoomHub() {
       Object.values(inviteTimersRef.current).forEach(clearTimeout);
       inviteTimersRef.current = {};
     };
-  }, []);
+  }, [setInvite]);
 
   // Carregar histórico ao abrir o hub ou ao trocar de sub-tab.
   // O WaitingCoachesModal só pede histórico no lobby; sem isto, o RoomHub
@@ -190,21 +194,22 @@ export function RoomHub() {
   const emitChat = useCallback(
     (text) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      if (!trimmed) return false;
       const now = Date.now();
-      if (now - lastSendRef.current < SEND_GAP_MS) return;
+      if (now - lastSendRef.current < SEND_GAP_MS) return false;
       lastSendRef.current = now;
       socket.emit("sendChatMessage", {
         channel: chatSubTab,
         message: trimmed,
       });
+      return true;
     },
     [chatSubTab],
   );
 
   const sendChat = useCallback(() => {
-    emitChat(chatInput);
-    setChatInput("");
+    // Só limpa se foi enviada — senão o texto perdia-se no gap anti-spam.
+    if (emitChat(chatInput)) setChatInput("");
   }, [emitChat, chatInput, setChatInput]);
 
   // Sala atual de cada coach online (presença global): nome → roomCode.
@@ -272,7 +277,7 @@ export function RoomHub() {
   const sendRoomInvite = useCallback(
     (toCoach) => {
       const key = `${myRoom}:${toCoach}`;
-      setInviteState((prev) => ({ ...prev, [key]: { status: "sending" } }));
+      setInvite(key, { status: "sending" });
       socket.emit(
         "sendRoomInvite",
         {
@@ -283,22 +288,16 @@ export function RoomHub() {
           toCoach,
         },
         (res) => {
-          setInviteState((prev) => {
-            if (res && res.ok) {
-              return { ...prev, [key]: { status: "sent" } };
-            }
-            return {
-              ...prev,
-              [key]: {
-                status: "error",
-                msg: res?.error || "Erro ao enviar o convite.",
-              },
-            };
-          });
+          if (res && res.ok) setInvite(key, { status: "sent" });
+          else
+            setInvite(key, {
+              status: "error",
+              msg: res?.error || "Erro ao enviar o convite.",
+            });
         },
       );
     },
-    [myName, myRoom, me],
+    [myName, myRoom, me, setInvite],
   );
 
   // Controlos de convite como no RoomSelectScreen (estados + botão).
@@ -414,7 +413,7 @@ export function RoomHub() {
                     {me.roomName || me.roomCode}
                   </span>
                   <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest shrink-0 ml-1">
-                    {players.length}
+                    {coaches.filter((c) => c.online).length}/{coaches.length}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -515,6 +514,8 @@ export function RoomHub() {
                         calendarIndex === 0 && (
                           <button
                             onClick={() => {
+                              if (!window.confirm(`Expulsar ${coach.name}?`))
+                                return;
                               socket.emit("kickCoach", {
                                 targetName: coach.name,
                               });
@@ -670,7 +671,7 @@ export function RoomHub() {
                               />
                             )}
                             <div
-                              className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug ${
+                              className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug break-words ${
                                 isOwn
                                   ? "bg-primary text-on-primary rounded-br-sm"
                                   : "bg-surface-container-high text-on-surface rounded-bl-sm"
@@ -697,7 +698,8 @@ export function RoomHub() {
                   aria-label="Escreve uma mensagem"
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") sendChat();
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing)
+                      sendChat();
                   }}
                   placeholder="Escreve uma mensagem…"
                   maxLength={500}

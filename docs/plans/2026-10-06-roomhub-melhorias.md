@@ -6,7 +6,7 @@ Ficheiro: `client/src/components/chat/RoomHub.jsx` (728 linhas, 1 componente). R
 
 ### Bugs / comportamento errado
 1. **Mensagem perdida:** `sendChat` limpa o input mesmo quando `emitChat` descarta por `SEND_GAP_MS` (ex.: quick-message e Enter em <300 ms).
-2. **Rate limit mudo:** o servidor limita a 1 msg/s (`socketChatHandlers.ts`, `RATE_LIMIT_MS`) e responde com `systemMessage` **string** — o `onSystemMessage` ignora strings (`typeof data === "string"` → return). O utilizador não vê nada e o gap de 300 ms no cliente não condiz com o 1 s do servidor.
+2. **Gap desalinhado:** o servidor limita a 1 msg/s (`RATE_LIMIT_MS`) e o cliente usava 300 ms (o aviso do servidor já aparece como toast via `hooks/socket/core.js`, não é mudo).
 3. **Convite preso:** `sent` e `error` nunca expiram (só `accepted`/`declined` têm timer) → "Convite enviado" fica para sempre se o convidado ignorar; o erro nunca desaparece.
 4. **Mensagens de sistema fora de ordem:** renderizadas todas antes das mensagens do chat, em vez de intercaladas por timestamp; key `Date.now()+Math.random()`.
 5. **Overflow:** bolha sem `break-words` — uma palavra comprida (500 chars) rebenta o layout.
@@ -34,7 +34,6 @@ Ficheiro: `client/src/components/chat/RoomHub.jsx` (728 linhas, 1 componente). R
 
 **Fase 1 — Bugs (1 commit, só RoomHub.jsx)**
 - `emitChat` devolve `boolean`; `sendChat` só limpa se enviou. `SEND_GAP_MS` → 1000 (alinhar ao servidor).
-- `onSystemMessage` mostra também strings (toast/linha de sistema só do próprio, não broadcast) — confirmar que não duplica o que `useSocketListeners` já faz com strings.
 - Timer de expiração para `sent` (ex.: 30 s) e `error` (5 s); centralizar num `setInviteStatus(key, status, ttl)`.
 - `break-words` na bolha; `isComposing` no Enter; kick com `window.confirm`/confirmação inline de 2 cliques.
 - Contador `online/total` a partir de `coaches`.
