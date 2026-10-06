@@ -304,3 +304,149 @@ export function computePenaltySteps(events, displayMs) {
 export function isFriendlyMatch(fixture, cupRound) {
   return !!fixture?.isFriendly || (cupRound != null && Number(cupRound) === 0);
 }
+
+/**
+ * Resultado até ao minuto, com o mesmo critério do marcador (`isGoalType`).
+ *
+ * @param {Array<{minute:number,type:string,team:string}>|null|undefined} events
+ * @param {number} liveMinute
+ * @returns {{home:number, away:number}}
+ */
+export function liveScore(events, liveMinute) {
+  let home = 0;
+  let away = 0;
+  for (const e of events || []) {
+    if ((e.minute ?? -1) > liveMinute || !isGoalType(e.type)) continue;
+    if (e.team === "home") home += 1;
+    else if (e.team === "away") away += 1;
+  }
+  return { home, away };
+}
+
+/* Lances que contam como remate (o `team` é sempre o lado que ataca). O
+ * auto-golo não conta: o `team` dele é o beneficiado, não quem rematou. */
+const SHOT_TYPES = new Set([
+  "goal", "penalty_goal", "chance", "near_miss", "penalty_miss",
+  "var_disallowed", "var_goal_pending",
+]);
+
+/**
+ * Remates por equipa até ao minuto.
+ *
+ * @param {Array<{minute:number,type:string,team:string}>|null|undefined} events
+ * @param {number} liveMinute
+ * @returns {{home:number, away:number}}
+ */
+export function liveShots(events, liveMinute) {
+  let home = 0;
+  let away = 0;
+  for (const e of events || []) {
+    if ((e.minute ?? -1) > liveMinute || !SHOT_TYPES.has(e.type)) continue;
+    if (e.team === "home") home += 1;
+    else if (e.team === "away") away += 1;
+  }
+  return { home, away };
+}
+
+/**
+ * Jogadores em campo mais cansados (perda de skill em jogo ≥ `minLoss`),
+ * do mais para o menos cansado. O lineup ao vivo mantém `fatigueLoss` em dia
+ * a cada minuto e as trocas em campo reaproveitam a posição (`is_starter`).
+ *
+ * @param {Array<{id:number,name:string,is_starter?:boolean,fatigueLoss?:number}>|null|undefined} lineup
+ * @param {Array<{minute:number,type:string,playerId?:number}>|null|undefined} events
+ * @param {number} liveMinute
+ * @param {number} [minLoss]
+ * @param {number} [limit]
+ * @returns {Array<{id:number,name:string,fatigueLoss:number}>}
+ */
+export function tiredPlayers(lineup, events, liveMinute, minLoss = 3, limit = 2) {
+  const sentOff = new Set(
+    (events || [])
+      .filter((e) => e.type === "red" && e.minute <= liveMinute)
+      .map((e) => e.playerId),
+  );
+  return (lineup || [])
+    .filter(
+      (p) =>
+        p.is_starter !== false &&
+        !sentOff.has(p.id) &&
+        Number(p.fatigueLoss ?? 0) >= minLoss,
+    )
+    .sort((a, b) => b.fatigueLoss - a.fatigueLoss)
+    .slice(0, limit);
+}
+
+/* "[23'] ⚽ Frase" → ícone + frase. O ícone só é separado quando o 1.º
+ * token não começa por letra/número (as mudanças táticas não trazem emoji). */
+const COMMENTARY_RE = /^\[(?:\d+'|HT)\]\s*(?:([^\p{L}\p{N}\s"“«'(]\S*)\s+)?(.*)$/su;
+
+/**
+ * Feed de lances do jogo até ao minuto, do mais recente para o mais antigo
+ * (empates de minuto pela ordem de chegada). As odds ficam de fora.
+ *
+ * @param {Array<Object>|null|undefined} events
+ * @param {number} liveMinute
+ * @returns {Array<{key:string, icon:string, phrase:string, event:Object}>}
+ */
+export function liveFeed(events, liveMinute) {
+  return (events || [])
+    .map((e, i) => ({ e, i }))
+    .filter(
+      ({ e }) =>
+        e.minute <= liveMinute &&
+        e.type !== "betting" &&
+        (e.text || matchEventIcon(e.type)),
+    )
+    .sort((a, b) => b.e.minute - a.e.minute || b.i - a.i)
+    .map(({ e, i }) => {
+      const m = e.text ? COMMENTARY_RE.exec(e.text) : null;
+      const phrase = (m ? m[2] : e.text || e.playerName || "").trim();
+      return {
+        key: `${e.minute}-${e.type}-${e.playerId ?? ""}-${i}`,
+        icon: m?.[1] || e.emoji || matchEventIcon(e.type),
+        phrase,
+        event: e,
+      };
+    })
+    .filter((row) => row.phrase);
+}
+
+/**
+ * Multiplex: golos dos outros jogos até ao minuto, do mais recente para o
+ * mais antigo, com o resultado logo a seguir a cada golo.
+ *
+ * @param {Array<{homeTeamId:number,awayTeamId:number,events?:Array<Object>}>|null|undefined} fixtures
+ * @param {number} liveMinute
+ * @param {(fixture: Object) => boolean} skip - jogos a excluir (o meu)
+ * @param {number} [limit]
+ * @returns {Array<{key:string, minute:number, fixture:Object, side:string, home:number, away:number, playerName?:string, type:string}>}
+ */
+export function otherGoals(fixtures, liveMinute, skip, limit = 6) {
+  const out = [];
+  for (const f of fixtures || []) {
+    if (skip(f)) continue;
+    let home = 0;
+    let away = 0;
+    (f.events || [])
+      .map((e, i) => ({ e, i }))
+      .sort((a, b) => a.e.minute - b.e.minute || a.i - b.i)
+      .forEach(({ e, i }) => {
+        if (e.minute > liveMinute || !isGoalType(e.type)) return;
+        if (e.team === "home") home += 1;
+        else if (e.team === "away") away += 1;
+        else return;
+        out.push({
+          key: `${f.homeTeamId}_${f.awayTeamId}_${i}`,
+          minute: e.minute,
+          fixture: f,
+          side: e.team,
+          home,
+          away,
+          playerName: e.playerName,
+          type: e.type,
+        });
+      });
+  }
+  return out.sort((a, b) => b.minute - a.minute).slice(0, limit);
+}

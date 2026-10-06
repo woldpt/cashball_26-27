@@ -121,12 +121,12 @@ function LiveFixtureRowInner({
       {/* Faixa única do treinador humano (o nome já não se repete por equipa) */}
       {isHumanMatch && (
         <div className="flex items-center justify-between gap-2 px-3 py-1 bg-amber-500/10 border-b border-amber-400/20">
-          <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-amber-400 shrink-0">
+          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-amber-400 shrink-0">
             <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
             Treinador humano
           </span>
           <span
-            className="text-[9px] font-bold text-amber-300/80 truncate"
+            className="text-[11px] font-bold text-amber-300/80 truncate"
             title={coachStrip}
           >
             {coachStrip}
@@ -144,7 +144,7 @@ function LiveFixtureRowInner({
             }}
           />
           <span
-            className={`text-[11px] sm:text-xs font-black truncate ${
+            className={`text-xs font-black truncate ${
               homeCoach ? "text-amber-300" : "text-on-surface/80"
             }`}
             title={homeName}
@@ -179,7 +179,7 @@ function LiveFixtureRowInner({
 
         <span className="flex items-center gap-1.5 flex-1 min-w-0 pl-1 justify-end">
           <span
-            className={`text-[11px] sm:text-xs font-black truncate text-right ${
+            className={`text-xs font-black truncate text-right ${
               awayCoach ? "text-amber-300" : "text-on-surface/80"
             }`}
             title={awayName}
@@ -200,13 +200,13 @@ function LiveFixtureRowInner({
       {(lastHomeEvent || lastAwayEvent) && (
         <div className="flex px-3 pb-1.5 gap-1">
           <span
-            className="flex-1 min-w-0 text-[10px] text-on-surface-variant/60 truncate"
+            className="flex-1 min-w-0 text-[11px] text-on-surface-variant/70 truncate"
             title={lastHomeEvent}
           >
             {lastHomeEvent}
           </span>
           <span
-            className="flex-1 min-w-0 text-[10px] text-on-surface-variant/60 truncate text-right"
+            className="flex-1 min-w-0 text-[11px] text-on-surface-variant/70 truncate text-right"
             title={lastAwayEvent}
           >
             {lastAwayEvent}

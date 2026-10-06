@@ -209,3 +209,10 @@ o `TeamKit` cai para o `TeamCrest` em vez de deixar vazio.
 - **Header = barra da jornada:** fundo na cor primária do clube, texto em `color_secondary` (`ink`); chips sobre a cor com `bg-black/25`. JOGAR via `usePlayCta` (mesmo estado no header e no bottom-nav).
 - **Badges de contagem:** alerta/não-lidas `bg-red-500 text-white`; contagem neutra `bg-primary text-on-primary`.
 - **Exceção intencional:** o balão de chat do header (branco, borda preta) é uma fala de banda desenhada — não alinhar com as superfícies escuras.
+
+## 15. Vista ao vivo (LiveView)
+
+- **Texto mínimo:** 11px para conteúdo (nomes, lances, tabela), 10px para labels, 9px só em badges.
+- **Hero:** marcador → golos/vermelhos por lado → cronómetro → posse · remates · cansaço → botão Substituições (a ação principal nunca vive só num clique escondido) → feed de lances (mais recente em cima).
+- **Efeitos:** flash de golo, aura de liderança e meteo; sem marcas de água no hero (ficam para o palco da final).
+- **Marcador fixo:** `sticky` de altura 0 no topo do contentor (`overflow-clip`, nunca `overflow-hidden`, que parte o sticky), visível quando o marcador do hero sai do ecrã.

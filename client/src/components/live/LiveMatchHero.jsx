@@ -5,7 +5,8 @@ import { usePhaseAnnounce, PreMatchIntro, FinalWhistleStamp, WeatherOverlay } fr
 import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { useKitClash } from "../../hooks/useKitClash.js";
-import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
+import { Button } from "../shared/Button.jsx";
+import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, liveFeed, liveScore, liveShots, matchEventIcon, parseOdds, resolveEventSide, teamTextColor, tiredPlayers } from "./liveHelpers.js";
 
 /* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
 const PAUSE_TEXT = {
@@ -38,11 +39,15 @@ const COMMENTARY_EFFECTS = {
   chance: { effect: "pulse" },
 };
 
-/* ── LiveMatchHero — painel do meu jogo (scoreboard estilo broadcast) ────
+/* Lances que ficam sob o marcador, por equipa. */
+const SCORER_TYPES = ["goal", "penalty_goal", "own_goal", "var_disallowed", "var_goal_pending", "red"];
+
+/* ── LiveMatchHero — painel do meu jogo (marcador estilo broadcast) ──────
  *
- * Hierarquia: meta strip (competição + LIVE) → info strip (estádio ·
- * clima · odds) → broadcast bar (equipas + placar central + fase/minuto) →
- * colunas de eventos → timeline + comentário → pre-match intros.
+ * Hierarquia: meta strip (competição) → info strip (estádio · clima · odds)
+ * → broadcast bar (equipas + marcador + fase/minuto) → marcadores de golos
+ * → cronómetro → dados (posse · remates · cansaço) + botão Substituições →
+ * feed de lances → pre-match intros.
  */
 
 /**
@@ -69,6 +74,8 @@ const COMMENTARY_EFFECTS = {
  * @param {boolean} [props.hideScoreboard] - esconde a meta strip e a barra
  *   broadcast (emblemas + marcador); usado na Final fundida, onde o
  *   `CupFinalStage` já mostra o frente-a-frente com o marcador ao centro.
+ * @param {import("react").Ref<HTMLDivElement>} [props.scoreRef] - ref do
+ *   marcador (a LiveView observa-o para mostrar o marcador fixo no topo).
  */
 export function LiveMatchHero({
   myMatch,
@@ -89,6 +96,7 @@ export function LiveMatchHero({
   finalWhistle = null,
   readOnly = false,
   hideScoreboard = false,
+  scoreRef,
 }) {
   const hInfo = myMatch ? teams.find((t) => t.id === myMatch.homeTeamId) : null;
   const aInfo = myMatch ? teams.find((t) => t.id === myMatch.awayTeamId) : null;
@@ -113,17 +121,12 @@ export function LiveMatchHero({
   // If ET is running for other fixtures but my match was decided at 90', hide this block
   if (isCupExtraTime && !isDrawnAt90(myMatch)) return null;
 
-  const homeGoals = matchEvents.filter(
-    (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "home",
-  );
-  const awayGoals = matchEvents.filter(
-    (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "away",
-  );
+  const score = liveScore(matchEvents, liveMinute);
   const maxMinute = isCupExtraTime ? 120 : 90;
   const progress = Math.min(100, (liveMinute / maxMinute) * 100);
 
-  // Lado em vantagem (para a aura de liderança do scoreboard).
-  const diffGoals = homeGoals.length - awayGoals.length;
+  // Lado em vantagem (para a aura de liderança do marcador).
+  const diffGoals = score.home - score.away;
   const leadSide = diffGoals > 0 ? "home" : diffGoals < 0 ? "away" : null;
   const leadColor =
     leadSide === "home" ? hCol : leadSide === "away" ? aCol : null;
@@ -154,104 +157,58 @@ export function LiveMatchHero({
   (myMatch.awayLineup || []).forEach((p) => lineupSideById.set(p.id, "away"));
   const resolveSide = (e) => resolveEventSide(e, lineupSideById);
 
-  const homeEvents = matchEvents
-    .filter(
-      (e) =>
-        e.minute <= liveMinute &&
-        resolveSide(e) === "home" &&
-        [
-          "goal", "penalty_goal", "own_goal", "penalty_miss",
-          "var_disallowed", "var_goal_pending",
-          "yellow", "red", "injury", "substitution", "halftime_sub",
-        ].includes(e.type),
-    )
-    .sort((a, b) => a.minute - b.minute);
-  const awayEvents = matchEvents
-    .filter(
-      (e) =>
-        e.minute <= liveMinute &&
-        resolveSide(e) === "away" &&
-        [
-          "goal", "penalty_goal", "own_goal", "penalty_miss",
-          "var_disallowed", "var_goal_pending",
-          "yellow", "red", "injury", "substitution", "halftime_sub",
-        ].includes(e.type),
-    )
-    .sort((a, b) => a.minute - b.minute);
+  // Sob o marcador só golos e vermelhos (o resto do jogo vive no feed).
+  const sideEvents = (side) =>
+    matchEvents
+      .filter(
+        (e) =>
+          e.minute <= liveMinute &&
+          SCORER_TYPES.includes(e.type) &&
+          resolveSide(e) === side,
+      )
+      .sort((a, b) => a.minute - b.minute);
+  const homeEvents = sideEvents("home");
+  const awayEvents = sideEvents("away");
+
+  // Dados para decidir: remates de cada lado e cansaço da minha equipa.
+  const shots = liveShots(matchEvents, liveMinute);
+  const tired =
+    isPlayingMatch && (homeIsMine || awayIsMine)
+      ? tiredPlayers(homeIsMine ? myMatch.homeLineup : myMatch.awayLineup, matchEvents, liveMinute)
+      : [];
+  const canSub = isPlayingMatch && !isMatchActionPending;
 
   return (
     <div className="relative overflow-hidden rounded-lg bg-surface-container-low border border-outline-variant/10">
-      {/* ── Cenografia de luz: casa à esquerda · fora à direita · estádio ── */}
+      {/* ── Luz das equipas: casa à esquerda · fora à direita (estática) ── */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background: [
-            // casa — luz da esquerda a convergir no marcador
             `radial-gradient(120% 130% at 0% 0%, ${hCol}2b 0%, transparent 55%)`,
-            // fora — luz da direita
             `radial-gradient(120% 130% at 100% 0%, ${aCol}24 0%, transparent 55%)`,
-            // "luz de estádio" a subir do chão (sóbria)
-            `radial-gradient(ellipse 55% 40% at 50% 112%, rgba(255,255,255,0.05) 0%, transparent 65%)`,
           ].join(", "),
         }}
-      />
-      {/* vinheta suave nas bordas (profundidade) */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{ boxShadow: "inset 0 0 90px rgba(0,0,0,0.42)" }}
       />
       {/* Ecrã inteiro só com o jogo vivo: depois do apito passava por trás
           dos modais pós-jogo (sorteio da Taça) através do fundo translúcido. */}
       {weatherEvent && (isPlayingMatch || finalWhistle) && (
         <WeatherOverlay emoji={weatherEvent.emoji} fullscreen />
       )}
-      {/* marcas de água dos emblemas (laterais, escuras e desvanecidas) */}
-      {!hideScoreboard && hInfo?.crest && (
-        <img
-          src={hInfo.crest}
-          alt=""
-          aria-hidden
-          loading="lazy"
-          onError={(e) => { e.currentTarget.style.display = "none"; }}
-          className="absolute -left-8 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
-          style={{
-            /* crest-shadow mesclado: o `filter` inline anula a classe */
-            filter: "brightness(0.75) saturate(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.45)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.25))",
-            maskImage: "linear-gradient(to right, black 55%, transparent 100%)",
-            WebkitMaskImage: "linear-gradient(to right, black 55%, transparent 100%)",
-          }}
-        />
-      )}
-      {!hideScoreboard && aInfo?.crest && (
-        <img
-          src={aInfo.crest}
-          alt=""
-          aria-hidden
-          loading="lazy"
-          onError={(e) => { e.currentTarget.style.display = "none"; }}
-          className="absolute -right-8 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
-          style={{
-            filter: "brightness(0.75) saturate(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.45)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.25))",
-            maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
-            WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
-          }}
-        />
-      )}
 
       <div className="relative z-10 flex flex-col items-center px-4 pt-5 pb-4">
         {/* ── Meta strip (oculta na Final fundida — a faixa cerimonial já a mostra) ── */}
         {!hideScoreboard && (
         <div className="flex items-center justify-between w-full mb-4">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/50 font-black">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/70 font-black">
             {isCupMatch
               ? isFriendly ? roundLabel : `Taça · ${cupMatchRoundName}`
               : `${DIVISION_NAMES[hInfo?.division] || ""} · Jornada ${matchResults?.matchweek ?? "—"}`}
           </span>
           <div className="flex items-center gap-2">
             {!isPlayingMatch && isCupMatch && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-widest">
                 {isFriendly ? "🤝" : "🏆"} {roundLabel}
               </span>
             )}
@@ -273,7 +230,7 @@ export function LiveMatchHero({
 
         {/* ── Info strip: estádio · clima · odds ── */}
         {(myMatch.attendance || weatherEvent || odds) && (
-          <div className="flex items-center justify-center gap-2 flex-wrap mb-4 text-[10px] text-on-surface-variant/60">
+          <div className="flex items-center justify-center gap-2 flex-wrap mb-4 text-[11px] text-on-surface-variant/70">
             {myMatch.attendance && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high/60 border border-outline-variant/15">
                 <span className="material-symbols-outlined text-[13px] leading-none">
@@ -303,7 +260,7 @@ export function LiveMatchHero({
 
         {/* ── Broadcast scoreboard (oculta na Final fundida — o marcador vive no frente-a-frente) ── */}
         {!hideScoreboard && (
-        <div className="relative w-full max-w-2xl">
+        <div ref={scoreRef} className="relative w-full max-w-2xl">
           {/* Aura da equipa em vantagem (pulso suave de liderança) */}
           {leadColor && (
             <div
@@ -358,13 +315,13 @@ export function LiveMatchHero({
                   {phaseAnnounce}
                 </div>
               ) : (
-              <div key={`${homeGoals.length}-${awayGoals.length}`} className="goal-shake font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap">
-                <span style={flashStyle(myHomeFlashing)}>{homeGoals.length}</span>
+              <div key={`${score.home}-${score.away}`} className="goal-shake font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap">
+                <span style={flashStyle(myHomeFlashing)}>{score.home}</span>
                 <span className="text-on-surface/20 text-xl sm:text-3xl">:</span>
-                <span style={flashStyle(myAwayFlashing)}>{awayGoals.length}</span>
+                <span style={flashStyle(myAwayFlashing)}>{score.away}</span>
               </div>
               )}
-              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mt-1 tabular-nums truncate max-w-full">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-on-surface-variant/70 mt-1 tabular-nums truncate max-w-full">
                 {liveMinute > 90 ? "Prol. " : ""}
                 {liveMinute < 1 ? "A começar…" : `${liveMinute}' · ${phaseLabel}`}
               </span>
@@ -389,17 +346,25 @@ export function LiveMatchHero({
         </div>
         )}
 
+        {/* ── Marcadores: golos e vermelhos de cada lado ── */}
+        {(homeEvents.length > 0 || awayEvents.length > 0) && (
+          <div className="w-full max-w-2xl grid grid-cols-2 gap-4 mt-3 px-1">
+            <TeamEvents events={homeEvents} align="left" />
+            <TeamEvents events={awayEvents} align="right" />
+          </div>
+        )}
+
         {/* ── Jogador do Jogo (pós-jogo) ── */}
         {mom && !isPlayingMatch && (mom.home || mom.away) && (
           <div className="w-full max-w-2xl mt-3 rounded-md border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2">
-            <p className="text-[9px] font-black uppercase tracking-widest text-amber-400 mb-1.5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-1.5">
               ⭐ Jogador do Jogo
             </p>
             <div className="flex items-center gap-2">
               <span className="flex-1 min-w-0 truncate text-left text-xs font-bold text-on-surface">
                 {mom.home ? mom.home.playerName : "—"}
               </span>
-              <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+              <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
                 vs
               </span>
               <span className="flex-1 min-w-0 truncate text-right text-xs font-bold text-on-surface">
@@ -454,79 +419,35 @@ export function LiveMatchHero({
           </div>
         </div>
 
-        {/* ── Team events columns ── */}
-        <div className="w-full max-w-2xl grid grid-cols-2 gap-4 mt-5 px-1">
-          <TeamEvents events={homeEvents} align="left" />
-          <TeamEvents events={awayEvents} align="right" />
-        </div>
+        {/* ── Dados para decidir + ação principal ── */}
+        <MatchStats
+          homePossession={myMatch.homePossession}
+          awayPossession={myMatch.awayPossession}
+          shots={shots}
+          hInfo={hInfo}
+          aInfo={aInfo}
+          tired={tired}
+        />
+        {!readOnly && (
+          <Button
+            variant={canSub ? "primary" : "secondary"}
+            onClick={onScoreClick}
+            className="mt-3 min-h-11 rounded-full px-5"
+          >
+            <span aria-hidden className="material-symbols-outlined text-[18px] leading-none">
+              {canSub ? "swap_horiz" : "query_stats"}
+            </span>
+            {canSub ? "Substituições" : "Detalhes do jogo"}
+          </Button>
+        )}
 
-        {/* ── Comentário ── */}
-        <div className="w-full max-w-2xl mt-5 space-y-1.5">
-
-          {/* ── Commentary phrase ── */}
-          {(() => {
-            const latestWithText = [...matchEvents]
-              .filter((e) => e.minute <= liveMinute && e.text)
-              .sort((a, b) => b.minute - a.minute)[0];
-            if (!latestWithText) return null;
-            const phrase = latestWithText.text
-              .replace(/^\[(?:\d+'|HT)\]\s*\S*\s*/, "")
-              .trim();
-            if (!phrase) return null;
-            const tier = COMMENTARY_EFFECTS[latestWithText.type] || null;
-            // Cor (aclarada) da equipa do lance; chance alinha ao lado dela
-            // (casa → esquerda, fora → direita); o pulse segue a mesma cor.
-            const eventSide = resolveSide(latestWithText);
-            const chanceSide = latestWithText.type === "chance" ? eventSide : null;
-            const teamColor = eventSide === "home" || eventSide === "away"
-              ? teamTextColor(eventSide === "away" ? aInfo : hInfo)
-              : null;
-            const chanceColor = teamColor && `color-mix(in srgb, ${teamColor} 60%, white)`;
-            const effectCls = tier?.effect
-              ? `commentary-effect commentary-effect--${tier.effect}`
-              : "";
-            const phraseStyle = {
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              animationDuration:
-                tier?.effect === "pulse"
-                  ? "1.4s"
-                  : tier?.effect
-                    ? "0.6s"
-                    : undefined,
-              // contorno escuro: legível sobre a chuva do WeatherOverlay
-              // (filter, não text-shadow — o pulse anima o text-shadow).
-              filter: "drop-shadow(0 1px 1px rgb(0 0 0 / 0.9)) drop-shadow(0 0 4px rgb(0 0 0 / 0.6))",
-            };
-            if (chanceColor) {
-              phraseStyle.color = chanceColor;
-              phraseStyle["--pulse-color"] = `color-mix(in srgb, ${chanceColor} 45%, transparent)`;
-            } else if (tier?.effect === "pulse" && tier.pulseColor) {
-              phraseStyle["--pulse-color"] = tier.pulseColor;
-            }
-            return (
-              <div
-                key={`${latestWithText.minute}-${latestWithText.type}`}
-                className={`w-full pt-3 pb-0.5 px-2 ${
-                  chanceSide === "home"
-                    ? "text-left"
-                    : chanceSide === "away"
-                      ? "text-right"
-                      : "text-center"
-                }`}
-                style={{ animation: "commentaryFadeIn 0.6s ease" }}
-              >
-                <p
-                  className={`text-[11px] sm:text-[16px] leading-snug italic font-medium tracking-wide line-clamp-2 ${effectCls} ${
-                    chanceColor ? "" : tier?.className || "text-on-surface-variant/55"
-                  }`}
-                  style={phraseStyle}
-                >
-                  "{phrase}"
-                </p>
-              </div>
-            );
-          })()}
-        </div>
+        {/* ── Feed de lances (mais recente em cima) ── */}
+        <LiveFeed
+          feed={liveFeed(matchEvents, liveMinute)}
+          resolveSide={resolveSide}
+          hInfo={hInfo}
+          aInfo={aInfo}
+        />
 
         <PreMatchIntro matchEvents={matchEvents} liveMinute={liveMinute} isPlayingMatch={isPlayingMatch} />
         {/* ── Apito final: selo transitório do GameContext (só no meu jogo) ── */}
@@ -558,7 +479,7 @@ export function ScoreKit({ team, isMine, coach, away = false }) {
       )}
       {coach && (
         <span
-          className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm font-black text-[8px] tracking-widest uppercase whitespace-nowrap shadow-lg ${
+          className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm font-black text-[9px] tracking-widest uppercase whitespace-nowrap shadow-lg ${
             isMine ? "bg-primary text-on-primary" : "bg-amber-500 text-zinc-950"
           }`}
         >
@@ -566,6 +487,137 @@ export function ScoreKit({ team, isMine, coach, away = false }) {
         </span>
       )}
     </div>
+  );
+}
+
+/* ── MatchStats — posse, remates e alerta de cansaço da minha equipa ──── */
+/**
+ * @param {Object} props
+ * @param {number|undefined} props.homePossession
+ * @param {number|undefined} props.awayPossession
+ * @param {{home:number, away:number}} props.shots
+ * @param {Object|undefined} props.hInfo
+ * @param {Object|undefined} props.aInfo
+ * @param {Array<{id:number,name:string,fatigueLoss:number}>} props.tired
+ * @returns {JSX.Element}
+ */
+function MatchStats({ homePossession, awayPossession, shots, hInfo, aInfo, tired }) {
+  const hasPoss = homePossession != null && awayPossession != null;
+  const label = "text-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70";
+  return (
+    <div className="w-full max-w-2xl mt-3 px-1 flex flex-col gap-2">
+      <div className="grid grid-cols-[2.75rem_1fr_2.75rem] items-center gap-x-2 gap-y-1.5 text-[12px] font-black tabular-nums text-on-surface">
+        {hasPoss && (
+          <>
+            <span>{homePossession}%</span>
+            <div className="flex flex-col gap-1">
+              <span className={label}>Posse</span>
+              <div
+                role="img"
+                aria-label={`Posse de bola: ${homePossession}% contra ${awayPossession}%`}
+                className="h-1.5 rounded-full overflow-hidden flex bg-surface-container-high"
+              >
+                <div
+                  className="h-full transition-all duration-700"
+                  style={{
+                    width: `${homePossession}%`,
+                    background: hInfo?.color_primary || "#6366f1",
+                    // Separador: com cores iguais a divisão continua visível.
+                    borderRight: "2px solid rgba(255,255,255,0.7)",
+                  }}
+                />
+                <div className="h-full flex-1" style={{ background: aInfo?.color_primary || "#f43f5e" }} />
+              </div>
+            </div>
+            <span className="text-right">{awayPossession}%</span>
+          </>
+        )}
+        <span>{shots.home}</span>
+        <span className={label}>Remates</span>
+        <span className="text-right">{shots.away}</span>
+      </div>
+      {tired.length > 0 && (
+        <p
+          className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-amber-300"
+          title="Perda de qualidade por cansaço neste jogo"
+        >
+          <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">battery_alert</span>
+          <span className="min-w-0 truncate">
+            Cansados: {tired.map((p) => `${p.name} −${p.fatigueLoss}`).join(" · ")}
+          </span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ── LiveFeed — todos os lances, mais recente em cima (~6 visíveis) ───── */
+/**
+ * @param {Object} props
+ * @param {Array<{key:string, icon:string, phrase:string, event:Object}>} props.feed
+ * @param {(event: Object) => string} props.resolveSide
+ * @param {Object|undefined} props.hInfo
+ * @param {Object|undefined} props.aInfo
+ * @returns {JSX.Element|null}
+ */
+function LiveFeed({ feed, resolveSide, hInfo, aInfo }) {
+  if (!feed.length) return null;
+  return (
+    <ol
+      aria-label="Lances do jogo"
+      aria-live="polite"
+      className="w-full max-w-2xl mt-4 max-h-64 overflow-y-auto flex flex-col gap-1 pr-1"
+    >
+      {feed.map((row, i) => {
+        const e = row.event;
+        const side = resolveSide(e);
+        const team = side === "home" ? hInfo : side === "away" ? aInfo : null;
+        const teamColor = team ? teamTextColor(team) : null;
+        const tier = COMMENTARY_EFFECTS[e.type] || null;
+        const isGoal = isGoalType(e.type);
+        const latest = i === 0;
+        const pulseColor =
+          tier?.pulseColor ||
+          (teamColor ? `color-mix(in srgb, ${teamColor} 45%, transparent)` : undefined);
+        return (
+          <li
+            key={row.key}
+            className={`flex items-start gap-2 rounded-md px-2.5 py-1.5 border-l-2 ${
+              isGoal ? "bg-primary/10" : "bg-black/20"
+            }`}
+            style={{
+              borderLeftColor: teamColor || "transparent",
+              animation: "commentaryFadeIn 0.6s ease",
+            }}
+          >
+            <span className="shrink-0 w-7 text-[11px] leading-5 font-black tabular-nums text-on-surface-variant/70">
+              {e.minute}&apos;
+            </span>
+            <span aria-hidden className="shrink-0 w-5 text-center text-[13px] leading-5">
+              {row.icon}
+            </span>
+            <p
+              className={`min-w-0 flex-1 leading-5 ${
+                latest ? "text-[13px] sm:text-[15px] italic" : "text-[12px]"
+              } ${isGoal ? "font-bold" : ""} ${
+                tier?.className || (latest ? "text-on-surface" : "text-on-surface-variant")
+              } ${latest && tier?.effect ? `commentary-effect commentary-effect--${tier.effect}` : ""}`}
+              style={
+                latest
+                  ? {
+                      fontFamily: "Georgia, 'Times New Roman', serif",
+                      animationDuration: tier?.effect === "pulse" ? "1.4s" : "0.6s",
+                      "--pulse-color": pulseColor,
+                    }
+                  : undefined
+              }
+            >
+              {row.phrase}
+            </p>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -599,13 +651,13 @@ function TeamEvents({ events, align }) {
         }`;
         const icon =
           e.type === "var_disallowed" ? (
-            <span className="shrink-0 rounded px-1 text-[9px] font-black leading-4 tracking-wider bg-zinc-700 text-zinc-100">
+            <span className="shrink-0 rounded px-1 text-[10px] font-black leading-4 tracking-wider bg-zinc-700 text-zinc-100">
               VAR
             </span>
           ) : e.type === "own_goal" ? (
             <span className="shrink-0 inline-flex items-center gap-0.5">
               ⚽
-              <span className="rounded px-1 text-[9px] font-black leading-4 tracking-wider bg-red-700 text-white">
+              <span className="rounded px-1 text-[10px] font-black leading-4 tracking-wider bg-red-700 text-white">
                 AG
               </span>
             </span>
@@ -626,7 +678,7 @@ function TeamEvents({ events, align }) {
               <PlayerLink playerId={e.playerId}>{name}</PlayerLink>
             </span>
             {e.type === "penalty_goal" && (
-              <span className="shrink-0 text-[8px] font-black uppercase px-1 py-px rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-widest">
+              <span className="shrink-0 text-[9px] font-black uppercase px-1 py-px rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-widest">
                 Pen.
               </span>
             )}
@@ -635,7 +687,7 @@ function TeamEvents({ events, align }) {
         return (
           <div
             key={`${e.minute}-${e.type}-${e.playerId || name}-${i}`}
-            className={`flex items-center gap-1 text-[9px] leading-tight w-full ${isRight ? "justify-end" : "justify-start"}`}
+            className={`flex items-center gap-1 text-[11px] leading-tight w-full ${isRight ? "justify-end" : "justify-start"}`}
           >
             {isRight ? [nameEl, icon, minuteEl] : [minuteEl, icon, nameEl]}
           </div>

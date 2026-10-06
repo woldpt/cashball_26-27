@@ -1,3 +1,9 @@
+## Redesign da vista ao vivo (2026-10-06)
+- `LiveView.jsx` (sai do GameRoutes): botão Substituições, posse/remates/cansaço, feed de lances, Multiplex de golos, outras divisões recolhidas, marcador fixo ao descer; sem marcas de água/vinheta no hero.
+- Fix: `MatchView` passava props erradas ao `PossessionBar` (a posse nunca aparecia).
+- Testado: lint, check:types, test:livehelpers, harness novo `liveview-resp-test` + livehero PASS, capturas 390/1440; falhas de test:mobile noutros harnesses já existiam no HEAD (transfer: obra da outra sessão).
+- Plano em `docs/plans/2026-10-06-live-view-redesign.md`.
+
 ## Redesign do shell do jogo (2026-10-06)
 - Shell em CSS grid (`.game-shell`), header passa a barra da jornada (clube, próximo jogo, orçamento, posição, JOGAR com estado via `usePlayCta`); JOGAR sai da sidebar.
 - Fix: `requestResync` reenvia `teamsData` (o jogo ficava sem equipas se o provider montasse depois do join); setinhas da classificação só re-snapshot quando a tabela muda.

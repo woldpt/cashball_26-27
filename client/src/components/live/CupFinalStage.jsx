@@ -114,7 +114,7 @@ export function CupFinalStage({
           ].join(", "),
         }}
       />
-      {/* Marcas de água dos emblemas (igual ao LiveMatchHero) */}
+      {/* Marcas de água dos emblemas (só no palco de gala da final) */}
       {hInfo?.crest && (
         <img
           src={hInfo.crest}

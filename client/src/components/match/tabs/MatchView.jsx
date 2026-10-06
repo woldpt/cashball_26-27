@@ -127,7 +127,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
 
           {/* Possession */}
           <div className="rounded-md overflow-hidden">
-            <PossessionBar homePct={fixture.homePossession} awayPct={fixture.awayPossession} hInfo={hInfo} aInfo={aInfo} />
+            <PossessionBar homePossession={fixture.homePossession} awayPossession={fixture.awayPossession} homeColor={hInfo?.color_primary} awayColor={aInfo?.color_primary} />
           </div>
 
           <div className="flex flex-col gap-1 px-1 py-0.5 border-b border-outline-variant/20 pb-3">

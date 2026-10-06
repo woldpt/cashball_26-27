@@ -30,7 +30,8 @@
     "test:stadium": "node src/components/shared/stadiumIllustration.test.mjs",
     "test:weather": "node src/utils/weather.test.mjs",
     "test:breakpoints": "node scripts/breakpointParityRegression.mjs",
-    "test:mobile": "node scripts/mobileRespCheck.mjs"
+    "test:mobile": "node scripts/mobileRespCheck.mjs",
+    "test:livehelpers": "node src/components/live/liveHelpers.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",

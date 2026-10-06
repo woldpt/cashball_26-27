@@ -9,7 +9,7 @@ import { TrendArrow } from "../shared/TrendArrow.jsx";
 /* Template de colunas (espelha as larguras da tabela original):
  * Pos | Clube | Mov | J | DG | Pts | Forma */
 const GRID_COLS =
-  "grid-cols-[1.75rem_minmax(0,1fr)_1.5rem_1.25rem_2rem_1.75rem_3.5rem]";
+  "grid-cols-[2rem_minmax(0,1fr)_1.5rem_1.5rem_2.25rem_2rem_3.5rem]";
 
 /* Transição de troca de posição: as linhas deslizam suavemente entre si. */
 const SWAP_TRANSITION = { type: "spring", stiffness: 320, damping: 32, mass: 0.9 };
@@ -78,7 +78,7 @@ export function LiveStandingsPanel({
     <div className="flex flex-col min-h-0 h-full rounded-lg bg-surface-container-low border border-outline-variant/10 overflow-hidden">
       {/* Header */}
       <div className="shrink-0 px-2.5 py-1.5 border-b border-outline-variant/10 bg-surface-container-high flex items-center justify-between gap-1.5">
-        <h3 className="min-w-0 flex-1 font-headline font-extrabold text-[10px] sm:text-[11px] tracking-tighter uppercase text-primary truncate">
+        <h3 className="min-w-0 flex-1 font-headline font-extrabold text-[11px] tracking-tighter uppercase text-primary truncate">
           Virtual · J{matchweek}
         </h3>
         <div className="relative shrink-0">
@@ -88,11 +88,11 @@ export function LiveStandingsPanel({
             aria-haspopup="listbox"
             aria-expanded={divOpen}
             aria-label={`Escolher divisão (atual: ${divLabel})`}
-            className="flex items-center gap-1 bg-surface-container-lowest border border-primary/30 text-primary text-[9px] font-black uppercase rounded-sm px-1.5 py-0.5 whitespace-nowrap cursor-pointer"
+            className="flex items-center gap-1 bg-surface-container-lowest border border-primary/30 text-primary text-[10px] font-black uppercase rounded-sm px-1.5 py-0.5 whitespace-nowrap cursor-pointer"
           >
             {divLabel}
             <span
-              className={`text-[8px] transition-transform ${divOpen ? "rotate-180" : ""}`}
+              className={`text-[9px] transition-transform ${divOpen ? "rotate-180" : ""}`}
             >
               ▼
             </span>
@@ -123,7 +123,7 @@ export function LiveStandingsPanel({
                         setDivOpen(false);
                       }
                     }}
-                    className={`px-2 py-1 text-[9px] font-black uppercase whitespace-nowrap cursor-pointer ${
+                    className={`px-2 py-1.5 text-[11px] font-black uppercase whitespace-nowrap cursor-pointer ${
                       div === viewDiv
                         ? "text-primary bg-primary/10"
                         : "text-on-surface hover:bg-surface-container-high"
@@ -142,7 +142,7 @@ export function LiveStandingsPanel({
       <div className="flex-1 overflow-y-auto">
         {/* Header */}
         <div
-          className={`grid ${GRID_COLS} items-center px-0 text-[7px] sm:text-[8px] uppercase text-on-surface-variant/50 font-bold`}
+          className={`grid ${GRID_COLS} items-center px-0 text-[10px] uppercase text-on-surface-variant/60 font-bold`}
         >
           <div className="pl-2.5 pr-1 py-1">Pos</div>
           <div className="px-1 py-1">Clube</div>
@@ -190,7 +190,7 @@ export function LiveStandingsPanel({
                   />
                 )}
                 <div
-                  className={`relative pl-2.5 pr-1 py-1.5 font-black text-[9px] ${
+                  className={`relative pl-2.5 pr-1 py-1.5 font-black text-[11px] tabular-nums ${
                     isPromo
                       ? "text-emerald-400"
                       : isRelegate
@@ -209,21 +209,21 @@ export function LiveStandingsPanel({
                       style={{ backgroundColor: t.color_primary || "#666" }}
                     />
                     <span
-                      className={`flex-1 min-w-0 truncate text-[9px] sm:text-[10px] font-bold ${
+                      className={`flex-1 min-w-0 truncate text-[11px] sm:text-[12px] font-bold ${
                         isMe ? "text-primary" : "text-on-surface/80"
                       }`}
                     >
                       {t.name}
                     </span>
                     {isMe && (
-                      <span className="shrink-0 px-1 py-px bg-tertiary text-on-tertiary text-[7px] font-black rounded-sm leading-tight">
+                      <span className="shrink-0 px-1 py-px bg-tertiary text-on-tertiary text-[9px] font-black rounded-sm leading-tight">
                         TU
                       </span>
                     )}
                     {!isMe && t.coach_is_human === 1 && t.coach_name && (
                       <span
                         title={t.coach_name}
-                        className="shrink-0 px-1 py-px bg-amber-400/15 text-amber-400 text-[7px] font-black rounded-sm border border-amber-400/30 leading-tight"
+                        className="shrink-0 px-1 py-px bg-amber-400/15 text-amber-400 text-[9px] font-black rounded-sm border border-amber-400/30 leading-tight"
                       >
                         {initialsFromName(t.coach_name)}
                       </span>
@@ -233,11 +233,11 @@ export function LiveStandingsPanel({
                 <div className="relative px-1 py-1.5 text-center">
                   <TrendArrow movement={row.movement} />
                 </div>
-                <div className="relative px-1 py-1.5 text-center text-[9px] text-on-surface-variant/60 tabular-nums">
+                <div className="relative px-1 py-1.5 text-center text-[11px] text-on-surface-variant/70 tabular-nums">
                   {row.played}
                 </div>
                 <div
-                  className={`relative px-1 py-1.5 text-center text-[9px] font-bold tabular-nums ${
+                  className={`relative px-1 py-1.5 text-center text-[11px] font-bold tabular-nums ${
                     gd > 0
                       ? "text-emerald-400"
                       : gd < 0
@@ -247,7 +247,7 @@ export function LiveStandingsPanel({
                 >
                   {gd > 0 ? `+${gd}` : gd}
                 </div>
-                <div className="relative px-1 py-1.5 text-center text-[9px] font-black font-headline text-on-surface tabular-nums">
+                <div className="relative px-1 py-1.5 text-center text-[11px] font-black font-headline text-on-surface tabular-nums">
                   {row.points}
                 </div>
                 <div className="relative pr-2.5 pl-1 py-1.5">
@@ -257,7 +257,7 @@ export function LiveStandingsPanel({
             );
           })}
           {rows.length === 0 && (
-            <div className="py-4 text-center text-[10px] text-on-surface-variant/30 font-bold">
+            <div className="py-4 text-center text-[11px] text-on-surface-variant/50 font-bold">
               Sem dados
             </div>
           )}
@@ -267,12 +267,12 @@ export function LiveStandingsPanel({
       {/* Legend */}
       <div className="shrink-0 flex items-center gap-3 px-2.5 py-1 border-t border-outline-variant/10 bg-surface-container-low/40">
         {viewDiv > 1 && (
-          <span className="flex items-center gap-1 text-[8px] text-on-surface-variant/40 font-bold uppercase tracking-wide">
+          <span className="flex items-center gap-1 text-[10px] text-on-surface-variant/60 font-bold uppercase tracking-wide">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70 inline-block" />
             Subida
           </span>
         )}
-        <span className="flex items-center gap-1 text-[8px] text-on-surface-variant/40 font-bold uppercase tracking-wide">
+        <span className="flex items-center gap-1 text-[10px] text-on-surface-variant/60 font-bold uppercase tracking-wide">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500/60 inline-block" />
           Descida
         </span>
