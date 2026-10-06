@@ -1,3 +1,8 @@
+## Deploy v26.10.28 no rick (2026-10-06)
+- Push + tag `v26.10.28` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.28` (rodapé da landing).
+- Mudações desta ronda: `GameHeader`, `CupBracketPage`, `LeagueStandings`, `CalendarioTab`, `FinancesTab`, `TrainingTab`, `TransferChrome`, `STYLE.md`.
+
 ## Deploy v26.10.27 no rick (2026-10-06)
 - Push + tag `v26.10.27` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
 - `APP_VERSION` bumpado para `v26.10.27` (rodapé da landing).
