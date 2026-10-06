@@ -8,4 +8,4 @@ Feito:
 3. Banner de pausa quando há coaches offline (o jogo congela até regressarem).
 4. Linhas de coach: faixa na cor do clube, anel de estado no avatar (pulsa se a pensar), `Badge` partilhado (`success`/`warning`/`error`).
 5. Rodapé com `Button` partilhado; "A observar o jogo" com ícone.
-6. Mobile: lista limitada a 34 % da altura, chat a ocupar o resto; ≥560 px lado a lado (coaches 290 px).
+6. Mobile: lista limitada a 40 % da altura, chat a ocupar o resto; ≥560 px lado a lado (coaches 290 px).

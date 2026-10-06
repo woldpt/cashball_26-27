@@ -215,7 +215,7 @@ export function WaitingCoachesModal({
             scroll interno. */}
         <div className="flex-1 min-h-0 flex flex-col min-[560px]:flex-row">
           {/* Coaches */}
-          <div className="shrink-0 max-h-[34%] min-[560px]:max-h-none min-[560px]:w-[290px] overflow-y-auto divide-y divide-outline-variant/10 border-b min-[560px]:border-b-0 min-[560px]:border-r border-outline-variant/15">
+          <div className="shrink-0 max-h-[40%] min-[560px]:max-h-none min-[560px]:w-[290px] overflow-y-auto divide-y divide-outline-variant/10 border-b min-[560px]:border-b-0 min-[560px]:border-r border-outline-variant/15">
             {coaches.map((coach) => {
               const st = STATUS[coach.status] ?? STATUS.thinking;
               return (
