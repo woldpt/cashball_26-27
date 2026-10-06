@@ -325,6 +325,26 @@ body {
   }
 }
 
+/* Duelo do briefing — entrada dos lados e pop do VS (só com movimento permitido) */
+@keyframes duel-in-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes duel-in-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes duel-vs-pop {
+  0% { opacity: 0; transform: scale(0.4); }
+  60% { opacity: 1; transform: scale(1.25); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .duel-in-left { animation: duel-in-left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .duel-in-right { animation: duel-in-right 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .duel-vs-pop { animation: duel-vs-pop 0.45s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
+
 /* Custom scrollbar — thin, non-obtrusive */
 * {
   scrollbar-width: thin;

@@ -12,7 +12,11 @@ import { DifficultyGauge } from "./DifficultyGauge.jsx";
 const DuelSlot = memo(function DuelSlot({ slot, side, coach, onOpenTeamSquad }) {
   const position = slot.team?.position ? `${slot.team.position}º lugar` : "—";
   return (
-    <div className="relative z-10 flex-1 min-w-0 flex flex-col items-center gap-1 text-center">
+    <div
+      className={`relative z-10 flex-1 min-w-0 flex flex-col items-center gap-1 text-center ${
+        side === "home" ? "duel-in-left" : "duel-in-right"
+      }`}
+    >
       <span
         className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-px rounded border ${
           slot.isMine
@@ -99,6 +103,14 @@ export const DuelHero = memo(function DuelHero({ vm, coachOf, onOpenTeamSquad })
 
       {/* Frente a frente */}
       <div className="relative overflow-hidden px-4 short:px-3 py-3 short:py-2 lg:py-5 flex items-center gap-2 lg:gap-6">
+        {/* brilho das cores de cada clube a "colidir" ao centro */}
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none opacity-25"
+          style={{
+            background: `linear-gradient(90deg, ${home?.team?.color_primary || "transparent"} 0%, transparent 45%, transparent 55%, ${away?.team?.color_primary || "transparent"} 100%)`,
+          }}
+        />
         {/* marcas de água dos emblemas (laterais, escuras e desvanecidas) */}
         {home?.team?.crest && (
           <div
@@ -151,7 +163,7 @@ export const DuelHero = memo(function DuelHero({ vm, coachOf, onOpenTeamSquad })
         <div className="relative z-10 shrink-0 flex flex-col items-center gap-1 px-1 lg:px-4">
           <span
             aria-hidden
-            className="text-[10px] lg:text-xs font-black text-gray-600 px-2.5 py-1 rounded-full border border-outline-variant/25 bg-surface-container-low"
+            className="duel-vs-pop text-sm lg:text-2xl font-headline font-black italic text-white px-3 lg:px-4 py-1.5 lg:py-2 rounded-full border border-emerald-400/40 bg-surface-container-low shadow-[0_0_18px_rgb(52_211_153/0.25)]"
           >
             VS
           </span>
