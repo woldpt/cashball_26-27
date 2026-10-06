@@ -3,7 +3,7 @@
  * registo de imprensa clássica e o cromo do detalhe (faixa + metadados).
  */
 import { Badge } from "../../components/shared/Badge.jsx";
-import { CATEGORY_EMOJIS, FILTER_TONES, LINK_CLS, TITLE_LINK_CLS } from "./tones.js";
+import { FILTER_TONES, LINK_CLS, TITLE_LINK_CLS } from "./tones.js";
 import { highlightText, splitPartsByParagraphs, teamFromRef } from "./utils.jsx";
 
 /** A capitular exige uma entrada com algum fôlego — em avisos de uma linha
@@ -144,7 +144,7 @@ export function CategoryAccentBar({ category, urgent }) {
 export function ArticleMeta({ item, catLabel }) {
   const badge = item ? (
     <Badge variant={FILTER_TONES[item.cat]?.badge || "neutral"} size="sm">
-      {CATEGORY_EMOJIS[item.cat] || "📰"} {catLabel || item.cat}
+      {catLabel || item.cat}
     </Badge>
   ) : null;
 

@@ -5,7 +5,7 @@
 
 export const FILTER_TONES = {
   all: {
-    row: "bg-surface-container/40 hover:bg-surface-container-high",
+    icon: "newspaper",
     selected: "bg-surface-container-high/80 ring-1 ring-inset ring-outline-variant/50",
     bar: "bg-on-surface-variant/40",
     badge: "neutral",
@@ -13,7 +13,7 @@ export const FILTER_TONES = {
     cap: "text-on-surface",
   },
   club: {
-    row: "bg-amber-500/10 hover:bg-amber-500/15",
+    icon: "shield",
     selected: "bg-amber-500/20 ring-1 ring-inset ring-amber-400/40",
     bar: "bg-amber-500",
     badge: "warning",
@@ -21,7 +21,7 @@ export const FILTER_TONES = {
     cap: "text-amber-300",
   },
   competitions: {
-    row: "bg-sky-500/10 hover:bg-sky-500/15",
+    icon: "emoji_events",
     selected: "bg-sky-500/20 ring-1 ring-inset ring-sky-400/40",
     bar: "bg-sky-500",
     badge: "cooldown",
@@ -29,7 +29,7 @@ export const FILTER_TONES = {
     cap: "text-sky-300",
   },
   squad: {
-    row: "bg-emerald-500/10 hover:bg-emerald-500/15",
+    icon: "groups",
     selected: "bg-emerald-500/20 ring-1 ring-inset ring-emerald-400/40",
     bar: "bg-emerald-500",
     badge: "sold",
@@ -37,21 +37,13 @@ export const FILTER_TONES = {
     cap: "text-emerald-300",
   },
   market: {
-    row: "bg-violet-500/10 hover:bg-violet-500/15",
+    icon: "swap_horiz",
     selected: "bg-violet-500/20 ring-1 ring-inset ring-violet-400/40",
     bar: "bg-violet-500",
     badge: "junior",
     dot: "bg-violet-400",
     cap: "text-violet-300",
   },
-};
-
-export const CATEGORY_EMOJIS = {
-  all: "📰",
-  club: "⚽",
-  competitions: "🏆",
-  squad: "👥",
-  market: "💰",
 };
 
 /** Tinta simples para links de entidades no título: sem pílula (em corpo

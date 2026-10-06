@@ -4,9 +4,18 @@
  */
 import { EmptyState } from "../../components/shared/EmptyState.jsx";
 import { Button } from "../../components/shared/Button.jsx";
-import { Badge } from "../../components/shared/Badge.jsx";
 import { FILTER_TONES } from "./tones.js";
 import { flagSummary, getSnippet, highlightText } from "./utils.jsx";
+
+/**
+ * «S5/2026» → «Semana 5 · 2026»; outros formatos passam tal como vêm.
+ * @param {string} date
+ * @returns {string}
+ */
+function formatGroupLabel(date) {
+  const m = /^S(\d+)\/(\d+)$/.exec(String(date ?? ""));
+  return m ? `Semana ${m[1]} · ${m[2]}` : String(date ?? "");
+}
 
 /**
  * @param {{
@@ -90,59 +99,61 @@ export function TopicList({
         />
       ) : (
         <ol onKeyDown={handleListKeyDown} className="max-h-64 short:max-h-44 overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:max-h-none lg:min-h-0 lg:flex-1">
-          {visible.map((it) => {
+          {visible.map((it, i) => {
             const active = selected?.id === it.id;
             const unread = inbox.isUnread(it);
             const tone = FILTER_TONES[it.cat] || FILTER_TONES.all;
             const snippet = getSnippet(it.body);
             const flagLine = it.redFlag ? flagSummary(it) : "";
             const sub = flagLine || snippet;
+            // Cabeçalho de grupo quando a semana muda (a data é «S5/2026»).
+            const newGroup = i === 0 || visible[i - 1].date !== it.date;
 
             return (
               <li key={it.id}>
+                {newGroup && (
+                  <div className="sticky top-0 z-10 border-b border-outline-variant/15 bg-surface-container px-2 py-1 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                    {formatGroupLabel(it.date)}
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => onSelectItem?.(it.id)}
                   aria-current={active}
                   tabIndex={it.id === activeId ? 0 : -1}
-                  className={`flex w-full items-start gap-2 px-2 py-1.5 text-left transition-colors ${
+                  className={`flex w-full items-start gap-2.5 px-2.5 py-2 text-left transition-colors ${
                     active
                       ? `${tone.selected} ${it.redFlag ? "ring-error/70 ring-1" : ""}`
                       : it.redFlag
                         ? "bg-error/10 hover:bg-error/15"
-                        : tone.row
+                        : "hover:bg-surface-container-high"
                   }`}
                 >
-                  {/* Faixa lateral: categoria, ou error sempre visível nas pendências */}
-                  <div
-                    className={`mt-0.5 h-4 w-1 shrink-0 rounded-full transition-opacity ${it.redFlag ? "bg-error opacity-100 flag-pulse" : `${tone.bar} ${active ? "opacity-100" : "opacity-0"}`}`}
+                  {/* Ícone da categoria, ou bandeira nas pendências */}
+                  <span
                     aria-hidden
-                  />
-                  <span className="w-20 short:w-16 shrink-0 truncate text-[10px] font-bold text-on-surface-variant tabular-nums">
-                    {it.date}
+                    className={`material-symbols-outlined mt-px shrink-0 text-[18px] ${
+                      it.redFlag ? "text-error flag-pulse" : `${tone.cap} ${unread || active ? "" : "opacity-50"}`
+                    }`}
+                  >
+                    {it.redFlag ? "flag" : tone.icon}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      {it.redFlag && (
-                        <Badge variant="error" size="sm" title="Ação necessária">
-                          Ação necessária
-                        </Badge>
-                      )}
-                      <span
-                        className={`min-w-0 truncate text-xs ${
-                          unread
-                            ? "font-black text-on-surface"
-                            : "font-medium text-on-surface-variant"
-                        }`}
-                      >
-                        {query && !flagLine
-                          ? highlightText(it.title, query)
-                          : it.title}
-                      </span>
-                    </div>
+                    <span
+                      className={`block truncate text-sm short:text-xs ${
+                        unread
+                          ? "font-black text-on-surface"
+                          : "font-medium text-on-surface-variant"
+                      }`}
+                    >
+                      {it.redFlag && <span className="sr-only">Ação necessária: </span>}
+                      {query && !flagLine
+                        ? highlightText(it.title, query)
+                        : it.title}
+                    </span>
                     {sub && (
                       <p
-                        className={`mt-0.5 truncate text-[10px] ${flagLine ? "font-bold text-error/90" : "text-on-surface-variant/70"}`}
+                        className={`mt-0.5 truncate text-xs short:text-[10px] ${flagLine ? "font-bold text-error/90" : "text-on-surface-variant/70"}`}
                       >
                         {query && !flagLine
                           ? highlightText(sub, query)
@@ -153,7 +164,7 @@ export function TopicList({
                   {unread && !active && (
                     <span
                       aria-label="Não lida"
-                      className={`mt-1 h-2 w-2 shrink-0 rounded-full ${tone.dot}`}
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${tone.dot}`}
                     />
                   )}
                 </button>
