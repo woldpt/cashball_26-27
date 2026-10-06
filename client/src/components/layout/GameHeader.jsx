@@ -413,9 +413,6 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             </div>
           )}
 
-          {/* Slot do botão de continuar do MatchPage (intervalo/pausa) */}
-          <div id="match-cta-slot" className="ml-2 flex items-center" />
-
           {/* RoomHub button — unified: Coaches + Chat */}
           <div className="relative">
           <button
@@ -682,6 +679,9 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
               )}
             </button>
           )}
+
+          {/* Slot do botão de continuar do MatchPage (intervalo/pausa) — último à direita, como o JOGAR */}
+          <div id="match-cta-slot" className="ml-2 flex items-center" />
 
           {/* Slot do botão Pausa do jogo ao vivo (onde está o JOGAR fora do jogo) */}
           <div id="match-pause-slot" className="ml-2 hidden lg:flex items-center" />
