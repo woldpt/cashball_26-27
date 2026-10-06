@@ -19,7 +19,11 @@ const COACHES = [
   "Bruno",
 ];
 
-const players = COACHES.map((name, i) => ({
+// O último coach está em lockedCoaches mas fora de `players` → offline
+// (cobre o banner de pausa e o estado "Desconectado").
+const OFFLINE = COACHES[COACHES.length - 1];
+
+const players = COACHES.filter((n) => n !== OFFLINE).map((name, i) => ({
   name,
   teamId: i + 1,
   ready: i === 0,
@@ -42,7 +46,7 @@ const roomMessages = Array.from({ length: 30 }, (_, i) => ({
 const ctxValue = {
   teams,
   lockedCoaches: COACHES,
-  awaitingCoaches: [],
+  awaitingCoaches: [OFFLINE],
   me: { name: "Coach Longuitudesupergrande Almeida" },
   roomMessages,
   chatInput: "",
