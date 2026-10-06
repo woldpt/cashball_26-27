@@ -102,7 +102,7 @@ Colunas por posição (`flex items-end`, altura 80px): trilho `bg-primary/10 rou
 | `md` (`hidden md:flex`) | Atributos (Agr/Res/For), Ordenado + Valor |
 | `xl` (`hidden xl:flex`) | Stats (Jogos, Golos, Vermelhos, Lesões) |
 
-Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grupos canónicos em `constants/navigation.js` (Clube/Gestão/Competição/Transferências); offsets do sidebar: elementos fixos/absolutos usam `lg:left-[var(--sidebar-w-collapsed)]` / `lg:left-[var(--sidebar-w)]`.
+Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grupos canónicos em `constants/navigation.js` (Clube/Gestão/Competição/Transferências); layout do shell em §14.
 
 **Armadilha do tema:** no CSS gerado, o bloco `@media (width >= 40rem)` (`sm`) sai **depois** de `md` (768) e `lg` (1024) — o `@theme` em `index.css` redefine `--breakpoint-md`/`--breakpoint-lg` e muda a ordem. Como a especificidade é igual, **`sm:*` ganha sempre a `md:*`/`lg:*`** para a mesma propriedade: `max-w-22 sm:max-w-32 md:max-w-none` fica preso em 32 (era o que truncava os nomes na classificação). Só `xl`/`2xl` saem depois de `sm` — uma escala crescente tem de ficar em `base → sm → xl` (nunca desfazer em `md`/`lg`).
 
@@ -200,3 +200,12 @@ A de fora (`<slug>_away.svg`, cores trocadas, mesmo padrão) só se usa quando
 as duas de casa empatam: o `useKitClash` compara os SVGs e a equipa de fora
 veste a de fora (placar do `LiveMatchHero`, `DuelHero`). Em 404 da camisola,
 o `TeamKit` cai para o `TeamCrest` em vez de deixar vazio.
+
+## 14. Shell do jogo (GameLayout)
+
+- **Grelha `.game-shell`** (`index.css`): áreas `top` (header) · `nav` (sidebar, só `lg`) · `main` · `ticker` (rodapé CM) · `bottom` (bottom-nav mobile). Peças novas do chrome entram com `[grid-area:…]`, nunca `fixed` + margens. `data-collapsed` / `data-match` mudam a coluna da sidebar. Overlays ficam fora da grelha.
+- **Geometria:** `--header-h`, `--mobile-nav-h`, `--sidebar-w(-collapsed)` — elementos `fixed` que se alinham com o shell usam estas vars.
+- **Camadas:** `z-(--z-header)`, `z-(--z-mobile-nav)`, `z-(--z-ticker)`… em `:root`; modais em `MODAL_Z`.
+- **Header = barra da jornada:** fundo na cor primária do clube, texto em `color_secondary` (`ink`); chips sobre a cor com `bg-black/25`. JOGAR via `usePlayCta` (mesmo estado no header e no bottom-nav).
+- **Badges de contagem:** alerta/não-lidas `bg-red-500 text-white`; contagem neutra `bg-primary text-on-primary`.
+- **Exceção intencional:** o balão de chat do header (branco, borda preta) é uma fala de banda desenhada — não alinhar com as superfícies escuras.

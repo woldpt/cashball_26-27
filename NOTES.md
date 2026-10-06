@@ -1,3 +1,9 @@
+## Redesign do shell do jogo (2026-10-06)
+- Shell em CSS grid (`.game-shell`), header passa a barra da jornada (clube, próximo jogo, orçamento, posição, JOGAR com estado via `usePlayCta`); JOGAR sai da sidebar.
+- Fix: `requestResync` reenvia `teamsData` (o jogo ficava sem equipas se o provider montasse depois do join); setinhas da classificação só re-snapshot quando a tabela muda.
+- Testado: lint, check:types, typecheck, capturas reais desktop/mobile (playwright, sala local); test:mobile 150/185 — as 35 falhas (assistant, club, journal, landing, stadiumtab, teamsquad, topwidgets) já existiam antes (confirmado com stash).
+- Plano e passos adiados em `docs/plans/2026-10-06-gamelayout-redesign.md`.
+
 ## Amigáveis em todas as semanas da Taça (2026-10-05)
 - Eliminado pode marcar amigável em qualquer semana da Taça ainda por jogar (exceto a final); isenta dos 32 avos marca para a ronda 1.
 - Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.

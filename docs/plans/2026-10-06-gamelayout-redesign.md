@@ -1,6 +1,7 @@
 # Redesign do shell do jogo (`GameLayout`)
 
-> Proposta, não implementada. Baseada em leitura de código (`GameLayout.jsx`,
+> **Estado (2026-10-06):** 1, 2 e 6 feitos; 3, 4 e 5 adiados (ver "Execução").
+> Proposta original baseada em leitura de código (`GameLayout.jsx`,
 > `GameHeader.jsx`, `Sidebar.jsx`, `MobileNav.jsx`, `GroupBackdrop.jsx`,
 > `index.css`, `constants/navigation.js`), sem capturas do ecrã real.
 
@@ -95,3 +96,13 @@ tutorial > adjunto > ticker) num só sítio.
 3. Hero por tab no lugar do fundo de ecrã inteiro.
 4. Bottom-nav mobile com destinos diretos.
 5. Prioridade de overlays.
+
+
+## Execução (2026-10-06)
+
+- **1 — feito** (`6564fcf5`): grelha `.game-shell`; ramo landscape removido (o `RotateOverlay` bloqueia-o).
+- **2 — feito** (`e34d1036`): barra da jornada + `usePlayCta`. Revelou um bug antigo: o `requestResync` não reenviava `teamsData` (orçamento 0 € nos Leilões) — corrigido em `5941ade1`.
+- **3 — adiado:** as capturas reais desmentem a premissa — a foto vê-se bem nas páginas sem painéis (Leilões, Jornal mobile). Trocar por hero tirava ambiente sem ganho claro.
+- **4 — adiado:** sem dados de uso para escolher os 5 destinos diretos; mexe no tutorial (submenus/`data-tour`). Retomar com números.
+- **5 — adiado:** não há colisões concretas observadas; a regra ad hoc (adjunto cala o ticker) chega. YAGNI até aparecer um caso.
+- **6 — feito:** badges unificados (red-500 / primary), balão e shell documentados no `STYLE.md` §14.
