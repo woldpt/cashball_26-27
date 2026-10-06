@@ -6,6 +6,7 @@ import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 import { LiveClock } from "../shared/LiveClock.jsx";
 import { TeamCrest } from "../shared/TeamCrest.jsx";
 import { isAdminCoach } from "../admin/adminApi.js";
+import { liveScore } from "../live/liveHelpers.js";
 import { rankStandings } from "../../utils/standingsRank.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { usePlayCta } from "./usePlayCta.js";
@@ -157,6 +158,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     userDropdownOpen,
     setUserDropdownOpen,
     financeData,
+    myMatch,
   } = useGame();
   const cta = usePlayCta(scrollToTop);
   const [standingsOpen, setStandingsOpen] = useState(false);
@@ -193,6 +195,11 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     divisionTeams.findIndex((t) => Number(t.id) === Number(me?.teamId)) + 1;
   const budget = teamInfo?.budget ?? 0;
   const nextOpponent = nextMatchSummary?.opponent;
+  const homeT = myMatch && teams.find((t) => Number(t.id) === Number(myMatch.homeTeamId));
+  const awayT = myMatch && teams.find((t) => Number(t.id) === Number(myMatch.awayTeamId));
+  const score = myMatch?.events
+    ? { ...liveScore(myMatch.events, liveMinute), homeName: homeT?.name, awayName: awayT?.name }
+    : null;
 
   return (
     <header
@@ -213,7 +220,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
           <img
             src={teamInfo.crest}
             alt=""
-            className="absolute left-1/2 top-1/2 h-[260%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 -rotate-[10deg] drop-shadow-[4px_6px_8px_rgba(0,0,0,0.6)]"
+            className="absolute left-1/2 top-1/2 h-[260%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 -rotate-[10deg] drop-shadow-[2px_3px_3px_rgba(0,0,0,0.35)]"
           />
         </div>
       )}
@@ -245,6 +252,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             cupPreMatch={cupPreMatch}
             cupMatchRoundName={cupMatchRoundName}
             cupExtraTimeBadge={cupExtraTimeBadge}
+            score={score}
           />
         ) : (
           <NextMatch summary={nextMatchSummary} jornada={currentJornada} ink={ink} />

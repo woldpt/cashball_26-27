@@ -11,7 +11,6 @@ import { generateLeagueFixtures } from "../../utils/fixtures.js";
 import { DIVISION_NAMES } from "../../constants/index.js";
 import { isFriendlyMatch } from "../live/liveHelpers.js";
 import {
-	useCompactViewport,
 	useLandscapePhone,
 } from "../../hooks/useIsMobile.js";
 
@@ -67,9 +66,6 @@ export function MatchPage({
 	} = useTactics();
 
 	const { waitingForResults, resultsWaitTimedOut } = useGame();
-
-	// Telemóvel em horizontal: largura de desktop, altura de telemóvel → layout compacto.
-	const compact = useCompactViewport();
 
 	// MOM do jogo: o fixture da liga já traz `mom` no payload final
 	// (matchResults); na Taça o fixture (matchResults simplificado) não traz,
@@ -359,37 +355,6 @@ export function MatchPage({
 					>
 						↻ Tentar de novo
 					</button>
-				</div>
-			)}
-
-			{/* ── Halftime score banner ──────────────────────────────────── */}
-			{mode === "halftime" && fixture && (
-				<div className={`${compact ? "hidden" : "flex"} shrink-0 items-stretch border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm`}>
-					<div
-						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
-						style={{ backgroundColor: hColor + "20", color: hColor }}
-					>
-						<span
-							className="w-2 h-2 rounded-full shrink-0"
-							style={{ background: hColor, boxShadow: `0 0 6px ${hColor}60` }}
-						/>
-						{homeTeam?.name || "Casa"}
-					</div>
-					<div className="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 bg-surface-container-low text-on-surface font-black text-xl tracking-widest">
-						<span className="tabular-nums">{fixture.finalHomeGoals ?? 0}</span>
-						<span className="text-on-surface-variant/60 text-base">—</span>
-						<span className="tabular-nums">{fixture.finalAwayGoals ?? 0}</span>
-					</div>
-					<div
-						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
-						style={{ backgroundColor: aColor + "20", color: aColor }}
-					>
-						{awayTeam?.name || "Fora"}
-						<span
-							className="w-2 h-2 rounded-full shrink-0"
-							style={{ background: aColor, boxShadow: `0 0 6px ${aColor}60` }}
-						/>
-					</div>
 				</div>
 			)}
 

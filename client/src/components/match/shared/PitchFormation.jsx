@@ -31,7 +31,7 @@ const PITCH_SVG = (
 );
 
 /* ── Posições das linhas ───────────────────────────────────────────────── */
-const ROW_POSITIONS = { ATA: "7%", MED: "30%", DEF: "55%", GR: "80%" };
+const ROW_POSITIONS = { ATA: "4%", MED: "28%", DEF: "52%", GR: "76%" };
 
 /**
  * Estatísticas por jogador a partir dos eventos visíveis (golos, cartões).
@@ -56,6 +56,9 @@ function usePlayerBadges(events, liveMinute) {
     return stats;
   }, [events, liveMinute]);
 }
+
+/* Linhas com 4+ jogadores: só o apelido (o nome inteiro truncava em "Afonso …"). */
+const lastWord = (n) => (n || "").trim().split(/\s+/).pop();
 
 /* ── Marcador de jogador (em campo) ──────────────────────────────────────
  * Cara do jogador (PlayerAvatar) com anel na cor da posição, placard com
@@ -149,7 +152,7 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
         className={`mt-1 bg-black/75 px-1 py-0.5 rounded font-semibold text-white text-center truncate w-full ${nameCls}`}
         style={{ textShadow: "0 1px 2px rgba(0,0,0,0.9)" }}
       >
-        {isJunior && !player.name ? "Júnior" : player.name}
+        {isJunior && !player.name ? "Júnior" : compact ? lastWord(player.name) : player.name}
         {!!player.is_star && (player.position === "MED" || player.position === "ATA") && (
           <span className={`ml-0.5 ${starColor}`} title="Craque">★</span>
         )}

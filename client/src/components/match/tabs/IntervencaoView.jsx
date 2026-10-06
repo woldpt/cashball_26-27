@@ -13,7 +13,6 @@ import {
   useLandscapePhone,
 } from "../../../hooks/useIsMobile.js";
 import { SubsPanel } from "./intervencao/SubsPanel.jsx";
-import { usePrefersReducedMotion } from "./intervencao/subsSelection.js";
 import {
   AdversarioPanel,
   CronologiaPanel,
@@ -75,18 +74,6 @@ export function IntervencaoView({
   const compact = useCompactViewport();
   // Banda landscape phone → compressão extra; o vertical não muda.
   const shortLandscape = useLandscapePhone();
-
-  // Mobile no intervalo: o topo alterna entre marcador e nome da fase com
-  // desvanecimento de 5 em 5 segundos. O toque alterna manualmente e
-  // reinicia a cadência (phaseIsScore nas deps).
-  const [phaseIsScore, setPhaseIsScore] = useState(true);
-  useEffect(() => {
-    if (!isHalftime) return;
-    const timer = setInterval(() => setPhaseIsScore((v) => !v), 5000);
-    return () => clearInterval(timer);
-  }, [isHalftime, phaseIsScore]);
-
-  const reducedMotion = usePrefersReducedMotion();
 
   /* ── Mode booleans ────────────────────────────────────────────── */
   const isPreExtraTime =
@@ -430,68 +417,13 @@ export function IntervencaoView({
           draggable={false}
         />
       </div>
-      {/* ── Halftime mobile: intermitência score ↔ título da fase + posse 2px ──
-       * Substitui (só no mobile) a barra de score do MatchPage e o bloco de
-       * posse de bola; desvanecimento de 5s entre os dois estados. */}
+      {/* ── Halftime mobile: título da fase + posse 2px (o resultado vive no relógio do header). ── */}
       {isHalftime && hInfo?.name && aInfo?.name && (
-        <div
-          className={`${compact ? "" : "hidden"} shrink-0 cursor-pointer border-b border-outline-variant/25 bg-surface-container-high`}
-          onClick={() => setPhaseIsScore((v) => !v)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setPhaseIsScore((v) => !v);
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label={
-            phaseIsScore
-              ? "A mostrar o marcador — tocar para ver a fase"
-              : "A mostrar a fase — tocar para ver o marcador"
-          }
-        >
-          <div className="relative h-10 overflow-hidden">
-            {/* Score — versão compacta do banner de intervalo do MatchPage. */}
-            <motion.div
-              initial={false}
-              animate={{ opacity: phaseIsScore ? 1 : 0 }}
-              transition={{ duration: reducedMotion ? 0 : 0.6, ease: "easeInOut" }}
-              className="absolute inset-0 flex items-stretch"
-              aria-hidden={!phaseIsScore}
-            >
-              <div
-                className="flex min-w-0 flex-1 items-center justify-end gap-1.5 px-3 text-[10px] font-black uppercase tracking-wide"
-                style={{ backgroundColor: `${hInfo.color_primary || "#6366f1"}35`, color: hInfo.color_primary || "#6366f1" }}
-              >
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: hInfo.color_primary || "#6366f1", boxShadow: `0 0 6px ${hInfo.color_primary || "#6366f1"}60` }} />
-                <span className="truncate">{hInfo.name}</span>
-              </div>
-              <div className="flex items-center gap-2 bg-surface-container-low px-3 font-black text-base tracking-widest text-on-surface">
-                <span className="tabular-nums">{fixture?.finalHomeGoals ?? 0}</span>
-                <span className="text-sm text-on-surface-variant/60">–</span>
-                <span className="tabular-nums">{fixture?.finalAwayGoals ?? 0}</span>
-              </div>
-              <div
-                className="flex min-w-0 flex-1 items-center justify-start gap-1.5 px-3 text-[10px] font-black uppercase tracking-wide"
-                style={{ backgroundColor: `${aInfo.color_primary || "#f43f5e"}35`, color: aInfo.color_primary || "#f43f5e" }}
-              >
-                <span className="truncate">{aInfo.name}</span>
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: aInfo.color_primary || "#f43f5e", boxShadow: `0 0 6px ${aInfo.color_primary || "#f43f5e"}60` }} />
-              </div>
-            </motion.div>
-            {/* Título da fase — alterna com o score. */}
-            <motion.div
-              initial={false}
-              animate={{ opacity: phaseIsScore ? 0 : 1 }}
-              transition={{ duration: reducedMotion ? 0 : 0.6, ease: "easeInOut" }}
-              className="absolute inset-0 flex items-center justify-center"
-              aria-hidden={phaseIsScore}
-            >
-              <span className="text-sm font-black uppercase tracking-[0.25em] text-on-surface">
-                {isPreExtraTime ? "Prolongamento" : "Intervalo"}
-              </span>
-            </motion.div>
+        <div className={`${compact ? "" : "hidden"} shrink-0 border-b border-outline-variant/25 bg-surface-container-high`}>
+          <div className="flex h-10 items-center justify-center">
+            <span className="text-sm font-black uppercase tracking-[0.25em] text-on-surface">
+              {isPreExtraTime ? "Prolongamento" : "Intervalo"}
+            </span>
           </div>
           {/* Posse de bola em linha de 2px (substitui o bloco no mobile). */}
           {fixture?.homePossession != null && (
