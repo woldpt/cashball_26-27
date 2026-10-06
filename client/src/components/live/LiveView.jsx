@@ -260,7 +260,9 @@ export function LiveView() {
                     Sem jogos
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                  <div
+                    className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${div === myDiv ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}
+                  >
                     {fixtures.map(renderRow)}
                   </div>
                 );
