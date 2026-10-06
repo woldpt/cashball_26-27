@@ -25,6 +25,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useInbox } from "../hooks/useInbox.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
+import { Badge } from "../components/shared/Badge.jsx";
 import { PostMatchPitch } from "../components/shared/PostMatchPitch.jsx";
 import { SponsorChooseModal } from "../components/shared/SponsorChooseModal.jsx";
 import { flagSummary, searchText } from "./journal/utils.jsx";
@@ -107,6 +108,7 @@ export function JournalTab({
       ? visible[detailIndex + 1]
       : null;
 
+  const firstFlag = inbox.redFlags > 0 ? inbox.items.find((it) => it.redFlag) : null;
   const labelOf = (id) => inbox.cats.find((c) => c.id === id)?.label || id;
   const hasUnreadNonFlag = inbox.items.some(
     (item) => !item.redFlag && inbox.isUnread(item),
@@ -126,29 +128,33 @@ export function JournalTab({
     <div className="space-y-2 short:space-y-1.5 lg:flex lg:min-h-[calc(100dvh-var(--header-h)-3rem)] lg:flex-col">
       {/* ── Barra de título ─────────────────────────────────────────── */}
       <div className="rounded-sm bg-surface-container border border-outline-variant/20 px-3 py-2 short:py-1.5 flex items-center justify-between gap-2">
-        <h1 className="min-w-0 truncate font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
-          Jornal do Clube
+        <h1 className="flex min-w-0 items-center gap-2 font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
+          <span aria-hidden className="material-symbols-outlined text-[20px]">newspaper</span>
+          <span className="truncate">Jornal do Clube</span>
         </h1>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {inbox.redFlags > 0 && (
-            <span className="rounded-sm bg-error-container px-1.5 py-0.5 text-[10px] font-black text-on-error-container uppercase tracking-widest">
-              🚩 {inbox.redFlags}
-            </span>
-          )}
-          {inbox.unreadCount > 0 && (
-            <span className="rounded-sm bg-surface-container-high border border-outline-variant/25 px-1.5 py-0.5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">
-              {inbox.unreadCount} nova
-              {inbox.unreadCount === 1 ? "" : "s"}
-            </span>
-          )}
-        </div>
+        {inbox.unreadCount > 0 && (
+          <Badge variant="neutral" size="md">
+            {inbox.unreadCount} nova{inbox.unreadCount === 1 ? "" : "s"}
+          </Badge>
+        )}
       </div>
 
-      {inbox.redFlags > 0 && (
-        <p className="rounded-sm border border-error/40 bg-error/10 px-3 py-1.5 text-[11px] font-bold text-error">
-          🚩 Tens assuntos por resolver — o Pronto fica bloqueado até
-          responderes.
-        </p>
+      {/* Pendências: uma faixa só, com atalho para a primeira */}
+      {firstFlag && (
+        <div className="flex items-center gap-2 rounded-sm border border-error/40 bg-error/10 px-3 py-1.5">
+          <span aria-hidden className="material-symbols-outlined text-[18px] text-error">flag</span>
+          <p className="min-w-0 flex-1 text-[11px] font-bold text-error">
+            {inbox.redFlags === 1
+              ? "Tens 1 assunto por resolver"
+              : `Tens ${inbox.redFlags} assuntos por resolver`}{" "}
+            — o Pronto fica bloqueado até responderes.
+          </p>
+          {selected?.id !== firstFlag.id && (
+            <Button variant="secondary" size="sm" onClick={() => handleSelectItem(firstFlag.id)}>
+              Ver
+            </Button>
+          )}
+        </div>
       )}
 
       <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
