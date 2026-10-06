@@ -253,7 +253,6 @@ export function GameProvider({
 
 	// ── Refs ────────────────────────────────────────────────────────────────
 	const injuryCountdownRef = useRef(null);
-	const chatMessagesRef = useRef(null);
 	const roomHubRef = useRef(null);
 	const chatOpenRef = useRef(false);
 	const activeChatTabRef = useRef("room");
@@ -2021,7 +2020,6 @@ year: seasonYear,
 		setCoachAvatarSeeds,
 		// Refs
 		injuryCountdownRef,
-		chatMessagesRef,
 		roomHubRef,
 		chatOpenRef,
 		activeChatTabRef,
@@ -2105,7 +2103,7 @@ transferProposalModal, setTransferProposalModal, signingCelebration, setSigningC
 		globalMessages, setGlobalMessages, globalPlayers, setGlobalPlayers, unreadRoom, unreadGlobal,
 		setUnreadRoom, setUnreadGlobal, chatInput, setChatInput, mobileSubMenu, setMobileSubMenu, sidebarCollapsed,
 		setSidebarCollapsed, avatarSeed, setAvatarSeed, coachAvatars, setCoachAvatars, coachAvatarSeeds, setCoachAvatarSeeds, injuryCountdownRef,
-		chatMessagesRef, roomHubRef, chatOpenRef, activeChatTabRef, me, setMe,
+		roomHubRef, chatOpenRef, activeChatTabRef, me, setMe,
 		leaveToMenu, meRef, roomCodeRef, joinTimerRef, backendUrl, addToast, dismissToast,
 		handleHalftimeReady, handleOpenTeamSquad, handleCloseTeamSquad, refreshCalendar, closeRefereePopup, handleResolveMatchAction,
 		handleCloseMatch, buyPlayer, renewPlayerContract, listPlayerAuction, listPlayerFixed, removeFromTransferList,

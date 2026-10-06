@@ -42,11 +42,11 @@ export function ChatMessages({ channel, systemMessages }) {
     coachAvatars,
     coachAvatarSeeds,
     backendUrl,
-    chatMessagesRef,
     roomRoster,
     teams,
   } = useGame();
   const myName = me?.name ?? "";
+  const listRef = useRef(null);
   const stickRef = useRef(true);
   const [hasNew, setHasNew] = useState(false);
   // Histórico a caminho: evita piscar "sem mensagens" antes da resposta.
@@ -96,7 +96,7 @@ export function ChatMessages({ channel, systemMessages }) {
   // Só salta para o fim se o utilizador já lá estava (ou se a mensagem é sua);
   // caso contrário mostra o pill "Novas mensagens" em vez de roubar o scroll.
   useEffect(() => {
-    const el = chatMessagesRef?.current;
+    const el = listRef.current;
     if (!el) return;
     const last = merged[merged.length - 1];
     if (stickRef.current || last?.coachName === myName) {
@@ -105,7 +105,7 @@ export function ChatMessages({ channel, systemMessages }) {
     } else if (last) {
       startTransition(() => setHasNew(true));
     }
-  }, [merged, myName, chatMessagesRef]);
+  }, [merged, myName]);
 
   const onScroll = (e) => {
     const el = e.currentTarget;
@@ -115,14 +115,14 @@ export function ChatMessages({ channel, systemMessages }) {
   };
 
   const scrollToEnd = () => {
-    const el = chatMessagesRef?.current;
+    const el = listRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   };
 
   return (
     <div className="relative flex-1 min-h-0 flex flex-col">
       <div
-        ref={chatMessagesRef}
+        ref={listRef}
         onScroll={onScroll}
         className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5"
       >

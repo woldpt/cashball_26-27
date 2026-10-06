@@ -7,9 +7,8 @@ import { panelRight, sheetUp } from "../../motion.js";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 import { CoachRow } from "./CoachRow.jsx";
 import { ChatMessages } from "./ChatMessages.jsx";
+import { ChatComposer } from "./ChatComposer.jsx";
 import { InviteControls } from "./InviteControls.jsx";
-
-const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
 
 // Mobile (< sm): folha inferior; desktop: painel que entra da direita.
 const isMobileViewport = () =>
@@ -47,8 +46,6 @@ export function RoomHubPanel({
     calendarIndex,
     unreadRoom,
     unreadGlobal,
-    chatInput,
-    setChatInput,
     avatarSeed,
     coachAvatars,
     coachAvatarSeeds,
@@ -59,11 +56,8 @@ export function RoomHubPanel({
 
   const [copied, setCopied] = useState(false);
   const [showCoaches, setShowCoaches] = useState(false);
-  const [showQuick, setShowQuick] = useState(false);
   const [anim] = useState(() => (isMobileViewport() ? sheetUp : panelRight));
   const copiedTimer = useRef(null);
-  const lastSendRef = useRef(0);
-  const inputRef = useRef(null);
 
   const myName = me?.name ?? "";
   const myRoom = me?.roomCode ?? "";
@@ -95,11 +89,9 @@ export function RoomHubPanel({
 
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
 
-  // Foco: no input ao abrir (só com rato/teclado — no telemóvel abriria o teclado
-  // por cima do chat) e de volta ao botão que abriu o hub ao fechar.
+  // Devolve o foco ao botão que abriu o hub ao fechar (o foco no input é do ChatComposer).
   useEffect(() => {
     const opener = document.activeElement;
-    if (window.matchMedia("(pointer: fine)").matches) inputRef.current?.focus();
     return () => {
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
     };
@@ -111,27 +103,6 @@ export function RoomHubPanel({
   useEffect(() => {
     socket.emit("getChatHistory", { channel: chatSubTab });
   }, [chatSubTab]);
-
-  const emitChat = useCallback(
-    (text) => {
-      const trimmed = text.trim();
-      if (!trimmed) return false;
-      const now = Date.now();
-      if (now - lastSendRef.current < SEND_GAP_MS) return false;
-      lastSendRef.current = now;
-      socket.emit("sendChatMessage", {
-        channel: chatSubTab,
-        message: trimmed,
-      });
-      return true;
-    },
-    [chatSubTab],
-  );
-
-  const sendChat = useCallback(() => {
-    // Só limpa se foi enviada — senão o texto perdia-se no gap anti-spam.
-    if (emitChat(chatInput)) setChatInput("");
-  }, [emitChat, chatInput, setChatInput]);
 
   // Sala atual de cada coach online (presença global): nome → roomCode.
   const presenceRooms = useMemo(() => {
@@ -391,63 +362,7 @@ export function RoomHubPanel({
 
           <ChatMessages channel={chatSubTab} systemMessages={systemMessages} />
 
-          {/* Respostas rápidas (só na sala) — abertas a pedido para poupar altura */}
-          {chatSubTab === "room" && showQuick && (
-            <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto border-t border-outline-variant/20 bg-surface-container-low">
-              {QUICK_MESSAGES.map((msg) => (
-                <button
-                  key={msg}
-                  onClick={() => emitChat(msg)}
-                  className="shrink-0 px-2.5 py-0.5 rounded-full text-xs bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/20 transition-colors"
-                >
-                  {msg}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Input */}
-          <div className="flex items-center gap-2 px-3 py-2.5 shrink-0 border-t border-outline-variant/20 bg-surface-container-low">
-            {chatSubTab === "room" && (
-              <button
-                onClick={() => setShowQuick((v) => !v)}
-                aria-label="Respostas rápidas"
-                aria-pressed={showQuick}
-                className={`shrink-0 grid place-items-center size-8 rounded-lg transition-colors ${
-                  showQuick
-                    ? "bg-primary/20 text-primary"
-                    : "text-on-surface-variant hover:bg-surface-container-high"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[20px] leading-none">
-                  add_reaction
-                </span>
-              </button>
-            )}
-            <input
-              ref={inputRef}
-              type="text"
-              value={chatInput}
-              aria-label="Escreve uma mensagem"
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.nativeEvent.isComposing) sendChat();
-              }}
-              placeholder="Escreve uma mensagem…"
-              maxLength={500}
-              className="min-w-0 flex-1 bg-surface-container text-on-surface text-sm px-3 py-1.5 rounded-lg outline-none placeholder:text-on-surface-variant/50 border border-outline-variant/30 focus:border-primary/60 transition-colors"
-            />
-            <button
-              onClick={sendChat}
-              disabled={!chatInput.trim()}
-              aria-label="Enviar mensagem"
-              className="shrink-0 p-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-30 hover:opacity-90 transition-opacity"
-            >
-              <span className="material-symbols-outlined text-[18px] leading-none">
-                send
-              </span>
-            </button>
-          </div>
+          <ChatComposer channel={chatSubTab} autoFocus />
         </div>
       </div>
     </motion.div>
