@@ -2,7 +2,6 @@
  * Corpo do artigo do Jornal: texto com entidades clicáveis, parágrafos em
  * registo de imprensa clássica e o cromo do detalhe (faixa + metadados).
  */
-import { Badge } from "../../components/shared/Badge.jsx";
 import { FILTER_TONES, LINK_CLS, TITLE_LINK_CLS } from "./tones.js";
 import { highlightText, splitPartsByParagraphs, teamFromRef } from "./utils.jsx";
 
@@ -142,16 +141,15 @@ export function CategoryAccentBar({ category, urgent }) {
  * @returns {JSX.Element}
  */
 export function ArticleMeta({ item, catLabel }) {
-  const badge = item ? (
-    <Badge variant={FILTER_TONES[item.cat]?.badge || "neutral"} size="sm">
-      {catLabel || item.cat}
-    </Badge>
-  ) : null;
-
+  if (!item) return null;
+  const tone = FILTER_TONES[item.cat] || FILTER_TONES.all;
   return (
-    <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-on-surface-variant">
-      {badge}
-      {item?.date && <span>{item.date}</span>}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-black uppercase tracking-widest">
+      <span className={`flex items-center gap-1 ${tone.cap}`}>
+        <span aria-hidden className="material-symbols-outlined text-[16px]">{tone.icon}</span>
+        {catLabel || item.cat}
+      </span>
+      {item.date && <span className="text-on-surface-variant tabular-nums">{item.date}</span>}
     </div>
   );
 }

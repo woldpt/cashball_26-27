@@ -41,8 +41,8 @@ export function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }
 
   return (
     <div
-      className={`mt-3 flex items-center justify-center ${
-        isTransfer ? "flex-col gap-2" : "flex-wrap gap-3"
+      className={`mt-4 flex ${
+        isTransfer ? "flex-col items-start gap-2" : "flex-wrap items-center gap-3"
       }`}
     >
       {media.player && (
@@ -57,14 +57,14 @@ export function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }
             photo={media.player.photo}
             size="md"
           />
-          <span className="max-w-40 truncate text-xs font-black text-primary">
+          <span className="max-w-48 truncate text-sm font-black text-primary">
             {media.player.label}
           </span>
         </button>
       )}
       {isTransfer ? (
         <div
-          className="flex items-center justify-center gap-2"
+          className="flex items-center gap-2"
           aria-label="Percurso da transferência"
         >
           {renderTransferTeam(transferFrom, "Origem")}
@@ -90,7 +90,7 @@ export function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }
               disabled={!team?.id || !onOpenTeamSquad}
             >
               <TeamCrest team={team} size="md" />
-              <span className="max-w-40 truncate text-xs font-black text-primary">
+              <span className="max-w-48 truncate text-sm font-black text-primary">
                 {ref.label}
               </span>
             </button>

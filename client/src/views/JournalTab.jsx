@@ -206,7 +206,7 @@ export function JournalTab({
                 <ArticleMeta item={selected} catLabel={labelOf(selected.cat)} />
 
                 {/* Título */}
-                <h2 className="mt-1.5 font-headline text-2xl short:text-xl font-black tracking-tight text-balance text-left text-on-surface">
+                <h2 className="mt-2 font-headline text-2xl sm:text-3xl short:text-xl leading-tight font-black tracking-tight text-balance text-left text-on-surface">
                   <RichNewsText
                     parts={selected.titleParts}
                     fallback={selected.title}
