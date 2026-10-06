@@ -3,7 +3,6 @@ import { getPosStyle } from "../../matchConstants.js";
 import {
   EventCard,
   OpponentGridCard,
-  PossessionBar,
   RefWeatherBar,
 } from "../../shared/index.js";
 import { TeamCrest } from "../../../live/TeamCrest.jsx";
@@ -51,13 +50,6 @@ export function CronologiaPanel({
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        <PossessionBar
-          homePossession={fixture.homePossession}
-          awayPossession={fixture.awayPossession}
-          homeColor={hInfo?.color_primary}
-          awayColor={aInfo?.color_primary}
-          compact
-        />
         <RefWeatherBar
           attendance={fixture?.attendance}
           referee={referee}
