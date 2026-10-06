@@ -284,23 +284,33 @@ export function PlayerRow({
               prevSkill={player.prev_skill}
               size="sm"
             />
-            <span className="flex flex-col items-center">
-              <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
-                Golos
+            {actions == null && (
+              <span className="flex flex-col items-center">
+                <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+                  Golos
+                </span>
+                <span className="text-emerald-400 font-black text-[12px] leading-none">
+                  {getPlayerStat(player, ["goals"])}
+                </span>
               </span>
-              <span className="text-emerald-400 font-black text-[12px] leading-none">
-                {getPlayerStat(player, ["goals"])}
-              </span>
-            </span>
+            )}
           </div>
-          <span className="shrink-0 flex flex-col items-end">
-            <span className="font-headline font-black text-xs tabular-nums text-on-surface">
-              {formatCurrency(player.wage || 0)}
+          {/* Com ações (Scout) a ação ocupa este canto em mobile — uma coluna
+              lateral roubava largura e o salário sobrepunha-se aos golos. */}
+          {actions != null ? (
+            <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+              {actions}
+            </div>
+          ) : (
+            <span className="shrink-0 flex flex-col items-end">
+              <span className="font-headline font-black text-xs tabular-nums text-on-surface">
+                {formatCurrency(player.wage || 0)}
+              </span>
+              <span className="text-[8px] text-zinc-500 font-black uppercase tracking-widest">
+                /sem
+              </span>
             </span>
-            <span className="text-[8px] text-zinc-500 font-black uppercase tracking-widest">
-              /sem
-            </span>
-          </span>
+          )}
         </div>
       </div>
 
@@ -340,7 +350,7 @@ export function PlayerRow({
       {actions != null && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="shrink-0 self-stretch flex items-center px-3 border-l"
+          className="hidden md:flex shrink-0 self-stretch items-center px-3 border-l"
         >
           {actions}
         </div>

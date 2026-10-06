@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { socket } from "../socket.js";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
-import { Button } from "../components/shared/Button.jsx";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
+import { TabBar } from "../components/shared/TabBar.jsx";
+import { FilterChip, TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { AuctionBidModal } from "../components/modals/AuctionBidModal.jsx";
 import {
   DIVISION_NAMES,
@@ -37,14 +38,131 @@ const SORTS = [
 ];
 
 const TRANSFER_STATUS_OPTIONS = [
-  { value: "all", label: "Estado: Todos" },
+  { value: "all", label: "Todos" },
   { value: "none", label: "Sem lista" },
   { value: "fixed", label: "À venda" },
   { value: "auction", label: "Leilão" },
 ];
 
-function inputClass() {
-  return "bg-surface border border-outline-variant/30 rounded-sm px-3 py-2.5 text-xs font-medium text-on-surface focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/30";
+const POSITION_TABS = [
+  { key: "all", label: "Todas" },
+  { key: "GR", label: "GR" },
+  { key: "DEF", label: "DEF" },
+  { key: "MED", label: "MED" },
+  { key: "ATA", label: "ATA" },
+];
+
+const DEFAULT_FILTERS = {
+  name: "",
+  position: "all",
+  skillMin: "",
+  skillMax: "",
+  ageMin: "",
+  ageMax: "",
+  priceMin: "",
+  priceMax: "",
+  division: "all",
+  transferStatus: "all",
+  isStar: false,
+  onlyAvailable: false,
+  onlyAffordable: false,
+  sort: "quality-desc",
+};
+
+// Filtros que vivem dentro de «Filtros avançados» (contam para o selo).
+const ADVANCED_KEYS = ["skillMin", "skillMax", "ageMin", "ageMax", "priceMin", "priceMax", "division", "transferStatus", "sort"];
+
+// Pesquisas prontas: partem dos filtros por defeito (resultado previsível).
+const PRESETS = [
+  { label: "Craques ao alcance", icon: "star", filters: { isStar: true, onlyAffordable: true } },
+  { label: "Jovens promessas", icon: "child_care", filters: { ageMax: "21" } },
+  { label: "À venda agora", icon: "sell", filters: { transferStatus: "fixed", sort: "value-asc" } },
+  { label: "Guarda-redes", icon: "sports_handball", filters: { position: "GR" } },
+];
+
+const FIELD = "w-full min-w-0 min-h-10 bg-surface border border-outline-variant/30 rounded-lg px-3 text-xs font-medium text-on-surface focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/40";
+const LABEL = "block mb-1 text-[9px] font-black uppercase tracking-widest text-on-surface-variant";
+
+/**
+ * Preço que o treinador paga por um jogador da pesquisa: lance mínimo
+ * (leilão), preço de lista (à venda) ou cláusula (sem lista).
+ * @param {object} player
+ * @returns {number}
+ */
+function acquisitionPrice(player) {
+  if (player.transfer_status === "auction") {
+    return player.auction_high_bid_team_id != null
+      ? player.auction_high_bid + AUCTION_BID_STEP
+      : player.auction_starting_price || player.transfer_price || 0;
+  }
+  if (player.transfer_status === "fixed") {
+    return player.transfer_price || Math.round((player.value || 0) * TRANSFER_LISTED_PRICE_MULT);
+  }
+  return Math.round((player.value || 0) * TRANSFER_CLAUSE_MULT);
+}
+
+const DEAL_TONE = {
+  auction: "bg-amber-500 hover:bg-amber-400 text-black border-amber-300 shadow-[0_6px_16px_-8px_#f59e0b]",
+  fixed: "bg-emerald-500 hover:bg-emerald-400 text-black border-emerald-300 shadow-[0_6px_16px_-8px_#10b981]",
+  proposal: "bg-primary hover:brightness-110 text-on-primary border-primary shadow-[0_6px_16px_-8px_var(--color-primary)]",
+};
+
+/**
+ * Botão de negócio com o preço por baixo do verbo (Licitar/Comprar/Proposta).
+ * Sem saldo: desligado, com o valor em falta no `title`.
+ *
+ * @param {Object} props
+ * @param {"auction"|"fixed"|"proposal"} props.kind
+ * @param {string} props.label
+ * @param {number} props.price
+ * @param {number} props.budget
+ * @param {() => void} props.onClick
+ * @returns {JSX.Element}
+ */
+function DealButton({ kind, label, price, budget, onClick }) {
+  const affordable = budget >= price;
+  return (
+    <button
+      type="button"
+      disabled={!affordable}
+      onClick={onClick}
+      title={affordable ? undefined : `Faltam ${formatCurrency(price - budget)}`}
+      className={`min-w-[92px] min-h-10 px-2.5 py-1 rounded-lg border flex flex-col items-center justify-center leading-none whitespace-nowrap transition-all active:scale-95 ${
+        affordable
+          ? DEAL_TONE[kind]
+          : "bg-surface-container-high text-on-surface-variant/50 border-outline-variant/20 cursor-not-allowed"
+      }`}
+    >
+      <span className="text-[11px] font-black uppercase tracking-wide">{affordable ? label : "Sem saldo"}</span>
+      <span className="mt-0.5 font-mono text-[10px] font-bold tabular-nums opacity-80">{formatCurrency(price)}</span>
+    </button>
+  );
+}
+
+/** @param {{ children: import("react").ReactNode }} props */
+function StatusPill({ children }) {
+  return (
+    <span className="inline-flex items-center min-h-8 px-2.5 rounded-lg border border-dashed border-outline-variant/25 text-[10px] text-on-surface-variant/70 font-black uppercase tracking-wide whitespace-nowrap">
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Par mín–máx com rótulo.
+ * @param {{ label: string, min: string, max: string, onMin: (v: string) => void, onMax: (v: string) => void, title?: string }} props
+ */
+function RangeField({ label, min, max, onMin, onMax, title }) {
+  return (
+    <div title={title}>
+      <span className={LABEL}>{label}</span>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+        <input type="number" min="0" className={FIELD} placeholder="mín" value={min} onChange={(e) => onMin(e.target.value)} aria-label={`${label} mínimo`} />
+        <span className="text-on-surface-variant/50 text-xs">–</span>
+        <input type="number" min="0" className={FIELD} placeholder="máx" value={max} onChange={(e) => onMax(e.target.value)} aria-label={`${label} máximo`} />
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -87,20 +205,8 @@ export function ScoutView({
     truncated: playerSearchTruncated,
   } = playerSearchData;
 
-  const [name, setName] = useState("");
-  const [position, setPosition] = useState("all");
-  const [skillMin, setSkillMin] = useState("");
-  const [skillMax, setSkillMax] = useState("");
-  const [ageMin, setAgeMin] = useState("");
-  const [ageMax, setAgeMax] = useState("");
-  const [priceMin, setPriceMin] = useState("");
-  const [priceMax, setPriceMax] = useState("");
-  const [division, setDivision] = useState("all");
-  const [transferStatus, setTransferStatus] = useState("all");
-  const [isStar, setIsStar] = useState(false);
-  const [onlyAvailable, setOnlyAvailable] = useState(false);
-  const [onlyAffordable, setOnlyAffordable] = useState(false);
-  const [sort, setSort] = useState("quality-desc");
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const setField = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const [searched, setSearched] = useState(false);
   // Lance inline: modal local — só a scout o abre, não precisa de estado global.
   const [bidModalPlayer, setBidModalPlayer] = useState(null);
@@ -115,93 +221,60 @@ export function ScoutView({
   );
 
   const filteredResults = useMemo(() => {
-    if (!onlyAffordable) return playerSearchResults;
-    return playerSearchResults.filter((player) => {
-      if (player.transfer_status === "auction") {
-        const hasBid = player.auction_high_bid_team_id != null;
-        const minBid = hasBid
-          ? player.auction_high_bid + AUCTION_BID_STEP
-          : player.auction_starting_price || player.transfer_price || 0;
-        return myBudget >= minBid;
-      }
-      if (player.transfer_status === "fixed") {
-        const price =
-          player.transfer_price ||
-          Math.round((player.value || 0) * TRANSFER_LISTED_PRICE_MULT);
-        return myBudget >= price;
-      }
-      return myBudget >= Math.round((player.value || 0) * TRANSFER_CLAUSE_MULT);
-    });
-  }, [onlyAffordable, playerSearchResults, myBudget]);
+    if (!filters.onlyAffordable) return playerSearchResults;
+    return playerSearchResults.filter((player) => myBudget >= acquisitionPrice(player));
+  }, [filters.onlyAffordable, playerSearchResults, myBudget]);
 
-  const search = (nextAffordable) => {
-    const affordable =
-      typeof nextAffordable === "boolean" ? nextAffordable : onlyAffordable;
+  const advancedCount = ADVANCED_KEYS.filter((k) => filters[k] !== DEFAULT_FILTERS[k]).length;
+
+  /** @param {Partial<typeof DEFAULT_FILTERS>} [next] - filtros a usar (já gravados no estado). */
+  const search = (next) => {
+    const q = next ? { ...filters, ...next } : filters;
+    if (next) setFilters(q);
     setSearched(true);
     setPlayerSearchLoading(true);
     socket.emit("requestPlayerSearch", {
       searchId: nextPlayerSearchId(),
-      name,
-      position,
-      skillMin: toNumOrNull(skillMin),
-      skillMax: toNumOrNull(skillMax),
-      ageMin: toNumOrNull(ageMin),
-      ageMax: toNumOrNull(ageMax),
-      priceMin: toNumOrNull(priceMin),
-      priceMax: toNumOrNull(priceMax),
-      division,
-      transferStatus,
-      isStar,
-      onlyAvailable,
-      onlyAffordable: affordable,
-      sort,
+      name: q.name,
+      position: q.position,
+      skillMin: toNumOrNull(q.skillMin),
+      skillMax: toNumOrNull(q.skillMax),
+      ageMin: toNumOrNull(q.ageMin),
+      ageMax: toNumOrNull(q.ageMax),
+      priceMin: toNumOrNull(q.priceMin),
+      priceMax: toNumOrNull(q.priceMax),
+      division: q.division,
+      transferStatus: q.transferStatus,
+      isStar: q.isStar,
+      onlyAvailable: q.onlyAvailable,
+      onlyAffordable: q.onlyAffordable,
+      sort: q.sort,
     });
   };
+
+  const runPreset = (preset) => search({ ...DEFAULT_FILTERS, ...preset.filters });
 
   const renderActions = (player) => {
     const isOwnTeam = isSameTeamId(player.team_id, me?.teamId);
     const isHumanTeam = humanTeamIds.has(normalizeTeamId(player.team_id));
     const status = player.transfer_status;
+    const price = acquisitionPrice(player);
 
-    if (isOwnTeam) {
-      return (
-        <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase whitespace-nowrap">
-          Tua equipa
-        </span>
-      );
-    }
+    if (isOwnTeam) return <StatusPill>Tua equipa</StatusPill>;
 
     if (status === "auction") {
-      const hasBid = player.auction_high_bid_team_id != null;
-      const minBid = hasBid
-        ? player.auction_high_bid + AUCTION_BID_STEP
-        : (player.auction_starting_price || player.transfer_price || 0);
-      const affordable = myBudget >= minBid;
       return (
-        <button
-          type="button"
-          disabled={!affordable}
-          onClick={() => setBidModalPlayer(player)}
-          className={`px-3 py-1.5 rounded text-xs font-black uppercase transition-colors whitespace-nowrap ${
-            affordable
-              ? "bg-amber-600 hover:bg-amber-500 text-white border border-amber-500"
-              : "bg-surface-container-high text-on-surface-variant/40 border border-outline-variant/20 cursor-not-allowed"
-          }`}
-        >
-          {affordable ? "Licitar" : "Sem saldo"}
-        </button>
+        <DealButton kind="auction" label="Licitar" price={price} budget={myBudget} onClick={() => setBidModalPlayer(player)} />
       );
     }
 
     if (status === "fixed") {
-      const price =
-        player.transfer_price ||
-        Math.round((player.value || 0) * TRANSFER_LISTED_PRICE_MULT);
-      const affordable = myBudget >= price;
       return (
-        <button
-          type="button"
-          disabled={!affordable}
+        <DealButton
+          kind="fixed"
+          label="Comprar"
+          price={price}
+          budget={myBudget}
           onClick={() => {
             setGameDialog({
               mode: "confirm",
@@ -212,50 +285,24 @@ export function ScoutView({
               onCancel: () => {},
             });
           }}
-          className={`px-3 py-1.5 rounded text-xs font-black uppercase transition-colors whitespace-nowrap ${
-            affordable
-              ? "bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500"
-              : "bg-surface-container-high text-on-surface-variant/40 border border-outline-variant/20 cursor-not-allowed"
-          }`}
-        >
-          {affordable ? "Comprar" : "Sem saldo"}
-        </button>
+        />
       );
     }
 
-    if (isHumanTeam) {
-      return (
-        <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase whitespace-nowrap">
-          Outro treinador
-        </span>
-      );
-    }
+    if (isHumanTeam) return <StatusPill>Outro treinador</StatusPill>;
 
     // contract_locked é calculado pelo servidor (mesma regra de contratos
     // do filtro onlyAvailable) — o client não duplica a matemática.
-    if (player.contract_locked) {
-      return (
-        <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase whitespace-nowrap">
-          🔒 Contrato
-        </span>
-      );
-    }
+    if (player.contract_locked) return <StatusPill>🔒 Contrato</StatusPill>;
 
-    const suggestedPrice = Math.round((player.value || 0) * TRANSFER_CLAUSE_MULT);
-    const affordable = myBudget >= suggestedPrice;
     return (
-      <button
-        type="button"
-        disabled={!affordable}
-        onClick={() => setTransferProposalModal({ player, suggestedPrice })}
-        className={`px-3 py-1.5 rounded text-xs font-black uppercase transition-colors whitespace-nowrap ${
-          affordable
-            ? "bg-primary hover:brightness-110 text-on-primary"
-            : "bg-surface-container-high text-on-surface-variant/40 border border-outline-variant/20 cursor-not-allowed"
-        }`}
-      >
-        {affordable ? "Proposta" : "Sem saldo"}
-      </button>
+      <DealButton
+        kind="proposal"
+        label="Proposta"
+        price={price}
+        budget={myBudget}
+        onClick={() => setTransferProposalModal({ player, suggestedPrice: price })}
+      />
     );
   };
 
@@ -269,213 +316,174 @@ export function ScoutView({
     return parts.join(" · ");
   };
 
-  return (
-    <div className="space-y-4">
-      <Panel title="Scout — Pesquisa de Jogadores" meta="Base de dados global">
-        <div className="p-3 md:p-4 space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-            <div className="relative md:col-span-2">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-sm select-none pointer-events-none">
-                search
-              </span>
-              <input
-                type="text"
-                className={`${inputClass()} w-full pl-9 pr-4`}
-                placeholder="Nome do jogador…"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") search();
-                }}
-              />
-            </div>
-            <select
-              className={inputClass()}
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-            >
-              <option value="all">Posição: Todas</option>
-              <option value="GR">Guarda-Redes</option>
-              <option value="DEF">Defesa</option>
-              <option value="MED">Médio</option>
-              <option value="ATA">Avançado</option>
-            </select>
-            <select
-              className={inputClass()}
-              value={division}
-              onChange={(e) => setDivision(e.target.value)}
-            >
-              <option value="all">Divisão: Todas</option>
-              {[1, 2, 3, 4, 5].map((d) => (
-                <option key={d} value={d}>
-                  {DIVISION_NAMES[d]}
-                </option>
-              ))}
-            </select>
-          </div>
+  const presetButtons = (
+    <div className="flex flex-wrap justify-center gap-2 pt-3">
+      {PRESETS.map((p) => (
+        <button
+          key={p.label}
+          type="button"
+          onClick={() => runPreset(p)}
+          className="inline-flex items-center gap-1.5 min-h-9 px-3 rounded-full border border-primary/30 bg-primary/10 text-[11px] font-black uppercase tracking-wider text-on-surface hover:bg-primary/20 transition-colors active:scale-95"
+        >
+          <span className="material-symbols-outlined text-[15px] leading-none w-[1em] overflow-hidden text-primary">{p.icon}</span>
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
 
-          <details className="group">
-            <summary className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface w-fit">
-              <span className="material-symbols-outlined text-sm transition-transform group-open:rotate-180">
-                expand_more
-              </span>
-              Filtros avançados
-            </summary>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-2">
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  className={`${inputClass()} flex-1 min-w-0`}
-                  placeholder="Skill mín"
-                  value={skillMin}
-                  onChange={(e) => setSkillMin(e.target.value)}
-                  min="0"
-                />
-                <input
-                  type="number"
-                  className={`${inputClass()} flex-1 min-w-0`}
-                  placeholder="Skill máx"
-                  value={skillMax}
-                  onChange={(e) => setSkillMax(e.target.value)}
-                  min="0"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  className={`${inputClass()} flex-1 min-w-0`}
-                  placeholder="Idade mín"
-                  value={ageMin}
-                  onChange={(e) => setAgeMin(e.target.value)}
-                  min="0"
-                />
-                <input
-                  type="number"
-                  className={`${inputClass()} flex-1 min-w-0`}
-                  placeholder="Idade máx"
-                  value={ageMax}
-                  onChange={(e) => setAgeMax(e.target.value)}
-                  min="0"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  className={`${inputClass()} flex-1 min-w-0`}
-                  placeholder="Preço mín (€)"
-                  value={priceMin}
-                  onChange={(e) => setPriceMin(e.target.value)}
-                  min="0"
-                  title={PRICE_INPUT_TITLE}
-                />
-                <input
-                  type="number"
-                  className={`${inputClass()} flex-1 min-w-0`}
-                  placeholder="Preço máx (€)"
-                  value={priceMax}
-                  onChange={(e) => setPriceMax(e.target.value)}
-                  min="0"
-                  title={PRICE_INPUT_TITLE}
-                />
-              </div>
-              <select
-                className={inputClass()}
-                value={transferStatus}
-                onChange={(e) => setTransferStatus(e.target.value)}
-              >
+  const resultsMeta = searched
+    ? `${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}${playerSearchTruncated || filteredResults.length !== playerSearchResults.length ? ` · a mostrar ${filteredResults.length}` : ""}`
+    : "—";
+
+  return (
+    <div className="flex flex-col gap-3 sm:gap-4 short:gap-2">
+      <TransferHeader
+        icon="travel_explore"
+        title="Scout"
+        budget={myBudget}
+        chips={[
+          { label: "base de dados global", icon: "public" },
+          ...(searched && !playerSearchLoading ? [{ value: playerSearchTotal, label: "encontrados", tone: "good", icon: "group" }] : []),
+        ]}
+      >
+        <form
+          className="flex gap-1.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            search();
+          }}
+        >
+          <div className="relative flex-1 min-w-0">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-[20px] w-[1em] overflow-hidden select-none pointer-events-none">
+              search
+            </span>
+            <input
+              type="text"
+              className={`${FIELD} min-h-11 pl-10 text-sm`}
+              placeholder="Nome do jogador…"
+              value={filters.name}
+              onChange={(e) => setField("name")(e.target.value)}
+              aria-label="Nome do jogador"
+            />
+          </div>
+          <button
+            type="submit"
+            className="shrink-0 min-h-11 px-4 sm:px-6 rounded-lg bg-primary text-on-primary font-headline font-black uppercase text-xs tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-[0_8px_20px_-10px_var(--color-primary)]"
+          >
+            Pesquisar
+          </button>
+        </form>
+
+        <TabBar size="sm" expand tabs={POSITION_TABS} active={filters.position} onChange={setField("position")} />
+
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip active={filters.isStar} onChange={setField("isStar")} icon="star">
+            Craques
+          </FilterChip>
+          <FilterChip active={filters.onlyAvailable} onChange={setField("onlyAvailable")} icon="lock_open">
+            Disponível
+          </FilterChip>
+          <FilterChip
+            active={filters.onlyAffordable}
+            onChange={(value) => {
+              setField("onlyAffordable")(value);
+              if (searched) search({ onlyAffordable: value });
+            }}
+            icon="savings"
+          >
+            Cabe no saldo
+          </FilterChip>
+        </div>
+
+        <details className="group rounded-lg border border-outline-variant/15 bg-surface/40">
+          <summary className="flex items-center gap-2 px-3 min-h-10 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface">
+            <span className="material-symbols-outlined text-[16px] leading-none w-[1em] overflow-hidden">tune</span>
+            Filtros avançados
+            {advancedCount > 0 && (
+              <span className="px-1.5 py-px rounded-full bg-primary text-on-primary text-[9px] tabular-nums">{advancedCount}</span>
+            )}
+            <span className="ml-auto material-symbols-outlined text-[18px] leading-none w-[1em] overflow-hidden transition-transform group-open:rotate-180">
+              expand_more
+            </span>
+          </summary>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 px-3 pb-3 pt-1">
+            <RangeField label="Qualidade" min={filters.skillMin} max={filters.skillMax} onMin={setField("skillMin")} onMax={setField("skillMax")} />
+            <RangeField label="Idade" min={filters.ageMin} max={filters.ageMax} onMin={setField("ageMin")} onMax={setField("ageMax")} />
+            <RangeField label="Preço (€)" title={PRICE_INPUT_TITLE} min={filters.priceMin} max={filters.priceMax} onMin={setField("priceMin")} onMax={setField("priceMax")} />
+            <label>
+              <span className={LABEL}>Divisão</span>
+              <select className={FIELD} value={filters.division} onChange={(e) => setField("division")(e.target.value)}>
+                <option value="all">Todas</option>
+                {[1, 2, 3, 4, 5].map((d) => (
+                  <option key={d} value={d}>
+                    {DIVISION_NAMES[d]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className={LABEL}>Estado</span>
+              <select className={FIELD} value={filters.transferStatus} onChange={(e) => setField("transferStatus")(e.target.value)}>
                 {TRANSFER_STATUS_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
                 ))}
               </select>
-              <select
-                className={inputClass()}
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-              >
-                {SORTS.map((o, i) => (
+            </label>
+            <label>
+              <span className={LABEL}>Ordenar por</span>
+              <select className={FIELD} value={filters.sort} onChange={(e) => setField("sort")(e.target.value)}>
+                {SORTS.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {i === 0 ? `Ordenar por: ${o.label}` : o.label}
+                    {o.label}
                   </option>
                 ))}
               </select>
-            </div>
-          </details>
-
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-4 flex-wrap">
-              <label className="flex items-center gap-2 text-xs font-bold text-on-surface cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isStar}
-                  onChange={(e) => setIsStar(e.target.checked)}
-                  className="accent-primary w-4 h-4"
-                />
-                Só craques (★)
-              </label>
-              <label className="flex items-center gap-2 text-xs font-bold text-on-surface cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={onlyAvailable}
-                  onChange={(e) => setOnlyAvailable(e.target.checked)}
-                  className="accent-primary w-4 h-4"
-                />
-                Disponível p/ compra
-              </label>
-              <label className="flex items-center gap-2 text-xs font-bold text-on-surface cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={onlyAffordable}
-                  onChange={(e) => {
-                    const value = e.target.checked;
-                    setOnlyAffordable(value);
-                    if (searched) search(value);
-                  }}
-                  className="accent-primary w-4 h-4"
-                />
-                Cabe no saldo
-              </label>
-            </div>
-            <Button
-              variant="primary"
-              className="w-full sm:w-auto"
-              onClick={() => search()}
-            >
-              Pesquisar
-            </Button>
+            </label>
+            {advancedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilters((f) => ({ ...f, ...Object.fromEntries(ADVANCED_KEYS.map((k) => [k, DEFAULT_FILTERS[k]])) }))}
+                className="sm:col-span-2 xl:col-span-3 justify-self-start min-h-9 px-3 rounded-lg border border-outline-variant/25 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface"
+              >
+                Limpar filtros avançados
+              </button>
+            )}
           </div>
-        </div>
-      </Panel>
+        </details>
+      </TransferHeader>
 
-      <Panel
-        title="Resultados"
-        meta={
-          searched
-            ? `${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}${playerSearchTruncated || filteredResults.length !== playerSearchResults.length ? ` (a mostrar ${filteredResults.length})` : ""}`
-            : "—"
-        }
-      >
+      <Panel title="Resultados" icon="person_search" meta={resultsMeta}>
         {playerSearchLoading ? (
-          <div className="p-8 text-center text-on-surface-variant font-bold">
-            A pesquisar…
+          <div className="flex flex-col gap-1.5" aria-busy="true" aria-label="A pesquisar">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-16 rounded-lg bg-surface-container-high/70 animate-pulse" style={{ animationDelay: `${i * 120}ms` }} />
+            ))}
           </div>
         ) : !searched ? (
-          <EmptyState
-            icon="search"
-            title="Preenche os filtros e pesquisa"
-            description="Procura jogadores em toda a base de dados."
-          />
+          <div>
+            <EmptyState
+              icon="travel_explore"
+              title="Descobre o próximo craque"
+              description="Pesquisa em toda a base de dados ou começa por um destes atalhos."
+            />
+            {presetButtons}
+          </div>
         ) : filteredResults.length === 0 ? (
-          <EmptyState
-            icon="help"
-            title="Sem resultados"
-            description={
-              onlyAffordable && playerSearchResults.length > 0
-                ? "Nenhum cabe no teu saldo com estes filtros."
-                : "Nenhum jogador corresponde aos filtros."
-            }
-          />
+          <div>
+            <EmptyState
+              icon="search_off"
+              title="Sem resultados"
+              description={
+                filters.onlyAffordable && playerSearchResults.length > 0
+                  ? "Nenhum cabe no teu saldo com estes filtros."
+                  : "Nenhum jogador corresponde aos filtros."
+              }
+            />
+            {presetButtons}
+          </div>
         ) : (
           <div className="flex flex-col gap-1.5">
             {filteredResults.map((player) => (

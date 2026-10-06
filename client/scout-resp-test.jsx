@@ -62,6 +62,7 @@ const results = [
     is_star: true,
     form: 118,
     transfer_status: "auction",
+    auction_starting_price: 120000,
     division: 2,
   }),
   mk(3, "MED", 3, "Sporting", {
