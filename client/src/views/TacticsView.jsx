@@ -1048,43 +1048,39 @@ export function TacticsView() {
               </div>
 
               {/* TOPO 3 — Jogar (sobre Pitch) */}
-              <div data-tour="tactic-play" className="xl:w-72.5 shrink-0 self-start">
-                <button
-                  onClick={isHalftime ? handleHalftimeReady : handleReady}
-                  disabled={settled || !canPlay}
-                  className={`w-full inline-flex items-center justify-center gap-2 text-center px-4 py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !settled ? "animate-heartbeat" : ""}
-${settled ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !canPlay ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
-                  style={
-                    settled || !canPlay
-                      ? {}
-                      : {
-                          background:
-                            "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
-                        }
-                  }
-                >
-                  {!settled && canPlay && (
-                    <span className="absolute inset-0 bg-linear-to-r from-white/10 to-transparent pointer-events-none" />
-                  )}
-                  {!settled && canPlay && (
-                    <span aria-hidden className="relative text-xs leading-none">▶</span>
-                  )}
-                  <span className="relative">{playLabel}</span>
-                </button>
-                {!canPlay && !myReady && (
-                  <p className="text-[10px] font-bold text-red-400/70 mt-1.5 text-center">
-                    Faltam: 11 titulares (1 GR + 10) + {MAX_BENCH_SIZE} suplentes (1 GR)
-                  </p>
-                )}
-                {canPlay && !myReady && (
-                  <p className="text-[9px] text-center text-gray-700 mt-1">
-                    A jornada avança quando todos clicarem.
-                  </p>
-                )}
+              <div className="xl:w-72.5 shrink-0 self-start flex flex-col gap-2 short:gap-1.5">
+                {/* O JOGAR vive no cabeçalho ("Definir Táctica" → "Jogar!");
+                    aqui só o estado da táctica. No intervalo mantém-se o botão. */}
+                {isHalftime ? (
+                  <button
+                    onClick={handleHalftimeReady}
+                    disabled={settled}
+                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 ${settled ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110 animate-heartbeat"}`}
+                    style={settled ? {} : { background: "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)" }}
+                  >
+                    {playLabel}
+                  </button>
+                ) : !myReady ? (
+                  <div
+                    className={`rounded-2xl border px-3 py-2.5 short:py-1.5 flex items-start gap-2 ${canPlay ? "border-[#4ade80]/30 bg-[#4ade80]/8" : "border-red-400/25 bg-red-400/5"}`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`material-symbols-outlined text-[18px] leading-none ${canPlay ? "text-[#4ade80]" : "text-red-400/80"}`}
+                    >
+                      {canPlay ? "check_circle" : "error"}
+                    </span>
+                    <p className={`text-[10px] font-bold leading-snug ${canPlay ? "text-[#4ade80]" : "text-red-400/80"}`}>
+                      {canPlay
+                        ? "Táctica pronta — carrega em Jogar! no cabeçalho. A jornada avança quando todos confirmarem."
+                        : `Faltam: 11 titulares (1 GR + 10) + ${MAX_BENCH_SIZE} suplentes (1 GR)`}
+                    </p>
+                  </div>
+                ) : null}
                 {/* Próximo jogo — preenche o espaço sob o botão (desktop):
                     adversário, casa/fora e árbitro antes de clicar. */}
                 {nextMatchSummary && (
-                  <div className="mt-2 short:mt-1.5 bg-surface-container border border-outline-variant/25 rounded-2xl px-3 py-2.5 short:py-1.5 flex flex-col gap-1">
+                  <div className="bg-surface-container border border-outline-variant/25 rounded-2xl px-3 py-2.5 short:py-1.5 flex flex-col gap-1">
                     <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                       {nextMatchSummary.isCup
                         ? (nextMatchSummary.cupRoundName ?? "Taça")

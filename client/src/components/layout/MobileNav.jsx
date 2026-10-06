@@ -132,7 +132,7 @@ function PlayButton({ scrollToTop }) {
           {cta.icon}
         </span>
         <span className="relative z-10 leading-none tabular-nums">
-          {waiting && cta.totalCoaches > 1 ? `${cta.readyCount}/${cta.totalCoaches}` : cta.label}
+          {waiting && cta.totalCoaches > 1 ? `${cta.readyCount}/${cta.totalCoaches}` : cta.short}
         </span>
       </motion.button>
     </div>

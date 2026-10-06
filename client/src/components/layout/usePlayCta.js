@@ -11,7 +11,7 @@ import { useTactics } from "../../contexts/TacticsContext.jsx";
  * - `live` — jogo em curso (desativado).
  *
  * @param {() => void} scrollToTop Sobe o conteúdo ao topo depois de navegar.
- * @returns {{ state: "idle"|"active"|"waiting"|"live", label: string, icon: string, readyCount: number, totalCoaches: number, onClick: () => void }}
+ * @returns {{ short: string, state: "idle"|"active"|"waiting"|"live", label: string, icon: string, readyCount: number, totalCoaches: number, onClick: () => void }}
  */
 export function usePlayCta(scrollToTop) {
   const {
@@ -24,7 +24,8 @@ export function usePlayCta(scrollToTop) {
     isMatchInProgress,
     setMobileSubMenu,
   } = useGame();
-  const { tactic } = useTactics();
+  const { tactic, isLineupComplete, handleReady, nextMatchSummary, nextMatchOpponent } =
+    useTactics();
 
   const myReady = !!players.find((p) => p.name === me?.name)?.ready;
   const readyCount = players.filter((p) => p.ready).length;
@@ -40,8 +41,16 @@ export function usePlayCta(scrollToTop) {
         ? "active"
         : "idle";
 
+  // Na tática com 11 + banco válidos o botão passa a confirmar a jornada.
+  // Espectador eliminado da Taça tem o seu próprio botão na página.
+  const canPlay =
+    state === "active" &&
+    isLineupComplete &&
+    !(nextMatchSummary?.isCup && !nextMatchOpponent);
+
   const onClick = () => {
     if (isMatchInProgress) return;
+    if (canPlay) return handleReady();
     navigateTab("tactic");
     setMobileSubMenu(null);
     scrollToTop();
@@ -53,8 +62,9 @@ export function usePlayCta(scrollToTop) {
 
   return {
     state,
-    label: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : "JOGAR",
-    icon: state === "live" ? "sensors" : state === "waiting" ? "check_circle" : "strategy",
+    label: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : canPlay ? "Jogar!" : "Definir Táctica",
+    short: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : canPlay ? "JOGAR" : "TÁCTICA",
+    icon: state === "live" ? "sensors" : state === "waiting" ? "check_circle" : canPlay ? "play_arrow" : "strategy",
     readyCount,
     totalCoaches,
     onClick,
