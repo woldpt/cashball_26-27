@@ -875,7 +875,6 @@ export function TacticsView() {
     liveMinute,
     calendarIndex,
     isCupExtraTime,
-    mobileSubMenu,
     seasonEndModal,
     cupPenaltyPopup,
     postMatchMood,
