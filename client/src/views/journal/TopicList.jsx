@@ -6,7 +6,7 @@
 import { EmptyState } from "../../components/shared/EmptyState.jsx";
 import { Button } from "../../components/shared/Button.jsx";
 import { FILTER_TONES } from "./tones.js";
-import { flagSummary, formatGroupLabel, getSnippet, highlightText } from "./utils.jsx";
+import { formatGroupLabel, highlightText } from "./utils.jsx";
 
 /**
  * @param {{
@@ -68,9 +68,6 @@ export function TopicList({
             const active = selected?.id === it.id;
             const unread = inbox.isUnread(it);
             const tone = FILTER_TONES[it.cat] || FILTER_TONES.all;
-            const snippet = getSnippet(it.body);
-            const flagLine = it.redFlag ? flagSummary(it) : "";
-            const sub = flagLine || snippet;
             // Cabeçalho de grupo quando a semana muda (a data é «S5/2026»).
             const newGroup = i === 0 || visible[i - 1].date !== it.date;
 
@@ -86,7 +83,7 @@ export function TopicList({
                   onClick={() => onSelectItem?.(it.id)}
                   aria-current={active}
                   tabIndex={it.id === activeId ? 0 : -1}
-                  className={`flex w-full items-start gap-2.5 px-2.5 py-2 text-left transition-colors ${
+                  className={`flex w-full items-center gap-2.5 px-2.5 py-2 text-left transition-colors ${
                     active
                       ? `${tone.selected} ${it.redFlag ? "ring-error/70 ring-1" : ""}`
                       : it.redFlag
@@ -97,7 +94,7 @@ export function TopicList({
                   {/* Ícone da categoria, ou bandeira nas pendências */}
                   <span
                     aria-hidden
-                    className={`material-symbols-outlined mt-px shrink-0 text-[18px] ${
+                    className={`material-symbols-outlined shrink-0 text-[18px] ${
                       it.redFlag ? "text-error flag-pulse" : `${tone.cap} ${unread || active ? "" : "opacity-50"}`
                     }`}
                   >
@@ -112,24 +109,13 @@ export function TopicList({
                       }`}
                     >
                       {it.redFlag && <span className="sr-only">Ação necessária: </span>}
-                      {query && !flagLine
-                        ? highlightText(it.title, query)
-                        : it.title}
+                      {query ? highlightText(it.title, query) : it.title}
                     </span>
-                    {sub && (
-                      <p
-                        className={`mt-0.5 truncate text-xs short:text-[10px] ${flagLine ? "font-bold text-error/90" : "text-on-surface-variant/70"}`}
-                      >
-                        {query && !flagLine
-                          ? highlightText(sub, query)
-                          : sub}
-                      </p>
-                    )}
                   </div>
                   {unread && !active && (
                     <span
                       aria-label="Não lida"
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${tone.dot}`}
+                      className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`}
                     />
                   )}
                 </button>
