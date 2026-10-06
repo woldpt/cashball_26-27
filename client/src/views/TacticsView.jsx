@@ -312,7 +312,7 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
 `}
     >
       <span
-        className={`w-8 shrink-0 text-center rounded-md py-0.5 text-[9px] font-black leading-none text-black/80 ${pos.bg ?? "bg-gray-500"}`}
+        className={`w-5 shrink-0 text-center rounded-md py-0.5 text-[9px] font-black leading-none text-black/80 ${pos.bg ?? "bg-gray-500"}`}
       >
         {player.position[0]}
       </span>
