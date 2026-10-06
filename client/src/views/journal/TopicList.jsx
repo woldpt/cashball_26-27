@@ -1,6 +1,6 @@
 /**
- * Coluna de tópicos do Jornal: pesquisa, lista de notícias e atalhos de
- * leitura («Marcar tudo como lido», «Ler próxima», épocas antigas).
+ * Coluna de tópicos do Jornal: pesquisa, lista agrupada por semana,
+ * «Marcar tudo como lido» e épocas antigas. «Ler próxima» vive no artigo.
  */
 import { EmptyState } from "../../components/shared/EmptyState.jsx";
 import { Button } from "../../components/shared/Button.jsx";
@@ -98,7 +98,7 @@ export function TopicList({
           }
         />
       ) : (
-        <ol onKeyDown={handleListKeyDown} className="max-h-64 short:max-h-44 overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:max-h-none lg:min-h-0 lg:flex-1">
+        <ol onKeyDown={handleListKeyDown} className="lg:overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:min-h-0 lg:flex-1">
           {visible.map((it, i) => {
             const active = selected?.id === it.id;
             const unread = inbox.isUnread(it);
@@ -112,7 +112,7 @@ export function TopicList({
             return (
               <li key={it.id}>
                 {newGroup && (
-                  <div className="sticky top-0 z-10 border-b border-outline-variant/15 bg-surface-container px-2 py-1 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                  <div className="lg:sticky lg:top-0 z-10 border-b border-outline-variant/15 bg-surface-container px-2 py-1 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
                     {formatGroupLabel(it.date)}
                   </div>
                 )}
@@ -174,25 +174,13 @@ export function TopicList({
         </ol>
       )}
 
-      {/* ── Próxima notícia por ler ───────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => inbox.markAllRead()}
-          disabled={!hasUnreadNonFlag}
-        >
-          Marcar tudo como lido
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={inbox.selectNextUnread}
-          disabled={!inbox.hasNextUnread}
-        >
-          Ler próxima
-        </Button>
-      </div>
+      {hasUnreadNonFlag && (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => inbox.markAllRead()}>
+            Marcar tudo como lido
+          </Button>
+        </div>
+      )}
       {inbox.hasOlderSeasons && (
         <div className="flex justify-center">
           <Button

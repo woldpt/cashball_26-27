@@ -3,7 +3,7 @@
  *
  * Tópicos à esquerda e detalhe à direita no desktop, sem filtros de categoria
  * (só a pesquisa). A notícia mais antiga
- * por ler fica seleccionada (sem a marcar como lida) e a lista tem
+ * por ler fica seleccionada (sem a marcar como lida) e o artigo tem
  * «Ler próxima». Só o clique na linha, o «Ler próxima» ou o Enter
  * marcam como lida.
  *
@@ -20,7 +20,7 @@
  * Orquestrador fino: lista, corpo, tabelas, ações e tons vivem em
  * `client/src/views/journal/`.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useInbox } from "../hooks/useInbox.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -50,7 +50,8 @@ export function JournalTab({
   const { selected: inboxSelected, selectNextUnread } = inbox;
   const [sponsorOpen, setSponsorOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const detailRef = useRef(null);
+  // Mobile: lista e artigo são vistas separadas (no desktop ficam lado a lado).
+  const [mobileDetail, setMobileDetail] = useState(false);
 
   // Atalho de teclado: Enter fora de controlos = próxima não lida.
   // Dentro de botões/links/inputs o teclado comporta-se nativamente.
@@ -118,7 +119,8 @@ export function JournalTab({
     (id) => {
       inbox.select(id);
       if (!window.matchMedia("(min-width: 1024px)").matches) {
-        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        setMobileDetail(true);
+        window.scrollTo({ top: 0 });
       }
     },
     [inbox],
@@ -159,6 +161,7 @@ export function JournalTab({
 
       <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
         {/* ── Coluna esquerda: Tópicos ───────────────────────────────── */}
+        <div className={mobileDetail ? "max-lg:hidden lg:contents" : "contents"}>
         <TopicList
           inbox={inbox}
           selected={selected}
@@ -170,9 +173,18 @@ export function JournalTab({
           onPreviewItem={inbox.preview}
           hasUnreadNonFlag={hasUnreadNonFlag}
         />
+        </div>
 
         {/* ── Coluna direita: Detalhe do artigo ──────────────────────── */}
-        <section ref={detailRef} aria-label="Corpo da notícia" className="min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col">
+        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={() => setMobileDetail(false)}
+          >
+            ‹ Notícias
+          </Button>
           <AnimatePresence>
             {!selected && (
               <div className="rounded-sm border border-outline-variant/20 bg-surface-container px-4 py-8">
@@ -293,31 +305,37 @@ export function JournalTab({
                   onOpenSponsor={() => setSponsorOpen(true)}
                 />
 
-                {/* Rodapé: anterior/seguinte + próxima por ler (chega ao mobile) */}
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-outline-variant/25 pt-4">
+                {/* Rodapé: mais recente / mais antiga + próxima por ler */}
+                <div className="mt-5 flex items-center justify-between gap-2 border-t border-outline-variant/25 pt-4">
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
                     onClick={() => newerItem && handleSelectItem(newerItem.id)}
                     disabled={!newerItem}
+                    aria-label="Notícia mais recente"
                   >
-                    ‹ Anterior
+                    ‹ Recente
                   </Button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold tabular-nums text-on-surface-variant">
+                      {detailIndex + 1} / {visible.length}
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={selectNextUnread}
+                      disabled={!inbox.hasNextUnread}
+                    >
+                      Ler próxima
+                    </Button>
+                  </div>
                   <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={selectNextUnread}
-                    disabled={!inbox.hasNextUnread}
-                  >
-                    Ler próxima
-                  </Button>
-                  <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
                     onClick={() => olderItem && handleSelectItem(olderItem.id)}
                     disabled={!olderItem}
+                    aria-label="Notícia mais antiga"
                   >
-                    Seguinte ›
+                    Antiga ›
                   </Button>
                 </div>
                 </div>
