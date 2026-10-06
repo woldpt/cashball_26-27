@@ -97,8 +97,8 @@ export function StadiumTab({
           mood={teamInfo?.fans_mood ?? null}
           className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-[1.02]"
         />
+      </div>
 
-        </div>
       {/* ── DUAS COLUNAS (desktop) ────────────────────────────────── */}
       <div className="grid gap-4 short:gap-2 lg:grid-cols-2 lg:items-start">
         <div className="space-y-4 short:space-y-2">
