@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   DIVISION_NAMES,
+  POSITION_BAR_CLASS,
   POSITION_TEXT_CLASS,
   SEASON_CALENDAR,
 } from "../constants/index.js";
@@ -23,6 +24,8 @@ import { StadiumIllustration } from "../components/shared/StadiumIllustration.js
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { FormDots } from "../components/shared/FormDots.jsx";
+import { SponsorLogo } from "../components/shared/SponsorLogo.jsx";
+import { Button } from "../components/shared/Button.jsx";
 import { TeamHistoryView } from "./TeamHistoryView.jsx";
 
 const POS_ORDER = ["GR", "DEF", "MED", "ATA"];
@@ -37,10 +40,167 @@ const GAME_LABEL = { league: "Liga", cup: "Taça", friendly: "Amigável" };
 const GAME_VARIANT = { league: "info", cup: "warning", friendly: "cooldown" };
 
 const RESULT_META = {
-  V: { letter: "V", title: "Vitória", bar: "bg-emerald-400", text: "text-emerald-400" },
-  E: { letter: "E", title: "Empate", bar: "bg-amber-400", text: "text-amber-400" },
-  D: { letter: "D", title: "Derrota", bar: "bg-red-400", text: "text-red-400" },
+  V: {
+    letter: "V",
+    title: "Vitória",
+    bar: "bg-emerald-400",
+    text: "text-emerald-400",
+    pill: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
+  },
+  E: {
+    letter: "E",
+    title: "Empate",
+    bar: "bg-amber-400",
+    text: "text-amber-400",
+    pill: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
+  },
+  D: {
+    letter: "D",
+    title: "Derrota",
+    bar: "bg-red-400",
+    text: "text-red-400",
+    pill: "bg-red-500/15 text-red-300 ring-red-500/30",
+  },
 };
+
+// Medalhas do top 3 dos destaques (ouro · prata · bronze)
+const MEDAL_CLASS = [
+  "bg-gradient-to-br from-amber-200 to-amber-500 text-amber-950 shadow-amber-500/40",
+  "bg-gradient-to-br from-zinc-100 to-zinc-400 text-zinc-900 shadow-zinc-300/30",
+  "bg-gradient-to-br from-orange-300 to-orange-700 text-orange-950 shadow-orange-600/30",
+];
+
+/**
+ * Cabeçalho de grupo (posição no plantel, resultados/por jogar nos jogos).
+ *
+ * @param {Object} props
+ * @param {string} props.title
+ * @param {string} [props.meta]
+ * @param {string} [props.barClass] gradiente da faixa (cor da posição)
+ * @returns {JSX.Element}
+ */
+function GroupHeader({ title, meta, barClass }) {
+  return (
+    <div className="flex items-center gap-2 px-1 py-2">
+      <span
+        aria-hidden
+        className={`h-3.5 w-1 rounded-full bg-gradient-to-b ${barClass || "from-outline-variant to-outline-variant/40"}`}
+      />
+      <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+        {title}
+      </h3>
+      {meta && (
+        <span className="text-[9px] font-bold tabular-nums text-on-surface-variant/70">
+          {meta}
+        </span>
+      )}
+      <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-outline-variant/30 to-transparent" />
+    </div>
+  );
+}
+
+/**
+ * Pastilha da linha de contexto do cabeçalho (sobre a cor do clube).
+ *
+ * @param {Object} props
+ * @param {string} [props.className]
+ * @param {import("react").ReactNode} props.children
+ * @returns {JSX.Element}
+ */
+function HeaderChip({ className = "", children }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 backdrop-blur-sm ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Um lado do cartão "duelo" do próximo jogo.
+ *
+ * @param {Object} props
+ * @param {object|null} props.team
+ * @param {boolean} props.highlight equipa do perfil (aro)
+ * @param {string} props.side "Casa" | "Fora"
+ * @returns {JSX.Element}
+ */
+function DuelSide({ team, highlight, side }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center">
+      <TeamCrest
+        team={team || { name: "?" }}
+        size="w-12 h-12 text-lg"
+        className={highlight ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-surface-container" : ""}
+      />
+      <p className="line-clamp-2 w-full break-words text-[11px] font-black leading-tight text-on-surface">
+        {team?.name ?? "Por definir"}
+      </p>
+      <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/60">
+        {side}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Próximo jogo em formato "duelo": brasão vs brasão, competição e jornada.
+ *
+ * @param {Object} props
+ * @param {object} props.match
+ * @param {object|null} props.team equipa do perfil
+ * @param {(team: object) => void} [props.onOpenTeam]
+ * @returns {JSX.Element}
+ */
+function NextMatchCard({ match, team, onOpenTeam }) {
+  const home = match.imHome ? team : match.opponent;
+  const away = match.imHome ? match.opponent : team;
+  const when = match.roundName || `Jornada ${match.matchweek ?? "—"}`;
+  const clickable = !!match.opponent?.id && typeof onOpenTeam === "function";
+  return (
+    <div className="rounded-lg border border-outline-variant/25 bg-gradient-to-b from-surface-container-high/70 to-surface-container-low p-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <Badge variant={GAME_VARIANT[match.kind] || "neutral"}>
+          {GAME_LABEL[match.kind] || match.kind}
+        </Badge>
+        <span className="truncate text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
+          {when}
+        </span>
+      </div>
+      <div className="flex items-start gap-2">
+        <DuelSide team={home} highlight={match.imHome} side="Casa" />
+        <div className="flex shrink-0 flex-col items-center pt-3.5">
+          {match.isCurrent ? (
+            <Badge variant="info" size="md">
+              Hoje
+            </Badge>
+          ) : (
+            <span className="font-headline text-lg font-black italic text-on-surface-variant/40">
+              VS
+            </span>
+          )}
+        </div>
+        <DuelSide team={away} highlight={!match.imHome} side="Fora" />
+      </div>
+      {clickable && (
+        <Button
+          variant="ghost"
+          size="sm"
+          full
+          className="mt-3"
+          onClick={() => onOpenTeam(match.opponent)}
+          title={`Abrir clube: ${match.opponent.name ?? ""}`}
+        >
+          Ver adversário
+          <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">
+            chevron_right
+          </span>
+        </Button>
+      )}
+    </div>
+  );
+}
 
 /**
  * Uma linha de jogo do clube (últimos jogos, próximo jogo e calendário).
@@ -97,11 +257,13 @@ function MatchLine({ match, onOpenTeam }) {
       <div className="shrink-0 text-right">
         {match.result ? (
           <>
-            <p className="font-headline text-sm font-black tabular-nums text-on-surface">
+            <p
+              className={`inline-block min-w-[3.25rem] rounded-md px-2 py-1 text-center font-headline text-sm font-black leading-none tabular-nums ring-1 ring-inset ${meta.pill}`}
+            >
               {match.myScore}–{match.opScore}
             </p>
             {match.hasPen && (
-              <p className="text-[8px] font-bold tabular-nums text-on-surface-variant/60">
+              <p className="mt-0.5 text-center text-[8px] font-bold tabular-nums text-on-surface-variant/60">
                 {match.myPen}–{match.opPen} g.p.
               </p>
             )}
@@ -115,7 +277,7 @@ function MatchLine({ match, onOpenTeam }) {
       {clickable && (
         <span
           aria-hidden
-          className="material-symbols-outlined hidden text-[16px] text-on-surface-variant/30 group-hover:text-on-surface-variant sm:inline"
+          className="material-symbols-outlined hidden text-[16px]! text-on-surface-variant/30 transition-transform group-hover:translate-x-0.5 group-hover:text-on-surface-variant sm:inline"
         >
           chevron_right
         </span>
@@ -124,7 +286,7 @@ function MatchLine({ match, onOpenTeam }) {
   );
 
   const className =
-    "flex w-full items-center gap-2 rounded-md border border-outline-variant/25 bg-surface-container-low px-2.5 py-2 text-left transition-colors";
+    "flex w-full items-center gap-2.5 rounded-lg border border-outline-variant/25 bg-surface-container-low px-2.5 py-2 text-left transition-all duration-200";
 
   if (!clickable) return <div className={className}>{content}</div>;
   return (
@@ -132,7 +294,7 @@ function MatchLine({ match, onOpenTeam }) {
       type="button"
       onClick={() => onOpenTeam(opponent)}
       title={`Abrir clube: ${opponent?.name ?? ""}`}
-      className={`group ${className} hover:border-outline-variant/50 hover:bg-surface-container-high`}
+      className={`group ${className} hover:-translate-y-px hover:border-outline-variant/50 hover:bg-surface-container-high hover:shadow-lg hover:shadow-black/30`}
     >
       {content}
     </button>
@@ -142,17 +304,23 @@ function MatchLine({ match, onOpenTeam }) {
 /**
  * Destaque do plantel (top por skill) na tab Resumo.
  *
- * @param {{ player: object, onOpenPlayerHistory?: (player: object) => void }} props
+ * @param {{ player: object, rank: number, onOpenPlayerHistory?: (player: object) => void }} props
  */
-function HighlightRow({ player, onOpenPlayerHistory }) {
+function HighlightRow({ player, rank, onOpenPlayerHistory }) {
   const skillClass = POSITION_TEXT_CLASS[player.position] || "text-on-surface";
   return (
     <button
       type="button"
       onClick={() => onOpenPlayerHistory?.(player)}
       title="Abrir histórico do jogador"
-      className="flex w-full items-center gap-3 rounded-md border border-outline-variant/25 bg-surface-container-low px-2.5 py-2 text-left transition-colors hover:border-outline-variant/50 hover:bg-surface-container-high"
+      className="flex w-full items-center gap-2.5 rounded-lg border border-outline-variant/25 bg-surface-container-low px-2.5 py-2 text-left transition-all duration-200 hover:-translate-y-px hover:border-outline-variant/50 hover:bg-surface-container-high hover:shadow-lg hover:shadow-black/30"
     >
+      <span
+        aria-label={`${rank}º`}
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black shadow-md ${MEDAL_CLASS[rank - 1] || "bg-surface-bright text-on-surface-variant"}`}
+      >
+        {rank}
+      </span>
       <PlayerAvatar
         seed={player.id}
         position={player.position}
@@ -450,6 +618,15 @@ export function OtherSquadsTab({
     0,
   );
   const brand = teamRow?.sponsorBrand;
+  // A linha da classificação não traz a capacidade — cai no clube clicado.
+  const capacity =
+    teamRow?.stadium_capacity || selectedTeam?.stadium_capacity || 10000;
+  const lastFiveRecord = ["V", "E", "D"]
+    .map((r) => `${lastFive.filter((m) => m.result === r).length}${r}`)
+    .join(" ");
+  const playedFixtures = fixtures.filter((m) => m.result);
+  const upcomingFixtures = fixtures.filter((m) => !m.result);
+  const ink = selectedTeam?.color_secondary || "#ffffff";
 
   return (
     <div className="min-h-0 flex-1 w-full overflow-y-auto overscroll-contain bg-surface text-on-surface">
@@ -469,13 +646,18 @@ export function OtherSquadsTab({
           <StadiumIllustration
             seed={selectedTeam?.id}
             weather={homeWeather}
-            capacity={selectedTeam?.stadium_capacity || 10000}
+            capacity={capacity}
             primary={selectedTeam?.color_primary}
             secondary={selectedTeam?.color_secondary}
             mood={selectedTeam?.fans_mood ?? null}
             className="h-full w-full"
           />
         </div>
+        {/* Profundidade: sombra a subir do fundo (legibilidade das tabs) */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-black/15"
+        />
         {/* Hairline nas cores do clube */}
         <div
           aria-hidden
@@ -490,9 +672,9 @@ export function OtherSquadsTab({
         <div className="relative z-10 px-4 pb-3 pt-2.5 sm:px-6 sm:pb-5 sm:pt-4">
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-white/80 transition-colors hover:text-white"
+            className="group -ml-1 flex items-center gap-1 rounded-full py-1 pl-1 pr-2.5 text-[10px] font-black uppercase tracking-widest text-white/80 transition-colors hover:bg-black/25 hover:text-white"
           >
-            <span className="material-symbols-outlined text-[18px]">
+            <span className="material-symbols-outlined text-[18px]! leading-none transition-transform group-hover:-translate-x-0.5">
               arrow_back
             </span>
             Voltar
@@ -501,8 +683,8 @@ export function OtherSquadsTab({
           <div className="mt-1.5 flex items-center gap-3 sm:mt-3 sm:gap-5">
             <TeamCrest
               team={teamRow}
-              size="w-11 h-11 sm:w-20 sm:h-20 text-lg sm:text-4xl"
-              className="shadow-lg"
+              size="w-12 h-12 sm:w-20 sm:h-20 text-lg sm:text-4xl"
+              className="shadow-xl shadow-black/40 ring-2 ring-white/25"
             />
             <div className="min-w-0 flex-1">
               <p
@@ -553,35 +735,24 @@ export function OtherSquadsTab({
 
           {/* Linha de contexto: posição · pontos · forma (· saldo, equipa própria) */}
           <div
-            className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] font-black uppercase tracking-widest sm:mt-3"
-            style={{ color: selectedTeam?.color_secondary || "#fff" }}
+            className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[10px] font-black uppercase tracking-widest sm:mt-3"
+            style={{ color: ink }}
           >
-            <span>Época {seasonYear}</span>
-            {position != null && (
-              <>
-                <span className="opacity-50">·</span>
-                <span>{position}º lugar</span>
-              </>
-            )}
+            <HeaderChip>Época {seasonYear}</HeaderChip>
+            {position != null && <HeaderChip>{position}º lugar</HeaderChip>}
             {teamRow?.points != null && (
-              <>
-                <span className="opacity-50">·</span>
-                <span>{teamRow.points} pts</span>
-              </>
+              <HeaderChip className="tabular-nums">{teamRow.points} pts</HeaderChip>
             )}
             {(teamForms?.[selectedTeam?.id] || "").length > 0 && (
-              <>
-                <span className="opacity-50">·</span>
+              <HeaderChip>
+                Forma
                 <FormDots form={teamForms[selectedTeam.id]} size="sm" />
-              </>
+              </HeaderChip>
             )}
             {isOwnTeam && (
-              <>
-                <span className="opacity-50">·</span>
-                <span className={myBudget >= 0 ? "" : "text-red-200"}>
-                  Saldo {formatCurrency(myBudget)}
-                </span>
-              </>
+              <HeaderChip className={`tabular-nums ${myBudget >= 0 ? "" : "text-red-200"}`}>
+                Saldo {formatCurrency(myBudget)}
+              </HeaderChip>
             )}
           </div>
 
@@ -640,14 +811,30 @@ export function OtherSquadsTab({
                 icon="calendar_month"
                 meta={`${fixtures.length} jogos · Época ${seasonYear}`}
               >
-                <div className="flex flex-col gap-1.5">
-                  {fixtures.map((match) => (
-                    <MatchLine
-                      key={`${match.kind}-${match.slot}-${match.opponentId}`}
-                      match={match}
-                      onOpenTeam={onOpenTeamSquad}
-                    />
-                  ))}
+                <div className="flex flex-col gap-2">
+                  {[
+                    ["Resultados", playedFixtures, "from-primary to-primary/40"],
+                    ["Por jogar", upcomingFixtures, null],
+                  ]
+                    .filter(([, list]) => list.length > 0)
+                    .map(([title, list, barClass]) => (
+                      <section key={title} aria-label={title}>
+                        <GroupHeader
+                          title={title}
+                          meta={`${list.length} ${list.length === 1 ? "jogo" : "jogos"}`}
+                          barClass={barClass}
+                        />
+                        <div className="flex flex-col gap-1.5">
+                          {list.map((match) => (
+                            <MatchLine
+                              key={`${match.kind}-${match.slot}-${match.opponentId}`}
+                              match={match}
+                              onOpenTeam={onOpenTeamSquad}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    ))}
                 </div>
               </Panel>
             )}
@@ -706,7 +893,7 @@ export function OtherSquadsTab({
               <Panel
                 title="Últimos jogos"
                 icon="sports_soccer"
-                meta={`${lastFive.length} ${lastFive.length === 1 ? "jogo" : "jogos"}`}
+                meta={lastFive.length > 0 ? lastFiveRecord : ""}
                 className="min-w-0 lg:col-span-2"
               >
                 {lastFive.length === 0 ? (
@@ -731,8 +918,9 @@ export function OtherSquadsTab({
               <div className="flex min-w-0 flex-col gap-4">
                 <Panel title="Próximo jogo" icon="flag">
                   {nextMatch ? (
-                    <MatchLine
+                    <NextMatchCard
                       match={nextMatch}
+                      team={teamRow}
                       onOpenTeam={onOpenTeamSquad}
                     />
                   ) : (
@@ -757,9 +945,10 @@ export function OtherSquadsTab({
                     </p>
                   ) : (
                     <div className="flex flex-col gap-1.5">
-                      {highlights.map((player) => (
+                      {highlights.map((player, i) => (
                         <HighlightRow
                           key={player.id}
+                          rank={i + 1}
                           player={player}
                           onOpenPlayerHistory={onOpenPlayerHistory}
                         />
@@ -772,64 +961,74 @@ export function OtherSquadsTab({
 
             <Panel title="Clube" icon="shield">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="flex shrink-0 justify-center sm:w-40">
+                <div className="flex shrink-0 justify-center rounded-lg bg-[radial-gradient(circle_at_50%_45%,rgba(255,255,255,0.07),transparent_70%)] py-2 sm:w-44">
                   <TeamKit
                     team={teamRow}
                     className="h-32 object-contain sm:h-36"
                   />
                 </div>
-                <dl className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div>
-                    <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-                      Cores
-                    </dt>
-                    <dd className="mt-1 flex items-center gap-2">
-                      {[teamRow?.color_primary, teamRow?.color_secondary]
-                        .filter(Boolean)
-                        .map((color) => (
-                          <span
-                            key={color}
-                            className="h-5 w-5 rounded-full border border-outline-variant/40"
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-                      Patrocinador
-                    </dt>
-                    <dd className="mt-1 truncate text-xs font-black text-on-surface">
-                      {brand?.name || "—"}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-                      Estádio
-                    </dt>
-                    <dd className="mt-1 truncate text-xs font-black text-on-surface">
-                      {teamRow?.stadium_name || "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-                      Capacidade
-                    </dt>
-                    <dd className="mt-1 text-xs font-black tabular-nums text-on-surface">
-                      {(teamRow?.stadium_capacity || 10000).toLocaleString("pt-PT")}{" "}
-                      lugares
-                    </dd>
-                  </div>
-                  {isOwnTeam && squadStats && (
-                    <div className="min-w-0">
-                      <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-                        Folha semanal
-                      </dt>
-                      <dd className="mt-1 truncate text-xs font-black tabular-nums text-on-surface">
-                        {formatCurrency(squadStats.wage)}
-                      </dd>
-                    </div>
-                  )}
+                <dl className="grid flex-1 grid-cols-1 gap-2 min-[400px]:grid-cols-2">
+                  {[
+                    {
+                      icon: "palette",
+                      label: "Cores",
+                      value: (
+                        <span className="flex items-center gap-1.5">
+                          {[teamRow?.color_primary, teamRow?.color_secondary]
+                            .filter(Boolean)
+                            .map((color) => (
+                              <span
+                                key={color}
+                                className="h-5 w-5 rounded-full border border-outline-variant/40 shadow-sm shadow-black/40"
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                        </span>
+                      ),
+                    },
+                    {
+                      icon: "handshake",
+                      label: "Patrocinador",
+                      value: brand ? (
+                        <span className="flex min-w-0 items-center gap-2">
+                          <SponsorLogo brand={brand} className="h-6 w-6 shrink-0 rounded-sm" />
+                          <span className="truncate">{brand.name}</span>
+                        </span>
+                      ) : (
+                        "—"
+                      ),
+                    },
+                    { icon: "stadium", label: "Estádio", value: teamRow?.stadium_name || "—" },
+                    {
+                      icon: "groups",
+                      label: "Capacidade",
+                      value: `${capacity.toLocaleString("pt-PT")} lugares`,
+                    },
+                    isOwnTeam && squadStats
+                      ? { icon: "payments", label: "Folha semanal", value: formatCurrency(squadStats.wage) }
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .map((fact) => (
+                      <div
+                        key={fact.label}
+                        className="flex min-w-0 items-center gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low px-3 py-2.5"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-bright/60 text-on-surface-variant">
+                          <span aria-hidden className="material-symbols-outlined text-[18px]! leading-none">
+                            {fact.icon}
+                          </span>
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <dt className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
+                            {fact.label}
+                          </dt>
+                          <dd className="mt-0.5 truncate text-xs font-black tabular-nums text-on-surface">
+                            {fact.value}
+                          </dd>
+                        </div>
+                      </div>
+                    ))}
                 </dl>
               </div>
             </Panel>
@@ -878,14 +1077,11 @@ export function OtherSquadsTab({
                   const wage = group.reduce((sum, p) => sum + (p.wage || 0), 0);
                   return (
                     <section key={pos} aria-label={POS_GROUP_LABEL[pos]}>
-                      <div className="flex items-center gap-2 px-1 py-2">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                          {POS_GROUP_LABEL[pos]}
-                        </h3>
-                        <span className="text-[9px] font-bold tabular-nums text-on-surface-variant/70">
-                          {group.length} · {formatCurrency(wage)}/sem
-                        </span>
-                      </div>
+                      <GroupHeader
+                        title={POS_GROUP_LABEL[pos]}
+                        meta={`${group.length} · ${formatCurrency(wage)}/sem`}
+                        barClass={POSITION_BAR_CLASS[pos]}
+                      />
                       <div className="flex flex-col gap-1.5">
                         {group.map((player) => (
                           <PlayerRow

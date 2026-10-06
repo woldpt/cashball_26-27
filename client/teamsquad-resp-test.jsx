@@ -5,6 +5,7 @@
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { OtherSquadsTab } from "./src/views/OtherSquadsTab.jsx";
+import { GameContext } from "./src/contexts/GameContext.jsx";
 
 function mk(id, position, name, extra = {}) {
   return {
@@ -136,7 +137,10 @@ const clubHistory = {
 };
 
 const root = createRoot(document.getElementById("root"));
+// O OtherSquadsTab lê o calendarIndex do GameContext (useGame) — sem
+// provider o harness rebentava antes de medir.
 root.render(
+  <GameContext.Provider value={{ calendarIndex: calendarData.calendarIndex }}>
   <div className="h-screen flex flex-col bg-surface">
     <OtherSquadsTab
       selectedTeam={selectedTeam}
@@ -161,7 +165,8 @@ root.render(
       onOpenTeamSquad={() => {}}
       onOpenPlayerHistory={() => {}}
     />
-  </div>,
+  </div>
+  </GameContext.Provider>,
 );
 
 function measure() {

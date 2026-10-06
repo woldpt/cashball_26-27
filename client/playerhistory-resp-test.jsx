@@ -88,15 +88,53 @@ const CASES = [
       resistance: 75,
     },
   },
+  {
+    // Jogador próprio com pedido de renovação, prémios e transferências:
+    // exercita a gestão contratual e a linha do tempo.
+    label: "mine",
+    myTeamId: 1,
+    player: {
+      ...base,
+      id: 4,
+      name: "Bernardo Vasconcelos",
+      skill: 44,
+      position: "MED",
+      age: 27,
+      is_star: 1,
+      isExClub: false,
+      team_name: "Porto",
+      contract_request_pending: 1,
+      contract_requested_wage: 9800,
+      contract_start_epoch: 3,
+      last_rating: 7.5,
+      prev_skill: 40,
+      games_played: 12,
+      goals: 6,
+      career_games: 88,
+      career_goals: 31,
+      career_reds: 2,
+      career_injuries: 1,
+    },
+    awards: [
+      { season: 2026, achievement: "Melhor Marcador (31 golos)" },
+      { season: 2025, achievement: "Jogador do Mês" },
+    ],
+    transfers: [
+      { year: 2024, matchweek: 3, type: "transfer_in", team_id: 9, team_name: "Vitória SC", related_team_name: "Clube Desportivo Nacional da Madeira", amount: 450000 },
+      { year: 2026, matchweek: 12, type: "transfer_in", team_id: 1, team_name: "Porto", related_team_name: "Vitória SC", amount: 1250000 },
+    ],
+  },
 ];
 
 const skillHistory = [
-  { matchweek: 1, skill: 41 },
-  { matchweek: 2, skill: 42 },
-  { matchweek: 3, skill: 42 },
-  { matchweek: 4, skill: 42 },
-  { matchweek: 5, skill: 42 },
+  { matchweek: 1, skill: 38 },
+  { matchweek: 2, skill: 39 },
+  { matchweek: 3, skill: 39 },
+  { matchweek: 4, skill: 41 },
+  { matchweek: 5, skill: 40 },
   { matchweek: 6, skill: 42 },
+  { matchweek: 7, skill: 42 },
+  { matchweek: 8, skill: 44 },
 ];
 
 // ── Measurement ──────────────────────────────────────────────────────────────
@@ -180,12 +218,12 @@ function Harness() {
     <PlayerHistoryModal
       playerHistoryModal={{
         player: c.player,
-        transfers: [],
-        awards: [],
+        transfers: c.transfers || [],
+        awards: c.awards || [],
         skillHistory,
       }}
       setPlayerHistoryModal={setPlayerHistoryModal}
-      myTeamId={99}
+      myTeamId={c.myTeamId ?? 99}
       matchweekCount={6}
       season={1}
     />

@@ -1,25 +1,76 @@
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useId, useRef } from "react";
 import { TeamLink } from "../shared/TeamLink.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { contractWeekLabel } from "../../utils/slotLabel.js";
 import { formatCurrency, seasonToYear } from "../../utils/formatters.js";
 import { BadgeSkills } from "../shared/BadgeSkills.jsx";
-import { Stars } from "../shared/Stars.jsx";
+import { Badge } from "../shared/Badge.jsx";
 import { Button } from "../shared/Button.jsx";
-import { EmptyState } from "../shared/EmptyState.jsx";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
+import { TeamCrest } from "../shared/TeamCrest.jsx";
 import { PlayerStatusBadges, StarMark } from "../shared/PlayerStatusBadges.jsx";
 import { SkillLineChart } from "./SkillLineChart.jsx";
 import {
-  POSITION_TEXT_CLASS,
-  POSITION_BORDER_CLASS,
+  POSITION_BADGE_BG_CLASS,
+  POSITION_BADGE_TEXT_CLASS,
+  POSITION_BADGE_BORDER_CLASS,
   POSITION_LABEL_MAP,
   POSITION_FULL_LABEL_MAP,
   POSITION_ACCENT_HEX,
   SEASON_WEEKS,
   MODAL_Z,
 } from "../../constants/index.js";
+
+/**
+ * Título de secção da ficha: ícone + rótulo + filete até à margem.
+ *
+ * @param {Object} props
+ * @param {string} props.icon
+ * @param {import("react").ReactNode} [props.meta]
+ * @param {import("react").ReactNode} props.children
+ * @returns {JSX.Element}
+ */
+function SectionTitle({ icon, meta, children }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none text-primary">
+        {icon}
+      </span>
+      <h3 className="shrink-0 text-[10px] font-black uppercase tracking-widest text-primary">
+        {children}
+      </h3>
+      <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-outline-variant/40 to-transparent" />
+      {meta && (
+        <span className="shrink-0 text-[9px] font-black uppercase tracking-widest tabular-nums text-on-surface-variant/60">
+          {meta}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Estado vazio compacto (as secções da ficha são curtas — o EmptyState
+ * grande ocupava meio ecrã por secção vazia).
+ *
+ * @param {Object} props
+ * @param {string} props.icon
+ * @param {string} props.children
+ * @returns {JSX.Element}
+ */
+function EmptyLine({ icon, children }) {
+  return (
+    <p className="flex items-center gap-2 rounded-lg border border-dashed border-outline-variant/30 px-3 py-3 text-[11px] font-bold text-on-surface-variant/60">
+      <span aria-hidden className="material-symbols-outlined text-[18px]! leading-none text-on-surface-variant/40">
+        {icon}
+      </span>
+      {children}
+    </p>
+  );
+}
+
+const SECTION = "border-t border-outline-variant/15 px-4 py-4 sm:px-6 sm:py-5";
 
 /**
  * @param {{
@@ -61,6 +112,7 @@ export function PlayerHistoryModal({
 }) {
   // Relógio único primeiro (regras dos hooks: antes de qualquer return).
   const ctxIdx = useContext(GameContext)?.calendarIndex;
+  const titleId = useId();
   // History API: push an entry when the modal opens so the browser back
   // button closes it, keeping navigation state consistent.
   const wasOpen = useRef(false);
@@ -97,7 +149,9 @@ export function PlayerHistoryModal({
   if (!player) return null;
 
   const pos = player.position;
-  const barColor = POSITION_ACCENT_HEX[pos] || POSITION_ACCENT_HEX.MED;
+  const posColor = POSITION_ACCENT_HEX[pos] || POSITION_ACCENT_HEX.MED;
+  const teamPrimary = player.team_color_primary || player.color_primary || "#333333";
+  const teamSecondary = player.team_color_secondary || player.color_secondary || "#ffffff";
   const isStar = player.is_star === 1;
   const skill = player.skill ?? 0;
   // Season stats
@@ -117,12 +171,12 @@ export function PlayerHistoryModal({
   const cReds = player.career_reds ?? 0;
   const cInjuries = player.career_injuries ?? 0;
 
-  // Linhas da tabela de desempenho (época vs carreira)
-  const perfRows = [
-    { label: "Jogos", season: sGames, career: cGames, seasonClass: "text-on-surface", careerClass: "text-on-surface" },
-    { label: "Golos", season: sGoals, career: cGoals, seasonClass: "text-tertiary", careerClass: "text-tertiary" },
-    { label: "Vermelhos", season: sReds, career: cReds, seasonClass: sReds > 0 ? "text-error" : "text-on-surface", careerClass: cReds > 0 ? "text-error" : "text-on-surface" },
-    { label: "Lesões", season: sInjuries, career: cInjuries, seasonClass: sInjuries > 0 ? "text-amber-400" : "text-on-surface", careerClass: cInjuries > 0 ? "text-amber-400" : "text-on-surface" },
+  // Mosaicos de desempenho (época em destaque, carreira por baixo)
+  const perfTiles = [
+    { label: "Jogos", icon: "stadium", season: sGames, career: cGames, cls: "text-on-surface" },
+    { label: "Golos", icon: "sports_soccer", season: sGoals, career: cGoals, cls: sGoals > 0 ? "text-tertiary" : "text-on-surface" },
+    { label: "Vermelhos", icon: "style", season: sReds, career: cReds, cls: sReds > 0 ? "text-error" : "text-on-surface" },
+    { label: "Lesões", icon: "healing", season: sInjuries, career: cInjuries, cls: sInjuries > 0 ? "text-amber-400" : "text-on-surface" },
   ];
 
   // Contract management — only shown for own team
@@ -163,7 +217,35 @@ export function PlayerHistoryModal({
   const marketPrice = player.marketPrice ?? player.value ?? 0;
   const canAfford = myBudget >= marketPrice;
 
-  // Disponibilidade (suspensão/lesão) — insígnias partilhadas no cabeçalho.
+  const afterMatches = "Disponível após as partidas";
+  const lockedTitle = `Contrato até ${contractEndYear}, ${contractEndLabel}`;
+  const rating = Number(player.last_rating);
+  const hasRating = player.last_rating != null && Number.isFinite(rating) && rating > 0;
+
+  const kpis = [
+    { label: "Valor de mercado", value: formatCurrency(player.value || 0), cls: "text-tertiary" },
+    { label: "Ordenado/sem", value: formatCurrency(player.wage || 0), cls: "text-on-surface" },
+    {
+      label: "Contrato até",
+      value: contractStart > 0 ? contractEndYear : "—",
+      sub: contractStart > 0 ? contractEndLabel : "Sem registo",
+      icon: isLocked ? "lock" : null,
+      cls: "text-on-surface",
+    },
+    {
+      label: "Última nota",
+      value: hasRating ? String(Math.round(rating * 2) / 2).replace(".", ",") : "—",
+      sub: hasRating ? "de 10" : "Sem jogos",
+      icon: hasRating ? "star" : null,
+      cls: "text-on-surface",
+    },
+  ];
+
+  const clubLabel = player.team_name
+    ? player.transfer_status === "auction" && player.isExClub
+      ? `ex-${player.team_name}`
+      : player.team_name
+    : "Sem clube";
 
   return (
     <ModalShell
@@ -171,471 +253,465 @@ export function PlayerHistoryModal({
       onClose={closeModal}
       z={MODAL_Z.default}
       variant="wide"
+      labelledBy={titleId}
       dismissable
     >
       <div className="flex flex-col" style={{ maxHeight: "90vh" }}>
-        {/* ── IDENTITY HEADER ──
+        {/* ── CABEÇALHO (carta do jogador) ──
             shrink-0: o container pai tem altura indefinida (max-height: 90vh),
             pelo que o flex-basis 0% do body (flex-1) é tratado como auto e o
             flex-shrink distribui o excesso pelo header — sem shrink-0 o header
             encolhe abaixo do conteúdo e o overflow-hidden corta as linhas
-            envoltas (ex.: 🛡️ resistência / 👍 forma). */}
-        <div className="relative shrink-0 bg-surface-container overflow-hidden">
+            envoltas (nome longo + insígnias). */}
+        <header className="relative shrink-0 overflow-hidden bg-surface-container-high">
           <div
-            className="absolute inset-0 pointer-events-none"
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
             style={{
-              background: `radial-gradient(ellipse at top left, ${barColor}18 0%, transparent 70%)`,
+              background: `radial-gradient(120% 100% at 0% 0%, ${posColor}2e 0%, transparent 55%), radial-gradient(90% 120% at 100% 0%, ${teamPrimary}33 0%, transparent 65%)`,
             }}
           />
-          <div className="relative flex items-start gap-2 sm:gap-4 px-3 sm:px-6 pt-3 sm:pt-6 pb-3 sm:pb-5">
-            <div className="shrink-0">
-              <PlayerAvatar seed={player.id} position={pos} teamColor={player.team_color_primary || player.color_primary || null} nationality={player.nationality} size="w-10 h-10 sm:w-24 sm:h-24" photo={player.photo || null} />
-            </div>
-            <div className="shrink-0 mt-0.5 sm:mt-1">
-              <div
-                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-sm bg-surface-bright border-l-2 ${POSITION_BORDER_CLASS[pos] || "border-zinc-500"} ${POSITION_TEXT_CLASS[pos] || "text-zinc-300"} text-[10px] sm:text-xs font-black uppercase tracking-wider`}
-              >
-                {POSITION_LABEL_MAP[pos] || pos}
-              </div>
-            </div>
+          {/* Filete nas cores do clube */}
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-1"
+            style={{ background: `linear-gradient(90deg, ${teamPrimary}, ${teamSecondary})` }}
+          />
+          {/* Marca d'água da posição */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 right-2 overflow-clip select-none font-headline text-[96px] font-black leading-[0.8] tracking-tighter text-on-surface opacity-[0.04] sm:text-[140px]"
+          >
+            {POSITION_LABEL_MAP[pos] || pos}
+          </span>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <h2 className="font-black font-headline text-lg sm:text-2xl tracking-tight text-on-surface uppercase leading-none">
-                  {player.name}
-                </h2>
-                {isStar && <StarMark />}
-                <PlayerStatusBadges
-                  player={player}
-                  matchweekCount={matchweekCount}
-                  season={season}
+          <button
+            type="button"
+            onClick={closeModal}
+            title="Fechar"
+            aria-label="Fechar"
+            className="absolute right-3 top-3.5 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/30 text-on-surface-variant backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-on-surface sm:right-4 sm:top-4"
+          >
+            <span aria-hidden className="material-symbols-outlined text-[20px]! leading-none">
+              close
+            </span>
+          </button>
+
+          <div className="relative px-4 pb-4 pt-5 sm:px-6 sm:pb-5 sm:pt-6">
+            <div className="flex items-start gap-3 sm:gap-5">
+              <div
+                className="shrink-0 rounded-full p-0.5 shadow-lg shadow-black/40"
+                style={{ background: `linear-gradient(140deg, ${posColor}, ${posColor}00 75%)` }}
+              >
+                <PlayerAvatar
+                  seed={player.id}
+                  position={pos}
+                  teamColor={player.team_color_primary || player.color_primary || null}
+                  nationality={player.nationality}
+                  size="w-16 h-16 sm:w-24 sm:h-24"
+                  photo={player.photo || null}
                 />
               </div>
-              <p className="text-on-surface-variant text-[10px] sm:text-xs font-medium mt-0.5 sm:mt-1 tracking-wide">
-                {POSITION_FULL_LABEL_MAP[pos] || pos}
-                {player.nationality ? ` · ${player.nationality}` : ""}
-              </p>
-              <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
-                <span className="text-on-surface-variant text-xs">Clube:</span>
-                {player.team_crest ? (
-                  <span className="w-5 h-5 rounded-sm shrink-0 border border-outline-variant/20 shadow-md" style={{ backgroundColor: player.team_color_primary || player.color_primary || "#333" }}>
-                    <img src={player.team_crest} alt={player.team_name || "crest"} onError={(e) => { e.currentTarget.style.display = "none"; }} className="crest-shadow w-full h-full object-contain p-0.5" loading="lazy" />
+
+              <div className="min-w-0 flex-1 pr-10">
+                <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                  <span
+                    className={`rounded-sm border px-1.5 py-px ${POSITION_BADGE_BG_CLASS[pos] || "bg-surface-bright"} ${POSITION_BADGE_TEXT_CLASS[pos] || "text-on-surface"} ${POSITION_BADGE_BORDER_CLASS[pos] || "border-outline-variant/30"}`}
+                  >
+                    {POSITION_LABEL_MAP[pos] || pos}
                   </span>
-                ) : player.team_name ? (
-                  <span className="w-5 h-5 rounded-sm flex items-center justify-center text-[8px] font-black shrink-0 border border-white/10" style={{ background: player.team_color_primary || player.color_primary || "#333", color: player.team_color_secondary || player.color_secondary || "#fff" }}>{player.team_name[0]}</span>
-                ) : null}
-                <span className="font-bold text-tertiary text-xs" title={player.team_name || undefined}>
-                  <TeamLink teamId={player.team_id} onNavigate={closeModal}>
-                    {player.team_name
-                      ? player.transfer_status === "auction" && player.isExClub
-                        ? `ex-${player.team_name}`
-                        : player.team_name
-                      : "Sem clube"}
-                  </TeamLink>
-                </span>
+                  <span>{POSITION_FULL_LABEL_MAP[pos] || pos}</span>
+                  {player.age ? <span className="tabular-nums">· {player.age} anos</span> : null}
+                  {player.nationality ? <span className="normal-case">· {player.nationality}</span> : null}
+                </div>
+                <h2
+                  id={titleId}
+                  className="mt-1 break-words font-headline text-xl font-black uppercase leading-[0.95] tracking-tight text-on-surface sm:text-3xl"
+                >
+                  {player.name}
+                </h2>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1 empty:hidden">
+                  {isStar && <StarMark className="ml-0" />}
+                  <PlayerStatusBadges
+                    player={player}
+                    matchweekCount={matchweekCount}
+                    season={season}
+                  />
+                </div>
+                <div className="mt-2 flex min-w-0 items-center gap-2">
+                  {player.team_name ? (
+                    <TeamCrest
+                      team={{
+                        crest: player.team_crest,
+                        name: player.team_name,
+                        color_primary: teamPrimary,
+                        color_secondary: teamSecondary,
+                      }}
+                      size="w-6 h-6 text-[10px]"
+                    />
+                  ) : null}
+                  <span className="min-w-0 truncate text-xs font-black text-tertiary" title={player.team_name || undefined}>
+                    <TeamLink teamId={player.team_id} onNavigate={closeModal}>
+                      {clubLabel}
+                    </TeamLink>
+                  </span>
+                </div>
               </div>
             </div>
 
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={closeModal}
-              title="Voltar"
-            >
-              <span className="sm:hidden" aria-hidden="true">
-                ✕
-              </span>
-              <span className="hidden sm:inline">← Voltar</span>
-            </Button>
+            <BadgeSkills
+              size="lg"
+              className="mt-4 w-fit max-w-full"
+              skill={skill}
+              resistance={player.resistance}
+              form={player.form}
+              morale={player.morale}
+              aggressiveness={player.aggressiveness}
+              prevSkill={player.prev_skill}
+            />
           </div>
-        </div>
+        </header>
 
-        {/* ── SCROLLABLE BODY ── */}
-        <div className="overflow-y-auto flex-1">
-          {/* ── GESTÃO CONTRATUAL (faixa total, entre cabeçalho e atributos) ── */}
+        {/* ── CORPO (rola) ── */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Faixa de números — filetes de 1px pela grelha (gap-px) */}
+          <dl className="grid grid-cols-2 gap-px border-t border-outline-variant/20 bg-outline-variant/15 sm:grid-cols-4">
+            {kpis.map((k) => (
+              <div key={k.label} className="min-w-0 bg-surface-container px-4 py-3 sm:px-5">
+                <dt className="truncate text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
+                  {k.label}
+                </dt>
+                <dd className={`mt-1 flex min-w-0 items-center gap-1 font-headline text-lg font-black leading-tight tracking-tight tabular-nums ${k.cls}`}>
+                  {k.icon && (
+                    <span
+                      aria-hidden
+                      className={`material-symbols-outlined text-[16px]! leading-none ${k.icon === "star" ? "text-amber-400" : "text-amber-400/80"}`}
+                    >
+                      {k.icon}
+                    </span>
+                  )}
+                  <span className="truncate">{k.value}</span>
+                </dd>
+                {k.sub && (
+                  <p className="mt-1 truncate text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/50">
+                    {k.sub}
+                  </p>
+                )}
+              </div>
+            ))}
+          </dl>
+
+          {/* ── GESTÃO CONTRATUAL (só o meu jogador) ── */}
           {isMyPlayer && (
-            <div className="px-6 py-4 border-b border-outline-variant/10">
-              <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">
-                Gestão Contratual
-              </p>
+            <section className={SECTION}>
+              <SectionTitle icon="contract_edit">Gestão contratual</SectionTitle>
               {isLocked && (
-                <p className="text-[11px] text-amber-400/90 font-bold mb-2">
-                  🔒 Contrato em vigor até {contractEndYear}, {contractEndLabel} — não pode ser transferido.
+                <p className="mb-3 flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11px] font-bold text-amber-300">
+                  <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">lock</span>
+                  Contrato em vigor até {contractEndYear}, {contractEndLabel} — não pode ser transferido.
                 </p>
               )}
               {hasPendingRequest ? (
-                <div className="flex flex-col gap-2 md:flex-row">
-                  {requestedWage != null && (
-                    <p className="w-full text-xs font-bold text-on-surface">
-                      Exige {formatCurrency(requestedWage)}/sem
-                    </p>
-                  )}
+                <div className="rounded-lg border border-error/30 bg-error-container/20 p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <Badge variant="error" size="md">Ação necessária</Badge>
+                    {requestedWage != null && (
+                      <p className="text-xs font-bold text-on-surface-variant">
+                        Exige{" "}
+                        <span className="font-headline font-black tabular-nums text-on-surface">
+                          {formatCurrency(requestedWage)}
+                        </span>
+                        /sem
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Button
+                      variant="success"
+                      disabled={matchInProgress}
+                      title={matchInProgress ? afterMatches : "Aceitar a renovação pelo valor exigido"}
+                      onClick={() => {
+                        respondContractRequest?.(player.id, true, requestedWage);
+                        closeModal();
+                      }}
+                    >
+                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">check</span>
+                      Aceitar renovação
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={matchInProgress}
+                      title={matchInProgress ? afterMatches : "Recusar — o jogador vai a leilão"}
+                      onClick={() => {
+                        respondContractRequest?.(player.id, false);
+                        closeModal();
+                      }}
+                    >
+                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">gavel</span>
+                      Enviar para leilão
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-3">
                   <Button
-                    variant="success"
-                    className="flex-1 shadow-[0_0_14px_rgba(239,68,68,0.55)]"
+                    variant="primary"
                     disabled={matchInProgress}
-                    title={
-                      matchInProgress
-                        ? "Disponível após as partidas"
-                        : "Aceitar a renovação pelo valor exigido"
-                    }
+                    title={matchInProgress ? afterMatches : "Renovar Contrato"}
                     onClick={() => {
-                      respondContractRequest?.(player.id, true, requestedWage);
+                      renewPlayerContract?.(player);
                       closeModal();
                     }}
                   >
-                    📝 Aceitar renovação
+                    <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">edit_document</span>
+                    Renovar contrato
                   </Button>
                   <Button
                     variant="secondary"
-                    className="flex-1 shadow-[0_0_14px_rgba(239,68,68,0.55)]"
-                    disabled={matchInProgress}
+                    disabled={matchInProgress || alreadyAuctionedThisWeek || isLocked}
                     title={
                       matchInProgress
-                        ? "Disponível após as partidas"
-                        : "Recusar — o jogador vai a leilão"
+                        ? afterMatches
+                        : isLocked
+                          ? lockedTitle
+                          : alreadyAuctionedThisWeek
+                            ? "Já foi a leilão nesta semana"
+                            : "Vender em Leilão"
                     }
                     onClick={() => {
-                      respondContractRequest?.(player.id, false);
+                      listPlayerAuction?.(player);
                       closeModal();
                     }}
                   >
-                    🔨 Enviar para leilão
+                    <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">gavel</span>
+                    Vender em leilão
                   </Button>
+                  {player.transfer_status === "fixed" ? (
+                    <Button
+                      variant="dangerSoft"
+                      disabled={matchInProgress}
+                      title={matchInProgress ? afterMatches : "Retirar da Lista"}
+                      onClick={() => {
+                        removeFromTransferList?.(player);
+                        closeModal();
+                      }}
+                    >
+                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">close</span>
+                      Retirar da lista
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      disabled={matchInProgress || isLocked}
+                      title={
+                        matchInProgress
+                          ? afterMatches
+                          : isLocked
+                            ? lockedTitle
+                            : "Listar para Transferência"
+                      }
+                      onClick={() => {
+                        listPlayerFixed?.(player);
+                        closeModal();
+                      }}
+                    >
+                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">sell</span>
+                      Pôr à venda
+                    </Button>
+                  )}
                 </div>
-              ) : (
-              <div className="flex flex-col gap-2 md:flex-row">
-                <Button
-                  variant="primary"
-                  className="flex-1"
-                  disabled={matchInProgress}
-                  title={
-                    matchInProgress
-                      ? "Disponível após as partidas"
-                      : "Renovar Contrato"
-                  }
-                  onClick={() => {
-                    renewPlayerContract?.(player);
-                    closeModal();
-                  }}
-                >
-                  📝 Renovar Contrato
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="flex-1"
-                  disabled={matchInProgress || alreadyAuctionedThisWeek || isLocked}
-                  title={
-                    matchInProgress
-                      ? "Disponível após as partidas"
-                      : isLocked
-                        ? `Contrato até ${contractEndYear}, ${contractEndLabel}`
-                        : alreadyAuctionedThisWeek
-                          ? "Já foi a leilão nesta semana"
-                          : "Vender em Leilão"
-                  }
-                  onClick={() => {
-                    listPlayerAuction?.(player);
-                    closeModal();
-                  }}
-                >
-                  🔨 Vender em Leilão
-                </Button>
-                {player.transfer_status === "fixed" ? (
+              )}
+            </section>
+          )}
+
+          {/* ── MERCADO (jogador de outra equipa, listado) ── */}
+          {isListedInMarket && (
+            <section className={SECTION}>
+              <SectionTitle icon="storefront">Mercado</SectionTitle>
+              <div className="flex flex-col gap-3 rounded-lg border border-primary/25 bg-primary/5 p-3 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
+                    {player.transfer_status === "auction" ? "Em leilão · base" : "Preço pedido"}
+                  </p>
+                  <p className="mt-1 font-headline text-2xl font-black leading-none tracking-tight tabular-nums text-on-surface">
+                    {formatCurrency(marketPrice)}
+                  </p>
+                  {!canAfford && (
+                    <p className="mt-1 text-[10px] font-bold text-error">
+                      Faltam {formatCurrency(marketPrice - myBudget)}
+                    </p>
+                  )}
+                </div>
+                {player.transfer_status === "auction" ? (
                   <Button
-                    variant="danger"
-                    className="flex-1"
-                    disabled={matchInProgress}
-                    title={
-                      matchInProgress
-                        ? "Disponível após as partidas"
-                        : "Retirar da Lista"
-                    }
+                    variant="primary"
+                    full
+                    className="sm:w-auto"
+                    disabled={!canAfford || matchInProgress}
+                    title={matchInProgress ? afterMatches : undefined}
                     onClick={() => {
-                      removeFromTransferList?.(player);
+                      openAuctionBid?.(player);
                       closeModal();
                     }}
                   >
-                    ✕ Retirar da Lista
+                    <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">gavel</span>
+                    {canAfford ? "Licitar no leilão" : "Saldo insuficiente"}
                   </Button>
                 ) : (
                   <Button
-                    variant="secondary"
-                    className="flex-1"
-                    disabled={matchInProgress || isLocked}
-                    title={
-                      matchInProgress
-                        ? "Disponível após as partidas"
-                        : isLocked
-                          ? `Contrato até ${contractEndYear}, ${contractEndLabel}`
-                          : "Listar para Transferência"
-                    }
+                    variant="primary"
+                    full
+                    className="sm:w-auto"
+                    disabled={!canAfford || matchInProgress}
+                    title={matchInProgress ? afterMatches : undefined}
                     onClick={() => {
-                      listPlayerFixed?.(player);
+                      if (!canAfford) return;
+                      setGameDialog?.({
+                        mode: "confirm",
+                        title: `Comprar ${player.name}`,
+                        description: `${player.position} · Qualidade ${player.skill} · Preço: ${formatCurrency(marketPrice)}`,
+                        confirmLabel: "Confirmar Compra",
+                        onConfirm: () => buyPlayer?.(player.id),
+                        onCancel: () => {},
+                      });
                       closeModal();
                     }}
                   >
-                    🏷️ Listar para Transferência
+                    <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">shopping_cart</span>
+                    {canAfford ? "Comprar jogador" : "Saldo insuficiente"}
                   </Button>
                 )}
               </div>
-              )}
-            </div>
+            </section>
           )}
-          {/* ── 2-COLUMN LAYOUT (md+) ── */}
-          <div className="md:grid md:grid-cols-2 md:divide-x md:divide-outline-variant/10">
-            {/* LEFT COLUMN: Attributes + Skill evolution */}
-            <div className="flex flex-col">
-              {/* ── ATRIBUTOS ── */}
-              <div className="px-6 py-5 border-b border-outline-variant/10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-                  Atributos
-                </p>
-                <div className="flex flex-col gap-4">
-                  <BadgeSkills
-                    size="lg"
-                    className="self-start max-w-full"
-                    skill={skill}
-                    resistance={player.resistance}
-                    form={player.form}
-                    morale={player.morale}
-                    aggressiveness={player.aggressiveness}
-                    prevSkill={player.prev_skill}
-                  />
-                  {player.last_rating != null && (
-                    <div className="flex justify-between items-end">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                        Última classificação
-                      </span>
-                      <span className="font-black font-headline text-base text-amber-400">
-                        <Stars value={player.last_rating} />
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Skill evolution chart */}
+          {/* ── EVOLUÇÃO + DESEMPENHO (2 colunas em md+) ── */}
+          <div className="md:grid md:grid-cols-2 md:divide-x md:divide-outline-variant/15 md:border-t md:border-outline-variant/15">
+            <section className={`${SECTION} md:border-t-0`}>
+              <SectionTitle icon="monitoring">Evolução da skill</SectionTitle>
               <SkillLineChart
                 skillHistory={playerHistoryModal.skillHistory || []}
                 skill={skill}
                 position={pos}
               />
-            </div>
+            </section>
 
-            {/* RIGHT COLUMN: Financial + Performance */}
-            <div className="flex flex-col">
-              <div className="px-6 py-5 border-b border-outline-variant/10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-                  Financeiro
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                      Valor de mercado
-                    </p>
-                    <p className="font-black font-headline text-lg tracking-tighter text-tertiary truncate">
-                      {formatCurrency(player.value || 0)}
-                    </p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                      Ordenado/sem
-                    </p>
-                    <p className="font-bold font-mono text-sm text-on-surface truncate">
-                      {formatCurrency(player.wage || 0)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Market purchase — for players from other teams listed in the market */}
-              {isListedInMarket && (
-                <div className="px-6 py-5 border-b border-outline-variant/10">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">
-                    Mercado
-                  </p>
-                  <div className="flex justify-between text-xs mb-3">
-                    <span className="text-on-surface-variant font-medium">
-                      Preço
-                    </span>
-                    <span className="font-black text-on-surface font-mono tabular-nums">
-                      {formatCurrency(marketPrice)}
-                    </span>
-                  </div>
-                  {player.transfer_status === "auction" ? (
-                    <Button
-                      variant="primary"
-                      full
-                      disabled={!canAfford || matchInProgress}
-                      title={
-                        matchInProgress
-                          ? "Disponível após as partidas"
-                          : undefined
-                      }
-                      onClick={() => {
-                        openAuctionBid?.(player);
-                        closeModal();
-                      }}
-                    >
-                      {canAfford
-                        ? "🔨 Licitar no Leilão"
-                        : "Saldo Insuficiente"}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="primary"
-                      full
-                      disabled={!canAfford || matchInProgress}
-                      title={
-                        matchInProgress
-                          ? "Disponível após as partidas"
-                          : undefined
-                      }
-                      onClick={() => {
-                        if (!canAfford) return;
-                        setGameDialog?.({
-                          mode: "confirm",
-                          title: `Comprar ${player.name}`,
-                          description: `${player.position} · Qualidade ${player.skill} · Preço: ${formatCurrency(marketPrice)}`,
-                          confirmLabel: "Confirmar Compra",
-                          onConfirm: () => buyPlayer?.(player.id),
-                          onCancel: () => {},
-                        });
-                        closeModal();
-                      }}
-                    >
-                      {canAfford ? "💰 Comprar Jogador" : "Saldo Insuficiente"}
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              {/* ── DESEMPENHO (época vs carreira) ── */}
-              <div className="px-6 py-5 border-b border-outline-variant/10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-                  Desempenho
-                </p>
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-                      <th className="py-1 pr-3 font-black"></th>
-                      <th className="py-1 px-3 text-right font-black">Época</th>
-                      <th className="py-1 pl-3 text-right font-black">Carreira</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {perfRows.map((r) => (
-                      <tr
-                        key={r.label}
-                        className="border-t border-outline-variant/10"
-                      >
-                        <td className="py-2 pr-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                          {r.label}
-                        </td>
-                        <td
-                          className={`px-3 py-2 text-right font-black font-headline text-base tabular-nums ${r.seasonClass}`}
-                        >
-                          {r.season}
-                        </td>
-                        <td
-                          className={`pl-3 py-2 text-right font-black font-headline text-base tabular-nums ${r.careerClass}`}
-                        >
-                          {r.career}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ── AWARDS (full width) ── */}
-          <div className="px-6 py-5 border-t border-outline-variant/10">
-            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-              Prémios Individuais
-            </p>
-            {awards.length === 0 ? (
-              <EmptyState icon="trophy" title="Sem prémios individuais registados." />
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {awards.map((a, i) => (
+            <section className={`${SECTION} md:border-t-0`}>
+              <SectionTitle icon="leaderboard" meta="Época · carreira">
+                Desempenho
+              </SectionTitle>
+              <div className="grid grid-cols-2 gap-2">
+                {perfTiles.map((t) => (
                   <div
-                    key={`${a.season ?? "?"}-${a.achievement ?? "?"}-${i}`}
-                    className="flex items-center gap-2 px-3 py-2 rounded border border-amber-500/20 bg-amber-500/5"
+                    key={t.label}
+                    className="rounded-lg border border-outline-variant/20 bg-surface-container-low px-3 py-2.5"
                   >
-                    <span className="text-amber-400 text-sm" title="Prémio">
-                      🏆
-                    </span>
-                    <div>
-                      <p className="text-amber-400 font-black text-xs">
-                        {a.achievement}
-                      </p>
-                      <p className="text-on-surface-variant text-[10px] font-bold tabular-nums">
-                        {a.season ?? "—"}
-                      </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
+                        {t.label}
+                      </span>
+                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none text-on-surface-variant/35">
+                        {t.icon}
+                      </span>
                     </div>
+                    <p className={`mt-1.5 font-headline text-2xl font-black leading-none tabular-nums ${t.cls}`}>
+                      {t.season}
+                    </p>
+                    <p className="mt-1.5 text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/50">
+                      Carreira{" "}
+                      <span className="font-black tabular-nums text-on-surface-variant">{t.career}</span>
+                    </p>
                   </div>
                 ))}
               </div>
-            )}
+            </section>
           </div>
 
-          {/* ── TRANSFER HISTORY (full width below) ── */}
-          <div className="px-6 py-5 border-t border-outline-variant/10">
-            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-              Historial de Transferências
-            </p>
-            {transfers.length === 0 ? (
-              <EmptyState icon="sync" title="Sem transferências registadas." />
+          {/* ── PRÉMIOS ── */}
+          <section className={SECTION}>
+            <SectionTitle icon="emoji_events" meta={awards.length > 0 ? awards.length : null}>
+              Prémios individuais
+            </SectionTitle>
+            {awards.length === 0 ? (
+              <EmptyLine icon="emoji_events">Sem prémios individuais registados.</EmptyLine>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant bg-surface-container-high/50">
-                      <th className="px-3 py-2">Época</th>
-                      <th className="px-3 py-2">De</th>
-                      <th className="px-3 py-2">Para</th>
-                      <th className="px-3 py-2 text-right">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transfers.map((t, i) => {
-                      const isOut = t.type === "transfer_out";
-                      const fromTeam = isOut ? t.team_name : t.related_team_name;
-                      const toTeam = isOut ? t.related_team_name : t.team_name;
-                      const fromId = isOut ? t.team_id : t.related_team_id;
-                      const toId = isOut ? t.related_team_id : t.team_id;
-                      return (
-                        <tr
-                          key={`${t.year ?? "?"}-${t.matchweek ?? "?"}-${t.related_team_name ?? "?"}-${t.team_name ?? "?"}-${i}`}
-                          className="border-t border-outline-variant/10 hover:bg-primary-container/10 transition-colors text-sm"
-                        >
-                          <td className="px-3 py-2.5 text-on-surface-variant text-xs tabular-nums">
-                            {t.year ?? "—"}
-                            {t.matchweek ? (
-                              <span className="opacity-50"> J{t.matchweek}</span>
-                            ) : null}
-                          </td>
-                          <td className="px-3 py-2.5 text-on-surface-variant text-xs truncate max-w-22.5" title={fromTeam || undefined}>
-                            <TeamLink teamId={fromId} onNavigate={closeModal}>{fromTeam || "—"}</TeamLink>
-                          </td>
-                          <td className="px-3 py-2.5 font-bold text-on-surface truncate max-w-22.5" title={toTeam || undefined}>
-                            <TeamLink teamId={toId} onNavigate={closeModal}>{toTeam || "?"}</TeamLink>
-                          </td>
-                          <td className="px-3 py-2.5 text-right text-tertiary font-black text-xs tabular-nums">
-                            {t.amount > 0 ? formatCurrency(t.amount) : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {awards.map((a, i) => (
+                  <li
+                    key={`${a.season ?? "?"}-${a.achievement ?? "?"}-${i}`}
+                    className="flex items-center gap-3 rounded-lg border border-amber-500/25 bg-gradient-to-br from-amber-500/15 to-amber-500/5 px-3 py-2"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-400/15 ring-1 ring-amber-400/40">
+                      <span aria-hidden className="material-symbols-outlined text-[18px]! leading-none text-amber-300">
+                        military_tech
+                      </span>
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-black text-amber-200" title={a.achievement}>
+                        {a.achievement}
+                      </p>
+                      <p className="text-[10px] font-bold tabular-nums text-on-surface-variant/70">
+                        {a.season ?? "—"}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
+          </section>
+
+          {/* ── TRANSFERÊNCIAS (linha do tempo, mais recente primeiro) ── */}
+          <section className={SECTION}>
+            <SectionTitle icon="swap_horiz" meta={transfers.length > 0 ? transfers.length : null}>
+              Historial de transferências
+            </SectionTitle>
+            {transfers.length === 0 ? (
+              <EmptyLine icon="swap_horiz">Sem transferências registadas.</EmptyLine>
+            ) : (
+              <ol className="ml-1.5 border-l border-outline-variant/30">
+                {[...transfers].reverse().map((t, i) => {
+                  const isOut = t.type === "transfer_out";
+                  const fromTeam = isOut ? t.team_name : t.related_team_name;
+                  const toTeam = isOut ? t.related_team_name : t.team_name;
+                  const fromId = isOut ? t.team_id : t.related_team_id;
+                  const toId = isOut ? t.related_team_id : t.team_id;
+                  return (
+                    <li
+                      key={`${t.year ?? "?"}-${t.matchweek ?? "?"}-${t.related_team_name ?? "?"}-${t.team_name ?? "?"}-${i}`}
+                      className="relative pb-2 pl-4 last:pb-0"
+                    >
+                      <span
+                        aria-hidden
+                        className={`absolute -left-[5px] top-3.5 h-2.5 w-2.5 rounded-full ring-2 ring-surface-container ${i === 0 ? "bg-tertiary" : "bg-outline-variant"}`}
+                      />
+                      <div className="flex items-center gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low px-3 py-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[9px] font-black uppercase tracking-widest tabular-nums text-on-surface-variant/60">
+                            {t.year ?? "—"}
+                            {t.matchweek ? ` · J${t.matchweek}` : ""}
+                          </p>
+                          <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
+                            <span className="min-w-0 font-bold text-on-surface-variant">
+                              <TeamLink teamId={fromId} onNavigate={closeModal}>{fromTeam || "—"}</TeamLink>
+                            </span>
+                            <span aria-hidden className="material-symbols-outlined shrink-0 text-[14px]! leading-none text-on-surface-variant/50">
+                              arrow_forward
+                            </span>
+                            <span className="min-w-0 font-black text-on-surface">
+                              <TeamLink teamId={toId} onNavigate={closeModal}>{toTeam || "?"}</TeamLink>
+                            </span>
+                          </p>
+                        </div>
+                        <span className="shrink-0 font-headline text-sm font-black tabular-nums text-tertiary">
+                          {t.amount > 0 ? formatCurrency(t.amount) : "—"}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </section>
         </div>
       </div>
     </ModalShell>
