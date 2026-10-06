@@ -46,7 +46,7 @@ const SCORER_TYPES = ["goal", "penalty_goal", "own_goal", "var_disallowed", "var
  *
  * Hierarquia: meta strip (competição) → info strip (estádio · clima · odds)
  * → broadcast bar (equipas + marcador + fase/minuto) → marcadores de golos
- * → cronómetro → dados (cansaço) + botão Substituições →
+ * → cronómetro → botão Pausa →
  * feed de lances → pre-match intros.
  */
 
@@ -423,7 +423,7 @@ export function LiveMatchHero({
             <span aria-hidden className="material-symbols-outlined text-[18px] leading-none">
               {canSub ? "swap_horiz" : "query_stats"}
             </span>
-            {canSub ? "Substituições" : "Detalhes do jogo"}
+            {canSub ? "Pausa" : "Detalhes do jogo"}
           </Button>
         )}
 

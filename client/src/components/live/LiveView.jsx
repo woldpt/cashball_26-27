@@ -375,8 +375,8 @@ function StickyScore({ match, home, away, liveMinute, canSub, onAction }) {
           <button
             type="button"
             onClick={onAction}
-            aria-label={canSub ? "Substituições" : "Detalhes do jogo"}
-            title={canSub ? "Substituições" : "Detalhes do jogo"}
+            aria-label={canSub ? "Pausa" : "Detalhes do jogo"}
+            title={canSub ? "Pausa" : "Detalhes do jogo"}
             className={`shrink-0 w-11 h-11 rounded-md inline-flex items-center justify-center ${
               canSub ? "text-primary hover:bg-primary/10" : "text-on-surface-variant hover:bg-surface-bright"
             }`}
