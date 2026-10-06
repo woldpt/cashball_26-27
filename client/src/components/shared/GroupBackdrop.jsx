@@ -24,6 +24,7 @@ const TAB_BG = {
   leiloes: "/backgrounds/leiloes.webp",
   scout: "/backgrounds/scout.webp",
   user_settings: "/backgrounds/user_settings.webp",
+  admin: "/backgrounds/admin.webp", // Pexels (Brett Sayles), licença Pexels — uso livre
 };
 
 // Recurso para tabs sem foto própria (não deve acontecer — o mapa cobre
