@@ -203,7 +203,9 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   // Bancadas laterais em perspetiva: encostam à linha lateral e saem do
   // enquadramento em primeiro plano. O pelado não tem; crescem por escalão.
   const sideTier = bare ? 0 : cap < 15000 ? 1 : cap < 50000 ? 2 : 3;
-  const sideH = [0, 16, 30, 44][sideTier];
+  // ≥50k: dois anéis (o relvado ocupa a largura toda perto da câmara e só
+  // a altura faz as laterais aparecerem por cima dos cantos).
+  const sideH = [0, 16, 30, 70][sideTier];
   // Com laterais a bancada do fundo fica menos densa (orçamento de pontos).
   const crowdStep = sideTier >= 2 ? 6 : 5;
 
@@ -301,8 +303,14 @@ export const StadiumIllustration = memo(function StadiumIllustration({
             ? "#1e293b"
             : "#3b4a61";
 
-  /** Multidão de um anel: manchas de cor (equipa + neutros) com jitter. */
-  const crowdDots = (yTop, yBot, seed) => {
+  /**
+   * Multidão de um anel: fila base por setor (lê-se "gente sentada" mesmo
+   * no card pequeno e os lugares vazios viram buracos) + pontos com jitter.
+   * Os setores seguem os vomitórios: claque da casa ao centro, visitantes
+   * no setor da direita do anel de baixo. Anéis de cima: mais escuros e
+   * pontos menores (profundidade).
+   */
+  const crowdDots = (yTop, yBot, seed, tier = 0) => {
     const dots = [];
     // Filas proporcionais à altura útil do anel (o anel de cima dos
     // grandes é mais baixo por causa da faixa de camarotes: 3 filas
@@ -311,6 +319,24 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     let k = 0;
     for (let r = 0; r < rows; r += 1) {
       const yBase = yTop + 3 + ((yBot - yTop - 6) * (r + 0.5)) / rows;
+      for (let sec = 0; sec <= aisleCount; sec += 1) {
+        const x0 = standX0 + (sec * (standX1 - standX0)) / (aisleCount + 1);
+        const x1 = standX0 + ((sec + 1) * (standX1 - standX0)) / (aisleCount + 1);
+        const awaySec = tier === 0 && sec === aisleCount;
+        dots.push(
+          <line
+            key={`${seed}-band-${r}-${sec}`}
+            x1={x0 + 4}
+            x2={x1 - 4}
+            y1={yBase}
+            y2={yBase}
+            stroke={awaySec ? away : sec === aisleCount / 2 ? home : "#475569"}
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            opacity={0.08 + 0.3 * moodOcc}
+          />,
+        );
+      }
       for (let x = standX0 + 4 + (r % 2) * 2.5; x < standX1 - 4; x += crowdStep) {
         // Lugares vazios: thinning determinístico; a claque central esvazia em último.
         const inClaque = Math.abs(x - 400) < claqueHalf;
@@ -319,16 +345,24 @@ export const StadiumIllustration = memo(function StadiumIllustration({
           k += 1;
           continue;
         }
+        const sec = Math.min(
+          aisleCount,
+          Math.floor(((x - standX0) / (standX1 - standX0)) * (aisleCount + 1)),
+        );
+        const zoneH = hash01(seed + sec * 4.7 + r * 0.8 + Math.floor(x / 17) * 0.13);
         const zone = inClaque
-          ? hash01(seed + Math.floor(x / 34) * 4.7 + r * 0.8) * 0.5
-          : hash01(seed + Math.floor(x / 34) * 4.7 + r * 0.8);
-        const fill = crowdFill(zone, hash01(seed + k * 12.9898));
+          ? zoneH * 0.5
+          : tier === 0 && sec === aisleCount
+            ? 0.52 + zoneH * 0.22
+            : zoneH;
+        const base = crowdFill(zone, hash01(seed + k * 12.9898));
+        const fill = tier > 0 ? shade(base, -0.15 * tier) : base;
         dots.push(
           <circle
             key={`${seed}-${k}`}
             cx={x + (hash01(seed + k * 3.7) - 0.5) * 2.4}
             cy={yBase + (hash01(seed + k * 9.1) - 0.5) * 1.6}
-            r={1.1 + hash01(seed + k * 7.3) * 0.9}
+            r={(1.1 + hash01(seed + k * 7.3) * 0.9) * (1 - 0.12 * tier)}
             fill={fill}
             opacity={0.7 + hash01(seed + k * 5.1) * 0.3}
           />,
@@ -718,7 +752,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
                 strokeWidth="1.5"
               />
               {rowLines(seatTop, seatBottom)}
-              {crowdDots(seatTop, seatBottom, 100 + i * 1000)}
+              {crowdDots(seatTop, seatBottom, 100 + i * 1000, i)}
               {/* Vomitórios: escadas que dividem a bancada em setores */}
               {Array.from({ length: aisleCount }, (_, a) => (a + 1) / (aisleCount + 1)).map((f) => {
                 const ax = standX0 + f * (standX1 - standX0);
@@ -871,6 +905,14 @@ export const StadiumIllustration = memo(function StadiumIllustration({
                   fill={url("roof")}
                   stroke="#64748b"
                   strokeOpacity="0.4"
+                />
+              )}
+              {/* Passadeira entre os dois anéis laterais (≥50k) */}
+              {sideTier >= 3 && (
+                <polygon
+                  points={pts([sidePoint(sign, 0, 0.48), sidePoint(sign, 1, 0.48), sidePoint(sign, 1, 0.53), sidePoint(sign, 0, 0.53)])}
+                  fill={url("concrete")}
+                  opacity="0.9"
                 />
               )}
               {/* Corrimão (cor do clube) e muro junto à linha lateral */}
