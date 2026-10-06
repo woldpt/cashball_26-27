@@ -193,7 +193,7 @@ function NextMatchCard({ match, team, onOpenTeam }) {
           title={`Abrir clube: ${match.opponent.name ?? ""}`}
         >
           Ver adversário
-          <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">
+          <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">
             chevron_right
           </span>
         </Button>
@@ -277,7 +277,7 @@ function MatchLine({ match, onOpenTeam }) {
       {clickable && (
         <span
           aria-hidden
-          className="material-symbols-outlined hidden text-[16px]! text-on-surface-variant/30 transition-transform group-hover:translate-x-0.5 group-hover:text-on-surface-variant sm:inline"
+          className="material-symbols-outlined hidden text-[16px] text-on-surface-variant/30 transition-transform group-hover:translate-x-0.5 group-hover:text-on-surface-variant sm:inline"
         >
           chevron_right
         </span>
@@ -674,7 +674,7 @@ export function OtherSquadsTab({
             onClick={onBack}
             className="group -ml-1 flex items-center gap-1 rounded-full py-1 pl-1 pr-2.5 text-[10px] font-black uppercase tracking-widest text-white/80 transition-colors hover:bg-black/25 hover:text-white"
           >
-            <span className="material-symbols-outlined text-[18px]! leading-none transition-transform group-hover:-translate-x-0.5">
+            <span className="material-symbols-outlined text-[18px] leading-none transition-transform group-hover:-translate-x-0.5">
               arrow_back
             </span>
             Voltar
@@ -1015,7 +1015,7 @@ export function OtherSquadsTab({
                         className="flex min-w-0 items-center gap-3 rounded-lg border border-outline-variant/20 bg-surface-container-low px-3 py-2.5"
                       >
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-bright/60 text-on-surface-variant">
-                          <span aria-hidden className="material-symbols-outlined text-[18px]! leading-none">
+                          <span aria-hidden className="material-symbols-outlined text-[18px] leading-none">
                             {fact.icon}
                           </span>
                         </span>

@@ -34,7 +34,7 @@ import {
 function SectionTitle({ icon, meta, children }) {
   return (
     <div className="mb-3 flex items-center gap-2">
-      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none text-primary">
+      <span aria-hidden className="material-symbols-outlined text-[16px] leading-none text-primary">
         {icon}
       </span>
       <h3 className="shrink-0 text-[10px] font-black uppercase tracking-widest text-primary">
@@ -62,7 +62,7 @@ function SectionTitle({ icon, meta, children }) {
 function EmptyLine({ icon, children }) {
   return (
     <p className="flex items-center gap-2 rounded-lg border border-dashed border-outline-variant/30 px-3 py-3 text-[11px] font-bold text-on-surface-variant/60">
-      <span aria-hidden className="material-symbols-outlined text-[18px]! leading-none text-on-surface-variant/40">
+      <span aria-hidden className="material-symbols-outlined text-[18px] leading-none text-on-surface-variant/40">
         {icon}
       </span>
       {children}
@@ -292,7 +292,7 @@ export function PlayerHistoryModal({
             aria-label="Fechar"
             className="absolute right-3 top-3.5 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/30 text-on-surface-variant backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-on-surface sm:right-4 sm:top-4"
           >
-            <span aria-hidden className="material-symbols-outlined text-[20px]! leading-none">
+            <span aria-hidden className="material-symbols-outlined text-[20px] leading-none">
               close
             </span>
           </button>
@@ -385,7 +385,7 @@ export function PlayerHistoryModal({
                   {k.icon && (
                     <span
                       aria-hidden
-                      className={`material-symbols-outlined text-[16px]! leading-none ${k.icon === "star" ? "text-amber-400" : "text-amber-400/80"}`}
+                      className={`material-symbols-outlined text-[16px] leading-none ${k.icon === "star" ? "text-amber-400" : "text-amber-400/80"}`}
                     >
                       {k.icon}
                     </span>
@@ -407,7 +407,7 @@ export function PlayerHistoryModal({
               <SectionTitle icon="contract_edit">Gestão contratual</SectionTitle>
               {isLocked && (
                 <p className="mb-3 flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11px] font-bold text-amber-300">
-                  <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">lock</span>
+                  <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">lock</span>
                   Contrato em vigor até {contractEndYear}, {contractEndLabel} — não pode ser transferido.
                 </p>
               )}
@@ -435,7 +435,7 @@ export function PlayerHistoryModal({
                         closeModal();
                       }}
                     >
-                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">check</span>
+                      <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">check</span>
                       Aceitar renovação
                     </Button>
                     <Button
@@ -447,7 +447,7 @@ export function PlayerHistoryModal({
                         closeModal();
                       }}
                     >
-                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">gavel</span>
+                      <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">gavel</span>
                       Enviar para leilão
                     </Button>
                   </div>
@@ -463,7 +463,7 @@ export function PlayerHistoryModal({
                       closeModal();
                     }}
                   >
-                    <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">edit_document</span>
+                    <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">edit_document</span>
                     Renovar contrato
                   </Button>
                   <Button
@@ -483,7 +483,7 @@ export function PlayerHistoryModal({
                       closeModal();
                     }}
                   >
-                    <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">gavel</span>
+                    <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">gavel</span>
                     Vender em leilão
                   </Button>
                   {player.transfer_status === "fixed" ? (
@@ -496,7 +496,7 @@ export function PlayerHistoryModal({
                         closeModal();
                       }}
                     >
-                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">close</span>
+                      <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">close</span>
                       Retirar da lista
                     </Button>
                   ) : (
@@ -515,7 +515,7 @@ export function PlayerHistoryModal({
                         closeModal();
                       }}
                     >
-                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">sell</span>
+                      <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">sell</span>
                       Pôr à venda
                     </Button>
                   )}
@@ -554,7 +554,7 @@ export function PlayerHistoryModal({
                       closeModal();
                     }}
                   >
-                    <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">gavel</span>
+                    <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">gavel</span>
                     {canAfford ? "Licitar no leilão" : "Saldo insuficiente"}
                   </Button>
                 ) : (
@@ -577,7 +577,7 @@ export function PlayerHistoryModal({
                       closeModal();
                     }}
                   >
-                    <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none">shopping_cart</span>
+                    <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">shopping_cart</span>
                     {canAfford ? "Comprar jogador" : "Saldo insuficiente"}
                   </Button>
                 )}
@@ -610,7 +610,7 @@ export function PlayerHistoryModal({
                       <span className="truncate text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
                         {t.label}
                       </span>
-                      <span aria-hidden className="material-symbols-outlined text-[16px]! leading-none text-on-surface-variant/35">
+                      <span aria-hidden className="material-symbols-outlined text-[16px] leading-none text-on-surface-variant/35">
                         {t.icon}
                       </span>
                     </div>
@@ -642,7 +642,7 @@ export function PlayerHistoryModal({
                     className="flex items-center gap-3 rounded-lg border border-amber-500/25 bg-gradient-to-br from-amber-500/15 to-amber-500/5 px-3 py-2"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-400/15 ring-1 ring-amber-400/40">
-                      <span aria-hidden className="material-symbols-outlined text-[18px]! leading-none text-amber-300">
+                      <span aria-hidden className="material-symbols-outlined text-[18px] leading-none text-amber-300">
                         military_tech
                       </span>
                     </span>
@@ -694,7 +694,7 @@ export function PlayerHistoryModal({
                             <span className="min-w-0 font-bold text-on-surface-variant">
                               <TeamLink teamId={fromId} onNavigate={closeModal}>{fromTeam || "—"}</TeamLink>
                             </span>
-                            <span aria-hidden className="material-symbols-outlined shrink-0 text-[14px]! leading-none text-on-surface-variant/50">
+                            <span aria-hidden className="material-symbols-outlined shrink-0 text-[14px] leading-none text-on-surface-variant/50">
                               arrow_forward
                             </span>
                             <span className="min-w-0 font-black text-on-surface">

@@ -1,7 +1,7 @@
 ## Redesign Ficha do jogador · Perfil de clube (2026-10-06)
 - Ficha: cabeçalho tipo carta (cores do clube, skills no topo), faixa Valor/Ordenado/Contrato/Nota, desempenho em mosaicos, prémios em medalhas, transferências em linha do tempo. Gráfico da skill novo (área, crosshair + tooltip, setas no teclado, tabela para leitores de ecrã). Perfil de clube: chips no cabeçalho, próximo jogo em "duelo", resultado em pastilha colorida, top 3 com medalhas, Clube em mosaicos com logótipo do patrocinador, Jogos separados em Resultados/Por jogar.
 - Fix: capacidade do estádio no perfil caía sempre em 10 000; harness `teamsquad` partia (`useGame` sem provider).
-- Achado (não corrigido): o CSS da Google (sem layer) impõe 24px a todos os `material-symbols-outlined` — `text-[Npx]` é ignorado na app inteira; nestes ficheiros usei `text-[Npx]!`. Correção global possível: carregar a fonte com `@import … layer(base)`.
+- Fix global: o CSS da Google (sem layer) impunha 24px a todos os `material-symbols-outlined` e `text-[Npx]` era ignorado na app inteira; a fonte passou do `<link>` do `index.html` para `@import … layer(base)` no `index.css` (as utilities voltam a mandar). test:mobile 33/38 = mesmas 5 falhas antigas que no HEAD (assistant, journal, landing, stadiumtab, topwidgets) + mosaico de capturas revisto.
 - Testado: lint (só o erro antigo do landing-resp-test), check:types, test:mobile playerhistory/teamsquad PASS 320–430 + capturas 390/1280 com a fonte dos ícones.
 
 ## Redesign Scout · Mercado · Leilões (2026-10-06)

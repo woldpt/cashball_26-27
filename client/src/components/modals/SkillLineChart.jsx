@@ -137,7 +137,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
               title={`Desde ${points[0].label}`}
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black tabular-nums ${trend.cls}`}
             >
-              <span aria-hidden className="material-symbols-outlined text-[14px]! leading-none">
+              <span aria-hidden className="material-symbols-outlined text-[14px] leading-none">
                 {trend.icon}
               </span>
               {trend.text}
