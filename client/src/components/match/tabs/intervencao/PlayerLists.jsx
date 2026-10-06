@@ -68,10 +68,6 @@ export function TitularesColumn({
             <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
             Titulares
           </h3>
-          {/* Legenda visível da métrica tripla dos cartões (skill · RES · forma). */}
-          <span className="text-[9px] text-on-surface-variant/80 font-semibold uppercase tracking-widest">
-            Skill · RES · Forma
-          </span>
         </div>
       )}
       {isEmergencyGk && (
@@ -157,10 +153,6 @@ export function SuplentesColumn({
             <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
             Suplentes
           </h3>
-          {/* Legenda visível da métrica tripla dos cartões (skill · RES · forma). */}
-          <span className="text-[9px] text-on-surface-variant/80 font-semibold uppercase tracking-widest">
-            Skill · RES · Forma
-          </span>
         </div>
       )}
       {isEmergencyGk && (
