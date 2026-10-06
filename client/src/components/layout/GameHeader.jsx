@@ -75,9 +75,9 @@ function NextMatch({ summary, jornada, ink }) {
  * @param {string} [props.title] Tooltip com o valor por extenso.
  * @returns {JSX.Element}
  */
-function HeaderStat({ label, value, ink, title }) {
+function HeaderStat({ label, value, ink, title, center = false }) {
   return (
-    <div className="flex flex-col items-end leading-tight px-2" style={{ color: ink }} title={title}>
+    <div className={`flex flex-col ${center ? "items-center" : "items-end"} leading-tight px-2`} style={{ color: ink }} title={title}>
       <span className="text-[9px] font-black uppercase tracking-[0.18em] opacity-60">
         {label}
       </span>
@@ -218,8 +218,9 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
               {position > 0 && (
                 <HeaderStat
                   label="Posição"
-                  value={`${position}.º/${divisionTeams.length}`}
+                  value={`${position}.º`}
                   ink={ink}
+                  center
                 />
               )}
               <button
