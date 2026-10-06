@@ -162,20 +162,20 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             }
       }
     >
+      {teamInfo?.crest && (
+        // Brasão como fundo da barra: sem tile, zoom grande, cortado e inclinado.
+        <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+          <img
+            src={teamInfo.crest}
+            alt=""
+            className="absolute left-0 top-1/2 h-[320%] w-auto max-w-none -translate-x-1/4 -translate-y-1/2 -rotate-[10deg] opacity-30"
+          />
+        </div>
+      )}
       <div className="relative flex items-center gap-3 w-full px-3 lg:px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
         {/* Esquerda: o meu clube + semana (no mobile, também o adversário) */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          {teamInfo?.crest ? (
-            <span className="w-11 h-11 shrink-0 overflow-hidden flex items-center justify-center">
-              <img
-                src={teamInfo.crest}
-                alt={teamInfo.name || "brasão"}
-                className="crest-shadow w-full h-full object-contain scale-[1.9] rotate-[10deg]"
-              />
-            </span>
-          ) : (
-            <TeamCrest team={teamInfo} size="w-9 h-9 text-sm" />
-          )}
+          {!teamInfo?.crest && <TeamCrest team={teamInfo} size="w-9 h-9 text-sm" />}
           <div className="min-w-0" style={{ color: ink }}>
             <h1 className="truncate text-sm font-headline font-black uppercase tracking-tight leading-tight">
               {teamInfo?.name || "CashBall"}
