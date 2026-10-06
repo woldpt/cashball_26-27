@@ -111,11 +111,33 @@ export function IntervencaoView({
       ? swapTarget.id
       : swapTarget;
 
-  const forceOutPlayer =
-    matchAction?.injuredPlayer ||
-    matchAction?.sentOffPlayer ||
-    matchAction?.dismissedPlayer ||
-    null;
+  // Os cartões do matchAction (onPitch/bench/expulso/lesionado) não trazem
+  // moral nem agressividade — completam-se a partir do plantel.
+  const withSquadTraits = useMemo(() => {
+    const byId = new Map(
+      (annotatedSquad || []).map((p) => [Number(p.id), p]),
+    );
+    return (p) => {
+      const base = p && byId.get(Number(p.id));
+      return base
+        ? {
+            ...p,
+            morale: p.morale ?? base.morale,
+            aggressiveness: p.aggressiveness ?? base.aggressiveness,
+          }
+        : p;
+    };
+  }, [annotatedSquad]);
+  const forceOutPlayer = useMemo(
+    () =>
+      withSquadTraits(
+        matchAction?.injuredPlayer ||
+          matchAction?.sentOffPlayer ||
+          matchAction?.dismissedPlayer ||
+          null,
+      ),
+    [matchAction, withSquadTraits],
+  );
 
   /* ── Team info ────────────────────────────────────────────────── */
   const isHome =
@@ -193,11 +215,11 @@ export function IntervencaoView({
             ),
           )
         : isActionSub
-          ? sortPlayersByPos(matchAction?.onPitch || [])
+          ? sortPlayersByPos((matchAction?.onPitch || []).map(withSquadTraits))
           : isGkRedCard
-            ? sortPlayersByPos(matchAction?.onPitch || [])
+            ? sortPlayersByPos((matchAction?.onPitch || []).map(withSquadTraits))
             : isEmergencyGk
-              ? sortPlayersByPos(matchAction?.onPitch || [])
+              ? sortPlayersByPos((matchAction?.onPitch || []).map(withSquadTraits))
               : forceOutPlayer
                 ? [forceOutPlayer]
                 : [],
@@ -213,6 +235,7 @@ export function IntervencaoView({
       isEmergencyGk,
       matchAction,
       forceOutPlayer,
+      withSquadTraits,
     ],
   );
 
@@ -228,8 +251,11 @@ export function IntervencaoView({
               .filter((p) => !isUserSubPause || !subbedOut.includes(p.id))
               .filter((p) => !injuredHalftimeIds?.has(p.id)),
           )
-        : sortPlayersByPos(matchAction?.benchPlayers || []),
+        : sortPlayersByPos(
+            (matchAction?.benchPlayers || []).map(withSquadTraits),
+          ),
     [
+      withSquadTraits,
       useTacticSquad,
       panelSquad,
       tactic,
