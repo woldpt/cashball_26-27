@@ -450,7 +450,7 @@ function GoldenBootSidebar({ topScorers, teams, myTeamId }) {
       : byDiv.has(myDivision)
         ? myDivision
         : divisions[0];
-  const rows = (byDiv.get(active) || []).slice(0, 7);
+  const rows = (byDiv.get(active) || []).slice(0, 9);
 
   return (
     <section className="bg-surface-container rounded-md overflow-hidden">
