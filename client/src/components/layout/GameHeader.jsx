@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
@@ -127,6 +127,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     setUserDropdownOpen,
   } = useGame();
   const cta = usePlayCta(scrollToTop);
+  const [standingsOpen, setStandingsOpen] = useState(false);
 
   // Dropdown do utilizador fecha com Escape (a saída animada trata o AnimatePresence no JSX).
   useEffect(() => {
@@ -137,6 +138,13 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [userDropdownOpen, setUserDropdownOpen]);
+
+  useEffect(() => {
+    if (!standingsOpen) return;
+    const onKey = (e) => e.key === "Escape" && setStandingsOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [standingsOpen]);
 
   // Texto sobre a cor do clube (o fundo do header é a cor primária).
   const ink = teamInfo?.color_secondary || "var(--color-on-surface)";
@@ -216,12 +224,70 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                 ink={ink}
               />
               {position > 0 && (
-                <HeaderStat
-                  label="Posição"
-                  value={`${position}.º`}
-                  ink={ink}
-                  center
-                />
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setStandingsOpen((v) => !v)}
+                    aria-haspopup="dialog"
+                    aria-expanded={standingsOpen}
+                    title="Ver classificação"
+                    className="rounded-lg hover:bg-white/10 transition-colors py-0.5"
+                  >
+                    <HeaderStat label="Posição" value={`${position}.º`} ink={ink} center />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {standingsOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-(--z-header-scrim)"
+                          onClick={() => setStandingsOpen(false)}
+                        />
+                        <motion.div
+                          initial={{ opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          className="absolute right-0 top-full mt-2 w-72 bg-surface-container border border-outline-variant/30 rounded-lg shadow-xl overflow-hidden z-(--z-header-menu)"
+                          role="dialog"
+                          aria-label="Classificação da divisão"
+                        >
+                          <ul className="max-h-80 overflow-y-auto py-1">
+                            {divisionTeams.map((t, i) => {
+                              const mine = Number(t.id) === Number(me?.teamId);
+                              return (
+                                <li
+                                  key={t.id}
+                                  className={`flex items-center gap-2 px-3 py-1.5 text-xs ${
+                                    mine ? "bg-primary/15 font-black text-on-surface" : "text-on-surface-variant font-bold"
+                                  }`}
+                                >
+                                  <span className="w-5 tabular-nums text-right opacity-70">{i + 1}</span>
+                                  <TeamCrest team={t} size="w-5 h-5 text-[9px]" />
+                                  <span className="flex-1 truncate">{t.name}</span>
+                                  <span className="tabular-nums opacity-70" title="Diferença de golos">
+                                    {(t.goals_for || 0) - (t.goals_against || 0) > 0 ? "+" : ""}
+                                    {(t.goals_for || 0) - (t.goals_against || 0)}
+                                  </span>
+                                  <span className="w-7 tabular-nums text-right font-black text-on-surface">{t.points || 0}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStandingsOpen(false);
+                              navigateTab("standings");
+                              scrollToTop();
+                            }}
+                            className="w-full border-t border-outline-variant/20 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-surface-bright transition-colors"
+                          >
+                            Ver classificação completa
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
               )}
             </div>
           )}
