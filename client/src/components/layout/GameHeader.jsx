@@ -34,7 +34,7 @@ function NextMatch({ summary, jornada, ink }) {
     ? summary.cupRoundName || "Taça"
     : `Liga · J${jornada}`;
   return (
-    <div className="hidden md:flex flex-1 min-w-0 justify-center">
+    <div className="hidden md:flex min-w-0 max-w-[min(30rem,40vw)] justify-center">
       <div
         className="flex items-center gap-2 min-w-0 rounded-full bg-black/25 pl-3 pr-1.5 py-1"
         style={{ color: ink }}
@@ -162,9 +162,9 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             }
       }
     >
-      <div className="relative flex items-center gap-3 w-full px-3 lg:px-6">
+      <div className="relative flex items-center gap-3 w-full px-3 lg:px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
         {/* Esquerda: o meu clube + semana (no mobile, também o adversário) */}
-        <div className="flex items-center gap-2.5 min-w-0 flex-1 md:flex-none md:w-56 lg:w-64">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <TeamCrest team={teamInfo} size="w-9 h-9 text-sm" />
           <div className="min-w-0" style={{ color: ink }}>
             <h1 className="truncate text-sm font-headline font-black uppercase tracking-tight leading-tight">
@@ -179,7 +179,9 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
           </div>
         </div>
 
-        {/* Centro: próximo jogo, ou o relógio do direto (absoluto, centrado) */}
+        {/* Centro: próximo jogo, ou o relógio do direto (absoluto, centrado).
+            A partir de md o header é uma grelha 1fr·auto·1fr: as laterais têm
+            a mesma largura, por isso o centro é o centro do ecrã. */}
         {isMatchInProgress ? (
           <LiveClock
             liveMinute={liveMinute}
@@ -194,7 +196,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
         )}
 
         {/* Direita: números do clube, JOGAR, sala/chat e utilizador */}
-        <div className="flex items-center gap-1 shrink-0 ml-auto">
+        <div className="flex items-center gap-1 shrink-0 ml-auto md:col-start-3 md:justify-self-end">
           {!isMatchInProgress && (
             <div className="hidden lg:flex items-center gap-1 mr-1">
               <HeaderStat
