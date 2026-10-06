@@ -1571,26 +1571,30 @@ year: seasonYear,
 		[matchResults, me?.teamId],
 	);
 
-	const mySideInHalftime = myMatch?.homeTeamId === me?.teamId ? "home" : "away";
+	// Ids de jogador são únicos entre equipas — filtrar por id (e não pelo
+	// lado, que falhava com teamId string/number e deixava o GR lesionado
+	// "em campo" no intervalo após reconexão).
+	const mySquadIds = useMemo(
+		() => new Set(mySquad.map((p) => Number(p.id))),
+		[mySquad],
+	);
 	const redCardedHalftimeIds = useMemo(
 		() =>
 			new Set(
 				(myMatch?.events || [])
-					.filter((e) => e.type === "red" && e.team === mySideInHalftime)
-					.map((e) => e.playerId)
-					.filter(Boolean),
+					.filter((e) => e.type === "red" && mySquadIds.has(Number(e.playerId)))
+					.map((e) => Number(e.playerId)),
 			),
-		[myMatch, mySideInHalftime],
+		[myMatch, mySquadIds],
 	);
 	const injuredHalftimeIds = useMemo(
 		() =>
 			new Set(
 				(myMatch?.events || [])
-					.filter((e) => e.type === "injury" && e.team === mySideInHalftime)
-					.map((e) => e.playerId)
-					.filter(Boolean),
+					.filter((e) => e.type === "injury" && mySquadIds.has(Number(e.playerId)))
+					.map((e) => Number(e.playerId)),
 			),
-		[myMatch, mySideInHalftime],
+		[myMatch, mySquadIds],
 	);
 
 	const myTeamInCup =
@@ -2048,7 +2052,6 @@ year: seasonYear,
 		isMatchInProgress,
 		teamInfo,
 		myMatch,
-		mySideInHalftime,
 		redCardedHalftimeIds,
 		injuredHalftimeIds,
 		myTeamInCup,
@@ -2104,7 +2107,7 @@ transferProposalModal, setTransferProposalModal, signingCelebration, setSigningC
 		leaveToMenu, meRef, roomCodeRef, joinTimerRef, backendUrl, addToast, dismissToast,
 		handleHalftimeReady, handleOpenTeamSquad, handleCloseTeamSquad, refreshCalendar, closeRefereePopup, handleResolveMatchAction,
 		handleCloseMatch, buyPlayer, renewPlayerContract, listPlayerAuction, listPlayerFixed, removeFromTransferList,
-		openAuctionBid, resetGameState, isMatchInProgress, teamInfo, myMatch, mySideInHalftime,
+		openAuctionBid, resetGameState, isMatchInProgress, teamInfo, myMatch,
 		redCardedHalftimeIds, injuredHalftimeIds, myTeamInCup, annotatedSquad, panelMode, panelFixture,
 		panelIsReady, nextMatchOpponent, nextMatchReferee, currentJornada, completedJornada, totalWeeklyWage,
 		capacityRevPerGame, loanAmount, loanInterestPerWeek, currentBudget, filteredMarketPlayers,
