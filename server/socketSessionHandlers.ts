@@ -1593,6 +1593,17 @@ export function registerSessionSocketHandlers(
 		console.log(
 			`[${game.roomCode}] 🔄 requestResync: ${playerState.name} (seq=${game.eventSeq})`,
 		);
+		// Tabela de equipas também: o cliente pede resync quando o GameProvider
+		// monta depois da rajada do join, e sem isto ficava sem `teams` (sem
+		// orçamento, cores nem posição) até ao próximo broadcast.
+		getTeamsWithCoachNames(game.db)
+			.then((teams: any[]) => {
+				socket.emit("teamsData", teams);
+				getAllTeamForms(game.db, game.season)
+					.then((forms) => socket.emit("teamForms", forms))
+					.catch(() => {});
+			})
+			.catch(() => {});
 		if (playerState.teamId != null) {
 			const teamId = playerState.teamId;
 			game.db.all(

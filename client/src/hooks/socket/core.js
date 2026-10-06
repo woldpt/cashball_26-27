@@ -17,8 +17,14 @@ export function registerCoreListeners(handlers, refs, ctx) {
 	socket.on("teamsData", (data) => {
 		if (!ctx.inRoom()) return;
 		// Snapshot da tabela atual antes do refresh — base para as setinhas
-		// de subida/descida na classificação.
-		handlers.setPrevStandings(refs.teamsRef.current || []);
+		// de subida/descida na classificação. Só quando a tabela mudou: um
+		// resync ou um broadcast de leilão/staff traz a mesma classificação e
+		// apagaria as setinhas da última jornada.
+		const prev = refs.teamsRef.current || [];
+		const standingsKey = (teams) =>
+			teams.map((t) => `${t.id}:${t.points}:${t.goals_for}:${t.goals_against}`).join();
+		if (standingsKey(prev) !== standingsKey(data || []))
+			handlers.setPrevStandings(prev);
 		handlers.setTeams(data);
 	});
 	socket.on("teamForms", (data) => {
