@@ -6,6 +6,7 @@ import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
+import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { FormDots } from "../components/shared/FormDots.jsx";
 import { formatCurrency } from "../utils/formatters.js";
 import { staggerItemProps } from "../motion.js";
@@ -339,7 +340,7 @@ function NextMatchHero({ item, teamForms, onOpenTeamSquad, onGoToTactics }) {
   if (!opponent) return null; // adversário ainda não sorteado
   const form = teamForms?.[opponent.id] || "";
   return (
-    <div className="rounded-md border border-primary/40 bg-primary/5 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+    <div className="rounded-xl border border-primary/40 bg-gradient-to-r from-primary/10 via-surface-container to-surface-container p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <TeamCircle team={opponent} />
         <div className="flex flex-col min-w-0">
@@ -546,6 +547,12 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
     cupWeekFriendly,
   ]);
 
+  const playedItems = calEntries.filter((e) => e.status === "done" && e.myScore != null);
+  const doneCount = playedItems.length;
+  const wins = playedItems.filter((e) => e.won).length;
+  const draws = playedItems.filter((e) => e.drew).length;
+  const losses = doneCount - wins - draws;
+
   const entriesLabel = `${calEntries.length} ${calEntries.length === 1 ? "jogo" : "jogos"}`;
 
   // Próximo jogo para o hero: o actual, senão o primeiro futuro com adversário.
@@ -556,34 +563,32 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
 
   return (
     <div className="space-y-4 short:space-y-2">
-      {/* ── PAGE HEADER ──────────────────────────────────── */}
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mb-1">
-          Timeline do Treinador
-        </p>
-        <div className="flex flex-wrap items-end justify-between gap-3 short:gap-2">
-          <div>
-            <h2 className="text-2xl short:text-lg font-headline font-black text-on-surface leading-tight">
-              Calendário de Competições
-            </h2>
-            <p className="text-sm text-on-surface-variant mt-0.5">
-              Temporada {calYear}
-              {myTeam ? ` · ${myTeam.name}` : ""}
-            </p>
-          </div>
-          {/* Filter tabs */}
-          <TabBar
-            tabs={[
-              { key: "all", label: "Todos" },
-              { key: "league", label: "Liga" },
-              { key: "cup", label: "Taça" },
-              { key: "friendly", label: "Amigáveis" },
-            ]}
-            active={calFilter}
-            onChange={setCalFilter}
-          />
-        </div>
-      </div>
+      <TransferHeader
+        icon="calendar_month"
+        kicker={`Timeline do Treinador · Temporada ${calYear}`}
+        title="Calendário"
+        valueLabel="Jogos disputados"
+        valueClass="text-tertiary"
+        budget={doneCount}
+        format={(n) => `${n}/${calEntries.length}`}
+        chips={[
+          { label: "vitórias", value: wins, tone: "good" },
+          { label: "empates", value: draws, tone: "warn" },
+          { label: "derrotas", value: losses, tone: "bad" },
+          ...(myTeam ? [{ label: myTeam.name, icon: "shield" }] : []),
+        ]}
+      >
+        <TabBar
+          tabs={[
+            { key: "all", label: "Todos" },
+            { key: "league", label: "Liga" },
+            { key: "cup", label: "Taça" },
+            { key: "friendly", label: "Amigáveis" },
+          ]}
+          active={calFilter}
+          onChange={setCalFilter}
+        />
+      </TransferHeader>
 
       {/* ── MATCH TIMELINE ────────────────────────────────── */}
       <Panel

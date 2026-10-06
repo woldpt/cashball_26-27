@@ -6,6 +6,7 @@ import { EmptyState } from "../shared/EmptyState.jsx";
 import { FormDots } from "../shared/FormDots.jsx";
 import { TeamCrest } from "../shared/TeamCrest.jsx";
 import { TabBar } from "../shared/TabBar.jsx";
+import { TransferHeader } from "../transfers/TransferChrome.jsx";
 import { initialsFromName } from "../../utils/initials.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { TrendArrow } from "../shared/TrendArrow.jsx";
@@ -60,8 +61,8 @@ function DivisionTable({
 
   return (
     <section
-      className={`bg-surface-container rounded-md overflow-hidden flex flex-col ${
-        hero ? "border border-tertiary/30 shadow-md shadow-black/30" : ""
+      className={`bg-surface-container rounded-xl overflow-hidden flex flex-col border shadow-sm shadow-black/30 ${
+        hero ? "border-tertiary/30 shadow-md" : "border-outline-variant/20"
       }`}
     >
       {/* Header */}
@@ -677,31 +678,24 @@ export function LeagueStandings({
 
   return (
     <div className="space-y-4">
-      {/* Page header */}
-      <div className="flex items-end justify-between">
-        <div>
-          <h2 className="text-xl font-headline font-black tracking-tight uppercase text-on-surface">
-            Classificações
-          </h2>
-          <p className="text-xs text-on-surface-variant font-medium mt-0.5">
-            {completedJornada > 0
-              ? `Jornada ${completedJornada} de ${SEASON_JORNADAS} concluída`
-              : "Época ainda não iniciada"}
-          </p>
-        </div>
-        {matchweekCount > 0 && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase rounded-sm border-l-2 border-primary">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Época em curso
-          </span>
-        )}
-        {standingsStale && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase rounded-sm border border-amber-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            A atualizar classificação…
-          </span>
-        )}
-      </div>
+      <TransferHeader
+        icon="leaderboard"
+        kicker="Competição"
+        title="Classificações"
+        valueLabel="Jornada"
+        valueClass="text-tertiary"
+        budget={completedJornada || 0}
+        format={(n) => `${n}/${SEASON_JORNADAS}`}
+        chips={[
+          matchweekCount > 0
+            ? { label: "época em curso", tone: "good", icon: "sports_soccer" }
+            : { label: "época por iniciar", icon: "schedule" },
+          { label: DIVISION_NAMES[heroDivision] || `Divisão ${heroDivision}`, icon: "emoji_events" },
+          ...(standingsStale
+            ? [{ label: "a atualizar classificação…", tone: "warn", icon: "sync" }]
+            : []),
+        ]}
+      />
 
       {/* A nossa divisão em destaque, com a corrida ao goleador ao lado */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
