@@ -243,7 +243,7 @@ export function JournalTab({
                 {/* Coluna de leitura: meta, manchete, corpo e ações com
                     largura de imprensa, centrada; tabelas centram-se a si */}
                 <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-                <div className="w-full">
+                <div className="w-full max-w-5xl">
                 {/* Metadados: categoria e data */}
                 <ArticleMeta item={selected} catLabel={labelOf(selected.cat)} />
 
@@ -339,7 +339,7 @@ export function JournalTab({
                 </div>
 
                 {/* Rodapé fixo no fundo do cartão: mais recente / mais antiga + próxima por ler */}
-                <div className="mt-2 w-full shrink-0 border-t border-outline-variant/25 pt-3">
+                <div className="mt-2 w-full max-w-5xl shrink-0 border-t border-outline-variant/25 pt-3">
                 <div className="flex items-center justify-between gap-2">
                   <Button
                     variant="ghost"
