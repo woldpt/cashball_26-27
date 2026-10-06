@@ -1,3 +1,8 @@
+## Redesign Scout · Mercado · Leilões (2026-10-06)
+- Topo comum `TransferHeader` (saldo grande + chips) e cabeça de cromo partilhada (`components/transfers/TransferChrome.jsx`); Mercado com selo preço vs valor e barra de % do saldo.
+- Leilões ordenados pelo fim, fita a liderar/superado (`utils/auctionStanding.js` + teste), lance numa linha com Mín./+5%/+10%. Scout: consola de pesquisa, atalhos, ação com preço; `PlayerRow` com `actions` põe-nas na linha de baixo em mobile.
+- Testado: lint (só o erro antigo do landing-resp-test), check:types, `node src/utils/auctionStanding.test.mjs`, test:mobile scout/transfer/auctions/mobile 320–1440 + capturas lidas.
+
 ## Redesign Clube · Finanças · Treino (2026-10-06)
 - Treino: foco em 2 grupos (Posições/Físico) com ícone por cima, topo sem cartão órfão, «Como funciona?» em `<details>`, relatório com chip de variação compacto. Finanças: topo 1+2 no telemóvel, Receitas/Despesas em `Panel` com ponto da cor da barra e %, painéis do topo esticam à mesma altura. Clube: hero com faixa Moral/Adeptos/Salários/Saldo (sai o cartão de saldo), Estádio/Equipamento/Palmarés à mesma altura, lugares de funcionários em pontos.
 - Fix: diálogo «Liquidar» mostrava `{interestPct}` literal; `ClubTab` recebe `homeWeather` por prop (o `useTactics` partia o harness do Clube, que volta a passar).

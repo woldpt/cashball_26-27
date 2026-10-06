@@ -1,6 +1,7 @@
 # Redesign — Scout, Mercado e Leilões
 
-> Proposta para aprovação. Uma fase por página, um commit por fase.
+> **Estado: feito** (065483d1 · c099a7d1 · 7c78d6f6). Fase 0 entrou no commit do Mercado.
+> Desvios: ordenação do Mercado em 3 opções (Melhores/Baratos/Caros — sai «Qualidade ↑»).
 > Base: capturas dos harnesses (`scout-resp-test`, `transfer-resp-test`, `auctions-resp-test`)
 > a 390 e 1440px e leitura do código.
 
