@@ -675,6 +675,9 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
               )}
             </button>
           )}
+
+          {/* Slot do botão Pausa do jogo ao vivo (onde está o JOGAR fora do jogo) */}
+          <div id="match-pause-slot" className="ml-2 hidden lg:flex items-center" />
         </div>
       </div>
     </header>

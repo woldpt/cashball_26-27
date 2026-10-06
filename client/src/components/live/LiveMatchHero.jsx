@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
@@ -416,19 +417,28 @@ export function LiveMatchHero({
           </div>
         </div>
 
-        {/* ── Ação principal ── */}
-        {!readOnly && (
-          <Button
-            variant={canSub ? "primary" : "secondary"}
-            onClick={onScoreClick}
-            className="mt-3 min-h-11 rounded-full px-5"
-          >
-            <span aria-hidden className="material-symbols-outlined text-[18px] leading-none">
-              {canSub ? "swap_horiz" : "query_stats"}
-            </span>
-            {canSub ? "Pausa" : "Detalhes do jogo"}
-          </Button>
-        )}
+        {/* ── Ação principal ── (desktop: a Pausa vive no header, onde está o JOGAR) */}
+        {!readOnly && (() => {
+          const pauseSlot = canSub ? document.getElementById("match-pause-slot") : null;
+          const btn = (cls) => (
+            <Button
+              variant={canSub ? "primary" : "secondary"}
+              onClick={onScoreClick}
+              className={cls}
+            >
+              <span aria-hidden className="material-symbols-outlined text-[18px] leading-none">
+                {canSub ? "swap_horiz" : "query_stats"}
+              </span>
+              {canSub ? "Pausa" : "Detalhes do jogo"}
+            </Button>
+          );
+          return (
+            <>
+              {btn(`mt-3 min-h-11 rounded-full px-5 ${pauseSlot ? "lg:hidden" : ""}`)}
+              {pauseSlot && createPortal(btn("h-9 min-h-0 rounded-lg px-4 text-xs font-black uppercase tracking-widest"), pauseSlot)}
+            </>
+          );
+        })()}
 
         {/* ── Feed de lances (mais recente em cima) ── */}
         <LiveFeed
