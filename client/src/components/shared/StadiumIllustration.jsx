@@ -686,11 +686,18 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         filter={url("blur")}
         transform={sunLeft ? `translate(${W} 0) scale(-1 1)` : undefined}
       >
-        <ellipse cx={140} cy={66} rx={36} ry={10} />
-        <ellipse cx={168} cy={60} rx={24} ry={8} />
-        <ellipse cx={430} cy={62} rx={30} ry={8} />
-        <ellipse cx={452} cy={57} rx={20} ry={7} />
-        <ellipse cx={620} cy={72} rx={26} ry={7} />
+        {/* Cada grupo desliza com a seed (sem seed fica na posição base) */}
+        {[
+          [[140, 66, 36, 10], [168, 60, 24, 8]],
+          [[430, 62, 30, 8], [452, 57, 20, 7]],
+          [[620, 72, 26, 7]],
+        ].map((group, gi) => (
+          <g key={`cloud-${gi}`} transform={seed == null ? undefined : `translate(${((style(5 + gi) - 0.5) * 140).toFixed(1)} 0)`}>
+            {group.map(([cx, cy, rx, ry]) => (
+              <ellipse key={cx} cx={cx} cy={cy} rx={rx} ry={ry} />
+            ))}
+          </g>
+        ))}
       </g>
       {/* Colinas ao longe (silhuetas com base escondida atrás do recinto) + haze */}
       <path d="M -20 164 Q 130 76 280 164 Z" fill={HILL_FAR} opacity={HILL_OP} />
@@ -973,6 +980,13 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         [210, 400, 590].map((x) => (
           <ellipse key={`pool-${x}`} cx={x} cy={202} rx={130} ry={40} fill={url("lamp")} opacity="0.45" />
         ))}
+      {/* Focos a bater nas bancadas laterais (só à noite) */}
+      {night &&
+        sideTier > 0 &&
+        [-1, 1].map((sign) => {
+          const [cx, cy] = sidePoint(sign, 0.25, 0.5);
+          return <ellipse key={`spot-${sign}`} cx={cx} cy={cy} rx={60} ry={sideH * 0.9} fill={url("lamp")} opacity="0.35" />;
+        })}
       {/* Sombra das bancadas projetada no relvado */}
       <rect x={400 - farHalf} y={PITCH_TOP} width={farHalf * 2} height={18} fill={url("standShadow")} />
       {/* Linha de fundo = bordo real do relvado (nos pequenos o muro é
