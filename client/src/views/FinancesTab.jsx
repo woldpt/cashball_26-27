@@ -20,78 +20,99 @@ import {
   TICKET_ESTIMATE_FACTOR,
 } from "../constants/index.js";
 
+// Uma cor por rubrica: a mesma no ponto da linha e no segmento da barra.
+const INCOME_COLORS = {
+  tickets: "bg-primary",
+  sponsor: "bg-tertiary",
+  base: "bg-emerald-500",
+  prizes: "bg-violet-400",
+  sales: "bg-sky-500",
+};
+const EXPENSE_COLORS = {
+  wages: "bg-error",
+  staff: "bg-orange-300",
+  interest: "bg-amber-500",
+  upkeep: "bg-yellow-700",
+  purchases: "bg-fuchsia-500",
+  works: "bg-red-800",
+};
+
 /**
- * Rubrica financeira: rótulo + subtítulo à esquerda, valor à direita. Com
- * `onToggle`, a linha é um botão acessível (Enter/Espaço) que expande a
- * lista em `children`; sem `onToggle` é uma linha estática.
+ * Rubrica financeira: ponto da cor da barra · rótulo + detalhe · % do total
+ * · valor. Com `onToggle`, a linha é um botão (alvo de 44px) que expande a
+ * lista em `children`.
  * @param {{
  *   label: string,
  *   sub: import("react").ReactNode,
- *   value: import("react").ReactNode,
+ *   value: number,
+ *   total: number,
+ *   color: string,
+ *   leading?: import("react").ReactNode,
  *   expanded?: boolean,
  *   onToggle?: (() => void)|null,
- *   accent?: "primary"|"error",
  *   children?: import("react").ReactNode,
  * }} props
+ * @returns {JSX.Element}
  */
-function ExpandableRow({
+function LedgerRow({
   label,
   sub,
   value,
+  total,
+  color,
+  leading = null,
   expanded = false,
   onToggle = null,
-  accent = "primary",
   children = null,
 }) {
   const clickable = !!onToggle;
-  const hasList = Array.isArray(children)
-    ? children.length > 0
-    : children != null;
+  const Row = clickable ? "button" : "div";
+  const pct = total > 0 ? Math.round((value / total) * 100) : null;
   return (
-    <li className="space-y-1">
-      <div
+    <li>
+      <Row
         {...(clickable
-          ? {
-              role: "button",
-              tabIndex: 0,
-              "aria-expanded": expanded,
-              onClick: onToggle,
-              onKeyDown: (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onToggle();
-                }
-              },
-            }
+          ? { type: "button", onClick: onToggle, "aria-expanded": expanded }
           : {})}
-        className={`flex justify-between items-center gap-2 rounded-sm ${clickable ? "cursor-pointer group outline-none focus-visible:ring-1 focus-visible:ring-primary/60" : ""}`}
+        className={`w-full min-h-11 flex items-center gap-2.5 py-2 short:py-1 text-left rounded-sm ${
+          clickable
+            ? "group cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-primary/60"
+            : ""
+        }`}
       >
-        <div className="min-w-0">
+        <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-[3px] ${color}`} />
+        {leading}
+        <div className="min-w-0 flex-1">
           <p
-            className={`text-sm text-on-surface-variant ${clickable ? "group-hover:text-on-surface transition-colors" : ""}`}
+            className={`text-sm font-bold text-on-surface leading-tight ${
+              clickable ? "group-hover:text-primary transition-colors" : ""
+            }`}
           >
             {label}
           </p>
-          <p className="text-[10px] opacity-40 uppercase flex items-center gap-1">
-            {clickable && (
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "10px" }}
-              >
-                {expanded ? "expand_less" : "expand_more"}
-              </span>
-            )}
+          <p className="text-[10px] uppercase tracking-wide text-on-surface-variant/70 leading-tight mt-0.5">
             {sub}
           </p>
         </div>
-        <span className="font-headline text-sm font-bold shrink-0">
-          {value}
+        {pct != null && (
+          <span className="w-9 shrink-0 text-right text-[10px] font-black tabular-nums text-on-surface-variant/60">
+            {pct}%
+          </span>
+        )}
+        <span className="shrink-0 text-right font-headline text-sm font-black tabular-nums text-on-surface">
+          {formatCurrency(value)}
         </span>
-      </div>
-      {expanded && hasList && (
-        <ul
-          className={`pl-3 space-y-1 border-l-2 ml-1 mt-1 ${accent === "error" ? "border-error/20" : "border-primary/20"}`}
+        <span
+          aria-hidden
+          className={`material-symbols-outlined w-5 shrink-0 text-[18px] text-on-surface-variant transition-transform ${
+            expanded ? "rotate-180" : ""
+          }`}
         >
+          {clickable ? "expand_more" : ""}
+        </span>
+      </Row>
+      {expanded && children && (
+        <ul className="mb-2 ml-[4px] space-y-1.5 border-l border-outline-variant/25 pl-4 pr-[30px]">
           {children}
         </ul>
       )}
@@ -100,39 +121,55 @@ function ExpandableRow({
 }
 
 /**
- * Barra segmentada de composição (proporção) + legenda.
+ * Linha do detalhe de uma rubrica (jogo, transferência…).
+ * @param {{ label: import("react").ReactNode, sub?: import("react").ReactNode, value: number }} props
+ * @returns {JSX.Element}
+ */
+function DetailItem({ label, sub = null, value }) {
+  return (
+    <li className="flex items-center justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-xs text-on-surface">{label}</p>
+        {sub && (
+          <p className="text-[10px] uppercase tracking-wide text-on-surface-variant/60">{sub}</p>
+        )}
+      </div>
+      <span className="shrink-0 text-xs font-bold tabular-nums text-on-surface-variant">
+        {formatCurrency(value)}
+      </span>
+    </li>
+  );
+}
+
+/**
+ * Barra segmentada de composição (proporção). A legenda são as próprias
+ * linhas (ponto da mesma cor + %).
  * @param {{segments: Array<{label: string, bg: string, pct: number}>}} props
  * @returns {JSX.Element|null}
  */
 function SegmentBar({ segments }) {
   if (segments.length === 0) return null;
   return (
-    <div className="pt-1 short:pt-0.5">
-      <div className="flex h-2 w-full overflow-hidden rounded-full gap-px">
-        {segments.map((s) => (
-          <div
-            key={s.label}
-            className={`h-full ${s.bg}`}
-            style={{ width: `${s.pct}%` }}
-          />
-        ))}
-      </div>
-      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
-        {segments.map((s) => (
-          <span
-            key={s.label}
-            className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/70"
-          >
-            <span className={`h-2 w-2 rounded-[2px] ${s.bg}`} />
-            {s.label}
-            <span className="text-on-surface-variant/90 tabular-nums">
-              {Math.round(s.pct)}%
-            </span>
-          </span>
-        ))}
-      </div>
+    <div
+      className="flex h-2 w-full overflow-hidden rounded-full gap-px mb-1"
+      role="img"
+      aria-label={segments.map((s) => `${s.label} ${Math.round(s.pct)}%`).join(", ")}
+    >
+      {segments.map((s) => (
+        <div key={s.label} className={`h-full ${s.bg}`} style={{ width: `${s.pct}%` }} />
+      ))}
     </div>
   );
+}
+
+/**
+ * Cor da folha salarial pelo peso nas receitas (verde · amarelo · vermelho).
+ * @param {number} pct
+ */
+function wageTone(pct) {
+  if (pct > 75) return { text: "text-error", bar: "bg-error" };
+  if (pct > 50) return { text: "text-tertiary", bar: "bg-tertiary" };
+  return { text: "text-primary", bar: "bg-primary" };
 }
 
 /**
@@ -301,16 +338,16 @@ export function FinancesTab({
         v:
           (financeData?.totalTicketRevenue || 0) +
           (financeData?.awayTicketRevenue || 0),
-        bg: "bg-primary",
+        bg: INCOME_COLORS.tickets,
       },
       {
         label: "Patrocinadores",
         v: financeData?.sponsorRevenue || 0,
-        bg: "bg-tertiary",
+        bg: INCOME_COLORS.sponsor,
       },
-      { label: "Receita base", v: weekly?.baseIncome || 0, bg: "bg-emerald-500" },
-      { label: "Prémios", v: financeData?.prizeRevenue || 0, bg: "bg-amber-400" },
-      { label: "Vendas", v: financeData?.totalTransferIncome || 0, bg: "bg-sky-500" },
+      { label: "Receita base", v: weekly?.baseIncome || 0, bg: INCOME_COLORS.base },
+      { label: "Prémios", v: financeData?.prizeRevenue || 0, bg: INCOME_COLORS.prizes },
+      { label: "Vendas", v: financeData?.totalTransferIncome || 0, bg: INCOME_COLORS.sales },
     ].filter((p) => p.v > 0);
     return parts.map((p) => ({ ...p, pct: (p.v / totalSeasonIncome) * 100 }));
   }, [totalSeasonIncome, financeData, weekly]);
@@ -319,12 +356,12 @@ export function FinancesTab({
   const expenseSegments = useMemo(() => {
     if (totalSeasonExpenses <= 0) return [];
     return [
-      { label: "Salários", v: wagesSeasonCost, bg: "bg-error" },
-      { label: "Funcionários", v: staffSeasonCost, bg: "bg-rose-400" },
-      { label: "Juros", v: interestSeasonCost, bg: "bg-orange-500" },
-      { label: "Manutenção", v: weekly?.upkeep || 0, bg: "bg-amber-600" },
-      { label: "Compras", v: financeData?.totalTransferExpenses || 0, bg: "bg-fuchsia-500" },
-      { label: "Obras", v: financeData?.totalStadiumExpenses || 0, bg: "bg-red-800" },
+      { label: "Salários", v: wagesSeasonCost, bg: EXPENSE_COLORS.wages },
+      { label: "Funcionários", v: staffSeasonCost, bg: EXPENSE_COLORS.staff },
+      { label: "Juros", v: interestSeasonCost, bg: EXPENSE_COLORS.interest },
+      { label: "Manutenção", v: weekly?.upkeep || 0, bg: EXPENSE_COLORS.upkeep },
+      { label: "Compras", v: financeData?.totalTransferExpenses || 0, bg: EXPENSE_COLORS.purchases },
+      { label: "Obras", v: financeData?.totalStadiumExpenses || 0, bg: EXPENSE_COLORS.works },
     ]
       .filter((p) => p.v > 0)
       .map((p) => ({ ...p, pct: (p.v / totalSeasonExpenses) * 100 }));
@@ -348,139 +385,90 @@ export function FinancesTab({
     ];
   }, [financeData, currentBudget]);
 
+  const wage = wageTone(wageSharePct);
+  const signed = (v) => `${v >= 0 ? "+" : ""}${formatCurrency(v)}`;
+  const payDisabledReason =
+    loanAmount < LOAN_STEP
+      ? "Sem dívida para pagar"
+      : currentBudget < LOAN_STEP
+        ? "Saldo insuficiente"
+        : undefined;
+  const homeGames =
+    financeData?.totalHomeMatchesPlayed ?? financeData?.homeMatchesPlayed ?? 0;
+  const stadiumWorks = Math.round(
+    (financeData?.totalStadiumExpenses || 0) / STADIUM_EXPANSION_COST,
+  );
+
   return (
     <div className="space-y-4 short:space-y-2">
-      {/* ── HERO ──────────────────────────────────────────────────────── */}
-      {/* 3 segmentos lado a lado em todas as larguras: no phone, empilhados
-          gastavam ~380px de altura; em colunas o valor exato cabe em text-[15px]. */}
-      <div className="grid grid-cols-3 gap-0.5 bg-outline-variant/10 overflow-hidden rounded-xl short:rounded-lg">
-        {/* Saldo Actual */}
+      {/* ── Resumo ─────────────────────────────────────────────────────── */}
+      {/* Telemóvel: saldo em largura total e os outros dois lado a lado (em 3
+          colunas o texto cortava). Tamanhos em base → sm → xl (STYLE.md §7). */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
         <SummaryWidget
-          flat
-          label="Saldo Actual"
+          label="Saldo atual"
           value={<CountUp value={currentBudget} format={formatCurrency} />}
-          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
+          sub={`Época ${seasonYear}`}
+          className="col-span-2 sm:col-span-1"
+          valueClass="text-3xl sm:text-2xl xl:text-3xl short:!text-lg"
+          accentClass={currentBudget >= 0 ? "border-primary" : "border-error"}
           valueColorClass={currentBudget >= 0 ? "text-primary" : "text-error"}
-          className="relative overflow-hidden short:!p-2"
-        >
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none short:hidden">
-            <span className="material-symbols-outlined text-6xl">
-              payments
-            </span>
-          </div>
-          <div className="mt-2 sm:mt-4 short:mt-1 flex items-end gap-2">
-            <div className="hidden sm:flex gap-1 h-6 sm:h-8 items-end">
-              <div className="w-1 bg-primary/20 h-2 rounded-t-sm" />
-              <div className="w-1 bg-primary/40 h-4 rounded-t-sm" />
-              <div className="w-1 bg-primary/60 h-3 rounded-t-sm" />
-              <div className="w-1 bg-primary/80 h-6 rounded-t-sm" />
-              <div className="w-1 bg-primary h-8 rounded-t-sm" />
-            </div>
-            <span className="text-[10px] text-primary font-bold font-label">
-              época {seasonYear}
-            </span>
-          </div>
-        </SummaryWidget>
-        {/* Resultado da Época */}
+        />
         <SummaryWidget
-          flat
-          label="Resultado da Época"
-          value={<CountUp value={seasonResult} format={(v) => `${v >= 0 ? "+" : ""}${formatCurrency(v)}`} />}
-          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
-          className="short:!p-2"
+          label="Resultado"
+          value={<CountUp value={seasonResult} format={signed} />}
+          sub={`Época · ${weeksElapsed}/${SEASON_WEEKS} semanas`}
+          valueClass="text-lg sm:text-2xl xl:text-3xl short:!text-sm"
+          accentClass={seasonResult >= 0 ? "border-tertiary" : "border-error"}
           valueColorClass={seasonResult >= 0 ? "text-tertiary" : "text-error"}
-        >
-          <div className="mt-2 sm:mt-4 short:mt-1 flex items-center gap-1 sm:gap-2">
-            <span
-              className={`material-symbols-outlined text-xs sm:text-sm ${seasonResult >= 0 ? "text-tertiary" : "text-error"}`}
-            >
-              {seasonResult >= 0
-                ? "trending_up"
-                : "trending_down"}
-            </span>
-            <span className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant font-medium font-label uppercase">
-              {weeksElapsed} / {SEASON_WEEKS} semanas concluídas
-            </span>
-          </div>
-        </SummaryWidget>
-        {/* Saldo previsto */}
+        />
         <SummaryWidget
-          flat
-          label="Saldo previsto fim de época"
-          value={<CountUp value={projection.projectedEndBudget} format={(v) => `${v >= 0 ? "+" : ""}${formatCurrency(v)}`} />}
-          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
+          label="Previsão"
+          value={<CountUp value={projection.projectedEndBudget} format={signed} />}
+          sub={`Fim de época · faltam ${projection.remainingWeeks} sem.`}
+          valueClass="text-lg sm:text-2xl xl:text-3xl short:!text-sm"
+          accentClass={projection.projectedEndBudget >= 0 ? "border-tertiary" : "border-error"}
           valueColorClass={projection.projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}
-          className="relative overflow-hidden short:!p-2"
-        >
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none short:hidden">
-            <span className="material-symbols-outlined text-6xl">
-              savings
-            </span>
-          </div>
-          <div className="mt-2 sm:mt-4 short:mt-1">
-            <p className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant uppercase mb-1">
-              Faltam {projection.remainingWeeks} sem. · sem prémios nem Taça
-              {projection.projectedLoan > 0 &&
-                ` · dívida ${formatCurrency(projection.projectedLoan)}`}
-            </p>
-          </div>
-        </SummaryWidget>
+        />
       </div>
 
-      {/* ── EVOLUÇÃO DO SALDO ─────────────────────────────────────────── */}
+      {/* lg: 6 colunas — gráfico (4) + salários/empréstimos (2) em cima, a
+          esticar à mesma altura; Receitas e Despesas a 50/50 por baixo. No
+          telemóvel, order-*: gráfico → receitas → despesas → controlo. */}
       <div className="grid grid-cols-1 gap-4 short:gap-2 lg:grid-cols-6">
-      <Panel
-        title="Evolução do Saldo"
-        icon="show_chart"
-        className="order-1 self-start lg:col-span-4 lg:row-start-1 short:[&>div:first-child]:!py-2"
-        bodyClassName="short:!p-2"
-        meta={
-          <span
-            className={`font-headline font-black ${currentBudget >= 0 ? "text-primary" : "text-error"}`}
-          >
-            {formatCurrency(currentBudget)}
-          </span>
-        }
-      >
-        <BalanceLineChart data={chartData} />
-      </Panel>
+        <Panel
+          title="Evolução do Saldo"
+          icon="show_chart"
+          className="order-1 lg:col-span-4 lg:row-start-1"
+        >
+          <BalanceLineChart data={chartData} />
+        </Panel>
 
-      {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
-        {/* lg: 6 colunas — gráfico (span 4) + Controlo (span 2) em cima;
-            Receitas e Despesas a 50/50 por baixo. No phone, order-* mantém a
-            ordem original: gráfico → receitas → despesas → controlo. */}
-        {/* Receitas */}
-        <div className="order-2 lg:col-start-1 lg:col-span-3 lg:row-start-2 bg-surface-container-low rounded-lg p-3 sm:p-5 short:p-2.5 flex flex-col space-y-3 short:space-y-2">
-          <div className="flex justify-between items-center pb-2 short:pb-1 border-b border-outline-variant/15">
-            <h3 className="font-headline text-base short:text-sm uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
-              <span className="material-symbols-outlined text-primary text-base short:text-sm shrink-0">
-                arrow_downward
-              </span>
-              Receitas
-            </h3>
-            <span className="font-headline text-primary font-bold text-sm shrink-0">
+        {/* ── Receitas ── */}
+        <Panel
+          title="Receitas"
+          icon="south_west"
+          className="order-2 lg:col-start-1 lg:col-span-3 lg:row-start-2"
+          meta={
+            <span className="font-headline text-sm text-primary tabular-nums">
               {formatCurrency(totalSeasonIncome)}
             </span>
-          </div>
+          }
+        >
           <SegmentBar segments={incomeSegments} />
-          <ul className="space-y-3 short:space-y-2">
-            <ExpandableRow
+          <ul className="divide-y divide-outline-variant/10">
+            <LedgerRow
               label="Bilheteiras"
+              color={INCOME_COLORS.tickets}
+              total={totalSeasonIncome}
+              value={financeData?.totalTicketRevenue || 0}
               sub={
                 <>
-                  {(financeData?.totalHomeMatchesPlayed ??
-                    financeData?.homeMatchesPlayed ??
-                    0)}{" "}
-                  jogos em casa
-                  {(financeData?.cupHomeMatchesPlayed || 0) > 0 && (
-                    <span className="opacity-60">
-                      {" "}· {financeData?.homeMatchesPlayed || 0} Liga +{" "}
-                      {financeData?.cupHomeMatchesPlayed} Taça
-                    </span>
-                  )}
+                  {homeGames} {homeGames === 1 ? "jogo" : "jogos"} em casa
+                  {(financeData?.cupHomeMatchesPlayed || 0) > 0 &&
+                    ` · ${financeData?.homeMatchesPlayed || 0} Liga + ${financeData.cupHomeMatchesPlayed} Taça`}
                 </>
               }
-              value={formatCurrency(financeData?.totalTicketRevenue || 0)}
               expanded={showTicketBreakdown}
               onToggle={
                 (financeData?.ticketBreakdown?.length || 0) > 0
@@ -490,319 +478,228 @@ export function FinancesTab({
             >
               {financeData?.ticketBreakdown?.map((t) => {
                 const isCup = t.competition === "cup";
-                const key = isCup ? `cup-${t.round}` : `league-${t.matchweek}`;
                 return (
-                  <li
-                    key={key}
-                    className="flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="text-xs text-on-surface-variant/80">
+                  <DetailItem
+                    key={isCup ? `cup-${t.round}` : `league-${t.matchweek}`}
+                    label={
+                      <>
                         {isCup ? `Taça · ${t.roundName}` : `J${t.matchweek}`}
-                      </p>
-                      <p className="text-[10px] opacity-30 uppercase">
-                        vs <TeamLink teamId={t.away_team_id}>{t.away_team_name || "—"}</TeamLink> · {t.attendance.toLocaleString("pt-PT")} esp.
-                      </p>
-                    </div>
-                    <span className="text-xs font-bold">
-                      {formatCurrency(t.revenue)}
-                    </span>
-                  </li>
+                        <span className="text-on-surface-variant"> · vs </span>
+                        <TeamLink teamId={t.away_team_id}>{t.away_team_name || "—"}</TeamLink>
+                      </>
+                    }
+                    sub={`${t.attendance.toLocaleString("pt-PT")} espectadores`}
+                    value={t.revenue}
+                  />
                 );
               })}
-            </ExpandableRow>
+            </LedgerRow>
             {(financeData?.awayTicketRevenue || 0) > 0 && (
-              <li className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-on-surface-variant">Bilheteiras fora</p>
-                  <p className="text-[10px] opacity-40 uppercase">15% da receita do visitado</p>
-                </div>
-                <span className="font-headline text-sm font-bold">
-                  {formatCurrency(financeData.awayTicketRevenue)}
-                </span>
-              </li>
+              <LedgerRow
+                label="Bilheteiras fora"
+                sub="15% da receita do visitado"
+                color={INCOME_COLORS.tickets}
+                total={totalSeasonIncome}
+                value={financeData.awayTicketRevenue}
+              />
             )}
-            <li className="flex justify-between items-center gap-2">
-              {financeData?.sponsorId && (
-                <SponsorLogo
-                  brand={{ sponsorId: financeData.sponsorId, name: financeData?.sponsorName }}
-                  className="h-11 w-11 shrink-0 rounded-md"
-                />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="text-sm text-on-surface-variant">
-                  Patrocinadores
-                </p>
-                <p className="text-[10px] opacity-40 uppercase">
-                  {financeData?.sponsorName
-                    ? `${financeData.sponsorName}${financeData?.sponsorProfile ? ` · perfil ${financeData.sponsorProfile}` : ""}`
-                    : "Receita anual por divisão"}
-                </p>
-              </div>
-              <span className="font-headline text-sm font-bold">
-                {formatCurrency(
-                  financeData?.sponsorRevenue || 0,
-                )}
-              </span>
-            </li>
+            <LedgerRow
+              label="Patrocinadores"
+              color={INCOME_COLORS.sponsor}
+              total={totalSeasonIncome}
+              value={financeData?.sponsorRevenue || 0}
+              leading={
+                financeData?.sponsorId ? (
+                  <SponsorLogo
+                    brand={{ sponsorId: financeData.sponsorId, name: financeData?.sponsorName }}
+                    className="h-8 w-8 shrink-0 rounded-md"
+                  />
+                ) : null
+              }
+              sub={
+                financeData?.sponsorName
+                  ? `${financeData.sponsorName}${financeData?.sponsorProfile ? ` · perfil ${financeData.sponsorProfile}` : ""}`
+                  : "Receita anual por divisão"
+              }
+            />
             {(weekly?.baseIncome || 0) > 0 && (
-              <li className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-on-surface-variant">Receita Base</p>
-                  <p className="text-[10px] opacity-40 uppercase">Por divisão · semanal</p>
-                </div>
-                <span className="font-headline text-sm font-bold">
-                  {formatCurrency(weekly.baseIncome)}
-                </span>
-              </li>
+              <LedgerRow
+                label="Receita base"
+                sub="Por divisão · semanal"
+                color={INCOME_COLORS.base}
+                total={totalSeasonIncome}
+                value={weekly.baseIncome}
+              />
             )}
             {(financeData?.prizeRevenue || 0) > 0 && (
-              <li className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-on-surface-variant">Prémios</p>
-                  <p className="text-[10px] opacity-40 uppercase">Taça, campeonato e individuais</p>
-                </div>
-                <span className="font-headline text-sm font-bold">
-                  {formatCurrency(financeData.prizeRevenue)}
-                </span>
-              </li>
+              <LedgerRow
+                label="Prémios"
+                sub="Taça, campeonato e individuais"
+                color={INCOME_COLORS.prizes}
+                total={totalSeasonIncome}
+                value={financeData.prizeRevenue}
+              />
             )}
             {(financeData?.totalTransferIncome || 0) > 0 && (
-              <ExpandableRow
-                label="Vendas de Jogadores"
+              <LedgerRow
+                label="Vendas de jogadores"
                 sub={`${financeData?.transferOutList?.length || 0} transferência(s)`}
-                value={formatCurrency(financeData.totalTransferIncome)}
+                color={INCOME_COLORS.sales}
+                total={totalSeasonIncome}
+                value={financeData.totalTransferIncome}
                 expanded={showTransferSales}
                 onToggle={() => setShowTransferSales((v) => !v)}
               >
                 {financeData?.transferOutList?.map((t) => (
-                  <li
+                  <DetailItem
                     key={`${t.player_name || "jogador"}-${t.amount}-${t.matchweek ?? "x"}`}
-                    className="flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="text-xs text-on-surface-variant/80">
+                    label={
+                      <>
                         <PlayerLink playerId={t.player_id}>{t.player_name || "Jogador"}</PlayerLink>
-                        <span className="opacity-40 mx-1">→</span>
+                        <span className="text-on-surface-variant/60 mx-1">→</span>
                         <TeamLink teamId={t.related_team_id}>{t.related_team_name || "—"}</TeamLink>
-                      </p>
-                      {t.matchweek != null && (
-                        <p className="text-[10px] opacity-30 uppercase">
-                          J{t.matchweek}
-                        </p>
-                      )}
-                    </div>
-                    <span className="text-xs font-bold">
-                      {formatCurrency(t.amount)}
-                    </span>
-                  </li>
+                      </>
+                    }
+                    sub={t.matchweek != null ? `J${t.matchweek}` : null}
+                    value={t.amount}
+                  />
                 ))}
-              </ExpandableRow>
+              </LedgerRow>
             )}
           </ul>
-        </div>
+        </Panel>
 
-        {/* Despesas */}
-        <div className="order-3 lg:col-start-4 lg:col-span-3 lg:row-start-2 bg-surface-container-low rounded-lg p-3 sm:p-5 short:p-2.5 flex flex-col space-y-3 short:space-y-2">
-          <div className="flex justify-between items-center pb-2 short:pb-1 border-b border-outline-variant/15">
-            <h3 className="font-headline text-base short:text-sm uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
-              <span className="material-symbols-outlined text-error text-base short:text-sm shrink-0">
-                arrow_upward
-              </span>
-              Despesas
-            </h3>
-            <span className="font-headline text-error font-bold text-sm shrink-0">
+        {/* ── Despesas ── */}
+        <Panel
+          title="Despesas"
+          icon="north_east"
+          className="order-3 lg:col-start-4 lg:col-span-3 lg:row-start-2"
+          meta={
+            <span className="font-headline text-sm text-error tabular-nums">
               {formatCurrency(totalSeasonExpenses)}
             </span>
-          </div>
+          }
+        >
           <SegmentBar segments={expenseSegments} />
-          <ul className="space-y-3 short:space-y-2">
-            <li className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-on-surface-variant">
-                  Folha Salarial
-                </p>
-                <p className="text-[10px] opacity-40 uppercase">
-                  {mySquad.length} atletas · pago por
-                  jornada
-                </p>
-              </div>
-              <span className="font-headline text-sm font-bold">
-                {formatCurrency(wagesSeasonCost)}
-              </span>
-            </li>
+          <ul className="divide-y divide-outline-variant/10">
+            <LedgerRow
+              label="Folha salarial"
+              sub={`${mySquad.length} atletas · pago por jornada`}
+              color={EXPENSE_COLORS.wages}
+              total={totalSeasonExpenses}
+              value={wagesSeasonCost}
+            />
             {staffMembers.length > 0 && (
-              <li className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-on-surface-variant">
-                    Funcionários
-                  </p>
-                  <p className="text-[10px] opacity-40 uppercase">
-                    {staffMembers.length} contratado(s) ·{" "}
-                    {formatCurrency(staffWeeklyWage)} / jornada
-                  </p>
-                </div>
-                <span className="font-headline text-sm font-bold">
-                  {formatCurrency(staffSeasonCost)}
-                </span>
-              </li>
+              <LedgerRow
+                label="Funcionários"
+                sub={`${staffMembers.length} contratado(s) · ${formatCurrency(staffWeeklyWage)}/jornada`}
+                color={EXPENSE_COLORS.staff}
+                total={totalSeasonExpenses}
+                value={staffSeasonCost}
+              />
             )}
             {loanAmount > 0 && (
-              <li className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-on-surface-variant">
-                    Juros Bancários
-                  </p>
-                  <p className="text-[10px] opacity-40 uppercase">
-                    {interestPct}% da dívida / jornada
-                  </p>
-                </div>
-                <span className="font-headline text-sm font-bold">
-                  {formatCurrency(interestSeasonCost)}
-                </span>
-              </li>
+              <LedgerRow
+                label="Juros bancários"
+                sub={`${interestPct}% da dívida / jornada`}
+                color={EXPENSE_COLORS.interest}
+                total={totalSeasonExpenses}
+                value={interestSeasonCost}
+              />
             )}
             {(weekly?.upkeep || 0) > 0 && (
-              <li className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-on-surface-variant">Manutenção do Estádio</p>
-                  <p className="text-[10px] opacity-40 uppercase">Lugares acima da isenção · semanal</p>
-                </div>
-                <span className="font-headline text-sm font-bold">
-                  {formatCurrency(weekly.upkeep)}
-                </span>
-              </li>
+              <LedgerRow
+                label="Manutenção do estádio"
+                sub="Lugares acima da isenção · semanal"
+                color={EXPENSE_COLORS.upkeep}
+                total={totalSeasonExpenses}
+                value={weekly.upkeep}
+              />
             )}
             {(financeData?.totalTransferExpenses || 0) > 0 && (
-              <ExpandableRow
-                label="Compras de Jogadores"
+              <LedgerRow
+                label="Compras de jogadores"
                 sub={`${financeData?.transferInList?.length || 0} transferência(s)`}
-                value={formatCurrency(financeData.totalTransferExpenses)}
+                color={EXPENSE_COLORS.purchases}
+                total={totalSeasonExpenses}
+                value={financeData.totalTransferExpenses}
                 expanded={showTransferPurchases}
                 onToggle={() => setShowTransferPurchases((v) => !v)}
-                accent="error"
               >
                 {financeData?.transferInList?.map((t) => (
-                  <li
+                  <DetailItem
                     key={`${t.player_name || "jogador"}-${t.amount}-${t.matchweek ?? "x"}`}
-                    className="flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="text-xs text-on-surface-variant/80">
+                    label={
+                      <>
                         <PlayerLink playerId={t.player_id}>{t.player_name || "Jogador"}</PlayerLink>
-                        <span className="opacity-40 mx-1">←</span>
+                        <span className="text-on-surface-variant/60 mx-1">←</span>
                         <TeamLink teamId={t.related_team_id}>{t.related_team_name || "—"}</TeamLink>
-                      </p>
-                      {t.matchweek != null && (
-                        <p className="text-[10px] opacity-30 uppercase">
-                          J{t.matchweek}
-                        </p>
-                      )}
-                    </div>
-                    <span className="text-xs font-bold">
-                      {formatCurrency(t.amount)}
-                    </span>
-                  </li>
+                      </>
+                    }
+                    sub={t.matchweek != null ? `J${t.matchweek}` : null}
+                    value={t.amount}
+                  />
                 ))}
-              </ExpandableRow>
+              </LedgerRow>
             )}
-            {(financeData?.totalStadiumExpenses || 0) >
-              0 && (
-              <li className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-on-surface-variant">
-                    Obras no Estádio
-                  </p>
-                  <p className="text-[10px] opacity-40 uppercase">
-                    {formatCurrency(STADIUM_EXPANSION_COST)} ×{" "}
-                    {Math.round(
-                      (financeData.totalStadiumExpenses ||
-                        0) / STADIUM_EXPANSION_COST,
-                    )}{" "}
-                    obra(s)
-                  </p>
-                </div>
-                <span className="font-headline text-sm font-bold">
-                  {formatCurrency(
-                    financeData.totalStadiumExpenses,
-                  )}
-                </span>
-              </li>
+            {(financeData?.totalStadiumExpenses || 0) > 0 && (
+              <LedgerRow
+                label="Obras no estádio"
+                sub={`${formatCurrency(STADIUM_EXPANSION_COST)} × ${stadiumWorks} obra(s)`}
+                color={EXPENSE_COLORS.works}
+                total={totalSeasonExpenses}
+                value={financeData.totalStadiumExpenses}
+              />
             )}
           </ul>
-        </div>
+        </Panel>
 
-        {/* Centro de Controlo */}
-        <div className="order-4 lg:col-start-5 lg:col-span-2 lg:row-start-1 space-y-4 short:space-y-2">
-          {/* Folha Salarial */}
-          <div
-            className={`bg-surface-container rounded-lg p-3 sm:p-5 short:p-2.5 border-l-4 ${wageSharePct > 75 ? "border-error" : wageSharePct > 50 ? "border-tertiary" : "border-primary"} relative overflow-hidden`}
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h3 className="font-headline text-xs uppercase tracking-widest text-on-surface-variant">
-                  Folha Salarial
-                </h3>
-                <p className="font-headline text-xl short:text-base font-bold mt-1 short:mt-0.5">
-                  {formatCurrency(totalWeeklyWage)}{" "}
-                  <span className="text-xs font-normal opacity-50">
-                    / jornada
-                  </span>
-                </p>
-              </div>
+        {/* ── Controlo: salários + empréstimos (esticam até à altura do gráfico) ── */}
+        <div className="order-4 lg:col-start-5 lg:col-span-2 lg:row-start-1 flex flex-col gap-4 short:gap-2">
+          <Panel title="Folha Salarial" icon="payments" meta={`${mySquad.length} atletas`}>
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-headline text-2xl short:text-lg font-black tracking-tight tabular-nums text-on-surface">
+                {formatCurrency(totalWeeklyWage)}
+                <span className="ml-1 text-xs font-bold text-on-surface-variant">/ jornada</span>
+              </p>
               {wageSharePct > 75 && (
                 <span
                   className="material-symbols-outlined text-error"
-                  style={{
-                    fontVariationSettings: "'FILL' 1",
-                  }}
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                  title="Os salários pesam demasiado nas receitas"
                 >
                   warning
                 </span>
               )}
             </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+            <div className="mt-3 short:mt-1.5 space-y-1.5">
+              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
                 <span>% das receitas</span>
-                <span
-                  className={
-                    wageSharePct > 75
-                      ? "text-error"
-                      : wageSharePct > 50
-                        ? "text-tertiary"
-                        : "text-primary"
-                  }
-                >
-                  {wageSharePct}%
-                </span>
+                <span className={`tabular-nums ${wage.text}`}>{wageSharePct}%</span>
               </div>
-              <div className="h-2 w-full bg-surface-bright rounded-full overflow-hidden">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-bright">
                 <div
-                  className={`h-full rounded-full transition-all ${wageSharePct > 75 ? "bg-error" : wageSharePct > 50 ? "bg-tertiary" : "bg-primary"}`}
+                  className={`h-full rounded-full transition-all duration-700 ${wage.bar}`}
                   style={{ width: `${wageSharePct}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[10px] opacity-50 uppercase">
-                <span>
-                  {formatCurrency(totalWeeklyWage)}/jornada
-                </span>
-                <span>{mySquad.length} atletas</span>
-              </div>
+              {staffWeeklyWage > 0 && (
+                <p className="text-[10px] uppercase tracking-wide text-on-surface-variant/70">
+                  + Funcionários {formatCurrency(staffWeeklyWage)} / jornada
+                </p>
+              )}
             </div>
-          </div>
+          </Panel>
 
-          {/* Dívida Bancária — cartão de crédito */}
-          <div className="bg-surface-container rounded-lg p-3 sm:p-5 short:p-2.5 border-t border-outline-variant/10">
-            <h3 className="font-headline text-xs uppercase tracking-widest text-on-surface-variant mb-3 short:mb-2 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-primary shrink-0">
-                account_balance
-              </span>
-              Empréstimos
-            </h3>
-
-            {/* ── Face do cartão ─────────────────────────────────── */}
+          <Panel
+            title="Empréstimos"
+            icon="account_balance"
+            className="flex-1"
+            meta={`Juros ${interestPct}%`}
+          >
+            {/* Face do cartão */}
             <div
-              className={`relative overflow-hidden rounded-xl p-4 sm:p-5 short:p-2.5 shadow-lg shadow-black/40 ring-1 transition-colors ${
+              className={`relative overflow-hidden rounded-xl p-4 short:p-2.5 shadow-lg shadow-black/40 ring-1 ${
                 loanAmount > 0
                   ? "bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 ring-white/10"
                   : "bg-gradient-to-br from-zinc-900 via-zinc-800 to-emerald-950 ring-emerald-400/25"
@@ -812,68 +709,44 @@ export function FinancesTab({
               <div className="pointer-events-none absolute -bottom-16 left-0 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
 
               <div className="relative flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 min-w-0">
-                  <span className="material-symbols-outlined text-base text-amber-400 shrink-0">
-                    account_balance
-                  </span>
-                  <span className="font-headline text-[11px] sm:text-xs font-black uppercase tracking-widest text-white/90 truncate">
-                    CashBall Bank
-                  </span>
+                <span className="font-headline text-[11px] font-black uppercase tracking-widest text-white/90 truncate">
+                  CashBall Bank
                 </span>
-                <span
-                  className="material-symbols-outlined text-lg text-white/40 shrink-0"
-                  title="Pagamento por aproximação"
-                >
+                <span aria-hidden className="material-symbols-outlined text-lg text-white/40">
                   nfc
                 </span>
               </div>
 
-              <div className="relative mt-4 short:mt-2.5 flex items-start justify-between gap-3">
+              <div className="relative mt-3 short:mt-2 flex items-end justify-between gap-3">
                 {/* chip do cartão */}
-                <div className="flex flex-col items-center shrink-0">
-                  <div className="h-8 w-11 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 p-[3px] shadow-inner ring-1 ring-black/25">
-                    <div className="flex h-full w-full items-stretch justify-center gap-[3px] rounded-[4px] bg-gradient-to-b from-white/25 to-transparent">
-                      <span className="w-px bg-black/25" />
-                      <span className="w-px bg-black/25" />
-                      <span className="w-px bg-black/25" />
-                    </div>
+                <div
+                  aria-hidden
+                  className="h-8 w-11 shrink-0 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 p-[3px] shadow-inner ring-1 ring-black/25"
+                >
+                  <div className="flex h-full w-full items-stretch justify-center gap-[3px] rounded-[4px] bg-gradient-to-b from-white/25 to-transparent">
+                    <span className="w-px bg-black/25" />
+                    <span className="w-px bg-black/25" />
+                    <span className="w-px bg-black/25" />
                   </div>
-                  <span className="mt-1 text-[7px] sm:text-[8px] uppercase tracking-widest text-white/35 tabular-nums">
-                    época {seasonYear}
-                  </span>
                 </div>
-
-                {/* valor em dívida */}
                 <div className="min-w-0 text-right">
-                  <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-white/45">
-                    Dívida actual
+                  <p className="text-[9px] font-black uppercase tracking-widest text-white/45">
+                    Dívida atual
                   </p>
                   <p
-                    className={`font-headline text-xl sm:text-2xl font-black tracking-tight tabular-nums leading-tight ${
+                    className={`font-headline text-2xl short:text-lg font-black tracking-tight tabular-nums leading-tight ${
                       loanAmount > 0 ? "text-white" : "text-emerald-300"
                     }`}
                   >
                     {formatCurrency(loanAmount)}
                   </p>
-                  {loanAmount > 0 ? (
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-rose-300">
-                      <span className="material-symbols-outlined text-[11px]">
-                        warning
-                      </span>
-                      Juros {interestPct}% / jornada
-                    </p>
-                  ) : (
-                    <p className="mt-0.5 text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-emerald-300/90">
-                      Sem juros · liquidado
-                    </p>
-                  )}
                 </div>
               </div>
 
               {/* plafond utilizado */}
-              <div className="relative mt-4 short:mt-2.5">
-                <div className="mb-1 flex items-baseline justify-between gap-2 text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-white/45">
-                  <span className="truncate">Plafond utilizado</span>
+              <div className="relative mt-3 short:mt-2">
+                <div className="mb-1 flex items-baseline justify-between gap-2 text-[9px] font-black uppercase tracking-widest text-white/45">
+                  <span className="truncate">Plafond</span>
                   <span className="tabular-nums shrink-0">
                     {loanPct.toFixed(0)}% de {formatCurrency(LOAN_MAX)}
                   </span>
@@ -881,15 +754,22 @@ export function FinancesTab({
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
-                      loanPct > 75
-                        ? "bg-rose-400"
-                        : loanPct > 40
-                          ? "bg-amber-400"
-                          : "bg-emerald-400"
+                      loanPct > 75 ? "bg-rose-400" : loanPct > 40 ? "bg-amber-400" : "bg-emerald-400"
                     }`}
                     style={{ width: `${loanPct}%` }}
                   />
                 </div>
+                <p
+                  className={`mt-1.5 text-[9px] font-black uppercase tracking-wider ${
+                    loanAmount > 0 ? "text-rose-300" : "text-emerald-300/90"
+                  }`}
+                >
+                  {loanAmount > 0
+                    ? projection.projectedLoan > 0
+                      ? `No fim da época: ${formatCurrency(projection.projectedLoan)}`
+                      : "Liquidado até ao fim da época"
+                    : "Sem dívida · sem juros"}
+                </p>
               </div>
             </div>
 
@@ -898,7 +778,8 @@ export function FinancesTab({
               <Button
                 variant="secondary"
                 onClick={() => socket.emit("payLoan")}
-                disabled={loanAmount < LOAN_STEP || currentBudget < LOAN_STEP}
+                disabled={!!payDisabledReason}
+                title={payDisabledReason}
               >
                 Pagar {loanStepK}
               </Button>
@@ -916,32 +797,33 @@ export function FinancesTab({
                   });
                 }}
                 disabled={loanAmount >= LOAN_MAX}
-                className="bg-surface-bright hover:brightness-110 border border-outline-variant/30"
+                title={loanAmount >= LOAN_MAX ? "Plafond esgotado" : undefined}
               >
-                Pedir +{loanStepK}
+                Pedir {loanStepK}
               </Button>
+              {loanAmount > 0 && (
+                <Button
+                  variant="dangerSoft"
+                  className="col-span-2"
+                  onClick={() => {
+                    setGameDialog({
+                      mode: "confirm",
+                      title: "Liquidar a Dívida Bancária",
+                      description: `Vais pagar o valor total em dívida: ${formatCurrency(loanAmount)}. Ficas com saldo de ${formatCurrency(currentBudget - loanAmount)} e deixas de pagar juros (${interestPct}%/jornada).`,
+                      confirmLabel: "Pagar Dívida",
+                      danger: true,
+                      onConfirm: () => socket.emit("payAllLoan"),
+                      onCancel: () => {},
+                    });
+                  }}
+                  disabled={currentBudget < loanAmount}
+                  title={currentBudget < loanAmount ? "Saldo insuficiente para liquidar" : undefined}
+                >
+                  Liquidar dívida · {formatCurrency(loanAmount)}
+                </Button>
+              )}
             </div>
-            {loanAmount > 0 && (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setGameDialog({
-                    mode: "confirm",
-                    title: "Liquidar a Dívida Bancária",
-                    description: `Vais pagar o valor total em dívida: ${formatCurrency(loanAmount)}. Ficas com saldo de ${formatCurrency(currentBudget - loanAmount)} e deixas de pagar juros ({interestPct}%/jornada).`,
-                    confirmLabel: "Pagar Dívida",
-                    danger: true,
-                    onConfirm: () => socket.emit("payAllLoan"),
-                    onCancel: () => {},
-                  });
-                }}
-                disabled={currentBudget < loanAmount}
-                className="mt-2 w-full"
-              >
-                Pagar Dívida ({formatCurrency(loanAmount)})
-              </Button>
-            )}
-          </div>
+          </Panel>
         </div>
       </div>
     </div>
