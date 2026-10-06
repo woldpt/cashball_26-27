@@ -6,7 +6,7 @@ import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { useKitClash } from "../../hooks/useKitClash.js";
 import { Button } from "../shared/Button.jsx";
-import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, liveFeed, liveScore, liveShots, matchEventIcon, parseOdds, resolveEventSide, teamTextColor, tiredPlayers } from "./liveHelpers.js";
+import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, liveFeed, liveScore, matchEventIcon, parseOdds, resolveEventSide, teamTextColor, tiredPlayers } from "./liveHelpers.js";
 
 /* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
 const PAUSE_TEXT = {
@@ -46,7 +46,7 @@ const SCORER_TYPES = ["goal", "penalty_goal", "own_goal", "var_disallowed", "var
  *
  * Hierarquia: meta strip (competição) → info strip (estádio · clima · odds)
  * → broadcast bar (equipas + marcador + fase/minuto) → marcadores de golos
- * → cronómetro → dados (posse · remates · cansaço) + botão Substituições →
+ * → cronómetro → dados (cansaço) + botão Substituições →
  * feed de lances → pre-match intros.
  */
 
@@ -170,8 +170,7 @@ export function LiveMatchHero({
   const homeEvents = sideEvents("home");
   const awayEvents = sideEvents("away");
 
-  // Dados para decidir: remates de cada lado e cansaço da minha equipa.
-  const shots = liveShots(matchEvents, liveMinute);
+  // Dados para decidir: cansaço da minha equipa.
   const tired =
     isPlayingMatch && (homeIsMine || awayIsMine)
       ? tiredPlayers(homeIsMine ? myMatch.homeLineup : myMatch.awayLineup, matchEvents, liveMinute)
@@ -421,11 +420,6 @@ export function LiveMatchHero({
 
         {/* ── Dados para decidir + ação principal ── */}
         <MatchStats
-          homePossession={myMatch.homePossession}
-          awayPossession={myMatch.awayPossession}
-          shots={shots}
-          hInfo={hInfo}
-          aInfo={aInfo}
           tired={tired}
         />
         {!readOnly && (
@@ -490,52 +484,16 @@ export function ScoreKit({ team, isMine, coach, away = false }) {
   );
 }
 
-/* ── MatchStats — posse, remates e alerta de cansaço da minha equipa ──── */
+/* ── MatchStats — alerta de cansaço da minha equipa ──── */
 /**
  * @param {Object} props
- * @param {number|undefined} props.homePossession
- * @param {number|undefined} props.awayPossession
- * @param {{home:number, away:number}} props.shots
- * @param {Object|undefined} props.hInfo
- * @param {Object|undefined} props.aInfo
  * @param {Array<{id:number,name:string,fatigueLoss:number}>} props.tired
- * @returns {JSX.Element}
+ * @returns {JSX.Element|null}
  */
-function MatchStats({ homePossession, awayPossession, shots, hInfo, aInfo, tired }) {
-  const hasPoss = homePossession != null && awayPossession != null;
-  const label = "text-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70";
+function MatchStats({ tired }) {
+  if (!tired.length) return null;
   return (
     <div className="w-full max-w-2xl mt-3 px-1 flex flex-col gap-2">
-      <div className="grid grid-cols-[2.75rem_1fr_2.75rem] items-center gap-x-2 gap-y-1.5 text-[12px] font-black tabular-nums text-on-surface">
-        {hasPoss && (
-          <>
-            <span>{homePossession}%</span>
-            <div className="flex flex-col gap-1">
-              <span className={label}>Posse</span>
-              <div
-                role="img"
-                aria-label={`Posse de bola: ${homePossession}% contra ${awayPossession}%`}
-                className="h-1.5 rounded-full overflow-hidden flex bg-surface-container-high"
-              >
-                <div
-                  className="h-full transition-all duration-700"
-                  style={{
-                    width: `${homePossession}%`,
-                    background: hInfo?.color_primary || "#6366f1",
-                    // Separador: com cores iguais a divisão continua visível.
-                    borderRight: "2px solid rgba(255,255,255,0.7)",
-                  }}
-                />
-                <div className="h-full flex-1" style={{ background: aInfo?.color_primary || "#f43f5e" }} />
-              </div>
-            </div>
-            <span className="text-right">{awayPossession}%</span>
-          </>
-        )}
-        <span>{shots.home}</span>
-        <span className={label}>Remates</span>
-        <span className="text-right">{shots.away}</span>
-      </div>
       {tired.length > 0 && (
         <p
           className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-amber-300"
