@@ -1,27 +1,14 @@
 import { memo } from "react";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
+import { Badge } from "../shared/Badge.jsx";
 import { InviteControls } from "./InviteControls.jsx";
 
 // Objetos estáticos: devolvem referência sem alocar por linha.
 const STATUS = {
-  offline: {
-    label: "Offline",
-    chip: "bg-surface-bright/40 text-on-surface-variant border-outline-variant/20",
-    dot: "bg-surface-bright",
-  },
-  ready: {
-    label: "Pronto ⚡",
-    chip: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-    dot: "bg-emerald-400",
-  },
-  thinking: {
-    label: "A pensar 🧠",
-    chip: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-    dot: "bg-amber-400",
-  },
+  offline: { label: "Offline", variant: "neutral", dot: "bg-surface-bright" },
+  ready: { label: "Pronto ⚡", variant: "success", dot: "bg-emerald-400" },
+  thinking: { label: "A pensar 🧠", variant: "warning", dot: "bg-amber-400" },
 };
-const CHIP =
-  "shrink-0 rounded border px-1.5 py-px text-[9px] font-black uppercase tracking-widest";
 
 /**
  * Linha de um coach na lista da sala (faixa da cor do clube, avatar, estado, convite, kick).
@@ -116,11 +103,7 @@ export const CoachRow = memo(function CoachRow({
         <div className="mt-0.5 flex flex-wrap items-center gap-1">
           {canInvite ? (
             <>
-              <span
-                className={`${CHIP} border-amber-500/30 bg-amber-500/10 text-amber-400`}
-              >
-                Noutra sala
-              </span>
+              <Badge variant="warning">Noutra sala</Badge>
               <InviteControls
                 coachName={coach.name}
                 invite={invite}
@@ -129,7 +112,7 @@ export const CoachRow = memo(function CoachRow({
               />
             </>
           ) : (
-            <span className={`${CHIP} ${status.chip}`}>{status.label}</span>
+            <Badge variant={status.variant}>{status.label}</Badge>
           )}
         </div>
       </div>

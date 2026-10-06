@@ -63,6 +63,7 @@ export function RoomHubPanel({
   const [anim] = useState(() => (isMobileViewport() ? sheetUp : panelRight));
   const copiedTimer = useRef(null);
   const lastSendRef = useRef(0);
+  const inputRef = useRef(null);
 
   const myName = me?.name ?? "";
   const myRoom = me?.roomCode ?? "";
@@ -93,6 +94,16 @@ export function RoomHubPanel({
   }, [me?.roomCode]);
 
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
+
+  // Foco: no input ao abrir (só com rato/teclado — no telemóvel abriria o teclado
+  // por cima do chat) e de volta ao botão que abriu o hub ao fechar.
+  useEffect(() => {
+    const opener = document.activeElement;
+    if (window.matchMedia("(pointer: fine)").matches) inputRef.current?.focus();
+    return () => {
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
+  }, []);
 
   // Carregar histórico ao abrir o hub ou ao trocar de sub-tab.
   // O WaitingCoachesModal só pede histórico no lobby; sem isto, o RoomHub
@@ -342,7 +353,7 @@ export function RoomHubPanel({
                   </span>
                 )}
                 {unread > 0 && (
-                  <span className="ml-1.5 inline-block min-w-4 px-1 rounded-full bg-primary text-on-primary text-[9px] font-black">
+                  <span className="ml-1.5 inline-block min-w-4 px-1 rounded-full bg-primary text-on-primary text-[10px] font-black">
                     {unread > 9 ? "9+" : unread}
                   </span>
                 )}
@@ -414,6 +425,7 @@ export function RoomHubPanel({
               </button>
             )}
             <input
+              ref={inputRef}
               type="text"
               value={chatInput}
               aria-label="Escreve uma mensagem"

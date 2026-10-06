@@ -170,7 +170,7 @@ export function ChatMessages({ channel, systemMessages }) {
                       info
                     </span>
                     <span className="italic">{msg.message}</span>
-                    <span className="text-[9px]">
+                    <span className="text-[10px]">
                       · {formatChatTime(msg.timestamp)}
                     </span>
                   </div>
@@ -232,7 +232,7 @@ export function ChatMessages({ channel, systemMessages }) {
                     </div>
                   </div>
                   {isLast && (
-                    <span className="text-[9px] text-on-surface-variant px-1">
+                    <span className="text-[10px] text-on-surface-variant px-1">
                       {formatChatTime(msg.timestamp)}
                     </span>
                   )}
