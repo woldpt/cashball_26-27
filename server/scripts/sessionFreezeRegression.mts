@@ -27,6 +27,8 @@
  *   F13 — unbindSocket: o lease começa na queda (não no último pacote)
  *   F14 — waitForMatchAction: presença só por lease nunca resolve `auto`
  *   F15 — waitForMatchAction: assento libertado resolve `auto` e esvazia os pendentes
+ *   F16 — setSeatTeamId: equipa nova limpa Pronto/11; a mesma equipa (join) não
+ *   F17 — unreadyTeam: no lobby tira o Pronto aos membros da equipa (assento + projeção)
  *
  * Run: cd server && npm run test:session-freeze
  */
@@ -48,6 +50,8 @@ const {
   clearSeatPositions,
   releaseSeat,
   resetAllReady,
+  setSeatTeamId,
+  unreadyTeam,
   ensureRoomStateTables,
   hasHumanTeamInFixtures,
   PRESENCE_GRACE_MS,
@@ -441,4 +445,43 @@ test("F15 — assento libertado resolve a janela `auto` e esvazia os pendentes",
   const res = await pending;
   assert.equal(res.source, "auto");
   assert.equal(getPendingMatchActions(game).size, 0);
+});
+
+// ── F16/F17 ─────────────────────────────────────────────────────────────────
+function readySeatGame(phase = "lobby") {
+  const game: any = makeGame({ db: { run: () => {} }, gamePhase: phase });
+  const a = seat("A", HOME);
+  a.intent = { ready: true, positions: { 1: 101 } } as any;
+  game.seats["A"] = a;
+  game.playersByName["A"] = { name: "A", teamId: HOME, ready: true, tactic: { positions: { 1: 101 } } };
+  return game;
+}
+
+test("F16 — setSeatTeamId: equipa nova limpa Pronto e 11; a mesma equipa não", () => {
+  const game = readySeatGame();
+  setSeatTeamId(game, "A", HOME); // join com a mesma equipa
+  assert.equal(game.seats["A"].intent.ready, true);
+  assert.deepEqual(game.seats["A"].intent.positions, { 1: 101 });
+
+  setSeatTeamId(game, "A", AWAY); // equipa nova (despedimento/convite)
+  assert.equal(game.seats["A"].teamId, AWAY);
+  assert.equal(game.seats["A"].intent.ready, false);
+  assert.deepEqual(game.seats["A"].intent.positions, {});
+  assert.equal(game.playersByName["A"].ready, false);
+  assert.deepEqual(game.playersByName["A"].tactic.positions, {});
+});
+
+test("F17 — unreadyTeam: lobby tira o Pronto à equipa; fora do lobby não faz nada", () => {
+  const game = readySeatGame();
+  game.seats["B"] = seat("B", AWAY);
+  game.seats["B"].intent.ready = true;
+  assert.deepEqual(unreadyTeam(game, HOME), ["A"]);
+  assert.equal(game.seats["A"].intent.ready, false);
+  assert.equal(game.playersByName["A"].ready, false);
+  assert.equal(game.seats["B"].intent.ready, true, "outra equipa não é tocada");
+  assert.deepEqual(unreadyTeam(game, HOME), [], "já não estava pronto");
+
+  const live = readySeatGame("match_first_half");
+  assert.deepEqual(unreadyTeam(live, HOME), []);
+  assert.equal(live.seats["A"].intent.ready, true);
 });

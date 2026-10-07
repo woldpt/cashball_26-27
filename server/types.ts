@@ -200,6 +200,8 @@ export interface RoomSeat {
     style?: string;
     positions?: Record<string, unknown>;
   };
+  /** Só em memória: contador dos `setReady` (descarta respostas assíncronas obsoletas). */
+  readySeq?: number;
   status: "member" | "kicked" | "dismissed" | "left";
 }
 

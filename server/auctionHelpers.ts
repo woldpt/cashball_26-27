@@ -12,6 +12,8 @@ import {
   runAll,
   serializeRoomTask,
 } from "./coreHelpers";
+import { unreadyTeam } from "./roomStateHelpers";
+import { notifyUnreadied } from "./presenceHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { emitCmNews, cmAuctionText, cmBombText, cmIsRecordSale } from "./cmNews";
 import { upcomingMatchweek } from "./game/lineupReady";
@@ -459,6 +461,9 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       );
       return;
     }
+
+    // O vendedor perdeu um jogador: o Pronto dado com esse 11 deixa de valer.
+    notifyUnreadied(game, io, unreadyTeam(game, auction.sellerTeamId));
 
     const buyerCoach = (
       Object.values(game.playersByName) as PlayerSession[]

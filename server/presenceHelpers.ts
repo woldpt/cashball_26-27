@@ -65,3 +65,23 @@ export function getOfflineCoaches(game: ActiveGame): string[] {
 export function emitAwaitingCoaches(game: ActiveGame, io: any) {
   io.to(game.roomCode).emit("awaitingCoaches", getOfflineCoaches(game));
 }
+
+/**
+ * Depois de `unreadyTeam`: refresca a presença da sala e avisa quem perdeu o
+ * Pronto (um jogador do plantel saiu, o 11 confirmado pode já não valer).
+ */
+export function notifyUnreadied(game: ActiveGame, io: any, names: string[]) {
+  if (names.length === 0) return;
+  // require tardio: o gameManager importa este módulo.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("./gameManager").emitPresence(game, io);
+  for (const name of names) {
+    const socketId = game.playersByName[name]?.socketId;
+    if (socketId) {
+      io.to(socketId).emit(
+        "systemMessage",
+        "Um jogador do teu plantel saiu — confirma o Pronto outra vez.",
+      );
+    }
+  }
+}

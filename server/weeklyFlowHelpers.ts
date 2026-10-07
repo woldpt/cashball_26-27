@@ -2177,6 +2177,25 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     return true;
   }
 
+  // Assentos de que a fase atual espera (membros das equipas da ronda). Usado
+  // no início do checkAllReady e outra vez no callback assíncrono do arranque.
+  function seatsWaitedFor(game: ActiveGame) {
+    const requiredTeams =
+      game.gamePhase === "match_et_gate"
+        ? new Set<number>(
+            game.currentFixtures
+              .filter((f) => (f as any).round !== FRIENDLY_ROUND && f.finalHomeGoals === f.finalAwayGoals)
+              .flatMap((f) => [f.homeTeamId, f.awayTeamId]),
+          )
+        : requiredTeamIds(game);
+    return Object.values(game.seats).filter(
+      (seat) =>
+        seat.status === "member" &&
+        seat.teamId != null &&
+        requiredTeams.has(seat.teamId),
+    );
+  }
+
   async function checkAllReady(game: ActiveGame) {
     // Web Push (Fase 2): antes do gate de presença — o em-falta está
     // tipicamente ausente. Leitura pura + fire-and-forget, sem await.
@@ -2205,20 +2224,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // um treinador que voltou a ligar mantém a intenção que já tinha dado.
     // O prolongamento (Taça) só espera pelas equipas empatadas — eliminados e
     // espectadores não bloqueiam.
-    const requiredTeams =
-      game.gamePhase === "match_et_gate"
-        ? new Set<number>(
-            game.currentFixtures
-              .filter((f) => (f as any).round !== FRIENDLY_ROUND && f.finalHomeGoals === f.finalAwayGoals)
-              .flatMap((f) => [f.homeTeamId, f.awayTeamId]),
-          )
-        : requiredTeamIds(game);
-    const waitingSeats = Object.values(game.seats).filter(
-      (seat) =>
-        seat.status === "member" &&
-        seat.teamId != null &&
-        requiredTeams.has(seat.teamId),
-    );
+    const waitingSeats = seatsWaitedFor(game);
     if (waitingSeats.length === 0) {
       // Lobby da Taça com treinadores eliminados: esperar por um clique explícito
       // em «Avançar para Taça». Sem membros na sala, mantém-se o avanço automático.
@@ -2299,6 +2305,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             );
           } else if (finRow) {
             recoverFinalizedSlot(game, entry);
+            segmentRunning[game.roomCode] = false;
+            return;
+          }
+          // O db.get é assíncrono: um Pronto retirado (ou uma equipa que perdeu
+          // um jogador) entretanto não pode deixar a semana arrancar.
+          if (seatsWaitedFor(game).some((seat) => !seat.intent.ready)) {
+            console.warn(`[${game.roomCode}] ⏸ arranque cancelado: Pronto retirado durante a verificação`);
             segmentRunning[game.roomCode] = false;
             return;
           }

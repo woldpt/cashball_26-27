@@ -276,8 +276,39 @@ export function setSeatIntent(
 
 export function setSeatTeamId(game: ActiveGame, name: string, teamId: number | null): void {
   const seat = seatOf(game, name);
+  // Equipa nova: o Pronto e o 11 eram da equipa antiga. Com a mesma equipa
+  // (ex. o join) nada se limpa.
+  const changed = seat.teamId !== teamId;
   seat.teamId = teamId;
+  if (changed) {
+    seat.intent.ready = false;
+    seat.intent.positions = {};
+    const player = game.playersByName[name];
+    if (player) {
+      player.ready = false;
+      if (player.tactic) player.tactic.positions = {};
+    }
+  }
   persistSeat(game, seat);
+}
+
+/**
+ * Um jogador saiu desta equipa: no lobby, os treinadores da equipa que já
+ * estavam prontos voltam a «não pronto» (o 11 confirmado pode já não existir).
+ * Devolve os nomes afetados; quem chama avisa e emite a presença.
+ */
+export function unreadyTeam(game: ActiveGame, teamId: number | null | undefined): string[] {
+  if (teamId == null || game.gamePhase !== "lobby") return [];
+  const names: string[] = [];
+  for (const seat of Object.values(game.seats)) {
+    if (seat.status !== "member" || seat.teamId !== teamId || !seat.intent.ready) continue;
+    seat.intent.ready = false;
+    persistSeat(game, seat);
+    const player = game.playersByName[seat.name];
+    if (player) player.ready = false;
+    names.push(seat.name);
+  }
+  return names;
 }
 
 /** Liberta o assento (leaveRoom/kick/despedimento/libertamento pelo admin). */

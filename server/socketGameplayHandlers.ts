@@ -142,13 +142,20 @@ export function registerGameplaySocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
     if (!playerState.teamId) return;
+    // Cada setReady invalida os anteriores ainda em voo (as leituras de BD abaixo
+    // são assíncronas): um `true` atrasado nunca sobrepõe um `false` mais recente.
+    const readySeat = game.seats[playerState.name];
+    const readySeq = readySeat ? (readySeat.readySeq = (readySeat.readySeq ?? 0) + 1) : 0;
     // Barreira do 11 no pré-jogo: sem 11 + banco completo não há ready.
     // Fora do lobby (intervalo, prolongamento) passa sempre — a escalação
-    // é a mesma. Espectadores sem jogo na ronda também passam.
+    // é a mesma. Espectadores sem jogo na ronda também passam. Sem fixtures
+    // ainda e a jornada é de liga, todas as equipas jogam: a barreira aplica-se.
+    const fixturesNow = (game as any).currentFixtures;
     if (
       ready === true &&
       game.gamePhase === "lobby" &&
-      isLobbyStarter((game as any).currentFixtures, playerState.teamId)
+      (isLobbyStarter(fixturesNow, playerState.teamId) ||
+        ((game as any).currentEvent?.type === "league" && !fixturesNow?.length))
     ) {
       // Patrocinador por escolher (🚩 no Jornal) bloqueia o Pronto como as
       // renovações. Salas antigas sem a coluna: fail-open (tRow a null).
@@ -210,6 +217,7 @@ export function registerGameplaySocketHandlers(
               return;
             }
           }
+          if (readySeat && readySeat.readySeq !== readySeq) return; // substituído por um setReady mais recente
           playerState.ready = true;
           setSeatIntent(game, playerState.name, { ready: true });
           console.log(

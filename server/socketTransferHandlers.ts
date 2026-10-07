@@ -17,6 +17,8 @@ import {
   contractEndInfo,
   seasonToYear,
 } from "./coreHelpers";
+import { unreadyTeam } from "./roomStateHelpers";
+import { notifyUnreadied } from "./presenceHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
 import { claimActionId } from "./actionDedup";
@@ -169,6 +171,9 @@ export function registerTransferSocketHandlers(
           throw txErr;
         }
       });
+
+      // O vendedor perdeu um jogador: o Pronto dado com esse 11 deixa de valer.
+      notifyUnreadied(game, io, unreadyTeam(game, sellerTeamId));
 
       // Log transfer news (outside transaction — non-critical)
       const buyingTeam = await runGet<any>(
