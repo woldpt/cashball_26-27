@@ -1,3 +1,8 @@
+## Race conditions do flow: janelas × modais (2026-10-07)
+- Fila de transações por sala (`runRoomTask`), fecho que falha volta ao lobby do mesmo slot, fim de época retomável por passos (`applied_weeks` + `game_state`), Pronto/barreira do 11 e concorrência entre treinadores, carências em slots, popups vs fase no cliente e 3 verificações novas no `audit:gamestate`. Plano: `docs/plans/2026-10-07-race-conditions-flow.md`.
+- Porquê: uma só ligação SQLite fazia transações alheias colidirem; quebras a meio do fecho/fim de época repetiam prémios ou deixavam a sala presa.
+- Testado: typecheck, lint, check:types, `test:room-tx` (novo), `test:crash-recovery` (S6/S7), `test:session-freeze` (F16/F17), `test:finalize` E2E, `test:connect-smoke`, `audit:socketio`. `test:staff` (NPC de D1 sem auxiliar) e lint do `landing-resp-test.jsx` já falhavam antes.
+
 ## Robustez de sessão/presença (2026-10-07)
 - Lease começa na queda do socket; janelas de decisão nunca decidem `auto` por quem só tem lease; join passivo (separador oculto) não rouba o assento; `presencePing` + gate de join no cliente; contra-proposta/convite sobrevivem à queda. Plano: `docs/plans/2026-10-07-sessao-presenca-mobile.md`.
 - Porquê: bloqueios de ecrã do telemóvel congelavam/descongelavam a sala e a lista `players` tratava a equipa como NPC.
