@@ -689,6 +689,8 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
               data-tour="nav-play"
               onClick={cta.onClick}
               className={`ml-2 hidden lg:flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 ${
+                cta.canPlay ? "animate-heartbeat motion-reduce:animate-none " : ""
+              }${
                 cta.state === "waiting"
                   ? "bg-black/30 text-on-surface border border-primary/60"
                   : cta.state === "active"

@@ -11,7 +11,7 @@ import { useTactics } from "../../contexts/TacticsContext.jsx";
  * - `live` — jogo em curso (desativado).
  *
  * @param {() => void} scrollToTop Sobe o conteúdo ao topo depois de navegar.
- * @returns {{ short: string, state: "idle"|"active"|"waiting"|"live", label: string, icon: string, readyCount: number, totalCoaches: number, onClick: () => void }}
+ * @returns {{ canPlay: boolean, short: string, state: "idle"|"active"|"waiting"|"live", label: string, icon: string, readyCount: number, totalCoaches: number, onClick: () => void }}
  */
 export function usePlayCta(scrollToTop) {
   const {
@@ -65,6 +65,7 @@ export function usePlayCta(scrollToTop) {
     label: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : canPlay ? "Jogar!" : "Definir Táctica",
     short: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : canPlay ? "JOGAR" : "TÁCTICA",
     icon: state === "live" ? "sensors" : state === "waiting" ? "check_circle" : canPlay ? "play_arrow" : "strategy",
+    canPlay,
     readyCount,
     totalCoaches,
     onClick,

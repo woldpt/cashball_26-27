@@ -123,6 +123,8 @@ function PlayButton({ scrollToTop }) {
         data-tour="nav-play-mobile"
         onClick={cta.onClick}
         className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg mb-2.5 ${
+          cta.canPlay ? "animate-heartbeat motion-reduce:animate-none " : ""
+        }${
           waiting
             ? "bg-surface-container-highest text-primary border-2 border-primary shadow-black/40"
             : "bg-primary text-on-primary shadow-primary/30"
