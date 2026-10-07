@@ -109,9 +109,14 @@ let leagueDone = false;
 let resultsSeen = false;
 let advancedSeen = false;
 let lastMinute = -1;
+// O servidor limpa o 11 no fim de cada ronda: reenviá-lo antes de cada
+// Pronto, como faz o jogador ao voltar a escolher a equipa.
+let lastTactic: any = null;
 
 function sendReady() {
-  if (!leagueDone) socket.emit("setReady", true);
+  if (leagueDone) return;
+  if (lastTactic) socket.emit("setTactic", lastTactic);
+  socket.emit("setReady", true);
 }
 
 socket.on("connect", () => {
@@ -147,11 +152,8 @@ socket.on("teamSquadData", ({ squad }: any) => {
   console.log(
     `ok   — tática enviada (${titulars.length} titulares, ${subs.length} suplentes)`,
   );
-  socket.emit("setTactic", {
-    formation: "4-4-2",
-    style: "Balanced",
-    positions,
-  });
+  lastTactic = { formation: "4-4-2", style: "Balanced", positions };
+  socket.emit("setTactic", lastTactic);
   sendReady();
 });
 // Janelas de decisão (penálti, lesão, GR, subs): fallback imediato.
