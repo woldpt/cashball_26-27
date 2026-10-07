@@ -937,7 +937,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			[year],
 		);
 
-		io.to(game.roomCode).emit("seasonEnd", {
+		const seasonEndPayload = {
 			season,
 			year,
 			newSeason: game.season,
@@ -974,7 +974,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						prize: topScorers[0].prize,
 					}
 				: null,
-		});
+		};
+		io.to(game.roomCode).emit("seasonEnd", seasonEndPayload);
+		// Quem estava ligado já o viu; quem entrar depois recebe-o no lobby
+		// (só memória; limpo ao avançar o 1.º slot da época nova).
+		(game as any).lastSeasonEndPayload = seasonEndPayload;
+		(game as any).seasonEndSeenBy = new Set(
+			(Object.values(game.playersByName) as PlayerSession[])
+				.filter((p) => !!p.socketId)
+				.map((p) => p.name),
+		);
 		io.to(game.roomCode).emit("globalNewsUpdated");
 	}
 
@@ -1574,6 +1583,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game._etSimCompleted = false;
 		game.cupResultsPayload = null;
 		game.gamePhase = "lobby";
+		// Avançou do slot 0 da época nova: os prémios da época anterior já não se reemitem.
+		if (game.calendarIndex === 1) {
+			(game as any).lastSeasonEndPayload = null;
+			(game as any).seasonEndSeenBy = null;
+		}
 		resetAllReady(game);
 		clearSeatPositions(game);
 		console.log(
@@ -1891,6 +1905,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 								p.teamId === fixture.awayTeamId),
 					),
 				)?.fixture ?? drawnSetups[0].fixture;
+			// Acks que cheguem antes de o gate estar armado (cliente rápido) ficam aqui.
+			game._cupETEarlyAcks = new Set<string>();
 			io.to(game.roomCode).emit("cupExtraTimeStart", {
 				homeTeamId: primaryDrawn.homeTeamId,
 				awayTeamId: primaryDrawn.awayTeamId,
@@ -2937,6 +2953,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					resolve();
 				}
 			};
+			// Re-aplica os acks que chegaram antes de o handler existir.
+			const early = game._cupETEarlyAcks as Set<string> | undefined;
+			delete game._cupETEarlyAcks;
+			for (const socketId of early ?? []) game._cupETAnimHandler?.(socketId);
 		});
 	}
 
@@ -2950,6 +2970,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		console.log(
 			`[${game.roomCode}] 🔌 emitCurrentPhaseToSocket | phase=${game.gamePhase} | eventType=${game.currentEvent?.type ?? "none"}`,
 		);
+
+		// Fim de época perdido (sala vazia / ligação em baixo no emit): reemite uma vez.
+		if (game.gamePhase === "lobby" && (game as any).lastSeasonEndPayload) {
+			const seenBy = (game as any).seasonEndSeenBy as Set<string> | null;
+			const who = game.socketToName[socket.id];
+			if (who && seenBy && !seenBy.has(who)) {
+				socket.emit("seasonEnd", (game as any).lastSeasonEndPayload);
+				seenBy.add(who);
+			}
+		}
 
 		// Lobby during a cup week: re-emit draw so reconnecting coach sees matchup
 		if (

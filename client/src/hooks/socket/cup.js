@@ -93,6 +93,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 		}
 	});
 	socket.on("cupETHalfTime", (data) => {
+		if (!ctx.inRoom()) return;
 		// Gate before extra time — server waits for coaches in drawn fixtures
 		// to ready up; observers auto-ready below.
 		try {
@@ -139,6 +140,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 		}
 	});
 	socket.on("cupExtraTimeStart", (data) => {
+		if (!ctx.inRoom()) return;
 		// Cup match went to extra time — show animation to all connected coaches, including observers.
 		// Guard against multiple ET fixtures in the same round resetting the clock/display.
 		const alreadyInET = refs.isCupExtraTimeRef.current;
@@ -194,6 +196,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 		}
 	});
 	socket.on("extraTimeEnded", (data) => {
+		if (!ctx.inRoom()) return;
 		// ET is over, prepare for penalties or declare winner
 		// Update the score if needed
 		if (data) {
@@ -216,6 +219,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 		}
 	});
 	socket.on("extraTimeHalfTime", (data) => {
+		if (!ctx.inRoom()) return;
 		// Indicate extra time half-time in the live tab — no ready gate needed
 		handlers.setCupExtraTimeBadge(true);
 		// Update the score for the displayed fixture if we have it
@@ -243,6 +247,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 		}
 	});
 	socket.on("extraTimeSecondHalfStart", (data) => {
+		if (!ctx.inRoom()) return;
 		// Second period of extra time — update scores and keep clock running
 		if (data && data.fixture) {
 			handlers.setMatchResults((prev) => {
@@ -263,8 +268,12 @@ export function registerCupListeners(handlers, refs, ctx) {
 			});
 		}
 	});
-	socket.on("cupBracketData", (data) => handlers.setCupBracketData(data));
+	socket.on("cupBracketData", (data) => {
+		if (!ctx.inRoom()) return;
+		handlers.setCupBracketData(data);
+	});
 	socket.on("cupRoundResults", (data) => {
+		if (!ctx.inRoom()) return;
 		cupFlowLog("cupRoundResults recebido", {
 			round: data?.round,
 			isPlayingMatch: !!refs.isPlayingMatchRef.current,
@@ -288,6 +297,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 		// com a edição do briefing da ronda seguinte.
 	});
 	socket.on("cupSecondHalfStart", (data) => {
+		if (!ctx.inRoom()) return;
 		handlers.setIsMatchActionPending(false);
 		// Nao dispensar o painel de intervalo aqui: o matchSegmentStart(46)
 		// fa-lo ja com a simulacao ligada. Nao sobrescrever o matchResults
@@ -317,6 +327,7 @@ export function registerCupListeners(handlers, refs, ctx) {
 		handlers.setCurrentCupRound(data.round ?? null);
 	});
 	socket.on("cupPenaltyShootout", (data) => {
+		if (!ctx.inRoom()) return;
 		cupFlowLog("penáltis a abrir", {
 			round: data?.round,
 			homeTeamId: data?.homeTeamId,

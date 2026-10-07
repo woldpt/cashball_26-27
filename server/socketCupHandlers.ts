@@ -214,9 +214,14 @@ export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
   // ── ET animation done ───────────────────────────────────────────────────────
   socket.on("cupExtraTimeDone", () => {
     const game = getGameBySocket(socket.id);
-    if (!game || !game._cupETAnimHandler) return;
+    if (!game) return;
     // Só treinadores vinculados à sala alimentam o gate (acks de fora não contam).
     if (!getPlayerBySocket(game, socket.id)) return;
+    // Gate ainda não armado: guarda o ack (o gate re-aplica-o ao armar).
+    if (!game._cupETAnimHandler) {
+      game._cupETEarlyAcks?.add(socket.id);
+      return;
+    }
     game._cupETAnimHandler(socket.id);
   });
 

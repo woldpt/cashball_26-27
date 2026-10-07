@@ -94,7 +94,7 @@ export function GameOverlays() {
     setGameDialog,
     setPlayerHistoryModal,
     setRoomSettingsOpen,
-    setSeasonEndModal,
+    closeSeasonEndModal,
     setShowCupDrawPopup,
     setSigningCelebration,
     setTransferProposalModal,
@@ -393,7 +393,7 @@ export function GameOverlays() {
         data={postMatchFlow.showSeasonEnd ? seasonEndModal : null}
         teams={teams}
         me={me}
-        onClose={() => setSeasonEndModal(null)}
+        onClose={closeSeasonEndModal}
       />
 
       <PlayerHistoryModal

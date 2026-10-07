@@ -404,7 +404,12 @@ export function registerTransferSocketHandlers(
       "SELECT * FROM players WHERE id = ? AND team_id = ?",
       [playerId, playerState.teamId],
       (err, player) => {
-        if (err || !player) return;
+        if (err) return;
+        if (!player) {
+          // O jogador já não está no plantel (vendido/saiu): fecha o diálogo do cliente.
+          socket.emit("contractOfferExpired", { playerId });
+          return;
+        }
 
         const demandedWage = renewalDemandedWage(player);
         const acceptedWage = Math.max(0, Math.round(offeredWage || 0));
@@ -570,7 +575,11 @@ export function registerTransferSocketHandlers(
     }
 
     const pending = game.pendingRenewalCounterOffers?.[playerId];
-    if (!pending || pending.teamId !== playerState.teamId) return;
+    if (!pending || pending.teamId !== playerState.teamId) {
+      // Sem contra-proposta pendente: o diálogo que ficou aberto no cliente já não vale.
+      socket.emit("contractOfferExpired", { playerId });
+      return;
+    }
 
     if (game.auctions?.[playerId]) {
       socket.emit("systemMessage", "Jogador já entrou em leilão — a contra-proposta expirou.");

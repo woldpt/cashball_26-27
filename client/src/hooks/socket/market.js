@@ -32,6 +32,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		});
 	});
 	socket.on("auctionStarted", (auctionData) => {
+		if (!ctx.inRoom()) return;
 		// Add to activeAuctions list (used by AuctionsTab and toast)
 		handlers.setActiveAuctions((prev) => {
 			const exists = prev.find((a) => a.playerId === auctionData.playerId);
@@ -67,6 +68,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 	socket.on(
 		"auctionBidPlaced",
 		({ playerId, currentHighBid, currentHighBidTeamId, bidHistory }) => {
+			if (!ctx.inRoom()) return;
 			handlers.setActiveAuctions((prev) =>
 				prev.map((a) =>
 					a.playerId === playerId
@@ -82,6 +84,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		},
 	);
 	socket.on("auctionBidConfirmed", ({ playerId, bidAmount }) => {
+		if (!ctx.inRoom()) return;
 		handlers.setSelectedAuctionPlayer((prev) => {
 			if (prev && prev.playerId === playerId) {
 				handlers.setMyAuctionBid(bidAmount);
@@ -90,6 +93,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		});
 	});
 	socket.on("auctionClosed", (result) => {
+		if (!ctx.inRoom()) return;
 			// Mark auction with result in activeAuctions; removal happens when matchweek advances
 		handlers.setActiveAuctions((prev) =>
 			prev.map((a) =>
@@ -113,6 +117,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		});
 	});
 	socket.on("auctionPaused", ({ playerId }) => {
+		if (!ctx.inRoom()) return;
 		handlers.setActiveAuctions((prev) =>
 			prev.map((a) => (a.playerId === playerId ? { ...a, paused: true } : a)),
 		);
@@ -120,6 +125,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 	socket.on(
 		"auctionResumed",
 		({ playerId, endsAt, currentHighBid, currentHighBidTeamId }) => {
+			if (!ctx.inRoom()) return;
 			handlers.setActiveAuctions((prev) =>
 				prev.map((a) =>
 					a.playerId === playerId
@@ -266,7 +272,22 @@ export function registerMarketListeners(handlers, refs, ctx) {
 			});
 		},
 	);
+	// Proposta de renovação que já não existe (jogador saiu / contra-proposta
+	// expirada): fecha o diálogo desse jogador em vez de o deixar a falhar.
+	socket.on("contractOfferExpired", ({ playerId }) => {
+		if (!ctx.inRoom()) return;
+		const cur = refs.gameDialogRef?.current;
+		if (
+			cur &&
+			cur.kind === "contract" &&
+			Number(cur.playerId) === Number(playerId)
+		) {
+			handlers.setGameDialog(null);
+			handlers.addToast("A proposta expirou.");
+		}
+	});
 	socket.on("transferProposalResult", ({ ok, message }) => {
+		if (!ctx.inRoom()) return;
 		if (ok) {
 			handlers.setTransferProposalModal(null);
 			return;
@@ -278,6 +299,7 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		);
 	});
 	socket.on("playerSigned", (data) => {
+		if (!ctx.inRoom()) return;
 		handlers.setSigningCelebration(data);
 		// A pesquisa do scout é um instantâneo — marca o jogador como nosso
 		// para a linha passar a "Tua equipa" sem nova pesquisa.
@@ -311,5 +333,6 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		socket.off("renewContractCounterOffer");
 		socket.off("contractRenewed");
 		socket.off("contractDeclined");
+		socket.off("contractOfferExpired");
 	};
 }

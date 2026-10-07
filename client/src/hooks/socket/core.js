@@ -59,15 +59,10 @@ export function registerCoreListeners(handlers, refs, ctx) {
 	});
 	socket.on("seasonEnd", (data) => {
 		if (!ctx.inRoom()) return;
-		// Show the season-end awards modal
+		// Só abre o modal de prémios; os resets da época vivem em
+		// closeSeasonEndModal (season/year já chegam por seasonState).
 		handlers.setSeasonEndModal(data);
-		if (data.year) handlers.setSeasonYear(data.year);
-		if (data.newSeason) handlers.setSeason(data.newSeason);
-		handlers.setAllMatchResults({});
-		handlers.setMatchweekCount(0);
-		handlers.setMatchResults(null);
-		handlers.setCalendarData(null);
-		});
+	});
 	socket.on("teamSquadData", ({ teamId, squad }) => {
 		if (refs.squadCacheRef) {
 			refs.squadCacheRef.current.set(teamId, squad || []);

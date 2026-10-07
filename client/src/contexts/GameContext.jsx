@@ -1815,6 +1815,18 @@ year: seasonYear,
 	}, []);
 
 	// ── Context value ────────────────────────────────────────────────────────
+	/**
+	 * Fecha o modal de fim de época e só então zera os resultados da época
+	 * velha (zerá-los no evento `seasonEnd` apagava os dados por trás do modal).
+	 */
+	const closeSeasonEndModal = useCallback(() => {
+		setSeasonEndModal(null);
+		setAllMatchResults({});
+		setMatchweekCount(0);
+		setMatchResults(null);
+		setCalendarData(null);
+	}, []);
+
 	const value = useMemo(() => ({
 		// State
 		teams,
@@ -1908,6 +1920,7 @@ year: seasonYear,
 		setCoachMarketReport,
 		seasonEndModal,
 		setSeasonEndModal,
+		closeSeasonEndModal,
 		// Admin
 		adminUsers,
 		setAdminUsers,
@@ -2082,7 +2095,7 @@ pendingRoomInvite, setPendingRoomInvite, onAcceptRoomInvite, cupDraw, setCupDraw
 		cupDrawRevealIdx, setCupDrawRevealIdx, cupRoundResults, cupResultsFilter, setCupResultsFilter, cupPenaltyPopup,
 		setCupPenaltyPopup, cupPenaltyKickIdx, setCupPenaltyKickIdx, pendingCupRoundResults, welcomeModal, setWelcomeModal,
 		jobOfferModal, setJobOfferModal, dismissalModal, setDismissalModal, boardWarning, setBoardWarning,
-		coachMarketReport, setCoachMarketReport, seasonEndModal, setSeasonEndModal,
+		coachMarketReport, setCoachMarketReport, seasonEndModal, setSeasonEndModal, closeSeasonEndModal,
 		adminUsers, setAdminUsers, userDropdownOpen, setUserDropdownOpen, isCupMatch, calendarIndex,
 		cupPreMatch, cupMatchRoundName, currentCupRound, cupExtraTimeBadge, isCupExtraTime, cupActiveTeamIds,
 		palmares, palmaresTeamId, clubHistory, clubHistoryTeamId, clubNews, playerHistoryModal,
