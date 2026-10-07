@@ -810,7 +810,7 @@ body {
    Tintas estáticas sempre visíveis; partículas animadas só sem
    prefers-reduced-motion (sem animação ficam como pontos estáticos). */
 .wx-sol {
-  background: radial-gradient(ellipse at 85% 0%, rgba(255, 224, 130, 0.28), transparent 60%);
+  background: radial-gradient(ellipse at 85% 0%, rgba(255, 224, 130, 0.15), transparent 60%);
 }
 /* Raios: conic-gradient centrado no canto do sol, mascarado para desvanecer. */
 .wx-sol::before {
