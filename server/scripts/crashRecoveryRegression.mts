@@ -17,6 +17,8 @@
  *  S5 — quebra a meio do jogo: volta ao lobby do slot SEM tática gravada
  *       (fase/intervalo/minuto/fixtures/checkpoint descartados, Pronto + 11
  *       invalidados).
+ *  S6 — falha na transação do fecho da liga: lobby do MESMO slot, sem fixtures
+ *       nem Pronto (nunca repete o jogo com o 11 antigo).
  *
  * Run: cd server && npm run test:crash-recovery
  * Env opcional: CRASHTEST_ROOM=XXXX  (fonte da cópia; default = primeira game_*.db)
@@ -486,6 +488,24 @@ async function main(): Promise<void> {
     );
     ok(await waitForKv("gamePhase", "lobby"), "disco: fase persistida = lobby");
     ok((await kvGet("matchCheckpoint")) === "null", "chave legada matchCheckpoint limpa");
+
+    // ── S6 — falha da transação do fecho: lobby do mesmo slot, sem Prontos ────
+    console.log("\nS6 · falha no fecho da liga → lobby sem Prontos");
+    const idx6 = game.calendarIndex;
+    game.currentEvent = SEASON_CALENDAR[idx6];
+    game.gamePhase = "match_finalizing";
+    game.currentFixtures = [
+      { homeTeamId: 1, awayTeamId: 2, finalHomeGoals: 1, finalAwayGoals: 0, events: [], homeLineup: [], awayLineup: [] },
+    ];
+    setSeatIntent(game, coach5, { ready: true }, { persist: false });
+    // BEGIN já aberto na ligação => o BEGIN do fecho falha.
+    await new Promise<void>((res, rej) => game.db.run("BEGIN", (e: Error | null) => (e ? rej(e) : res())));
+    await helpers.finalizeLeagueEvent(game);
+    await new Promise<void>((res) => game.db.run("ROLLBACK", () => res()));
+    ok(game.gamePhase === "lobby", "fase volta a lobby após falha do fecho");
+    ok(game.calendarIndex === idx6, "mesmo slot (calendário não avançou)");
+    ok(game.currentFixtures.length === 0, "fixtures descartadas");
+    ok(game.seats[coach5]?.intent.ready === false, "nenhum assento pronto");
   } finally {
     if (activeGames[TEST_ROOM]) {
       await closeRoom(activeGames[TEST_ROOM]);

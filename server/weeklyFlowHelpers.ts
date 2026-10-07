@@ -1110,9 +1110,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       console.error(
         `[${game.roomCode}] ❌ finalize watchdog: fase presa em match_finalizing — a libertar para lobby`,
       );
-      game.gamePhase = "lobby";
       segmentRunning[game.roomCode] = false;
-      saveGameState(game);
+      revertWeekToLobby(game);
       console.error(
         `[${game.roomCode}] ⚠ finalização da jornada presa — sala libertada para o lobby`,
       );
@@ -1353,7 +1352,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           });
         } catch (txErr) {
           console.error(`[${game.roomCode}] Standings update error:`, txErr);
-          game.gamePhase = "lobby";
+          revertWeekToLobby(game);
           resolveOuter();
           return;
         }
@@ -1690,6 +1689,19 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         })();
       })();
     });
+  }
+
+  // Falha no fecho da jornada: volta ao lobby do MESMO slot, sem Prontos nem
+  // fixtures (regeneram no próximo arranque) — a jornada rejoga-se do 0, como
+  // numa quebra. Sem isto a fase ficava presa ou o jogo repetia com o 11 antigo.
+  function revertWeekToLobby(game: ActiveGame) {
+    game.gamePhase = "lobby";
+    game.currentFixtures = [];
+    game.lastHalftimePayload = null;
+    resetAllReady(game);
+    clearSeatPositions(game);
+    emitPresence(game);
+    saveGameState(game);
   }
 
   // ─── MAIN DISPATCH: checkAllReady ────────────────────────────────────────────
@@ -2319,5 +2331,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // slot já finalizado. Não usadas pelo fluxo normal (index.ts).
     applyWeeklyFinancesOnce,
     recoverFinalizedSlot,
+    finalizeLeagueEvent,
   };
 }

@@ -2514,13 +2514,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			console.error(
 				`[${game.roomCode}] ⚠ Falha ao gravar a ronda da Taça — resultados provisórios.`,
 			);
-			game.gamePhase = "lobby";
-			game.currentFixtures = [];
-			game.cupHalftimePayload = null;
-			resetAllReady(game);
-			clearSeatPositions(game);
-			emitPresence(game);
-			saveGameState(game);
+			revertRoundToLobby(game);
 			return;
 		}
 		const { results, upsets } = cupOutcome;
@@ -2739,6 +2733,19 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		return results;
 	}
 
+	// Falha ao gravar a ronda (Taça/amigável): lobby do mesmo slot, sem Prontos nem
+	// fixtures — a ronda rejoga-se do 0 (como após uma quebra).
+	function revertRoundToLobby(game: ActiveGame) {
+		game.gamePhase = "lobby";
+		game.currentFixtures = [];
+		game.cupHalftimePayload = null;
+		game.lastHalftimePayload = null;
+		resetAllReady(game);
+		clearSeatPositions(game);
+		emitPresence(game);
+		saveGameState(game);
+	}
+
 	// ─── FRIENDLY FINALIZATION ──────────────────────────────────────────────────
 	// Amigavel de pre-epoca (slot 0, ronda 0): sem ET/penaltis (empates ficam),
 	// sem apurados, sem premios. Bilheteira dividida a meio; treino e evolucao
@@ -2782,7 +2789,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				await dbRunOn(game, "ROLLBACK").catch(() => {});
 			}
 		});
-		if (friendlyTxFailed) return;
+		if (friendlyTxFailed) {
+			revertRoundToLobby(game);
+			return;
+		}
 		// Saldo de fim de semana (inclui a bilheteira do amigável).
 		await snapshotBalanceHistory(
 			game,
