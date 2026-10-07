@@ -216,7 +216,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     >
       {teamInfo?.crest && (
         // Célula do brasão: sem tile, zoom grande, cortado e inclinado; o texto começa a seguir.
-        <div aria-hidden className="absolute left-0 inset-y-0 w-36 overflow-hidden pointer-events-none">
+        <div aria-hidden className="absolute left-0 inset-y-0 w-36 overflow-hidden max-lg:hidden pointer-events-none">
           <img
             src={teamInfo.crest}
             alt=""
@@ -224,7 +224,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
           />
         </div>
       )}
-      <div className={`relative flex items-center gap-3 w-full ${teamInfo?.crest ? "pl-40 pr-3" : "px-3 lg:pl-6"} md:grid md:grid-cols-[1fr_auto_1fr]`}>
+      <div className={`relative flex items-center gap-3 w-full ${teamInfo?.crest ? "lg:pl-40 pr-3 pl-3" : "px-3 lg:pl-6"} md:grid md:grid-cols-[1fr_auto_1fr]`}>
         {/* Esquerda: o meu clube + semana (no mobile, também o adversário) */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {!teamInfo?.crest && <TeamCrest team={teamInfo} size="w-9 h-9 text-sm" />}
