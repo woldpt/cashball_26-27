@@ -191,7 +191,7 @@ export function JournalTab({
         </div>
 
         {/* ── Leitor (à direita, ~2/3) ───────────────────────────────── */}
-        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2`}>
+        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:sticky lg:top-2 lg:h-[calc(100dvh-9rem)] lg:overflow-y-auto`}>
           <Button
             variant="ghost"
             size="sm"
