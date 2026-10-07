@@ -1,8 +1,3 @@
-## Race conditions do flow: janelas × modais (2026-10-07)
-- Fila de transações por sala (`runRoomTask`), fecho que falha volta ao lobby do mesmo slot, fim de época retomável por passos (`applied_weeks` + `game_state`), Pronto/barreira do 11 e concorrência entre treinadores, carências em slots, popups vs fase no cliente e 3 verificações novas no `audit:gamestate`. Plano: `docs/plans/2026-10-07-race-conditions-flow.md`.
-- Porquê: uma só ligação SQLite fazia transações alheias colidirem; quebras a meio do fecho/fim de época repetiam prémios ou deixavam a sala presa.
-- Testado: typecheck, lint, check:types, `test:room-tx` (novo), `test:crash-recovery` (S6/S7), `test:session-freeze` (F16/F17), `test:finalize` E2E, `test:connect-smoke`, `audit:socketio`. `test:staff` (NPC de D1 sem auxiliar) e lint do `landing-resp-test.jsx` já falhavam antes.
-
 ## Robustez de sessão/presença (2026-10-07)
 - Lease começa na queda do socket; janelas de decisão nunca decidem `auto` por quem só tem lease; join passivo (separador oculto) não rouba o assento; `presencePing` + gate de join no cliente; contra-proposta/convite sobrevivem à queda. Plano: `docs/plans/2026-10-07-sessao-presenca-mobile.md`.
 - Porquê: bloqueios de ecrã do telemóvel congelavam/descongelavam a sala e a lista `players` tratava a equipa como NPC.
@@ -148,3 +143,7 @@
 - Cliente: `sw.v10.js` (tag `<tipo>:<sala>`, navega para o deep link `/?room=`, `pushsubscriptionchange`), re-registo da subscrição no arranque, interruptores por tipo no painel Avisos; o painel passa a mudar o texto-base (antes só falava do lobby).
 - Verificação: `test:push` 12 testes · server `typecheck` + `test:connect-smoke` + `test:session-freeze` + `test:engine-unit` + `test:segment-barrier` + `cupLobbyAdvanceRegression` + `audit:socketio` 0 erros · client `lint` + `check:types` · `test:mobile` 185/185 + screenshots do painel · `audit:gamestate` sem sala viva fica para a próxima.
 
+## Consistência de estado no frontend (2026-10-08)
+- Limpar a tática mantém a formação; contagens ignoram ids fora do plantel; subs voltam do servidor após reload ao intervalo; plantel/finanças/standings emitidos em ordem; reconexão em lobby limpa o resultado parcial; leilão reaberto, lance offline, Pronto com patrocinador, tabs e guardas de sala; estado de leilão legado removido. Plano: `docs/plans/2026-10-08-consistencia-estado-frontend.md`.
+- Porquê: o que o cliente mostrava/enviava divergia do servidor (11 que nunca chegava, subs a mais, plantel com segundos de atraso).
+- Testado: client `lint` (só o `landing-resp-test.jsx`, já falhava) + `check:types` + `test:tacticpositions` (novo) + `build`; server `typecheck` + `test:finalize` + `audit:socketio`. Reload/rede/Taça por testar à mão.
