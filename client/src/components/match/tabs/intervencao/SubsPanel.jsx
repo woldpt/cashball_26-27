@@ -188,8 +188,13 @@ export function SubsPanel({
 
   // Contexto único para o estado dos cartões — titulares, banco e landscape
   // aplicam as mesmas regras via getPitchCardState/getBenchCardState.
+  const justInIds = useMemo(
+    () => new Set((confirmedSubs || []).map((s) => Number(s.in))),
+    [confirmedSubs],
+  );
   const cardCtx = useMemo(
     () => ({
+      justInIds,
       isHalftime,
       isForcedSwap,
       isGkRedCard,
@@ -216,6 +221,7 @@ export function SubsPanel({
       effectiveOutId,
       selectedInId,
       playerMatchStats,
+      justInIds,
     ],
   );
 
@@ -490,7 +496,7 @@ export function SubsPanel({
               )}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-1.5" style={{ WebkitOverflowScrolling: "touch" }}>
                 {onPitchPlayers.map((p) => {
-                  const { disabled, selected, forcedOut, stats } =
+                  const { disabled, selected, forcedOut, stats, justIn } =
                     getPitchCardState(p, cardCtx);
                   return (
                     <CompactPlayerCard
@@ -508,6 +514,7 @@ export function SubsPanel({
                       yellowCards={stats?.yellowCards ?? 0}
                       swapIndicator={isHalftime}
                       forcedOut={forcedOut}
+                      justIn={justIn}
                       draggable={!disabled}
                       onDragStart={handleDragStart(p, "pitch")}
                       onDragOver={handleDragOver("pitch")}
@@ -742,6 +749,78 @@ export function SubsPanel({
   );
 }
 
+/* Etiqueta «Sai → Entra» do botão de confirmação (nome de quem sai → quem entra). */
+function SwapLabel({ out, inn }) {
+  return (
+    <span className="flex min-w-0 items-center gap-1.5 truncate">
+      <span className="truncate">{out}</span>
+      <span aria-hidden="true" className="shrink-0 opacity-70">→</span>
+      <span className="truncate">{inn}</span>
+    </span>
+  );
+}
+
+const PILL_TONES = {
+  emerald: {
+    bg: "bg-gradient-to-b from-emerald-300 via-emerald-400 to-emerald-600 text-emerald-950 ring-1 ring-white/40",
+    glow: "0 0 0 0 rgba(52,211,153,0.55)",
+    glowEnd: "0 0 0 14px rgba(52,211,153,0)",
+    shadow: "shadow-[0_10px_30px_-6px_rgba(16,185,129,0.65),inset_0_1px_0_rgba(255,255,255,0.55)]",
+  },
+  indigo: {
+    bg: "bg-gradient-to-b from-indigo-400 via-indigo-500 to-indigo-700 text-white ring-1 ring-white/30",
+    glow: "0 0 0 0 rgba(129,140,248,0.55)",
+    glowEnd: "0 0 0 14px rgba(129,140,248,0)",
+    shadow: "shadow-[0_10px_30px_-6px_rgba(99,102,241,0.65),inset_0_1px_0_rgba(255,255,255,0.4)]",
+  },
+};
+
+/* ── ConfirmPill — botão de confirmação com entrada em mola, halo pulsante e
+ * brilho a varrer. Movimento reduzido: sem halo nem brilho. */
+function ConfirmPill({ tone, onClick, disabled, ariaLabel, icon, children }) {
+  const t = PILL_TONES[tone];
+  const reduced = usePrefersReducedMotion();
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      initial={reduced ? false : { opacity: 0, scale: 0.8, y: 8 }}
+      animate={
+        reduced
+          ? { opacity: 1 }
+          : { opacity: 1, scale: 1, y: 0, boxShadow: [t.glow, t.glowEnd] }
+      }
+      transition={
+        reduced
+          ? { duration: 0 }
+          : {
+              default: { type: "spring", stiffness: 380, damping: 22 },
+              boxShadow: { duration: 1.6, repeat: Infinity, ease: "easeOut" },
+            }
+      }
+      whileHover={reduced ? undefined : { scale: 1.04 }}
+      whileTap={reduced ? undefined : { scale: 0.94 }}
+      className={`pointer-events-auto relative flex min-h-12 max-w-[calc(100%-2rem)] items-center gap-2 overflow-hidden rounded-full px-6 py-2.5 text-sm font-black tracking-tight ${t.bg} ${t.shadow} disabled:opacity-70`}
+    >
+      {!reduced && (
+        <motion.span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/50 to-transparent"
+          initial={{ x: "-150%" }}
+          animate={{ x: "450%" }}
+          transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 1.6, ease: "easeInOut" }}
+        />
+      )}
+      <span className="relative flex shrink-0 items-center justify-center rounded-full bg-black/15 p-1">
+        {icon}
+      </span>
+      <span className="relative min-w-0 truncate">{children}</span>
+    </motion.button>
+  );
+}
+
 /* ── FloatingConfirmButton — pill de confirmação ao centro ───────────────
  * Um só botão a meio do ecrã, visível quando ambos os intervenientes estão
  * escolhidos (todos os modos: intervalo/pausa em fila, GR improvisado e
@@ -782,46 +861,39 @@ function FloatingConfirmButton({
         </>
       )}
       {isHalftime || isUserSubPause ? (
-        <button
-          type="button"
+        <ConfirmPill
+          tone="emerald"
           onClick={onQueue}
           disabled={confirming}
-          aria-label={`Substituir ${sourcePlayer?.name} por ${targetPlayer?.name}`}
-          className="pointer-events-auto flex min-h-11 max-w-[calc(100%-2rem)] items-center gap-2 rounded-full bg-emerald-500 px-5 py-2 text-sm font-black text-zinc-950 shadow-2xl shadow-emerald-500/30 transition-transform active:scale-95 disabled:opacity-70"
+          ariaLabel={`Substituir ${sourcePlayer?.name} por ${targetPlayer?.name}`}
+          icon={<MatchIcon name="confirm" className="h-4 w-4 shrink-0" />}
         >
-          <MatchIcon name="confirm" className="h-4 w-4 shrink-0" />
-          <span className="truncate min-w-0">
-            Sai {sourcePlayer?.name} → Entra {targetPlayer?.name}
-          </span>
-        </button>
+          <SwapLabel out={sourcePlayer?.name} inn={targetPlayer?.name} />
+        </ConfirmPill>
       ) : isEmergencyGk ? (
-        <button
-          type="button"
+        <ConfirmPill
+          tone="indigo"
           onClick={onResolveGk}
           disabled={confirming}
-          aria-label={`${targetPlayer?.name} vai para a baliza`}
-          className="pointer-events-auto flex min-h-11 max-w-[calc(100%-2rem)] items-center gap-2 rounded-full bg-indigo-500 px-5 py-2 text-sm font-black text-white shadow-2xl shadow-indigo-500/30 transition-transform active:scale-95 disabled:opacity-70"
+          ariaLabel={`${targetPlayer?.name} vai para a baliza`}
+          icon={<span aria-hidden="true" className="text-sm leading-none">🧤</span>}
         >
-          <span aria-hidden="true" className="text-sm leading-none">🧤</span>
-          <span className="truncate min-w-0">
-            {targetPlayer?.name} para a baliza
-          </span>
-        </button>
+          <span className="truncate">{targetPlayer?.name} para a baliza</span>
+        </ConfirmPill>
       ) : (
-        <button
-          type="button"
+        <ConfirmPill
+          tone="indigo"
           onClick={onResolveSwap}
           disabled={confirming}
-          aria-label={noReplacement ? "Continuar sem substituição" : `Substituir ${sourcePlayer?.name} por ${targetPlayer?.name}`}
-          className="pointer-events-auto flex min-h-11 max-w-[calc(100%-2rem)] items-center gap-2 rounded-full bg-indigo-500 px-5 py-2 text-sm font-black text-white shadow-2xl shadow-indigo-500/30 transition-transform active:scale-95 disabled:opacity-70"
+          ariaLabel={noReplacement ? "Continuar sem substituição" : `Substituir ${sourcePlayer?.name} por ${targetPlayer?.name}`}
+          icon={<MatchIcon name="confirm" className="h-4 w-4 shrink-0" />}
         >
-          <MatchIcon name="confirm" className="h-4 w-4 shrink-0" />
-          <span className="truncate min-w-0">
-            {noReplacement
-              ? "Continuar sem substituição"
-              : `Sai ${sourcePlayer?.name} → Entra ${targetPlayer?.name}`}
-          </span>
-        </button>
+          {noReplacement ? (
+            <span className="truncate">Continuar sem substituição</span>
+          ) : (
+            <SwapLabel out={sourcePlayer?.name} inn={targetPlayer?.name} />
+          )}
+        </ConfirmPill>
       )}
     </div>
   );

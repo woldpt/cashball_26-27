@@ -27,6 +27,7 @@ import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
  * @param {boolean} [props.skillLast] - SKILL em último (Intervenção em vertical).
  * @param {boolean} [props.posRight] - Posição à extrema direita (banco mobile).
  * @param {boolean} [props.forcedOut] - Substitução obrigatória (destaque vermelho).
+ * @param {boolean} [props.justIn] - Acabou de entrar (selo «Entrou»).
  * @param {boolean} [props.draggable] - Arrastável (DnD desktop).
  */
 export function CompactPlayerCard({
@@ -43,6 +44,7 @@ export function CompactPlayerCard({
   goals = 0,
   yellowCards = 0,
   forcedOut = false,
+  justIn = false,
   draggable = false,
   dragOver = false,
   onDragStart,
@@ -61,7 +63,9 @@ export function CompactPlayerCard({
       ? "border-white/60 bg-white/10"
       : disabled
         ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
-        : `cursor-pointer border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30`;
+        : justIn
+          ? "cursor-pointer border-emerald-400/60 bg-emerald-500/10 shadow-[0_0_14px_rgba(52,211,153,0.25)] hover:-translate-y-px"
+          : `cursor-pointer border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30`;
 
   // Chip de posição — à esquerda por omissão; com `posRight` (banco
   // mobile) rende-se à extrema direita, após o BadgeSkills, para o peek
@@ -97,6 +101,11 @@ export function CompactPlayerCard({
       {forcedOut && (
         <span className="absolute top-0 right-10 px-1.5 py-px bg-red-500/90 text-white text-[8px] font-black uppercase tracking-widest rounded-bl-md">
           Obrigatório
+        </span>
+      )}
+      {justIn && !forcedOut && (
+        <span className="absolute top-0 right-10 px-1.5 py-px bg-emerald-400 text-zinc-950 text-[8px] font-black uppercase tracking-widest rounded-bl-md">
+          Entrou
         </span>
       )}
       {/* Position accent bar */}

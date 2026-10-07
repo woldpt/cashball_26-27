@@ -44,6 +44,7 @@ export function usePrefersReducedMotion() {
  * @property {boolean} grAvailableOnBench - Há GR disponível no banco?
  * @property {number|string|null} effectiveOutId - Id de quem sai (seleção + forçado).
  * @property {number|string|null} selectedInId - Id de quem entra.
+ * @property {Set<number>} [justInIds] - Ids de quem entrou em substituições confirmadas.
  * @property {Map|null} playerMatchStats - Golos/amarelos por jogador.
  *
  * @typedef {object} PitchCardState
@@ -51,6 +52,7 @@ export function usePrefersReducedMotion() {
  * @property {boolean} selected - Cartão selecionado (quem sai / vai à baliza).
  * @property {boolean} forcedOut - Saída obrigatória (destaque vermelho).
  * @property {object|undefined} stats - Golos e amarelos no jogo.
+ * @property {boolean} justIn - Entrou numa substituição desta pausa/intervalo.
  */
 
 /**
@@ -73,6 +75,7 @@ export function getPitchCardState(p, ctx) {
     effectiveOutId,
     selectedInId,
     playerMatchStats,
+    justInIds,
   } = ctx;
   const noGrReplacement =
     isHalftime && p.position === "GR" && !grAvailableOnBench;
@@ -96,6 +99,7 @@ export function getPitchCardState(p, ctx) {
       !!forceOutPlayer &&
       p.id === forceOutPlayer.id,
     stats: playerMatchStats?.get(p.id),
+    justIn: !!justInIds?.has(Number(p.id)),
   };
 }
 

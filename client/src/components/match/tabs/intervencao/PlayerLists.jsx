@@ -82,7 +82,7 @@ export function TitularesColumn({
       )}
       <div className={flat ? "space-y-2 px-3 pt-2 pb-3" : "flex-1 overflow-y-auto px-3 py-2.5 space-y-2"}>
         {players.map((p) => {
-          const { disabled, selected, forcedOut, stats } = getPitchCardState(
+          const { disabled, selected, forcedOut, stats, justIn } = getPitchCardState(
             p,
             cardCtx,
           );
@@ -103,6 +103,7 @@ export function TitularesColumn({
               yellowCards={stats?.yellowCards ?? 0}
               swapIndicator={isHalftime}
               forcedOut={forcedOut}
+              justIn={justIn}
               draggable={!disabled}
               onDragStart={handleDragStart(p, "pitch")}
               onDragOver={handleDragOver("pitch")}
