@@ -105,7 +105,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip, c
 						? "inset-y-0 items-center"
 						: placeAbove
 							? "top-0 items-start"
-							: "items-end bottom-24 lg:bottom-6"
+							: "items-end pb-0 bottom-[var(--mobile-nav-h)] max-lg:landscape:bottom-0 lg:bottom-0"
 				}`}
 			>
 				<motion.div
@@ -121,19 +121,19 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip, c
 					transition={{ duration: 0.3 }}
 				>
 					<AssistantMascot mood="worried" color={color} />
-					<div className="relative flex-1 min-w-0 bg-white border-[3px] border-zinc-900 rounded-3xl p-4 text-zinc-900 shadow-[0_18px_50px_rgba(0,0,0,0.45)]">
+					<div className="relative flex-1 min-w-0 mb-3 lg:mb-6 bg-surface-container-high border border-outline-variant/40 border-l-4 border-l-primary rounded-lg p-3 pl-4 text-on-surface shadow-xl shadow-black/50">
 						{/* Rabicho para o retrato (fica sempre à esquerda do balão) */}
 						<span
 							aria-hidden
-							className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[11px] border-l-[3px] border-b-[3px] border-zinc-900"
+							className="absolute bottom-5 w-3 h-3 rotate-45 bg-surface-container-high -left-[7px] border-l border-b border-outline-variant/40"
 						/>
-						<p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+						<p className="text-[10px] font-black uppercase tracking-widest text-primary">
 							Treinador-adjunto · Passo {stepIndex + 1} de {total}
 						</p>
-						<h3 className="text-base font-black font-headline tracking-tight text-zinc-900 uppercase mt-0.5">
+						<h3 className="text-base font-black font-headline tracking-tight text-on-surface uppercase mt-0.5">
 							{step.title}
 						</h3>
-						<p className="relative text-sm text-zinc-700 leading-relaxed mt-1">
+						<p className="relative text-sm text-on-surface-variant leading-relaxed mt-1">
 							{/* Altura final reservada desde o início; a máquina escreve por cima. */}
 							<span className="invisible" aria-hidden="true">
 								{step.text}
@@ -143,7 +143,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip, c
 								{!done && (
 									<span
 										aria-hidden="true"
-										className="animate-pulse font-black text-emerald-700"
+										className="animate-pulse font-black text-primary"
 									>
 										▌
 									</span>
@@ -155,7 +155,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip, c
 							{COACH_TUTORIAL_STEPS.map((s, i) => (
 								<span
 									key={s.id}
-									className={`h-1 flex-1 rounded-full ${i <= stepIndex ? "bg-primary" : "bg-zinc-200"}`}
+									className={`h-1 flex-1 rounded-full ${i <= stepIndex ? "bg-primary" : "bg-outline-variant/40"}`}
 								/>
 							))}
 						</div>
@@ -163,7 +163,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip, c
 							<button
 								type="button"
 								onClick={onSkip}
-								className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-zinc-900 transition-colors px-1 py-2"
+								className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors px-1 py-2"
 							>
 								Saltar
 							</button>
