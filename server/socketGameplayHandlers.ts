@@ -20,6 +20,7 @@ import {
   releaseSeat,
   setSeatIntent,
   waitForPresence,
+  PRESENCE_GRACE_MS,
 } from "./roomStateHelpers";
 
 interface GameplayHandlerDeps {
@@ -282,7 +283,9 @@ export function registerGameplaySocketHandlers(
       socket.emit("matchActionResolved", { source: "auto" });
       return;
     }
-    if (pendingAction.teamId !== teamId) return;
+    // Só o dono da equipa resolve (o teamId do cliente não é de confiança).
+    const ps = getPlayerBySocket(game, socket.id);
+    if (!ps || pendingAction.teamId !== ps.teamId) return;
     takePendingMatchAction(game, actionId);
 
     const pending: any = pendingAction;
@@ -459,6 +462,16 @@ export function registerGameplaySocketHandlers(
 
     // Presença mudou: emitir o estado de pausa (agora bloqueado) e congelar.
     emitPresencePause(game, io);
+
+    // A grace expira sem evento nenhum: reavaliar a presença nessa altura para
+    // os clientes verem a equipa como ausente (e a pausa) sem esperar por outro evento.
+    const droppedName = playerState.name;
+    setTimeout(() => {
+      if (game.purged) return;
+      if (game.playersByName[droppedName]?.socketId) return;
+      emitPresence(game);
+      emitPresencePause(game, io);
+    }, PRESENCE_GRACE_MS + 1000);
 
     // Clear phase timer to prevent stale timeouts after disconnect/reconnect
     if (game.phaseTimer) {

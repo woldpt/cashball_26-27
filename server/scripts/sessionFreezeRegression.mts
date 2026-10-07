@@ -24,6 +24,9 @@
  *   F12 — hasHumanTeamInFixtures: gates de consentimento decidem por quem tem
  *        clube (assento), não por quem está ligado — um treinador com jogo
  *        offline não perde o Pronto e rondas só-NPC seguem sem confirmação
+ *   F13 — unbindSocket: o lease começa na queda (não no último pacote)
+ *   F14 — waitForMatchAction: presença só por lease nunca resolve `auto`
+ *   F15 — waitForMatchAction: assento libertado resolve `auto` e esvazia os pendentes
  *
  * Run: cd server && npm run test:session-freeze
  */
@@ -49,6 +52,8 @@ const {
   hasHumanTeamInFixtures,
   PRESENCE_GRACE_MS,
 } = require("../roomStateHelpers.ts");
+const { bindSocket, unbindSocket } = require("../gameManager.ts");
+const { waitForMatchAction, getPendingMatchActions } = require("../game/engine.ts");
 
 const HOME = 10;
 const AWAY = 20;
@@ -371,4 +376,69 @@ test("F12 — gates de consentimento decidem por quem tem clube, não por quem e
 
   // Fixtures vazias: nunca há gate humano.
   assert.equal(hasHumanTeamInFixtures(online, []), false);
+});
+
+// ── F13 ─────────────────────────────────────────────────────────────────────
+test("F13 — o lease começa na queda do socket, não no último pacote", () => {
+  const game: any = makeGame({ db: { run: () => {} }, socketToName: {} });
+  game.seats["A"] = seat("A", HOME);
+  game.playersByName["A"] = { name: "A", teamId: HOME, socketId: null };
+  bindSocket(game, "A", "s1");
+  // Treinador a ver o jogo sem clicar há 5 min: o último pacote é antigo.
+  game.seatSeenAt["A"] = Date.now() - 5 * 60_000;
+  unbindSocket(game, "s1");
+  // Sem o fix ficava ausente no próprio instante da queda.
+  assert.equal(isSeatPresent(game, "A"), true);
+
+  const realNow = Date.now;
+  try {
+    Date.now = () => realNow() + PRESENCE_GRACE_MS + 1000;
+    assert.equal(isSeatPresent(game, "A"), false, "passada a grace volta a ausente");
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+// ── F14/F15 ─────────────────────────────────────────────────────────────────
+function leaseOnlyGame() {
+  const game: any = makeGame({ db: { run: () => {} } });
+  game.seats["A"] = seat("A", HOME);
+  // Sem socket mas com lease fresco: presente só por lease.
+  game.playersByName["A"] = { name: "A", teamId: HOME, socketId: null };
+  game.seatSeenAt["A"] = Date.now();
+  return game;
+}
+const actionArgs = (game: any, io: any) => ({
+  game,
+  io,
+  type: "injury",
+  teamId: HOME,
+  payload: {},
+  timeoutMs: 50,
+  fallback: () => null,
+});
+
+test("F14 — janela de decisão com presença só por lease não resolve `auto`", async () => {
+  const game = leaseOnlyGame();
+  const io = ioStub();
+  let resolved: any = null;
+  const pending = waitForMatchAction(actionArgs(game, io)).then((r: any) => (resolved = r));
+  await new Promise((r) => setTimeout(r, 150));
+  assert.equal(resolved, null, "não pode decidir por um treinador só presente por lease");
+  assert.equal(getPendingMatchActions(game).size, 1, "a ação continua pendente");
+
+  // Limpeza: libertar o assento resolve a janela.
+  releaseSeat(game, "A", "left");
+  await pending;
+});
+
+test("F15 — assento libertado resolve a janela `auto` e esvazia os pendentes", async () => {
+  const game = leaseOnlyGame();
+  const io = ioStub();
+  const pending = waitForMatchAction(actionArgs(game, io));
+  await new Promise((r) => setTimeout(r, 20));
+  releaseSeat(game, "A", "left");
+  const res = await pending;
+  assert.equal(res.source, "auto");
+  assert.equal(getPendingMatchActions(game).size, 0);
 });

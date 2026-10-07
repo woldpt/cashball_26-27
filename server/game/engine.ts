@@ -502,7 +502,7 @@ export function listTeamMatchActions(
   return [...map.values()].filter((pa) => pa && pa.teamId === teamId);
 }
 
-async function waitForMatchAction({
+export async function waitForMatchAction({
   game,
   io,
   type,
@@ -529,6 +529,13 @@ async function waitForMatchAction({
     return Promise.resolve({ choice: fallback(), source: "auto" });
   }
 
+  // Assento libertado explicitamente (leave/kick/despedida/adminReleaseRoom):
+  // é o único consentimento para decidir por ele (`source:"auto"`).
+  const released = () =>
+    !game.playersByName[humanCoach.name] ||
+    (game.seats[humanCoach.name] &&
+      game.seats[humanCoach.name].status !== "member");
+
   // Treinador humano AUSENTE: a sala congela. Não se decide por ele — era
   // exatamente isto que fazia o jogo avançar sozinho para a jornada seguinte
   // enquanto o telemóvel estava sem rede. Nada anda até ele voltar (ou o
@@ -540,6 +547,7 @@ async function waitForMatchAction({
     });
     maybeNotifyWaiting(game);
     await waitForPresence(game, io);
+    if (released()) return { choice: fallback(), source: "auto" };
   }
 
   return new Promise<{ choice: MatchActionChoice; source: string }>((resolve) => {
@@ -574,6 +582,22 @@ async function waitForMatchAction({
     // dela, o relógio reinicia quando voltar em vez de decidir por ele.
     const arm = (): ReturnType<typeof setTimeout> => {
       const t = setTimeout(async () => {
+        const entry0 = getPendingMatchActions(game).get(actionId);
+        if (!entry0) return; // já consumida (leave/kick/resolve)
+        if (released()) {
+          finalize(fallback(), "auto");
+          return;
+        }
+        // Presente só por lease (socket caído, dentro da grace): nunca decidir
+        // por ele. Reinicia o prazo; o rejoin reenvia `matchActionRequired`.
+        if (
+          isSeatPresent(game, humanCoach.name) &&
+          !game.playersByName[humanCoach.name]?.socketId
+        ) {
+          entry0.expiresAt = Date.now() + timeoutMs;
+          entry0.timer = arm();
+          return;
+        }
         if (!isSeatPresent(game, humanCoach.name)) {
           io.to(game.roomCode).emit("matchActionBlocked", {
             actionId,
@@ -585,6 +609,10 @@ async function waitForMatchAction({
           await waitForPresence(game, io);
           const entry = getPendingMatchActions(game).get(actionId);
           if (!entry) return; // foi consumida entretanto (leave/kick)
+          if (released()) {
+            finalize(fallback(), "auto");
+            return;
+          }
           entry.expiresAt = Date.now() + timeoutMs;
           entry.timer = arm();
           io.to(game.roomCode).emit("matchActionRequired", {

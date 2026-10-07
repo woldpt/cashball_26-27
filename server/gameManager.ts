@@ -9,6 +9,7 @@ import { getOfflineCoaches, getRoomRoster } from "./presenceHelpers";
 import {
   backfillSeats,
   clearSeatPositions,
+  isSeatPresent,
   loadEventSeq,
   loadSeats,
   markSeatSeen,
@@ -1159,6 +1160,9 @@ function unbindSocket(game: ActiveGame, socketId: string): void {
   // ser dele. Só `leaveRoom`/kick/despedimento/libertamento pelo admin o
   // removem. A presença cai porque o lease (seatSeenAt) deixa de ser renovado.
   if (name) {
+    // O lease começa na queda (não no último pacote): quem via o jogo sem
+    // clicar há >90 s não pode ficar ausente no próprio instante da queda.
+    markSeatSeen(game, name);
     const seat = seatOf(game, name);
     seat.lastSeenAt = Date.now();
     persistSeat(game, seat);
@@ -1193,7 +1197,11 @@ function getPlayerList(game: ActiveGame): PlayerSession[] {
  */
 function emitPresence(game: ActiveGame, io: any): void {
   io.to(game.roomCode).emit("playerListUpdate", {
-    players: getPlayerList(game),
+    // Mesma definição de presença do roster: socket ligado OU lease dentro da
+    // grace (um bloqueio de ecrã não faz da equipa um NPC nas outras vistas).
+    players: Object.values(game.playersByName).filter(
+      (p) => p.socketId || isSeatPresent(game, p.name),
+    ),
     roomCreator: game.roomCreator || "",
   });
   io.to(game.roomCode).emit("awaitingCoaches", getOfflineCoaches(game));
