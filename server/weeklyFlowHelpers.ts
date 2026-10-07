@@ -1955,6 +1955,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       segmentRunning[game.roomCode] = false;
       return;
     }
+    // As finanças semanais mexeram nos saldos: o cliente tem de os ver já.
+    getTeamsWithCoachNames(game.db)
+      .then((t: any[]) => io.to(game.roomCode).emit("teamsData", t))
+      .catch(() => {});
 
     try {
       if (entry.type === "friendly") {

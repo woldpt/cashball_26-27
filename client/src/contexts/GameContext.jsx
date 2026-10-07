@@ -935,9 +935,9 @@ year: seasonYear,
 	}, [activeTab, me?.teamId]);
 
 	useEffect(() => {
-		if (activeTab !== "finances" || !me?.teamId) return;
+		if (activeTab !== "finances" || !me?.teamId || disconnected) return;
 		socket.emit("requestFinanceData", { teamId: me.teamId });
-	}, [activeTab, me?.teamId, matchweekCount]);
+	}, [activeTab, me?.teamId, matchweekCount, calendarIndex, disconnected]);
 
 	useEffect(() => {
 		if (!me?.teamId) return;
@@ -966,9 +966,9 @@ year: seasonYear,
 	}, [matchweekCount]);
 
 	useEffect(() => {
-		if (activeTab !== "calendario") return;
+		if (activeTab !== "calendario" || disconnected) return;
 		socket.emit("requestCalendar");
-	}, [activeTab, matchweekCount]);
+	}, [activeTab, matchweekCount, calendarIndex, disconnected]);
 
 	// Plantéis em cache só valem dentro da época (mercado/época nova muda tudo).
 	useEffect(() => {
