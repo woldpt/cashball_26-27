@@ -94,7 +94,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen, color }) {
       // `invisible` (e não desmontar) com o fly-up aberto: o balão está no
       // mesmo ancoradouro do menu e, com z maior, roubava-lhe os toques —
       // escondido, o texto e o gate do onze ficam intactos.
-      className={`fixed bottom-[calc(var(--mobile-nav-h)+0.5rem)] max-lg:landscape:bottom-2 lg:bottom-6 left-0 right-0 pointer-events-none flex justify-center lg:justify-end px-3 lg:pr-6 ${menuOpen ? "invisible" : ""}`}
+      className={`fixed bottom-[var(--mobile-nav-h)] max-lg:landscape:bottom-0 lg:bottom-0 left-0 right-0 pointer-events-none flex justify-center lg:justify-end px-3 lg:pr-6 ${menuOpen ? "invisible" : ""}`}
       style={{ zIndex: MODAL_Z.assistant }}
       data-tour="assistant-coach"
     >
@@ -116,7 +116,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen, color }) {
         {/* O balão surge quando o boneco chega; ao dispensar desvanece primeiro. */}
         <motion.div
           onClick={() => (done ? onDismiss() : complete())}
-          className="relative flex-1 cursor-pointer bg-white border-[3px] border-zinc-900 rounded-3xl p-4 pr-3 text-zinc-900 shadow-[0_18px_50px_rgba(0,0,0,0.45)]"
+          className="relative flex-1 cursor-pointer mb-3 lg:mb-6 bg-surface-container-high border border-outline-variant/40 border-l-4 border-l-primary rounded-lg p-3 pl-4 text-on-surface shadow-xl shadow-black/50 hover:border-primary/60 transition-colors"
           initial={reducedMotion ? false : { opacity: 0, y: 16 }}
           animate={reducedMotion ? undefined : { opacity: 1, y: 0, transition: { delay: 0.3, duration: 0.25 } }}
           exit={reducedMotion ? undefined : { opacity: 0, transition: { duration: 0.15 } }}
@@ -125,9 +125,9 @@ export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen, color }) {
               à direita em desktop, onde o retrato fica no canto). */}
           <span
             aria-hidden
-            className="absolute bottom-5 w-4 h-4 rotate-45 bg-white -left-[11px] border-l-[3px] border-b-[3px] border-zinc-900 lg:left-auto lg:-right-[11px] lg:border-l-0 lg:border-r-[3px]"
+            className="absolute bottom-5 w-3 h-3 rotate-45 bg-surface-container-high -left-[7px] border-l border-b border-outline-variant/40 lg:left-auto lg:-right-[7px] lg:border-l-0 lg:border-b-0 lg:border-r lg:border-t"
           />
-          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+          <p className="text-[10px] font-black uppercase tracking-widest text-primary">
             Treinador-adjunto
           </p>
           <p className="relative text-sm leading-snug mt-1" aria-hidden="true">
@@ -137,7 +137,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen, color }) {
             <span className="absolute inset-0">
               {shown}
               {!done && (
-                <span aria-hidden="true" className="animate-pulse font-black text-emerald-700">
+                <span aria-hidden="true" className="animate-pulse font-black text-primary">
                   ▌
                 </span>
               )}
@@ -151,7 +151,7 @@ export function AssistantCoachView({ tip, onGo, onDismiss, menuOpen, color }) {
               type="button"
               onClick={onDismiss}
               aria-label="Dispensar dica"
-              className="min-w-11 min-h-11 px-3 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-900 transition-colors"
+              className="min-w-11 min-h-11 px-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
             >
               X
             </button>
