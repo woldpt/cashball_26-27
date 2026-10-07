@@ -392,6 +392,7 @@ export function GameProvider({
 				setMyAuctionBid(null);
 				setAuctionResult(null);
 				setShowCupDrawPopup(false);
+				setTransferProposalModal(null);
 			});
 		} else if (pendingCupDrawRef.current) {
 			// Sorteio de taça recebido durante o replay do jogo anterior —

@@ -249,7 +249,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       } catch (err) {
         console.error(`[${game.roomCode}] ❌ finalizeAuction:`, err);
         // Nunca deixar o leilão preso sem timer: rearma uma tentativa.
-        if ((game.auctions as any)?.[playerId] && !(game.auctionTimers as any)?.[playerId]) {
+        if ((game.auctions as any)?.[playerId]?.status === "open" && !(game.auctionTimers as any)?.[playerId]) {
           if (!game.auctionTimers) game.auctionTimers = {};
           (game.auctionTimers as any)[playerId] = setTimeout(() => {
             finalizeAuction(game, playerId);
@@ -262,6 +262,13 @@ export function createAuctionHelpers(deps: AuctionDeps) {
   const runFinalizeAuction = async (game: ActiveGame, playerId: number) => {
     if (!game.auctions || !game.auctions[playerId]) return;
     const auction = game.auctions[playerId] as any;
+    // Pausado ou em jogo o leilão não fecha. Em jogo o timer já disparou: soltá-lo
+    // para a retoma (resumeAllPausedAuctions) o voltar a armar.
+    if (auction.status !== "open") return;
+    if (isMatchInProgress(game)) {
+      delete game.auctionTimers?.[playerId];
+      return;
+    }
     const timer = game.auctionTimers?.[playerId];
     if (timer) clearTimeout(timer as any);
 

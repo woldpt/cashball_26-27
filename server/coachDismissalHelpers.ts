@@ -1253,6 +1253,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     "match_second_half",
     "match_et_gate",
     "match_extra_time",
+    "match_finalizing",
   ]);
 
   /** «Assumir o comando»: fecha a janela de troca (o clube atual fica). */

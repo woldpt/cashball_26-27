@@ -1,4 +1,5 @@
 import type { ActiveGame } from "./types";
+import { SEASON_CALENDAR } from "./gameConstants";
 
 /**
  * Returns true if any match simulation is currently running.
@@ -12,7 +13,9 @@ export function isMatchInProgress(game: ActiveGame) {
     game.gamePhase === "match_second_half" ||
     game.gamePhase === "match_et_gate" ||
     game.gamePhase === "match_extra_time" ||
-    game.gamePhase === "match_finalizing"
+    game.gamePhase === "match_finalizing" ||
+    // Fim de época a correr (prémios, subidas, reset): trata-se como jogo em curso.
+    game.calendarIndex >= SEASON_CALENDAR.length
   );
 }
 

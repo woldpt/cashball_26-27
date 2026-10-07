@@ -1,5 +1,6 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import { isMatchInProgress } from "./matchFlowHelpers";
 import {
   peekPendingMatchAction,
   takePendingMatchAction,
@@ -490,6 +491,10 @@ export function registerGameplaySocketHandlers(
     if (!game) return;
     const name = game.socketToName[socket.id];
     if (!name) return;
+    if (isMatchInProgress(game)) {
+      socket.emit("systemMessage", "Responde ao convite depois do jogo.");
+      return;
+    }
     await handleAcceptJobOffer(game, name);
   });
 

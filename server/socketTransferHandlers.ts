@@ -707,6 +707,14 @@ export function registerTransferSocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
 
+    if (isMatchInProgress(game)) {
+      socket.emit("transferProposalResult", {
+        ok: false,
+        message: "Não é possível fazer propostas durante uma partida.",
+      });
+      return;
+    }
+
     const validPlayerId = validatePositiveInt(playerId);
     if (!validPlayerId) {
       socket.emit("transferProposalResult", {
