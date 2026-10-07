@@ -286,14 +286,21 @@ export function runExec(
 // sqlite — o 2.º BEGIN falha com "cannot start a transaction within a
 // transaction". Nunca rejeita: erros são registados e a fila continua.
 const roomTaskChains = new Map<string, Promise<unknown>>();
-export function serializeRoomTask(roomCode: string, task: () => Promise<unknown>): void {
+/**
+ * Corre `task` na fila da sala e devolve o seu resultado/erro ao chamador.
+ * A fila nunca parte: uma tarefa que rejeita não impede as seguintes.
+ * Nunca chamar uma função que já use a fila de dentro de `task` (deadlock).
+ */
+export function runRoomTask<T>(roomCode: string, task: () => Promise<T>): Promise<T> {
   const prev = roomTaskChains.get(roomCode) ?? Promise.resolve();
-  roomTaskChains.set(
-    roomCode,
-    prev.then(task).catch((err) => {
-      console.error(`[${roomCode}] ❌ room task:`, err);
-    }),
-  );
+  const run = prev.then(task);
+  roomTaskChains.set(roomCode, run.catch(() => undefined));
+  return run;
+}
+export function serializeRoomTask(roomCode: string, task: () => Promise<unknown>): void {
+  void runRoomTask(roomCode, task).catch((err) => {
+    console.error(`[${roomCode}] ❌ room task:`, err);
+  });
 }
 
 /**

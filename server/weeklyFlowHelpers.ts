@@ -170,6 +170,7 @@ import {
   getTeamsWithCoachNames,
   logClubNews,
   logClubNewsOnce,
+  runRoomTask,
   slimMatchResult,
   snapshotBalanceHistory,
 } from "./coreHelpers";
@@ -1284,79 +1285,80 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         try {
           // Líderes antes da jornada (para o rodapé Notícias CM).
           (game as any)._cmLeadersBefore = await readCmLeaders(game.db);
-          await dbRun(game.db, "BEGIN TRANSACTION");
+          // Transação na fila da sala (ligação SQLite única); só o BEGIN…COMMIT lá dentro.
+          await runRoomTask(game.roomCode, async () => {
+            await dbRun(game.db, "BEGIN TRANSACTION"); // fora do try: um BEGIN falhado não faz ROLLBACK alheio
+            try {
 
-          // Deltas do jogo (golos, cartões, lesões, presenças) acumulados em
-          // memória pela engine — comitados atomicamente com classificações +
-          // receita + marker 'finalized' (janela de crash fechada).
-          queueMatchDeltaWrites(game.db, fixtures);
+              // Deltas do jogo (golos, cartões, lesões, presenças) acumulados em
+              // memória pela engine — comitados atomicamente com classificações +
+              // receita + marker 'finalized' (janela de crash fechada).
+              queueMatchDeltaWrites(game.db, fixtures);
 
-          for (const match of fixtures) {
-            const hG = match.finalHomeGoals;
-            const aG = match.finalAwayGoals;
-            const pts = pointsForScore(hG, aG);
-            await dbRun(
-              game.db,
-              `UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`,
-              [pts.hPts, pts.hW, pts.hD, pts.hL, hG, aG, match.homeTeamId],
-            );
-            await dbRun(
-              game.db,
-              `UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`,
-              [pts.aPts, pts.aW, pts.aD, pts.aL, aG, hG, match.awayTeamId],
-            );
-          }
-
-          // ── BILHETEIRA — dentro da transação para comitar atomicamente
-          // com as classificações (antes corria após o COMMIT, fora de
-          // transação — janela de crash). Mesmo valor semanal: attendance ×
-          // preço do bilhete da casa, com 15% para o visitante (AWAY_TICKET_SHARE).
-          for (const match of fixtures) {
-            const ticketPrice = (match as any)._ticketPrice || 15;
-            const revenue = (match.attendance || 0) * ticketPrice;
-            if (revenue > 0) {
-              const awayShare = Math.floor(revenue * AWAY_TICKET_SHARE);
-              const homeShare = revenue - awayShare;
-              await dbRun(
-                game.db,
-                "UPDATE teams SET budget = budget + ? WHERE id = ?",
-                [homeShare, match.homeTeamId],
-              );
-              if (awayShare > 0) {
+              for (const match of fixtures) {
+                const hG = match.finalHomeGoals;
+                const aG = match.finalAwayGoals;
+                const pts = pointsForScore(hG, aG);
                 await dbRun(
                   game.db,
-                  "UPDATE teams SET budget = budget + ? WHERE id = ?",
-                  [awayShare, match.awayTeamId],
+                  `UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`,
+                  [pts.hPts, pts.hW, pts.hD, pts.hL, hG, aG, match.homeTeamId],
+                );
+                await dbRun(
+                  game.db,
+                  `UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`,
+                  [pts.aPts, pts.aW, pts.aD, pts.aL, aG, hG, match.awayTeamId],
                 );
               }
-            }
-          }
 
-          // Recovery marker for crash recovery: committed atomically with standings +
-          // ticket revenue. If a process dies after this COMMIT but before the
-          // calendar advances, restart sees the row and advances state instead of
-          // replaying the week (see recoverFinalizedSlot in checkAllReady's lobby).
-          await dbRun(
-            game.db,
-            "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
-            [game.season, completedCalendarIndex],
-          );
+              // ── BILHETEIRA — dentro da transação para comitar atomicamente
+              // com as classificações (antes corria após o COMMIT, fora de
+              // transação — janela de crash). Mesmo valor semanal: attendance ×
+              // preço do bilhete da casa, com 15% para o visitante (AWAY_TICKET_SHARE).
+              for (const match of fixtures) {
+                const ticketPrice = (match as any)._ticketPrice || 15;
+                const revenue = (match.attendance || 0) * ticketPrice;
+                if (revenue > 0) {
+                  const awayShare = Math.floor(revenue * AWAY_TICKET_SHARE);
+                  const homeShare = revenue - awayShare;
+                  await dbRun(
+                    game.db,
+                    "UPDATE teams SET budget = budget + ? WHERE id = ?",
+                    [homeShare, match.homeTeamId],
+                  );
+                  if (awayShare > 0) {
+                    await dbRun(
+                      game.db,
+                      "UPDATE teams SET budget = budget + ? WHERE id = ?",
+                      [awayShare, match.awayTeamId],
+                    );
+                  }
+                }
+              }
+
+              // Recovery marker for crash recovery: committed atomically with standings +
+              // ticket revenue. If a process dies after this COMMIT but before the
+              // calendar advances, restart sees the row and advances state instead of
+              // replaying the week (see recoverFinalizedSlot in checkAllReady's lobby).
+              await dbRun(
+                game.db,
+                "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
+                [game.season, completedCalendarIndex],
+              );
+              await dbRun(game.db, "COMMIT");
+            } catch (txErr) {
+              await dbRun(game.db, "ROLLBACK").catch(() => {});
+              throw txErr;
+            }
+          });
         } catch (txErr) {
           console.error(`[${game.roomCode}] Standings update error:`, txErr);
-          await dbRun(game.db, "ROLLBACK").catch(() => {});
           game.gamePhase = "lobby";
           resolveOuter();
           return;
         }
 
-        game.db.run("COMMIT", async (err: any) => {
-          if (err) {
-            console.error(`[${game.roomCode}] Standings update error:`, err);
-            game.db.run("ROLLBACK");
-            game.gamePhase = "lobby";
-            resolveOuter();
-            return;
-          }
+        await (async () => {
 
           // Saldo de fim de semana (inclui a bilheteira acabada de creditar).
           snapshotBalanceHistory(
@@ -1685,7 +1687,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 resolveOuter();
               });
           });
-        });
+        })();
       })();
     });
   }
@@ -1718,170 +1720,183 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         return true;
       }
 
-      try {
-        await dbRun(game.db, "BEGIN TRANSACTION");
-      } catch (begErr) {
-        console.error(
-          `[${game.roomCode}] ❌ Weekly finance BEGIN failed:`,
-          begErr,
-        );
-        return false;
-      }
-
-      // Weekly base income by division (keeps lower-division teams viable)
-      for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
-        await dbRun(
-          game.db,
-          "UPDATE teams SET budget = budget + ? WHERE division = ?",
-          [income, Number(div)],
-        );
-      }
-
-      // Patrocinadores: prestação semanal do perfil B + 2.ª tranche do
-      // perfil C na semana 10. Cada crédito tem linha `sponsor` no Jornal
-      // para a reconciliação do gráfico não esmagar valores (bug antigo
-      // dos prémios creditados sem diário). Salas antigas sem as colunas
-      // caem no catch com lista vazia.
-      const paidSponsor: Record<number, number> = {};
-      try {
-        const sponsorRows: any[] = await dbAll(
-          game.db,
-          `SELECT id, sponsor_id, sponsor_weekly, sponsor_second_half, sponsor_paid_second
-           FROM teams WHERE sponsor_season = ? AND (sponsor_weekly > 0 OR (sponsor_second_half > 0 AND sponsor_paid_second = 0))`,
-          [game.season],
-        );
-        for (const t of sponsorRows) {
-          const sName = sponsorById(String(t.sponsor_id || ""))?.name || "Patrocinador";
-          if ((t.sponsor_weekly || 0) > 0) {
-            await dbRun(game.db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [t.sponsor_weekly, t.id]);
-            paidSponsor[t.id] = (paidSponsor[t.id] || 0) + t.sponsor_weekly;
-            logClubNews(game, "sponsor", `${sName} — prestação semanal`, t.id, {
-              amount: t.sponsor_weekly,
-              description: `Patrocínio ${sName} (época ${game.year})`,
-            });
-          }
-          if (slot === SPONSOR_SECOND_TRANCHE_SLOT && (t.sponsor_second_half || 0) > 0 && !t.sponsor_paid_second) {
+      // Transação na fila da sala (ligação SQLite única): só BEGIN…COMMIT lá dentro.
+      const applied = await runRoomTask(game.roomCode, async () => {
+        try {
+          await dbRun(game.db, "BEGIN TRANSACTION");
+        } catch (begErr) {
+          console.error(
+            `[${game.roomCode}] ❌ Weekly finance BEGIN failed:`,
+            begErr,
+          );
+          return false;
+        }
+        try {
+          // Weekly base income by division (keeps lower-division teams viable)
+          for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
             await dbRun(
               game.db,
-              "UPDATE teams SET budget = budget + ?, sponsor_paid_second = 1 WHERE id = ?",
-              [t.sponsor_second_half, t.id],
+              "UPDATE teams SET budget = budget + ? WHERE division = ?",
+              [income, Number(div)],
             );
-            paidSponsor[t.id] = (paidSponsor[t.id] || 0) + t.sponsor_second_half;
-            logClubNews(game, "sponsor", `${sName} — 2.ª tranche`, t.id, {
-              amount: t.sponsor_second_half,
-              description: `Patrocínio ${sName}, segunda metade (época ${game.year})`,
+          }
+
+          // Patrocinadores: prestação semanal do perfil B + 2.ª tranche do
+          // perfil C na semana 10. Cada crédito tem linha `sponsor` no Jornal
+          // para a reconciliação do gráfico não esmagar valores (bug antigo
+          // dos prémios creditados sem diário). Salas antigas sem as colunas
+          // caem no catch com lista vazia.
+          const paidSponsor: Record<number, number> = {};
+          try {
+            const sponsorRows: any[] = await dbAll(
+              game.db,
+              `SELECT id, sponsor_id, sponsor_weekly, sponsor_second_half, sponsor_paid_second
+               FROM teams WHERE sponsor_season = ? AND (sponsor_weekly > 0 OR (sponsor_second_half > 0 AND sponsor_paid_second = 0))`,
+              [game.season],
+            );
+            for (const t of sponsorRows) {
+              const sName = sponsorById(String(t.sponsor_id || ""))?.name || "Patrocinador";
+              if ((t.sponsor_weekly || 0) > 0) {
+                await dbRun(game.db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [t.sponsor_weekly, t.id]);
+                paidSponsor[t.id] = (paidSponsor[t.id] || 0) + t.sponsor_weekly;
+                logClubNews(game, "sponsor", `${sName} — prestação semanal`, t.id, {
+                  amount: t.sponsor_weekly,
+                  description: `Patrocínio ${sName} (época ${game.year})`,
+                });
+              }
+              if (slot === SPONSOR_SECOND_TRANCHE_SLOT && (t.sponsor_second_half || 0) > 0 && !t.sponsor_paid_second) {
+                await dbRun(
+                  game.db,
+                  "UPDATE teams SET budget = budget + ?, sponsor_paid_second = 1 WHERE id = ?",
+                  [t.sponsor_second_half, t.id],
+                );
+                paidSponsor[t.id] = (paidSponsor[t.id] || 0) + t.sponsor_second_half;
+                logClubNews(game, "sponsor", `${sName} — 2.ª tranche`, t.id, {
+                  amount: t.sponsor_second_half,
+                  description: `Patrocínio ${sName}, segunda metade (época ${game.year})`,
+                });
+              }
+            }
+          } catch {}
+
+          // Dívida/capacidade/salários ANTES dos descontos — os mesmos valores
+          // alimentam o UPDATE de despesas e o resumo do Jornal. Em erro de
+          // leitura, segue com mapas vazios (comportamento anterior).
+          const preLoan: Record<number, number> = {};
+          const preDiv: Record<number, number> = {};
+          const preHuman: Record<number, number> = {};
+          const preWages: Record<number, number> = {};
+          const preSeats: Record<number, number> = {};
+          const preRows: any[] = await dbAll(
+            game.db,
+            `SELECT t.id, t.loan_amount, t.division, t.stadium_capacity,
+                          m.is_human,
+                          (SELECT COALESCE(SUM(wage), 0)
+                           FROM players WHERE players.team_id = t.id) AS wages
+                   FROM teams t
+                   LEFT JOIN managers m ON t.manager_id = m.id`,
+          ).catch(() => []);
+          for (const r of preRows) {
+            preLoan[r.id] = r.loan_amount || 0;
+            preDiv[r.id] = r.division ?? 5;
+            preHuman[r.id] = r.is_human || 0;
+            preWages[r.id] = r.wages || 0;
+            preSeats[r.id] = r.stadium_capacity || 0;
+          }
+
+          // Funcionários: salário semanal por equipa (linha própria da folha).
+          // Falha de leitura → mapa vazio (as salas antigas sem a tabela não
+          // podem travar a semana).
+          const preStaff: Record<number, number> = {};
+          for (const [teamId, total] of await fetchStaffSalaryTotals(game).catch(
+            () => new Map<number, number>(),
+          )) {
+            preStaff[teamId] = total;
+          }
+
+          // Deduct weekly wages + loan interest + principal installment (same for
+          // cup and league weeks). The installment abates the loan principal so the
+          // visible debt shrinks week over week, and scales with the division's
+          // base income (a flat fee was 3 weekly incomes for Distritais). Stadium
+          // upkeep spares the first STADIUM_UPKEEP_EXEMPT_SEATS seats: giant
+          // stadiums still cost millions per season (anti-snowball), small ones breathe.
+          try {
+            await dbRun(
+              game.db,
+              `UPDATE teams SET
+                        loan_amount = MAX(0, loan_amount - (${LOAN_DIV_CASE})),
+                        budget = budget
+                          - CAST((loan_amount * 0.015) AS INTEGER)
+                          - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
+                          - (SELECT COALESCE(SUM(salary_weekly), 0) FROM team_staff WHERE team_id = teams.id)
+                          - CAST((MAX(0, COALESCE(stadium_capacity, 0) - ?) * ?) AS INTEGER)
+                          - MIN((${LOAN_DIV_CASE}), loan_amount)`,
+              [STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK],
+            );
+          } catch (expErr) {
+            console.error(`[${game.roomCode}] ❌ Weekly expense DB error:`, expErr);
+            await rollback();
+            return false;
+          }
+
+          // Resumo financeiro semanal: 1 notícia por equipa com
+          // treinador humano. Os valores são os mesmos do UPDATE
+          // (loan_amount pré-atualização; idênticas fórmulas do SQL).
+          for (const teamId of Object.keys(preLoan)) {
+            const id = Number(teamId);
+            if (!preHuman[id]) continue;
+            const oldLoan = preLoan[id];
+            const div = preDiv[id] ?? 5;
+            const income = WEEKLY_BASE_INCOME[div] ?? 0;
+            const wages = preWages[id] || 0;
+            const upkeep = Math.trunc(
+              Math.max(0, (preSeats[id] || 0) - STADIUM_UPKEEP_EXEMPT_SEATS) *
+                STADIUM_UPKEEP_PER_SEAT_WEEK,
+            );
+            const interest = Math.floor(oldLoan * 0.015);
+            const installment = Math.min(loanInstallment(div), oldLoan);
+            logClubNews(game, "weekly_finance", "Resumo Financeiro da Semana", id, {
+              description: buildWeeklyFinanceFacts({
+                income,
+                wages,
+                upkeep,
+                staff: preStaff[id] || 0,
+                sponsor: paidSponsor[id] || 0,
+                interest,
+                installment,
+                oldLoan,
+              }),
             });
           }
+
+          // Marker + COMMIT: dinheiro e Jornal comitam atomicamente; um crash
+          // antes daqui deixa tudo sem marker, por isso rejogar é seguro.
+          await dbRun(
+            game.db,
+            "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'weekly_finance')",
+            [game.season, slot],
+          );
+          try {
+            await dbRun(game.db, "COMMIT");
+          } catch (commitErr) {
+            console.error(
+              `[${game.roomCode}] ❌ Weekly finance COMMIT failed:`,
+              commitErr,
+            );
+            await rollback();
+            return false;
+          }
+          return true;
+        } catch (unexpected) {
+          console.error(
+            `[${game.roomCode}] ❌ Weekly finance unexpected error:`,
+            unexpected,
+          );
+          await rollback();
+          return false;
         }
-      } catch {}
-
-      // Dívida/capacidade/salários ANTES dos descontos — os mesmos valores
-      // alimentam o UPDATE de despesas e o resumo do Jornal. Em erro de
-      // leitura, segue com mapas vazios (comportamento anterior).
-      const preLoan: Record<number, number> = {};
-      const preDiv: Record<number, number> = {};
-      const preHuman: Record<number, number> = {};
-      const preWages: Record<number, number> = {};
-      const preSeats: Record<number, number> = {};
-      const preRows: any[] = await dbAll(
-        game.db,
-        `SELECT t.id, t.loan_amount, t.division, t.stadium_capacity,
-                      m.is_human,
-                      (SELECT COALESCE(SUM(wage), 0)
-                       FROM players WHERE players.team_id = t.id) AS wages
-               FROM teams t
-               LEFT JOIN managers m ON t.manager_id = m.id`,
-      ).catch(() => []);
-      for (const r of preRows) {
-        preLoan[r.id] = r.loan_amount || 0;
-        preDiv[r.id] = r.division ?? 5;
-        preHuman[r.id] = r.is_human || 0;
-        preWages[r.id] = r.wages || 0;
-        preSeats[r.id] = r.stadium_capacity || 0;
-      }
-
-      // Funcionários: salário semanal por equipa (linha própria da folha).
-      // Falha de leitura → mapa vazio (as salas antigas sem a tabela não
-      // podem travar a semana).
-      const preStaff: Record<number, number> = {};
-      for (const [teamId, total] of await fetchStaffSalaryTotals(game).catch(
-        () => new Map<number, number>(),
-      )) {
-        preStaff[teamId] = total;
-      }
-
-      // Deduct weekly wages + loan interest + principal installment (same for
-      // cup and league weeks). The installment abates the loan principal so the
-      // visible debt shrinks week over week, and scales with the division's
-      // base income (a flat fee was 3 weekly incomes for Distritais). Stadium
-      // upkeep spares the first STADIUM_UPKEEP_EXEMPT_SEATS seats: giant
-      // stadiums still cost millions per season (anti-snowball), small ones breathe.
-      try {
-        await dbRun(
-          game.db,
-          `UPDATE teams SET
-                    loan_amount = MAX(0, loan_amount - (${LOAN_DIV_CASE})),
-                    budget = budget
-                      - CAST((loan_amount * 0.015) AS INTEGER)
-                      - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
-                      - (SELECT COALESCE(SUM(salary_weekly), 0) FROM team_staff WHERE team_id = teams.id)
-                      - CAST((MAX(0, COALESCE(stadium_capacity, 0) - ?) * ?) AS INTEGER)
-                      - MIN((${LOAN_DIV_CASE}), loan_amount)`,
-          [STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK],
-        );
-      } catch (expErr) {
-        console.error(`[${game.roomCode}] ❌ Weekly expense DB error:`, expErr);
-        await rollback();
-        return false;
-      }
-
-      // Resumo financeiro semanal: 1 notícia por equipa com
-      // treinador humano. Os valores são os mesmos do UPDATE
-      // (loan_amount pré-atualização; idênticas fórmulas do SQL).
-      for (const teamId of Object.keys(preLoan)) {
-        const id = Number(teamId);
-        if (!preHuman[id]) continue;
-        const oldLoan = preLoan[id];
-        const div = preDiv[id] ?? 5;
-        const income = WEEKLY_BASE_INCOME[div] ?? 0;
-        const wages = preWages[id] || 0;
-        const upkeep = Math.trunc(
-          Math.max(0, (preSeats[id] || 0) - STADIUM_UPKEEP_EXEMPT_SEATS) *
-            STADIUM_UPKEEP_PER_SEAT_WEEK,
-        );
-        const interest = Math.floor(oldLoan * 0.015);
-        const installment = Math.min(loanInstallment(div), oldLoan);
-        logClubNews(game, "weekly_finance", "Resumo Financeiro da Semana", id, {
-          description: buildWeeklyFinanceFacts({
-            income,
-            wages,
-            upkeep,
-            staff: preStaff[id] || 0,
-            sponsor: paidSponsor[id] || 0,
-            interest,
-            installment,
-            oldLoan,
-          }),
-        });
-      }
-
-      // Marker + COMMIT: dinheiro e Jornal comitam atomicamente; um crash
-      // antes daqui deixa tudo sem marker, por isso rejogar é seguro.
-      await dbRun(
-        game.db,
-        "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'weekly_finance')",
-        [game.season, slot],
-      );
-      try {
-        await dbRun(game.db, "COMMIT");
-      } catch (commitErr) {
-        console.error(
-          `[${game.roomCode}] ❌ Weekly finance COMMIT failed:`,
-          commitErr,
-        );
-        await rollback();
-        return false;
-      }
+      });
+      if (!applied) return false;
       // Saldo real pós-descontos (o jogo da semana ainda não
       // foi jogado); a finalização atualiza o mesmo slot
       // com a bilheteira — o ponto final é de fim de semana.
@@ -1898,7 +1913,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         `[${game.roomCode}] ❌ Weekly finance unexpected error:`,
         unexpected,
       );
-      await rollback();
       return false;
     }
   }

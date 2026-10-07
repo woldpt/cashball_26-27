@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { runExec, getTeamsWithCoachNames, logClubNews, currentSlot } from "./coreHelpers";
+import { runExec, runRoomTask, getTeamsWithCoachNames, logClubNews, currentSlot } from "./coreHelpers";
 
 interface FinanceHandlerDeps {
   io: any;
@@ -58,27 +58,43 @@ export function registerFinanceSocketHandlers(
     }
 
     const matchweek = game.matchweek || 1;
-    try {
-      await runExec(game.db, "BEGIN");
-      const result = await runExec(
-        game.db,
-        "UPDATE teams SET budget = budget - ?, stadium_capacity = MIN(stadium_capacity + 5000, ?) WHERE id = ? AND budget >= ? AND stadium_capacity < ?",
-        [cost, maxCapacity, playerState.teamId, cost, maxCapacity],
-      );
-      if (result.changes === 0) {
-        await runExec(game.db, "ROLLBACK").catch(() => {});
-        socket.emit("systemMessage", "Operação inválida (saldo ou capacidade).");
-        return;
-      }
-      await runExec(
-        game.db,
-        "INSERT INTO club_news (team_id, type, title, description, amount, matchweek, slot, year) VALUES (?, 'stadium_build', 'Expansão do Estádio', '+5000 lugares construídos', ?, ?, ?, ?)",
-        [playerState.teamId, cost, matchweek, currentSlot(game), game.year || 0],
-      );
-      await runExec(game.db, "COMMIT");
-    } catch (err) {
-      await runExec(game.db, "ROLLBACK").catch(() => {});
-      console.error("[buildStadium] Transaction failed:", err);
+    // Transação na fila da sala (a ligação SQLite é única). O BEGIN fica fora
+    // do try interno: um BEGIN falhado nunca faz ROLLBACK da transação de outro fluxo.
+    const outcome = await runRoomTask(game.roomCode, async () => {
+        try {
+          await runExec(game.db, "BEGIN");
+        } catch (err) {
+          console.error("[buildStadium] BEGIN failed:", err);
+          return "error" as const;
+        }
+        try {
+          const result = await runExec(
+            game.db,
+            "UPDATE teams SET budget = budget - ?, stadium_capacity = MIN(stadium_capacity + 5000, ?) WHERE id = ? AND budget >= ? AND stadium_capacity < ?",
+            [cost, maxCapacity, playerState.teamId, cost, maxCapacity],
+          );
+          if (result.changes === 0) {
+            await runExec(game.db, "ROLLBACK").catch(() => {});
+            return "invalid" as const;
+          }
+          await runExec(
+            game.db,
+            "INSERT INTO club_news (team_id, type, title, description, amount, matchweek, slot, year) VALUES (?, 'stadium_build', 'Expansão do Estádio', '+5000 lugares construídos', ?, ?, ?, ?)",
+            [playerState.teamId, cost, matchweek, currentSlot(game), game.year || 0],
+          );
+          await runExec(game.db, "COMMIT");
+          return "ok" as const;
+        } catch (err) {
+          await runExec(game.db, "ROLLBACK").catch(() => {});
+          console.error("[buildStadium] Transaction failed:", err);
+          return "error" as const;
+        }
+    });
+    if (outcome === "invalid") {
+      socket.emit("systemMessage", "Operação inválida (saldo ou capacidade).");
+      return;
+    }
+    if (outcome === "error") {
       socket.emit("systemMessage", "Erro ao construir estádio.");
       return;
     }

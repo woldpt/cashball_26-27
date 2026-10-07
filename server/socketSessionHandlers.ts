@@ -1,5 +1,5 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, fetchTopScorers, logClubNews } from "./coreHelpers";
+import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, fetchTopScorers, logClubNews, runRoomTask } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, FRIENDLY_ROUND_NAME, SEASON_CALENDAR, AWAY_TICKET_SHARE, loanInstallment, WEEKLY_BASE_INCOME, STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK } from "./gameConstants";
 import { drawOffers, drawOffersAny, sponsorById, SPONSOR_WEEKS } from "./game/sponsors";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
@@ -1770,25 +1770,27 @@ export function registerSessionSocketHandlers(
 				socket.emit("sponsorState", { pending: true, offers: next, chosen: null, taken: true });
 				return;
 			}
-			await dbRunRaw("BEGIN TRANSACTION");
-			try {
-				await dbRunRaw(
-					"UPDATE teams SET sponsor_id = ?, sponsor_profile = ?, sponsor_pending = 0, sponsor_upfront = ?, sponsor_weekly = ?, sponsor_second_half = ?, sponsor_paid_second = 0, sponsor_season = ? WHERE id = ?",
-					[offer.sponsorId, offer.profile, offer.upfront || 0, offer.weekly || 0, offer.secondHalf || 0, game.season, teamId],
-				);
-				if ((offer.upfront || 0) > 0) {
-					await dbRunRaw("UPDATE teams SET budget = budget + ? WHERE id = ?", [offer.upfront, teamId]);
+			await runRoomTask(game.roomCode, async () => {
+				await dbRunRaw("BEGIN TRANSACTION");
+				try {
+					await dbRunRaw(
+						"UPDATE teams SET sponsor_id = ?, sponsor_profile = ?, sponsor_pending = 0, sponsor_upfront = ?, sponsor_weekly = ?, sponsor_second_half = ?, sponsor_paid_second = 0, sponsor_season = ? WHERE id = ?",
+						[offer.sponsorId, offer.profile, offer.upfront || 0, offer.weekly || 0, offer.secondHalf || 0, game.season, teamId],
+					);
+					if ((offer.upfront || 0) > 0) {
+						await dbRunRaw("UPDATE teams SET budget = budget + ? WHERE id = ?", [offer.upfront, teamId]);
+					}
+					await dbRunRaw(
+						`INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, slot, year)
+						 VALUES (?, 'sponsor', ?, ?, NULL, NULL, NULL, NULL, ?, ?, ?, ?)`,
+						[teamId, `${offer.name} é o novo patrocinador`, `Escolha do treinador (perfil ${offer.profile}, total ${offer.total}€)`, offer.upfront > 0 ? offer.upfront : offer.total, game.matchweek, 1, game.year],
+					);
+					await dbRunRaw("COMMIT");
+				} catch (txErr) {
+					await dbRunRaw("ROLLBACK").catch(() => {});
+					throw txErr;
 				}
-				await dbRunRaw(
-					`INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, slot, year)
-					 VALUES (?, 'sponsor', ?, ?, NULL, NULL, NULL, NULL, ?, ?, ?, ?)`,
-					[teamId, `${offer.name} é o novo patrocinador`, `Escolha do treinador (perfil ${offer.profile}, total ${offer.total}€)`, offer.upfront > 0 ? offer.upfront : offer.total, game.matchweek, 1, game.year],
-				);
-				await dbRunRaw("COMMIT");
-			} catch (txErr) {
-				await dbRunRaw("ROLLBACK").catch(() => {});
-				throw txErr;
-			}
+			});
 			socket.emit("sponsorState", await buildSponsorState(game, teamId));
 			// Sem este broadcast a camisola (TeamKit via `sponsorBrand`) e o saldo
 			// ficavam presos até ao refresh — mesmo padrão dos outros fluxos

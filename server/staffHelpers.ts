@@ -31,7 +31,7 @@ import {
   staffSigningFee,
   staffSeverance,
 } from "./gameConstants";
-import { currentSlot, logClubNews, runExec } from "./coreHelpers";
+import { currentSlot, logClubNews, runExec, runRoomTask } from "./coreHelpers";
 
 /**
  * Reserva de tesouraria exigida aos NPCs antes de contratar: o custo de
@@ -251,35 +251,43 @@ export async function hireStaff(
   const cost = staffSigningFee(lvl);
   const salary = staffSalaryFor(lvl);
   const name = randomStaffName(role);
-  try {
-    await runExec(game.db, "BEGIN");
-    const insert = await runExec(
-      game.db,
-      "INSERT INTO team_staff (team_id, role, level, name, salary_weekly, hired_slot) VALUES (?, ?, ?, ?, ?, ?)",
-      [teamId, role, lvl, name, salary, currentSlot(game)],
-    ).catch((err: any) => {
-      // UNIQUE(team_id, role) — corrida perdida para outra contratação.
-      throw err;
-    });
-    if (insert.changes === 0) {
-      await runExec(game.db, "ROLLBACK").catch(() => {});
+  // Transação na fila da sala; BEGIN fora do try (um BEGIN falhado não faz ROLLBACK alheio).
+  const failed = await runRoomTask<HireResult | null>(game.roomCode, async () => {
+    try {
+      await runExec(game.db, "BEGIN");
+    } catch (err) {
+      console.error(`[${game.roomCode}] staff: hire BEGIN failed:`, err);
       return { ok: false, error: "db" };
     }
-    const paid = await runExec(
-      game.db,
-      "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
-      [cost, teamId, cost],
-    );
-    if (paid.changes === 0) {
+    try {
+      // UNIQUE(team_id, role) — corrida perdida para outra contratação cai no catch.
+      const insert = await runExec(
+        game.db,
+        "INSERT INTO team_staff (team_id, role, level, name, salary_weekly, hired_slot) VALUES (?, ?, ?, ?, ?, ?)",
+        [teamId, role, lvl, name, salary, currentSlot(game)],
+      );
+      if (insert.changes === 0) {
+        await runExec(game.db, "ROLLBACK").catch(() => {});
+        return { ok: false, error: "db" };
+      }
+      const paid = await runExec(
+        game.db,
+        "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
+        [cost, teamId, cost],
+      );
+      if (paid.changes === 0) {
+        await runExec(game.db, "ROLLBACK").catch(() => {});
+        return { ok: false, error: "no_budget" };
+      }
+      await runExec(game.db, "COMMIT");
+      return null;
+    } catch (err) {
       await runExec(game.db, "ROLLBACK").catch(() => {});
-      return { ok: false, error: "no_budget" };
+      console.error(`[${game.roomCode}] staff: hire failed:`, err);
+      return { ok: false, error: "db" };
     }
-    await runExec(game.db, "COMMIT");
-  } catch (err) {
-    await runExec(game.db, "ROLLBACK").catch(() => {});
-    console.error(`[${game.roomCode}] staff: hire failed:`, err);
-    return { ok: false, error: "db" };
-  }
+  });
+  if (failed) return failed;
 
   logClubNews(game, "staff_hire", `${name} contratado`, teamId, {
     amount: cost,
@@ -313,27 +321,36 @@ export async function fireStaff(
   if (!member) return { ok: false, error: "not_found" };
 
   const severance = staffSeverance(member.level);
-  try {
-    await runExec(game.db, "BEGIN");
-    const paid = await runExec(
-      game.db,
-      "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
-      [severance, teamId, severance],
-    );
-    if (paid.changes === 0) {
-      await runExec(game.db, "ROLLBACK").catch(() => {});
+  const failed = await runRoomTask<FireResult | null>(game.roomCode, async () => {
+    try {
+      await runExec(game.db, "BEGIN");
+    } catch (err) {
+      console.error(`[${game.roomCode}] staff: fire BEGIN failed:`, err);
       return { ok: false, error: "db" };
     }
-    await runExec(game.db, "DELETE FROM team_staff WHERE team_id = ? AND role = ?", [
-      teamId,
-      role,
-    ]);
-    await runExec(game.db, "COMMIT");
-  } catch (err) {
-    await runExec(game.db, "ROLLBACK").catch(() => {});
-    console.error(`[${game.roomCode}] staff: fire failed:`, err);
-    return { ok: false, error: "db" };
-  }
+    try {
+      const paid = await runExec(
+        game.db,
+        "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
+        [severance, teamId, severance],
+      );
+      if (paid.changes === 0) {
+        await runExec(game.db, "ROLLBACK").catch(() => {});
+        return { ok: false, error: "db" };
+      }
+      await runExec(game.db, "DELETE FROM team_staff WHERE team_id = ? AND role = ?", [
+        teamId,
+        role,
+      ]);
+      await runExec(game.db, "COMMIT");
+      return null;
+    } catch (err) {
+      await runExec(game.db, "ROLLBACK").catch(() => {});
+      console.error(`[${game.roomCode}] staff: fire failed:`, err);
+      return { ok: false, error: "db" };
+    }
+  });
+  if (failed) return failed;
 
   logClubNews(game, "staff_fire", `${member.name} despedido`, teamId, {
     amount: severance,

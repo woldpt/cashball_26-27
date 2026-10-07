@@ -27,7 +27,7 @@ import { emitCmNews, cmUpsetText } from "./cmNews";
 import { drawNpcChoice, drawOffers, drawOffersAny } from "./game/sponsors";
 import { generateAITactic } from "./game/matchCalculations";
 import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites, withJuniorGRs, ensureFullBench } from "./game/engine";
-import { getTeamsWithCoachNames, logClubNews, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory, currentSlot, getCupExemptTeamIds } from "./coreHelpers";
+import { runRoomTask, getTeamsWithCoachNames, logClubNews, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory, currentSlot, getCupExemptTeamIds } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
@@ -636,42 +636,44 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			});
 		}
 
-		await dbRunOn(game, "BEGIN");
-		try {
-			for (const promotion of promotions) {
-				await dbRunOn(game, "UPDATE teams SET division = ? WHERE id = ?", [
-					promotion.toDiv,
-					promotion.teamId,
-				]);
-				// Quem sobe leva o bónus de subida no mesmo movimento atómico.
-				if (promotion.toDiv < promotion.fromDiv) {
-					await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [
-						PROMOTION_BONUS,
+		await runRoomTask(game.roomCode, async () => {
+			await dbRunOn(game, "BEGIN");
+			try {
+				for (const promotion of promotions) {
+					await dbRunOn(game, "UPDATE teams SET division = ? WHERE id = ?", [
+						promotion.toDiv,
 						promotion.teamId,
 					]);
+					// Quem sobe leva o bónus de subida no mesmo movimento atómico.
+					if (promotion.toDiv < promotion.fromDiv) {
+						await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [
+							PROMOTION_BONUS,
+							promotion.teamId,
+						]);
+					}
 				}
+				await dbRunOn(game,
+					"UPDATE teams SET points=0, wins=0, draws=0, losses=0, goals_for=0, goals_against=0",
+				);
+				// Reset emocional de época nova: moral neutra para todos e adeptos
+				// à base de fidelidade da (nova) divisão — sem herdar euforias nem crises.
+				await dbRunOn(game, "UPDATE teams SET morale = 25");
+				await dbRunOn(game,
+					"UPDATE teams SET fans_mood = CASE division WHEN 1 THEN ? WHEN 2 THEN ? WHEN 3 THEN ? WHEN 4 THEN ? ELSE ? END",
+					[
+						MATCH_TUNING.fansBaseByDivision[1],
+						MATCH_TUNING.fansBaseByDivision[2],
+						MATCH_TUNING.fansBaseByDivision[3],
+						MATCH_TUNING.fansBaseByDivision[4],
+						MATCH_TUNING.fansBaseByDivision[5],
+					],
+				);
+				await dbRunOn(game, "COMMIT");
+			} catch (txErr) {
+				await dbRunOn(game, "ROLLBACK").catch(() => {});
+				throw txErr;
 			}
-			await dbRunOn(game,
-				"UPDATE teams SET points=0, wins=0, draws=0, losses=0, goals_for=0, goals_against=0",
-			);
-			// Reset emocional de época nova: moral neutra para todos e adeptos
-			// à base de fidelidade da (nova) divisão — sem herdar euforias nem crises.
-			await dbRunOn(game, "UPDATE teams SET morale = 25");
-			await dbRunOn(game,
-				"UPDATE teams SET fans_mood = CASE division WHEN 1 THEN ? WHEN 2 THEN ? WHEN 3 THEN ? WHEN 4 THEN ? ELSE ? END",
-				[
-					MATCH_TUNING.fansBaseByDivision[1],
-					MATCH_TUNING.fansBaseByDivision[2],
-					MATCH_TUNING.fansBaseByDivision[3],
-					MATCH_TUNING.fansBaseByDivision[4],
-					MATCH_TUNING.fansBaseByDivision[5],
-				],
-			);
-			await dbRunOn(game, "COMMIT");
-		} catch (txErr) {
-			await dbRunOn(game, "ROLLBACK").catch(() => {});
-			throw txErr;
-		}
+		});
 
 		// Jornal + anúncio do bónus de subida (fora da transação: o dinheiro
 		// já foi creditado acima; aqui é só a notícia, como nos outros prémios).
@@ -762,29 +764,31 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		// Runs BEFORE stats reset so games_played is still available
 		await applyOffSeasonDecay(game);
 
-		await dbRunOn(game, "BEGIN");
-		try {
-			// career_goals/reds/injuries já são acumulados por jogo no flush transacional
-			// (queueMatchDeltaWrites → `career_goals = career_goals + ?`). Soma-los aqui de novo
-			// duplicaria a carreira (2× por época) — ver repro E2E: 9 golos época → carreira 18.
-			// Só career_games é escrito exclusivamente aqui (NÃO é incrementado por jogo).
-			await dbRunOn(game,
-				"UPDATE players SET career_games = career_games + games_played",
-			);
-			await dbRunOn(game,
-			// last_appearance_matchweek stores calendar slots (0-based); it must reset with
-			// the season or the engine's per-slot replay guard blocks slot 0 of the new
-			// season for players who appeared late in the previous one.
-			"UPDATE players SET goals = 0, red_cards = 0, yellow_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0",
-			);
-			// Atribuição de golos por clube (liga + Taça): vive e morre com a época,
-			// como `players.goals` — o prémio de Melhor Marcador já foi pago acima.
-			await dbRunOn(game, "DELETE FROM player_season_goals");
-			await dbRunOn(game, "COMMIT");
-		} catch (txErr) {
-			await dbRunOn(game, "ROLLBACK").catch(() => {});
-			throw txErr;
-		}
+		await runRoomTask(game.roomCode, async () => {
+			await dbRunOn(game, "BEGIN");
+			try {
+				// career_goals/reds/injuries já são acumulados por jogo no flush transacional
+				// (queueMatchDeltaWrites → `career_goals = career_goals + ?`). Soma-los aqui de novo
+				// duplicaria a carreira (2× por época) — ver repro E2E: 9 golos época → carreira 18.
+				// Só career_games é escrito exclusivamente aqui (NÃO é incrementado por jogo).
+				await dbRunOn(game,
+					"UPDATE players SET career_games = career_games + games_played",
+				);
+				await dbRunOn(game,
+				// last_appearance_matchweek stores calendar slots (0-based); it must reset with
+				// the season or the engine's per-slot replay guard blocks slot 0 of the new
+				// season for players who appeared late in the previous one.
+				"UPDATE players SET goals = 0, red_cards = 0, yellow_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0",
+				);
+				// Atribuição de golos por clube (liga + Taça): vive e morre com a época,
+				// como `players.goals` — o prémio de Melhor Marcador já foi pago acima.
+				await dbRunOn(game, "DELETE FROM player_season_goals");
+				await dbRunOn(game, "COMMIT");
+			} catch (txErr) {
+				await dbRunOn(game, "ROLLBACK").catch(() => {});
+				throw txErr;
+			}
+		});
 	}
 
 	async function startNewSeasonState(game: ActiveGame) {
@@ -1970,418 +1974,425 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			winnerId: number;
 			loserId: number;
 		}> = [];
-		// Transacção atómica para receita + resultados + marker (recuperação de crash)
-		await new Promise<void>((resolve) => game.db.run("BEGIN TRANSACTION", () => resolve()));
-		// Deltas do jogo (golos, cartões, lesões, presenças) acumulados em memória
-		// pela engine — comitados atomicamente com o resto (janela de crash fechada).
-		queueMatchDeltaWrites(game.db, setups.map((s) => s.fixture));
+		// Transacção atómica para receita + resultados + marker (recuperação de crash),
+		// na fila da sala (ligação SQLite única). BEGIN/COMMIT que falham => null.
 		let cupTxFailed = false;
-		// Divisões para o contexto do rescaldo do Jornal (só escalão na Taça).
-		const cupDivOf = new Map<number, { name: string; division: number }>();
-		try {
-			const cupTeams = await getTeamsWithCoachNames(game.db);
-			for (const t of cupTeams || [])
-				cupDivOf.set(Number(t.id), { name: t.name, division: Number(t.division) });
-		} catch {
-			/* sem foto de divisões: o rescaldo sai com variante simples */
-		}
-		try {
-		for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {
-			// ── Bilheteira da Taça (tarifa da equipa da casa, como na liga),
-			// com 15% para o visitante (AWAY_TICKET_SHARE).
-			const cupTicketPrice = (fixture as any)._ticketPrice || 15;
-			const cupRevenue = (fixture.attendance || 0) * cupTicketPrice;
-			const cupAwayShare = Math.floor(cupRevenue * AWAY_TICKET_SHARE);
-			const cupHomeShare = cupRevenue - cupAwayShare;
-			if (cupHomeShare > 0) {
-				await new Promise<void>((resolve) => {
-					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupHomeShare, fixture.homeTeamId], () => resolve());
-				});
-			}
-			if (cupAwayShare > 0) {
-				await new Promise<void>((resolve) => {
-					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupAwayShare, fixture.awayTeamId], () => resolve());
-				});
-			}
-			// Persiste attendance + receita faturada mesmo quando 0 (auditoria e finances)
-			await new Promise<void>((resolve) => {
-				game.db.run(
-					"UPDATE cup_matches SET attendance = ?, ticket_revenue = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-					[fixture.attendance || 0, cupRevenue, season, round, fixture.homeTeamId, fixture.awayTeamId],
-					() => resolve(),
-				);
-			});
-			const winnerId =
-				fixture._winnerId ??
-				(goals90Home > goals90Away ? fixture.homeTeamId : fixture.awayTeamId);
-
-			// Prémio por ultrapassar a eliminatória: a Taça paga a quem lá vai,
-			// não só a quem a levanta (a final tem o prémio próprio de 500K€).
-			const roundPrize = CUP_ROUND_PRIZE[round] || 0;
-			if (roundPrize > 0) {
-				await new Promise<void>((resolve) => {
-					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [roundPrize, winnerId], () => resolve());
-				});
-				logClubNews(game, "prize", `Prémio da Taça — ${roundLabel}`, winnerId, {
-					amount: roundPrize,
-					description: `Apuramento na ${roundLabel} (época ${season})`,
-				});
-			}
-
-			// Memória táctica (Taça) — 0.5 estrelas (1.ª parte) + 0.5 (2.ª parte)
-			const updateCupFamiliarity = (
-				teamId: number,
-				tactic: any,
-				won: boolean,
-				firstTactic?: any,
-			) => {
-				if (!tactic?.formation || !tactic?.style) return;
-				// Memória táctica: fonte de verdade é a memória do jogo
-				updateTacticFamiliarity(
-					game,
-					teamId,
-					firstTactic ?? tactic,
-					tactic,
-					game.matchweek,
-					won ? "V" : "D",
-				);
-				const playerState = Object.values(game.playersByName).find(
-					(p: any) => p.teamId === teamId && p.socketId,
-				);
-				if (!playerState) return;
-				// Linha de auditoria (apenas coaches humanos)
-				game.db.run(
-					"INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
-					[
-						teamId,
-						playerState.name,
-						tactic.formation,
-						tactic.style,
-						game.matchweek,
-						"cup",
-						won ? "V" : "D",
-					],
-				);
-			};
-			updateCupFamiliarity(
-				fixture.homeTeamId,
-				t1,
-				winnerId === fixture.homeTeamId,
-				(fixture as any)._firstHalfT1 ?? t1,
-			);
-			updateCupFamiliarity(
-				fixture.awayTeamId,
-				t2,
-				winnerId === fixture.awayTeamId,
-				(fixture as any)._firstHalfT2 ?? t2,
-			);
-
-			// Escritas adiadas da Fase 2 (ET + penáltis): dentro da transação
-			// para que um crash antes do COMMIT não deixe played=1 órfão sem
-			// marker 'finalized' (o re-sorteio só apaga played=0 e duplicava
-			// vencedores — ex.: ronda 3 com 5 em vez de 4). O played=1 sai no
-			// UPDATE do resultado abaixo, para todas as eliminatórias.
-			if (fixture._etGoalsHome != null) {
-				await new Promise((resolve) => {
-					game.db.run(
-						"UPDATE cup_matches SET home_et_score = ?, away_et_score = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-						[
-							fixture._etGoalsHome,
-							fixture._etGoalsAway,
-							season,
-							round,
-							fixture.homeTeamId,
-							fixture.awayTeamId,
-						],
-						resolve,
-					);
-				});
-			}
-			if (fixture._decidedByPenalties) {
-				await new Promise((resolve) => {
-					game.db.run(
-						"UPDATE cup_matches SET home_penalties = ?, away_penalties = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-						[
-							fixture._penaltyHomeGoals,
-							fixture._penaltyAwayGoals,
-							season,
-							round,
-							fixture.homeTeamId,
-							fixture.awayTeamId,
-						],
-						resolve,
-					);
-				});
-			}
-			await new Promise((resolve) => {
-				game.db.run(
-					"UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-					[
-						goals90Home,
-						goals90Away,
-						winnerId,
-						season,
-						round,
-						fixture.homeTeamId,
-						fixture.awayTeamId,
-					],
-					resolve,
-				);
-			});
-
-			// MOM por equipa (Jornal Global) — dentro da transação da ronda
+		await runRoomTask(game.roomCode, async () => {
 			try {
-				persistMoms(game.db, game, fixture, "Cup", null, round);
-			} catch (momErr: any) {
-				console.warn(
-					`[continueFromEtGate] MOM persistence failed (round ${round}):`,
-					momErr?.message,
-				);
+				await dbRunOn(game, "BEGIN TRANSACTION");
+			} catch (begErr) {
+				cupTxFailed = true;
+				console.error(`[${game.roomCode}] ❌ Cup BEGIN failed:`, begErr);
+				return;
 			}
-
-			// Classificação 0–10 do último jogo por participante (mantém quem
-			// não jogou). Idempotente → seguro no replay da ronda.
+			// Deltas do jogo (golos, cartões, lesões, presenças) acumulados em memória
+			// pela engine — comitados atomicamente com o resto (janela de crash fechada).
+			queueMatchDeltaWrites(game.db, setups.map((s) => s.fixture));
+			// Divisões para o contexto do rescaldo do Jornal (só escalão na Taça).
+			const cupDivOf = new Map<number, { name: string; division: number }>();
 			try {
-				persistLastRatings(game.db, fixture);
-			} catch (ratingErr: any) {
-				console.warn(
-					`[continueFromEtGate] last_rating persistence failed (round ${round}):`,
-					ratingErr?.message,
-				);
-			}
-
-			// Cup upset drama by division gap: the lower-division team that
-			// advances gets an extra morale spike and the higher-division team
-			// it eliminates takes a matching extra hit.
-			const [homeDiv, awayDiv] = await Promise.all([
-				runGet(game.db, "SELECT division FROM teams WHERE id = ?", [
-					fixture.homeTeamId,
-				]),
-				runGet(game.db, "SELECT division FROM teams WHERE id = ?", [
-					fixture.awayTeamId,
-				]),
-			]);
-			const winnerIsHome = winnerId === fixture.homeTeamId;
-			const winnerDiv = winnerIsHome
-				? (homeDiv?.division ?? 5)
-				: (awayDiv?.division ?? 5);
-			const loserDiv = winnerIsHome
-				? (awayDiv?.division ?? 5)
-				: (homeDiv?.division ?? 5);
-			if (loserDiv < winnerDiv) {
-				const divDiff = winnerDiv - loserDiv;
-				const upsetMorale = Math.min(15, divDiff * 5);
-				await new Promise((resolve) => {
-					game.db.run(
-						"UPDATE teams SET morale = MIN(50, morale + ?) WHERE id = ?",
-						[upsetMorale, winnerId],
-						resolve,
-					);
-				});
-				const loserId = winnerIsHome
-					? fixture.awayTeamId
-					: fixture.homeTeamId;
-				await new Promise((resolve) => {
-					game.db.run(
-						"UPDATE teams SET morale = MAX(1, morale - ?) WHERE id = ?",
-						[upsetMorale, loserId],
-						resolve,
-					);
-				});
-				const winnerName =
-					(winnerIsHome ? fixture.homeTeam : fixture.awayTeam)?.name ?? "Desconhecido";
-				const loserName =
-					(winnerIsHome ? fixture.awayTeam : fixture.homeTeam)?.name ??
-					"Desconhecido";
-				upsets.push({ winnerName, winnerDiv, loserName, loserDiv, winnerId, loserId });
-				// Notícia persistente do tomba-gigantes (o modal do cliente foi
-				// substituído pela tira do Jornal): dentro da transação, logo
-				// replay-safe pelo marker 'finalized'. Sem amount (não toca no
-				// gráfico de saldo) e sem emit próprio — o globalNewsUpdated do
-				// fim da ronda refresca o Jornal.
-				const wGoals = winnerIsHome
-					? (fixture.finalHomeGoals ?? goals90Home)
-					: (fixture.finalAwayGoals ?? goals90Away);
-				const lGoals = winnerIsHome
-					? (fixture.finalAwayGoals ?? goals90Away)
-					: (fixture.finalHomeGoals ?? goals90Home);
-				const upsetScore =
-					wGoals != null && lGoals != null ? `${wGoals}–${lGoals}` : null;
-				logClubNews(
-					game,
-					"cup_upset",
-					`Tomba-gigantes: ${winnerName} elimina ${loserName}`,
-					winnerId,
-					{
-						description: [
-							roundName || `Ronda ${round}`,
-							`${DIVISION_NAMES[winnerDiv] ?? `Div ${winnerDiv}`} vence ${DIVISION_NAMES[loserDiv] ?? `Div ${loserDiv}`}`,
-							upsetScore ??
-								(fixture._decidedByPenalties ? "nos penáltis" : "na eliminatória"),
-						].join(" · "),
-						related_team_id: loserId,
-						related_team_name: loserName,
-					},
-				);
-			}
-
-			// Rescaldo persistente do Jornal, um por equipa (replay seguro:
-			// o helper substitui a linha do mesmo jogo).
-			try {
-				const cHG = fixture.finalHomeGoals ?? 0;
-				const cAG = fixture.finalAwayGoals ?? 0;
-				const cHome = cupDivOf.get(Number(fixture.homeTeamId));
-				const cAway = cupDivOf.get(Number(fixture.awayTeamId));
-				const cupKey = `cup:${season}:${round}`;
-				const cupRatings = computeMatchRatings(fixture);
-				const cupMoms = computeMoms(fixture.events || [], fixture.homeLineup || [], fixture.awayLineup || []);
-				logPostMatchRecap(game, {
-					teamId: fixture.homeTeamId,
-					teamName: cHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
-					opponentId: fixture.awayTeamId,
-					opponentName: cAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
-					myGoals: cHG,
-					oppGoals: cAG,
-					outcome: winnerId === fixture.homeTeamId ? "win" : "loss",
-					source: "cup",
-					roundLabel,
-					key: cupKey,
-					ratings: cupRatings.home,
-					mom: cupMoms.home,
-					penalties: !!fixture._decidedByPenalties,
-					ticketRevenue: cupHomeShare,
-					myDivision: cHome?.division ?? null,
-					opponentDivision: cAway?.division ?? null,
-					matchweek: game.matchweek,
-				});
-				logPostMatchRecap(game, {
-					teamId: fixture.awayTeamId,
-					teamName: cAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
-					opponentId: fixture.homeTeamId,
-					opponentName: cHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
-					myGoals: cAG,
-					oppGoals: cHG,
-					outcome: winnerId === fixture.awayTeamId ? "win" : "loss",
-					source: "cup",
-					roundLabel,
-					key: cupKey,
-					ratings: cupRatings.away,
-					mom: cupMoms.away,
-					penalties: !!fixture._decidedByPenalties,
-					ticketRevenue: cupAwayShare,
-					myDivision: cAway?.division ?? null,
-					opponentDivision: cHome?.division ?? null,
-					matchweek: game.matchweek,
-				});
-			} catch (cupRecapErr: any) {
-				console.warn(`[continueFromEtGate] recap failed (round ${round}):`, cupRecapErr?.message);
+				const cupTeams = await getTeamsWithCoachNames(game.db);
+				for (const t of cupTeams || [])
+					cupDivOf.set(Number(t.id), { name: t.name, division: Number(t.division) });
+			} catch {
+				/* sem foto de divisões: o rescaldo sai com variante simples */
 			}
 			try {
-				logMatchMedicalNews(game, fixture.homeTeamId, game.matchweek);
-				logMatchMedicalNews(game, fixture.awayTeamId, game.matchweek);
-			} catch {}
-
-			results.push({
-				homeTeamId: fixture.homeTeamId,
-				awayTeamId: fixture.awayTeamId,
-				homeTeam: fixture.homeTeam || null,
-				awayTeam: fixture.awayTeam || null,
-				homeGoals: fixture.finalHomeGoals,
-				homeTicketRevenue: cupHomeShare,
-				awayTicketRevenue: cupAwayShare,
-				awayGoals: fixture.finalAwayGoals,
-				winnerId,
-				wentToET:
-					!!fixture._decidedByPenalties ||
-					fixture.events.some((e: any) => e.minute > 90),
-				decidedByPenalties: !!fixture._decidedByPenalties,
-				penaltyHomeGoals: fixture._penaltyHomeGoals ?? null,
-				penaltyAwayGoals: fixture._penaltyAwayGoals ?? null,
-				events: fixture.events,
-				mom: computeMoms(
-					fixture.events || [],
-					fixture.homeLineup || [],
-					fixture.awayLineup || [],
-				),
-			});
-
-			if (round === CUP_FINAL_ROUND) {
-				const winnerTeam = await runGet(
-					game.db,
-					"SELECT name FROM teams WHERE id = ?",
-					[winnerId],
-				);
-				const coachInfo = await runGet(
-					game.db,
-					"SELECT m.name as coach_name, m.is_human as is_human FROM teams t JOIN managers m ON t.manager_id = m.id WHERE t.id = ?",
-					[winnerId],
-				);
-				await new Promise((resolve) => {
-					game.db.run(
-						"INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach) VALUES (?, ?, ?, ?, ?)",
-						[
-							winnerId,
-							game.year,
-							"Vencedor da Taça de Portugal",
-							coachInfo?.coach_name || null,
-							coachInfo?.is_human || 0,
-						],
-						resolve,
-					);
-				});
-				await new Promise((resolve) => {
-					game.db.run(
-						"UPDATE teams SET budget = budget + 500000 WHERE id = ?",
-						[winnerId],
-						resolve,
-					);
-				});
-				logClubNews(game, "prize", "Prémio da Taça", winnerId, {
-					amount: 500000,
-					description: "Vencedor da Taça de Portugal",
-				});
-				const updatedTeams = await getTeamsWithCoachNames(game.db);
-				io.to(game.roomCode).emit("teamsData", updatedTeams);
-				if (winnerTeam) {
-					io.to(game.roomCode).emit("systemMessage", {
-						text: `🏆 ${winnerTeam.name} venceu a Taça de Portugal de ${game.year}! (+500 000 €) no Estádio do Jamor`,
-						broadcast: true,
-						cm: true,
+			for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {
+				// ── Bilheteira da Taça (tarifa da equipa da casa, como na liga),
+				// com 15% para o visitante (AWAY_TICKET_SHARE).
+				const cupTicketPrice = (fixture as any)._ticketPrice || 15;
+				const cupRevenue = (fixture.attendance || 0) * cupTicketPrice;
+				const cupAwayShare = Math.floor(cupRevenue * AWAY_TICKET_SHARE);
+				const cupHomeShare = cupRevenue - cupAwayShare;
+				if (cupHomeShare > 0) {
+					await new Promise<void>((resolve) => {
+						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupHomeShare, fixture.homeTeamId], () => resolve());
 					});
 				}
-			}
-		}
-			// Amigáveis dos eliminados: mesma transação (sem stats, como na pré-época).
-			if (friendlyFixtures.length > 0) {
-				for (const fixture of friendlyFixtures) fixture._deltas = undefined;
-				const friendlyResults = await commitFriendlyFixtures(game, friendlyFixtures, cupWeekFriendlyRound(round));
-				results.push(...friendlyResults.map((r) => ({ ...r, isFriendly: true })));
-			}
-			// Fecha transacção atómica da Taça (receita + resultados + attendance)
-			await new Promise<void>((resolve) => {
-				game.db.run(
-					"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
-					[game.season, game.calendarIndex],
-					() => resolve(),
+				if (cupAwayShare > 0) {
+					await new Promise<void>((resolve) => {
+						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupAwayShare, fixture.awayTeamId], () => resolve());
+					});
+				}
+				// Persiste attendance + receita faturada mesmo quando 0 (auditoria e finances)
+				await new Promise<void>((resolve) => {
+					game.db.run(
+						"UPDATE cup_matches SET attendance = ?, ticket_revenue = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+						[fixture.attendance || 0, cupRevenue, season, round, fixture.homeTeamId, fixture.awayTeamId],
+						() => resolve(),
+					);
+				});
+				const winnerId =
+					fixture._winnerId ??
+					(goals90Home > goals90Away ? fixture.homeTeamId : fixture.awayTeamId);
+
+				// Prémio por ultrapassar a eliminatória: a Taça paga a quem lá vai,
+				// não só a quem a levanta (a final tem o prémio próprio de 500K€).
+				const roundPrize = CUP_ROUND_PRIZE[round] || 0;
+				if (roundPrize > 0) {
+					await new Promise<void>((resolve) => {
+						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [roundPrize, winnerId], () => resolve());
+					});
+					logClubNews(game, "prize", `Prémio da Taça — ${roundLabel}`, winnerId, {
+						amount: roundPrize,
+						description: `Apuramento na ${roundLabel} (época ${season})`,
+					});
+				}
+
+				// Memória táctica (Taça) — 0.5 estrelas (1.ª parte) + 0.5 (2.ª parte)
+				const updateCupFamiliarity = (
+					teamId: number,
+					tactic: any,
+					won: boolean,
+					firstTactic?: any,
+				) => {
+					if (!tactic?.formation || !tactic?.style) return;
+					// Memória táctica: fonte de verdade é a memória do jogo
+					updateTacticFamiliarity(
+						game,
+						teamId,
+						firstTactic ?? tactic,
+						tactic,
+						game.matchweek,
+						won ? "V" : "D",
+					);
+					const playerState = Object.values(game.playersByName).find(
+						(p: any) => p.teamId === teamId && p.socketId,
+					);
+					if (!playerState) return;
+					// Linha de auditoria (apenas coaches humanos)
+					game.db.run(
+						"INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
+						[
+							teamId,
+							playerState.name,
+							tactic.formation,
+							tactic.style,
+							game.matchweek,
+							"cup",
+							won ? "V" : "D",
+						],
+					);
+				};
+				updateCupFamiliarity(
+					fixture.homeTeamId,
+					t1,
+					winnerId === fixture.homeTeamId,
+					(fixture as any)._firstHalfT1 ?? t1,
 				);
-			});
-			await new Promise<void>((resolve) => {
-				game.db.run("COMMIT", () => resolve());
-			});
-			// Saldo de fim de semana (inclui a bilheteira da Taça).
-			await snapshotBalanceHistory(
-				game,
-				game.season,
-				game.calendarIndex,
-				game.year || 0,
-				game.matchweek || 0,
-			).catch(() => {});
-		} catch (cupTxErr) {
-			cupTxFailed = true;
-			console.error(`[${game.roomCode}] ❌ Cup transaction failed:`, cupTxErr);
-			await new Promise<void>((resolve) => game.db.run("ROLLBACK", () => resolve()));
-		}
+				updateCupFamiliarity(
+					fixture.awayTeamId,
+					t2,
+					winnerId === fixture.awayTeamId,
+					(fixture as any)._firstHalfT2 ?? t2,
+				);
+
+				// Escritas adiadas da Fase 2 (ET + penáltis): dentro da transação
+				// para que um crash antes do COMMIT não deixe played=1 órfão sem
+				// marker 'finalized' (o re-sorteio só apaga played=0 e duplicava
+				// vencedores — ex.: ronda 3 com 5 em vez de 4). O played=1 sai no
+				// UPDATE do resultado abaixo, para todas as eliminatórias.
+				if (fixture._etGoalsHome != null) {
+					await new Promise((resolve) => {
+						game.db.run(
+							"UPDATE cup_matches SET home_et_score = ?, away_et_score = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+							[
+								fixture._etGoalsHome,
+								fixture._etGoalsAway,
+								season,
+								round,
+								fixture.homeTeamId,
+								fixture.awayTeamId,
+							],
+							resolve,
+						);
+					});
+				}
+				if (fixture._decidedByPenalties) {
+					await new Promise((resolve) => {
+						game.db.run(
+							"UPDATE cup_matches SET home_penalties = ?, away_penalties = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+							[
+								fixture._penaltyHomeGoals,
+								fixture._penaltyAwayGoals,
+								season,
+								round,
+								fixture.homeTeamId,
+								fixture.awayTeamId,
+							],
+							resolve,
+						);
+					});
+				}
+				await new Promise((resolve) => {
+					game.db.run(
+						"UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+						[
+							goals90Home,
+							goals90Away,
+							winnerId,
+							season,
+							round,
+							fixture.homeTeamId,
+							fixture.awayTeamId,
+						],
+						resolve,
+					);
+				});
+
+				// MOM por equipa (Jornal Global) — dentro da transação da ronda
+				try {
+					persistMoms(game.db, game, fixture, "Cup", null, round);
+				} catch (momErr: any) {
+					console.warn(
+						`[continueFromEtGate] MOM persistence failed (round ${round}):`,
+						momErr?.message,
+					);
+				}
+
+				// Classificação 0–10 do último jogo por participante (mantém quem
+				// não jogou). Idempotente → seguro no replay da ronda.
+				try {
+					persistLastRatings(game.db, fixture);
+				} catch (ratingErr: any) {
+					console.warn(
+						`[continueFromEtGate] last_rating persistence failed (round ${round}):`,
+						ratingErr?.message,
+					);
+				}
+
+				// Cup upset drama by division gap: the lower-division team that
+				// advances gets an extra morale spike and the higher-division team
+				// it eliminates takes a matching extra hit.
+				const [homeDiv, awayDiv] = await Promise.all([
+					runGet(game.db, "SELECT division FROM teams WHERE id = ?", [
+						fixture.homeTeamId,
+					]),
+					runGet(game.db, "SELECT division FROM teams WHERE id = ?", [
+						fixture.awayTeamId,
+					]),
+				]);
+				const winnerIsHome = winnerId === fixture.homeTeamId;
+				const winnerDiv = winnerIsHome
+					? (homeDiv?.division ?? 5)
+					: (awayDiv?.division ?? 5);
+				const loserDiv = winnerIsHome
+					? (awayDiv?.division ?? 5)
+					: (homeDiv?.division ?? 5);
+				if (loserDiv < winnerDiv) {
+					const divDiff = winnerDiv - loserDiv;
+					const upsetMorale = Math.min(15, divDiff * 5);
+					await new Promise((resolve) => {
+						game.db.run(
+							"UPDATE teams SET morale = MIN(50, morale + ?) WHERE id = ?",
+							[upsetMorale, winnerId],
+							resolve,
+						);
+					});
+					const loserId = winnerIsHome
+						? fixture.awayTeamId
+						: fixture.homeTeamId;
+					await new Promise((resolve) => {
+						game.db.run(
+							"UPDATE teams SET morale = MAX(1, morale - ?) WHERE id = ?",
+							[upsetMorale, loserId],
+							resolve,
+						);
+					});
+					const winnerName =
+						(winnerIsHome ? fixture.homeTeam : fixture.awayTeam)?.name ?? "Desconhecido";
+					const loserName =
+						(winnerIsHome ? fixture.awayTeam : fixture.homeTeam)?.name ??
+						"Desconhecido";
+					upsets.push({ winnerName, winnerDiv, loserName, loserDiv, winnerId, loserId });
+					// Notícia persistente do tomba-gigantes (o modal do cliente foi
+					// substituído pela tira do Jornal): dentro da transação, logo
+					// replay-safe pelo marker 'finalized'. Sem amount (não toca no
+					// gráfico de saldo) e sem emit próprio — o globalNewsUpdated do
+					// fim da ronda refresca o Jornal.
+					const wGoals = winnerIsHome
+						? (fixture.finalHomeGoals ?? goals90Home)
+						: (fixture.finalAwayGoals ?? goals90Away);
+					const lGoals = winnerIsHome
+						? (fixture.finalAwayGoals ?? goals90Away)
+						: (fixture.finalHomeGoals ?? goals90Home);
+					const upsetScore =
+						wGoals != null && lGoals != null ? `${wGoals}–${lGoals}` : null;
+					logClubNews(
+						game,
+						"cup_upset",
+						`Tomba-gigantes: ${winnerName} elimina ${loserName}`,
+						winnerId,
+						{
+							description: [
+								roundName || `Ronda ${round}`,
+								`${DIVISION_NAMES[winnerDiv] ?? `Div ${winnerDiv}`} vence ${DIVISION_NAMES[loserDiv] ?? `Div ${loserDiv}`}`,
+								upsetScore ??
+									(fixture._decidedByPenalties ? "nos penáltis" : "na eliminatória"),
+							].join(" · "),
+							related_team_id: loserId,
+							related_team_name: loserName,
+						},
+					);
+				}
+
+				// Rescaldo persistente do Jornal, um por equipa (replay seguro:
+				// o helper substitui a linha do mesmo jogo).
+				try {
+					const cHG = fixture.finalHomeGoals ?? 0;
+					const cAG = fixture.finalAwayGoals ?? 0;
+					const cHome = cupDivOf.get(Number(fixture.homeTeamId));
+					const cAway = cupDivOf.get(Number(fixture.awayTeamId));
+					const cupKey = `cup:${season}:${round}`;
+					const cupRatings = computeMatchRatings(fixture);
+					const cupMoms = computeMoms(fixture.events || [], fixture.homeLineup || [], fixture.awayLineup || []);
+					logPostMatchRecap(game, {
+						teamId: fixture.homeTeamId,
+						teamName: cHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
+						opponentId: fixture.awayTeamId,
+						opponentName: cAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
+						myGoals: cHG,
+						oppGoals: cAG,
+						outcome: winnerId === fixture.homeTeamId ? "win" : "loss",
+						source: "cup",
+						roundLabel,
+						key: cupKey,
+						ratings: cupRatings.home,
+						mom: cupMoms.home,
+						penalties: !!fixture._decidedByPenalties,
+						ticketRevenue: cupHomeShare,
+						myDivision: cHome?.division ?? null,
+						opponentDivision: cAway?.division ?? null,
+						matchweek: game.matchweek,
+					});
+					logPostMatchRecap(game, {
+						teamId: fixture.awayTeamId,
+						teamName: cAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
+						opponentId: fixture.homeTeamId,
+						opponentName: cHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
+						myGoals: cAG,
+						oppGoals: cHG,
+						outcome: winnerId === fixture.awayTeamId ? "win" : "loss",
+						source: "cup",
+						roundLabel,
+						key: cupKey,
+						ratings: cupRatings.away,
+						mom: cupMoms.away,
+						penalties: !!fixture._decidedByPenalties,
+						ticketRevenue: cupAwayShare,
+						myDivision: cAway?.division ?? null,
+						opponentDivision: cHome?.division ?? null,
+						matchweek: game.matchweek,
+					});
+				} catch (cupRecapErr: any) {
+					console.warn(`[continueFromEtGate] recap failed (round ${round}):`, cupRecapErr?.message);
+				}
+				try {
+					logMatchMedicalNews(game, fixture.homeTeamId, game.matchweek);
+					logMatchMedicalNews(game, fixture.awayTeamId, game.matchweek);
+				} catch {}
+
+				results.push({
+					homeTeamId: fixture.homeTeamId,
+					awayTeamId: fixture.awayTeamId,
+					homeTeam: fixture.homeTeam || null,
+					awayTeam: fixture.awayTeam || null,
+					homeGoals: fixture.finalHomeGoals,
+					homeTicketRevenue: cupHomeShare,
+					awayTicketRevenue: cupAwayShare,
+					awayGoals: fixture.finalAwayGoals,
+					winnerId,
+					wentToET:
+						!!fixture._decidedByPenalties ||
+						fixture.events.some((e: any) => e.minute > 90),
+					decidedByPenalties: !!fixture._decidedByPenalties,
+					penaltyHomeGoals: fixture._penaltyHomeGoals ?? null,
+					penaltyAwayGoals: fixture._penaltyAwayGoals ?? null,
+					events: fixture.events,
+					mom: computeMoms(
+						fixture.events || [],
+						fixture.homeLineup || [],
+						fixture.awayLineup || [],
+					),
+				});
+
+				if (round === CUP_FINAL_ROUND) {
+					const winnerTeam = await runGet(
+						game.db,
+						"SELECT name FROM teams WHERE id = ?",
+						[winnerId],
+					);
+					const coachInfo = await runGet(
+						game.db,
+						"SELECT m.name as coach_name, m.is_human as is_human FROM teams t JOIN managers m ON t.manager_id = m.id WHERE t.id = ?",
+						[winnerId],
+					);
+					await new Promise((resolve) => {
+						game.db.run(
+							"INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach) VALUES (?, ?, ?, ?, ?)",
+							[
+								winnerId,
+								game.year,
+								"Vencedor da Taça de Portugal",
+								coachInfo?.coach_name || null,
+								coachInfo?.is_human || 0,
+							],
+							resolve,
+						);
+					});
+					await new Promise((resolve) => {
+						game.db.run(
+							"UPDATE teams SET budget = budget + 500000 WHERE id = ?",
+							[winnerId],
+							resolve,
+						);
+					});
+					logClubNews(game, "prize", "Prémio da Taça", winnerId, {
+						amount: 500000,
+						description: "Vencedor da Taça de Portugal",
+					});
+					const updatedTeams = await getTeamsWithCoachNames(game.db);
+					io.to(game.roomCode).emit("teamsData", updatedTeams);
+					if (winnerTeam) {
+						io.to(game.roomCode).emit("systemMessage", {
+							text: `🏆 ${winnerTeam.name} venceu a Taça de Portugal de ${game.year}! (+500 000 €) no Estádio do Jamor`,
+							broadcast: true,
+							cm: true,
+						});
+					}
+				}
+			}
+				// Amigáveis dos eliminados: mesma transação (sem stats, como na pré-época).
+				if (friendlyFixtures.length > 0) {
+					for (const fixture of friendlyFixtures) fixture._deltas = undefined;
+					const friendlyResults = await commitFriendlyFixtures(game, friendlyFixtures, cupWeekFriendlyRound(round));
+					results.push(...friendlyResults.map((r) => ({ ...r, isFriendly: true })));
+				}
+				// Fecha transacção atómica da Taça (receita + resultados + attendance)
+				await new Promise<void>((resolve) => {
+					game.db.run(
+						"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
+						[game.season, game.calendarIndex],
+						() => resolve(),
+					);
+				});
+				await dbRunOn(game, "COMMIT");
+			} catch (cupTxErr) {
+				cupTxFailed = true;
+				console.error(`[${game.roomCode}] ❌ Cup transaction failed:`, cupTxErr);
+				await dbRunOn(game, "ROLLBACK").catch(() => {});
+			}
+		});
 		if (cupTxFailed) return null;
+		// Saldo de fim de semana (inclui a bilheteira da Taça).
+		await snapshotBalanceHistory(
+			game,
+			game.season,
+			game.calendarIndex,
+			game.year || 0,
+			game.matchweek || 0,
+		).catch(() => {});
 		return { results, upsets };
 	}
 
@@ -2740,39 +2751,46 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		console.log(
 			`[${game.roomCode}] finalizeFriendly | fixtures=${fixtures.length}`,
 		);
-		await new Promise<void>((resolve) => game.db.run("BEGIN TRANSACTION", () => resolve()));
-		// Amigavel nao conta para estatisticas de jogador (nem epoca nem
-		// carreira): golos, presencas, cartoes e lesoes ficam de fora. Os
-		// eventos do jogo (relato, jornal, resultado) mantem-se intactos.
-		for (const fixture of fixtures) fixture._deltas = undefined;
-		queueMatchDeltaWrites(game.db, fixtures);
+		// Transação na fila da sala; BEGIN/COMMIT que falham contam como falha.
 		let friendlyTxFailed = false;
-		try {
-			results.push(...(await commitFriendlyFixtures(game, fixtures, FRIENDLY_ROUND)));
-			await new Promise<void>((resolve) => {
-				game.db.run(
-					"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
-					[game.season, game.calendarIndex],
-					() => resolve(),
-				);
-			});
-			await new Promise<void>((resolve) => {
-				game.db.run("COMMIT", () => resolve());
-			});
-			// Saldo de fim de semana (inclui a bilheteira do amigável).
-			await snapshotBalanceHistory(
-				game,
-				game.season,
-				game.calendarIndex,
-				game.year || 0,
-				game.matchweek || 0,
-			).catch(() => {});
-		} catch (friendlyTxErr) {
-			friendlyTxFailed = true;
-			console.error(`[${game.roomCode}] Friendly transaction failed:`, friendlyTxErr);
-			await new Promise<void>((resolve) => game.db.run("ROLLBACK", () => resolve()));
-		}
+		await runRoomTask(game.roomCode, async () => {
+			try {
+				await dbRunOn(game, "BEGIN TRANSACTION");
+			} catch (begErr) {
+				friendlyTxFailed = true;
+				console.error(`[${game.roomCode}] Friendly BEGIN failed:`, begErr);
+				return;
+			}
+			// Amigavel nao conta para estatisticas de jogador (nem epoca nem
+			// carreira): golos, presencas, cartoes e lesoes ficam de fora. Os
+			// eventos do jogo (relato, jornal, resultado) mantem-se intactos.
+			for (const fixture of fixtures) fixture._deltas = undefined;
+			queueMatchDeltaWrites(game.db, fixtures);
+			try {
+				results.push(...(await commitFriendlyFixtures(game, fixtures, FRIENDLY_ROUND)));
+				await new Promise<void>((resolve) => {
+					game.db.run(
+						"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
+						[game.season, game.calendarIndex],
+						() => resolve(),
+					);
+				});
+				await dbRunOn(game, "COMMIT");
+			} catch (friendlyTxErr) {
+				friendlyTxFailed = true;
+				console.error(`[${game.roomCode}] Friendly transaction failed:`, friendlyTxErr);
+				await dbRunOn(game, "ROLLBACK").catch(() => {});
+			}
+		});
 		if (friendlyTxFailed) return;
+		// Saldo de fim de semana (inclui a bilheteira do amigável).
+		await snapshotBalanceHistory(
+			game,
+			game.season,
+			game.calendarIndex,
+			game.year || 0,
+			game.matchweek || 0,
+		).catch(() => {});
 
 		game.cupResultsPayload = {
 			round: FRIENDLY_ROUND,

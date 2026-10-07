@@ -3,6 +3,7 @@ import {
   logClubNews,
   recordTransfer,
   runExec,
+  runRoomTask,
   runGet,
   runAll,
   renewalDemandedWage,
@@ -134,38 +135,40 @@ export function registerTransferSocketHandlers(
         return;
       }
 
-      await runExec(game.db, "BEGIN");
-      try {
-        await runExec(
-          game.db,
-          "UPDATE teams SET budget = budget - ? WHERE id = ?",
-          [price, playerState.teamId],
-        );
-        if (player.team_id && player.team_id !== playerState.teamId) {
+      await runRoomTask(game.roomCode, async () => {
+        await runExec(game.db, "BEGIN");
+        try {
           await runExec(
             game.db,
-            "UPDATE teams SET budget = budget + ? WHERE id = ?",
-            [price, player.team_id],
+            "UPDATE teams SET budget = budget - ? WHERE id = ?",
+            [price, playerState.teamId],
           );
+          if (player.team_id && player.team_id !== playerState.teamId) {
+            await runExec(
+              game.db,
+              "UPDATE teams SET budget = budget + ? WHERE id = ?",
+              [price, player.team_id],
+            );
+          }
+          await runExec(
+            game.db,
+            "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
+            [
+              playerState.teamId,
+              signingWage(player),
+              getSeasonEndMatchweek(game.matchweek),
+              currentEpoch(game),
+              currentSlot(game),
+              currentSlot(game),
+              validPlayerId,
+            ],
+          );
+          await runExec(game.db, "COMMIT");
+        } catch (txErr) {
+          await runExec(game.db, "ROLLBACK").catch(() => {});
+          throw txErr;
         }
-        await runExec(
-          game.db,
-          "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
-          [
-            playerState.teamId,
-            signingWage(player),
-            getSeasonEndMatchweek(game.matchweek),
-            currentEpoch(game),
-            currentSlot(game),
-            currentSlot(game),
-            validPlayerId,
-          ],
-        );
-        await runExec(game.db, "COMMIT");
-      } catch (txErr) {
-        await runExec(game.db, "ROLLBACK").catch(() => {});
-        throw txErr;
-      }
+      });
 
       // Log transfer news (outside transaction — non-critical)
       const buyingTeam = await runGet<any>(
@@ -772,57 +775,59 @@ export function registerTransferSocketHandlers(
       // Transação única: sem isto, um crash entre o débito e o registo do
       // jogador fazia o dinheiro desaparecer (era o único caminho de dinheiro
       // fora de transação — ver buyPlayer para o padrão).
-      await runExec(game.db, "BEGIN");
-      try {
-        const debit = await runExec(
-          game.db,
-          "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
-          [proposalPrice, playerState.teamId, proposalPrice],
-        );
-        if (debit.changes === 0) throw new Error("insufficient_budget");
-        if (sellerTeamId != null) {
-          await runExec(
+      await runRoomTask(game.roomCode, async () => {
+        await runExec(game.db, "BEGIN");
+        try {
+          const debit = await runExec(
             game.db,
-            "UPDATE teams SET budget = budget + ? WHERE id = ?",
-            [proposalPrice, sellerTeamId],
+            "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
+            [proposalPrice, playerState.teamId, proposalPrice],
           );
+          if (debit.changes === 0) throw new Error("insufficient_budget");
+          if (sellerTeamId != null) {
+            await runExec(
+              game.db,
+              "UPDATE teams SET budget = budget + ? WHERE id = ?",
+              [proposalPrice, sellerTeamId],
+            );
+          }
+          // Guarda anti-concorrência: o jogador tem de continuar no clube vendedor.
+          const moved =
+            sellerTeamId != null
+              ? await runExec(
+                  game.db,
+                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id = ?",
+                  [
+                    playerState.teamId,
+                    wage,
+                    seasonEnd,
+                    epoch,
+                    slot,
+                    slot,
+                    validPlayerId,
+                    sellerTeamId,
+                  ],
+                )
+              : await runExec(
+                  game.db,
+                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id IS NULL",
+                  [
+                    playerState.teamId,
+                    wage,
+                    seasonEnd,
+                    epoch,
+                    slot,
+                    slot,
+                    validPlayerId,
+                  ],
+                );
+          if (moved.changes === 0) throw new Error("player_moved");
+          await runExec(game.db, "COMMIT");
+        } catch (txErr) {
+          await runExec(game.db, "ROLLBACK").catch(() => {});
+          throw txErr;
         }
-        // Guarda anti-concorrência: o jogador tem de continuar no clube vendedor.
-        const moved =
-          sellerTeamId != null
-            ? await runExec(
-                game.db,
-                "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id = ?",
-                [
-                  playerState.teamId,
-                  wage,
-                  seasonEnd,
-                  epoch,
-                  slot,
-                  slot,
-                  validPlayerId,
-                  sellerTeamId,
-                ],
-              )
-            : await runExec(
-                game.db,
-                "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id IS NULL",
-                [
-                  playerState.teamId,
-                  wage,
-                  seasonEnd,
-                  epoch,
-                  slot,
-                  slot,
-                  validPlayerId,
-                ],
-              );
-        if (moved.changes === 0) throw new Error("player_moved");
-        await runExec(game.db, "COMMIT");
-      } catch (txErr) {
-        await runExec(game.db, "ROLLBACK").catch(() => {});
-        throw txErr;
-      }
+      });
 
       // Notícias e histórico (não-críticos, fora da transação)
       const buyingTeam = await runGet<any>(game.db, "SELECT name FROM teams WHERE id = ?", [
