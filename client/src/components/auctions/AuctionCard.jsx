@@ -170,11 +170,15 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
         }
       />
 
-      <p className="px-3 short:px-2 mt-2 text-[10px] text-on-surface-variant tabular-nums">
-        <b className="text-on-surface font-black">{auction.games_played ?? 0}</b> jogos ·{" "}
-        <b className="text-emerald-400 font-black">{auction.goals ?? 0}</b> golos ·{" "}
-        <b className="text-on-surface font-black">{formatCurrency(auction.wage || 0)}</b>/sem
-      </p>
+      <div className="px-3 short:px-2 mt-2.5 flex items-center justify-between gap-2 text-[11px] text-on-surface-variant tabular-nums">
+        <p>
+          <b className="text-on-surface font-black">{auction.games_played ?? 0}</b> jogos ·{" "}
+          <b className="text-emerald-400 font-black">{auction.goals ?? 0}</b> golos
+        </p>
+        <p title="Ordenado semanal">
+          Ordenado <b className="text-on-surface font-black">{formatCurrency(auction.wage || 0)}</b>/sem
+        </p>
+      </div>
 
       {/* Bilhete: lance atual + licitação */}
       <div className="mt-auto pt-2.5 short:pt-1.5 px-2 pb-2 space-y-1.5">
