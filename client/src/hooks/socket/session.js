@@ -268,6 +268,9 @@ export function registerSessionListeners(handlers, refs, ctx) {
 				token: currentMe.token,
 				roomCode: currentMe.roomCode,
 				deviceId: getDeviceId(),
+				// Reconexão com o separador oculto é passiva: não rouba o assento a
+				// outro dispositivo vivo (ver assignPlayer).
+				visible: document.visibilityState === "visible",
 			});
 		}
 	};

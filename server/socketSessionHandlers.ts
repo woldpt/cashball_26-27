@@ -256,6 +256,21 @@ export function registerSessionSocketHandlers(
 		resendBoardWarning,
 	} = deps;
 
+	// Avisa o socket deslocado — só se estiver vivo (um socket antigo morto do
+	// mesmo telemóvel não recebe nada, logo não há falso deslocamento). O motivo
+	// distingue outro dispositivo de outra tab do mesmo.
+	function notifyDisplaced(
+		oldSocketId: string | null,
+		previousDevice: string | null,
+		deviceId: string | null,
+	) {
+		if (!oldSocketId || !io.sockets.sockets.get(oldSocketId)?.connected) return;
+		const otherDevice = !!(previousDevice && deviceId && previousDevice !== deviceId);
+		io.to(oldSocketId).emit("sessionDisplaced", {
+			reason: otherDevice ? "another_device" : "another_tab",
+		});
+	}
+
 	function assignPlayer(
 		game: ActiveGame,
 		name: string,
@@ -263,10 +278,30 @@ export function registerSessionSocketHandlers(
 		roomCode: string,
 		isNew: boolean = true,
 		deviceId: string | null = null,
+		passive: boolean = false,
 	) {
 		console.log(
 			`[${roomCode}] 👤 assignPlayer: ${name} → team=${team.name ?? team.id} | isNew=${isNew} | phase=${game.gamePhase}`,
 		);
+		// Reconexão em segundo plano (separador oculto): não rouba o assento a
+		// outro dispositivo que o tem ligado e vivo — este cliente fica deslocado
+		// e só volta com «Retomar aqui» (aí o join é visível e passa).
+		if (passive) {
+			const cur = game.playersByName[name]?.socketId;
+			const seatDevice = game.seats[name]?.deviceId ?? null;
+			if (
+				cur &&
+				cur !== socket.id &&
+				io.sockets.sockets.get(cur)?.connected &&
+				seatDevice &&
+				deviceId &&
+				seatDevice !== deviceId
+			) {
+				socket.leave(roomCode);
+				socket.emit("sessionDisplaced", { reason: "another_device" });
+				return;
+			}
+		}
 		if (!game.playersByName[name]) {
 			game.playersByName[name] = {
 				name,
@@ -310,14 +345,8 @@ export function registerSessionSocketHandlers(
 				io,
 			);
 		}
-		// Só é "sessão noutro dispositivo" quando o dispositivo é mesmo outro.
-		// Um reconnect do mesmo telemóvel (novo socket, mesmo device) não pode
-		// desligar o cliente — era isso que o deixava sem reconexão para sempre.
-		if (displacedSocketId && previousDevice && deviceId && previousDevice !== deviceId) {
-			io.to(displacedSocketId).emit("sessionDisplaced", {
-				reason: "another_device",
-			});
-		}
+		// Só avisa um socket antigo que ainda esteja vivo (ver notifyDisplaced).
+		notifyDisplaced(displacedSocketId, previousDevice, deviceId ?? null);
 
 		game.lockedCoaches.add(name);
 		if (game.lockedCoaches.size >= 2) {
@@ -550,7 +579,7 @@ export function registerSessionSocketHandlers(
 	}
 
 	socket.on("joinGame", async (data) => {
-		const { name, token, roomCode: rawRoom, roomName, joinMode, deviceId } = data;
+		const { name, token, roomCode: rawRoom, roomName, joinMode, deviceId, visible } = data;
 
 		if (!name || typeof name !== "string" || name.trim().length === 0) {
 			return socket.emit("joinError", "Nome de treinador inválido.");
@@ -663,6 +692,7 @@ export function registerSessionSocketHandlers(
 			const doJoinContinue = () => {
 				// Bloquear coaches expulso definitivamente pelo Admin
 				if (game.kickedCoaches?.has(trimmedName)) {
+					socket.leave(finalRoomCode);
 					return socket.emit(
 						"joinError",
 						"Foste expulso desta sala pelo Admin.",
@@ -699,7 +729,7 @@ export function registerSessionSocketHandlers(
 								[row.id],
 								(_err2: any, team: any) => {
 									if (team) {
-										assignPlayer(game, trimmedName, team, finalRoomCode, false, deviceId ?? null);
+										assignPlayer(game, trimmedName, team, finalRoomCode, false, deviceId ?? null, visible === false);
 									} else if (game.dismissedCoachSince[trimmedName]) {
 										// Coach is dismissed and waiting for a new job — rebind socket
 										// without assigning a new team so their dismissed state is preserved.
@@ -713,12 +743,9 @@ export function registerSessionSocketHandlers(
 												socketId: socket.id,
 											};
 										}
+										const dismissedPrevDevice = game.seats[trimmedName]?.deviceId ?? null;
 										const displacedSocketId = bindSocket(game, trimmedName, socket.id);
-										if (displacedSocketId) {
-											io.to(displacedSocketId).emit("sessionDisplaced", {
-												reason: "another_device",
-											});
-										}
+										notifyDisplaced(displacedSocketId, dismissedPrevDevice, deviceId ?? null);
 
 										const dismissalInfo = game.dismissedCoachSince[trimmedName];
 										socket.emit("coachDismissed", {
@@ -811,6 +838,7 @@ export function registerSessionSocketHandlers(
 					(player) => player.socketId,
 				).length;
 				if (connectedCount >= 8 && !game.playersByName[trimmedName]) {
+					socket.leave(finalRoomCode);
 					socket.emit("joinError", "Sala cheia (Máximo 8 Treinadores).");
 					return;
 				}

@@ -223,6 +223,7 @@ export function useJoinSession({ setRoomCode, onRoomGone }) {
 				token: savedSession.token,
 				roomCode: savedSession.roomCode.toUpperCase(),
 				deviceId: getDeviceId(),
+				visible: document.visibilityState === "visible",
 			};
 			lastJoinRef.current = payload;
 			lastNameRef.current = savedSession.name;
