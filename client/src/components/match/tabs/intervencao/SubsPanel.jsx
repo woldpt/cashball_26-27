@@ -749,13 +749,11 @@ export function SubsPanel({
   );
 }
 
-/* Etiqueta «Sai → Entra» do botão de confirmação (nome de quem sai → quem entra). */
+/* Etiqueta «Sai → Entra» do botão de confirmação; nomes longos passam a 2 linhas. */
 function SwapLabel({ out, inn }) {
   return (
-    <span className="flex min-w-0 items-center gap-1.5 truncate">
-      <span className="truncate">{out}</span>
-      <span aria-hidden="true" className="shrink-0 opacity-70">→</span>
-      <span className="truncate">{inn}</span>
+    <span>
+      {out} <span aria-hidden="true" className="opacity-70">→</span> {inn}
     </span>
   );
 }
@@ -816,7 +814,7 @@ function ConfirmPill({ tone, onClick, disabled, ariaLabel, icon, children }) {
       <span className="relative flex shrink-0 items-center justify-center rounded-full bg-black/15 p-1">
         {icon}
       </span>
-      <span className="relative min-w-0 truncate">{children}</span>
+      <span className="relative min-w-0 text-center leading-tight [overflow-wrap:anywhere] line-clamp-2">{children}</span>
     </motion.button>
   );
 }
@@ -878,7 +876,7 @@ function FloatingConfirmButton({
           ariaLabel={`${targetPlayer?.name} vai para a baliza`}
           icon={<span aria-hidden="true" className="text-sm leading-none">🧤</span>}
         >
-          <span className="truncate">{targetPlayer?.name} para a baliza</span>
+          <span>{targetPlayer?.name} para a baliza</span>
         </ConfirmPill>
       ) : (
         <ConfirmPill
@@ -889,7 +887,7 @@ function FloatingConfirmButton({
           icon={<MatchIcon name="confirm" className="h-4 w-4 shrink-0" />}
         >
           {noReplacement ? (
-            <span className="truncate">Continuar sem substituição</span>
+            <span>Continuar sem substituição</span>
           ) : (
             <SwapLabel out={sourcePlayer?.name} inn={targetPlayer?.name} />
           )}
