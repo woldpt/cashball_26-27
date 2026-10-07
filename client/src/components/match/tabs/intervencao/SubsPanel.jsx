@@ -844,7 +844,7 @@ function FloatingConfirmButton({
 }) {
   if (!canConfirmSwap) return null;
   return (
-    <div className="absolute left-1/2 top-[38%] z-[5] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 pointer-events-none">
+    <div className="absolute inset-x-0 top-[38%] z-[5] flex -translate-y-1/2 flex-col items-center gap-2 pointer-events-none">
       {isForcedSwap && injuryCountdown !== null && (
         <>
           <span role="status" className="sr-only">
