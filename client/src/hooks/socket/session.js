@@ -204,6 +204,15 @@ export function registerSessionListeners(handlers, refs, ctx) {
 			handlers.setShowHalftimePanel(false);
 			handlers.setMatchAction(null);
 			handlers.setIsMatchActionPending(false);
+			// Caiu a meio da 2.ª parte e voltou já em lobby: o direto parcial (sem
+			// MOM) ficava congelado no tab Jogo. Com o relógio a 90'/120' é o ecrã
+			// final normal e não se mexe.
+			if (refs.liveMinuteRef.current < 90) {
+				handlers.setMatchResults((prev) =>
+					prev?.results?.some((r) => r.mom != null) ? prev : null,
+				);
+				handlers.setActiveTab((t) => (t === "live" ? "jornal" : t));
+			}
 		}
 		// O join já está ligado no servidor: esvaziar a fila offline
 		// (tática, resoluções) + repor intenções sticky.
