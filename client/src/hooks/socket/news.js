@@ -24,10 +24,12 @@ export function registerNewsListeners(handlers, refs, ctx) {
 		socket.emit("getGlobalNews");
 	});
 	socket.on("palmaresData", (data) => {
+		if (!ctx.inRoom()) return;
 		handlers.setPalmares(data);
 		handlers.setPalmaresTeamId(data.teamId);
 	});
 	socket.on("clubHistoryData", (data) => {
+		if (!ctx.inRoom()) return;
 		handlers.setClubHistory(data);
 		handlers.setClubHistoryTeamId(data.teamId);
 	});
@@ -44,9 +46,10 @@ export function registerNewsListeners(handlers, refs, ctx) {
 			}
 		},
 	);
-	socket.on("playerHistoryData", (data) =>
-		handlers.setPlayerHistoryModal(data),
-	);
+	socket.on("playerHistoryData", (data) => {
+		if (!ctx.inRoom()) return;
+		handlers.setPlayerHistoryModal(data);
+	});
 	socket.on("playerSearchResults", (data) => {
 		// Anti-race: ignora respostas de pesquisas antigas (searchId ecoado pelo
 		// servidor) — só a última pesquisa feita pode atualizar os resultados.
@@ -58,7 +61,10 @@ export function registerNewsListeners(handlers, refs, ctx) {
 			truncated: !!data?.truncated,
 		});
 	});
-	socket.on("financeData", (data) => handlers.setFinanceData(data));
+	socket.on("financeData", (data) => {
+		if (!ctx.inRoom()) return;
+		handlers.setFinanceData(data);
+	});
 	socket.on("sponsorState", (data) => {
 		if (!ctx.inRoom()) return;
 		handlers.setSponsorState(

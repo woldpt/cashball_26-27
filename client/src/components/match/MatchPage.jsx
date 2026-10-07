@@ -421,7 +421,7 @@ export function MatchPage({
 								? isFriendly
 									? "Amigáveis · Outros jogos"
 									: `${cupMatchRoundName || "Taça"} · Outros jogos`
-								: `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
+								: `${DIVISION_NAMES[myDivision] || "Liga"} · J${matchResults?.matchweek || currentJornada || "—"}`}
 						</h4>
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
 							{isCupMatch

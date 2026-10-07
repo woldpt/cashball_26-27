@@ -98,7 +98,7 @@ export function GameProvider({
 	const [activeTab, setActiveTab] = useState(() => {
 		try {
 			const saved = sessionStorage.getItem("cashball_tab");
-			if (saved && !["club", "standings", "players", "finances", "tactic", "briefing", "live", "calendar", "market", "bracket", "user_settings", "squad", "jornal"].includes(saved)) return "jornal";
+			if (saved && !["club", "standings", "players", "finances", "tactic", "briefing", "live", "calendar", "market", "bracket", "user_settings", "squad", "jornal", "calendario", "leiloes", "scout", "training", "stadium"].includes(saved)) return "jornal";
 			return saved || "jornal";
 		} catch {
 			return "club";
@@ -963,7 +963,7 @@ year: seasonYear,
 		startTransition(() => {
 			setActiveAuctions((prev) => prev.filter((a) => !a.closed));
 		});
-	}, [matchweekCount]);
+	}, [matchweekCount, calendarIndex]);
 
 	useEffect(() => {
 		if (activeTab !== "calendario" || disconnected) return;

@@ -28,7 +28,7 @@
 - **Coordenação de fase:** `phaseToken` (UUID) + `phaseAcks` (Set de nomes de coaches confirmados).
 - **Assentos & presença:** `roomStateHelpers.ts` — `room_seats` (equipa/`ready`/tática/`seat_epoch`/`deviceId`) é a fonte durável; `playersByName` é a projeção. Presença = socket ligado **ou** lease dentro da grace (`PRESENCE_GRACE_MS`), por isso um flape não conta como ausência.
 - **Congelamento (regra central):** com um treinador da ronda ausente, `computeAbsentees` > 0 e `waitForPresence` bloqueia o minuto, as janelas de decisão (`waitForMatchAction`), o intervalo, o prolongamento e o fecho da jornada. Não há fallback automático para humanos. Só `leaveRoom`/kick/despedida/`adminReleaseRoom` libertam o assento.
-- **Durabilidade:** `room_events` (append-only, `seq`) + volta ao `lobby` do slot depois do replay — a quebra a meio descarta o jogo (sem tática gravada) e a ronda rejoga-se do 0; só um slot já finalizado avança (`recoverFinalizedSlot`). Cliente: `seq` no `gameState` + `requestResync` quando deteta um salto.
+- **Durabilidade:** `room_events` (append-only, `seq` só em `calendar_advanced`/`week_started`) + volta ao `lobby` do slot depois do replay — a quebra a meio descarta o jogo (sem tática gravada) e a ronda rejoga-se do 0; só um slot já finalizado avança (`recoverFinalizedSlot`). Cliente: `seq` no `gameState` + `requestResync` quando deteta um salto.
 - **Segment guard:** `segmentRunning[roomCode]` impede dupla execução de segmento de jogo.
 
 ## 🧩 Sistemas transversais (1 linha cada)

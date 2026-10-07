@@ -49,9 +49,10 @@ export function BidForm({ playerId, minBid, budget, socket, accentHex = "#94a3b8
 		}
 		setBidError("");
 		if (!socket?.connected) {
-			// Sem rede: o lance fica em fila e é enviado ao reconectar (com
-			// __actionId anti-duplicado no servidor). Feedback imediato.
-			setBidError("Sem ligação — lance em fila para enviar.");
+			// Um lance enviado mais tarde pode já não fazer sentido (leilão
+			// fechado, preço mudado): não fica em fila.
+			setBidError("Sem ligação — tenta quando voltares a estar online.");
+			return;
 		}
 		emitComAck(
 			"placeAuctionBid",

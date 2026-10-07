@@ -36,9 +36,11 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		// Add to activeAuctions list (used by AuctionsTab and toast)
 		handlers.setActiveAuctions((prev) => {
 			const exists = prev.find((a) => a.playerId === auctionData.playerId);
-			if (exists) return prev;
+			// Leilão reaberto (mesmo jogador, o anterior já fechado): substitui.
+			if (exists && !exists.closed) return prev;
+			const base = exists ? prev.filter((a) => a !== exists) : prev;
 			return [
-				...prev,
+				...base,
 				{
 					...auctionData,
 					currentHighBid: auctionData.currentHighBid ?? 0,

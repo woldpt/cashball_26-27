@@ -51,6 +51,7 @@ export function TacticsProvider({ children }) {
     me,
     teamInfo,
     jobOfferModal,
+    sponsorState,
     setActiveTab,
     disconnected,
     isCupMatch,
@@ -67,8 +68,8 @@ export function TacticsProvider({ children }) {
   const dragPlayerStatusRef = useRef(null);
 
   // Briefing visto 1x por jornada (liga: matchweek, taça: cupRound) — o
-  // "Continuar" salta-o depois. Não usa calendarIndex: o cliente só o recebe
-  // via gameState, nunca avança pós-jogo.
+  // "Continuar" salta-o depois. Não usa calendarIndex: avança por seasonState
+  // logo no fim da ronda, antes de o briefing da seguinte estar visto.
   const matchdayKey = nextMatchSummary
     ? nextMatchSummary.isCup
       ? `cup:${nextMatchSummary.cupRound ?? "?"}`
@@ -532,18 +533,18 @@ export function TacticsProvider({ children }) {
 
   const handleReady = useCallback(() => {
     const isReady = players.find((p) => p.name === me?.name)?.ready;
-    // Caixa de entrada: bandeira vermelha (renovação/convite por responder)
-    // bloqueia o Pronto — desvia para o Jornal em vez de emitir. O servidor
+    // Caixa de entrada: bandeira vermelha (renovação/convite/patrocinador
+    // por responder) bloqueia o Pronto — desvia para o Jornal em vez de emitir. O servidor
     // recusa na mesma (fail-closed); ao intervalo não há gate.
     const pendingContracts = (mySquad || []).some(
       (p) => p?.contract_request_pending,
     );
-    if (!isReady && (pendingContracts || jobOfferModal)) {
+    if (!isReady && (pendingContracts || jobOfferModal || sponsorState?.pending)) {
       setActiveTab("jornal");
       return;
     }
     queueEmit("setReady", !isReady);
-  }, [players, me, mySquad, jobOfferModal, setActiveTab]);
+  }, [players, me, mySquad, jobOfferModal, sponsorState?.pending, setActiveTab]);
 
   const handleHalftimeReady = useCallback(() => {
     queueEmit("setReady", true);
