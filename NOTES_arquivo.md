@@ -1,6 +1,37 @@
 # NOTES_arquivo.md — arquivo do caderno (ver regra do teto em AGENTS.md)
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
+
+## Lista de melhores marcadores cortada a 7 (2026-10-05)
+- Pedido: harmonizar a altura da lista com a da classificação geral do campeonato.
+- `LeagueStandings.jsx` (`GoldenBootSidebar`): `rows` passa a `.slice(0, 7)` — o servidor continua a enviar 10 por divisão; o corte é só na renderização. Os emblemas de posição usam o índice do array → continuam correctos (1–7).
+- Checks: `lint` limpo no ficheiro (4 problemas pré-existentes noutros) · corte de 1 linha → sem `test:mobile`; sem lógica de jogo/sockets → sem audits.
+
+## Deploy v26.10.15 no rick (2026-10-05)
+- Amigáveis na semana da Taça (separador no Calendário, live view, cartão certo), clima variado, Jornal sem filtros + semana no cabeçalho mobile; `backend Healthy`.
+
+## Deploy v26.10.14 no rick (2026-10-05)
+- Amigáveis para eliminados da Taça na semana da ronda (com todos os suplentes utilizáveis); `backend Healthy`.
+
+## Deploy v26.10.13 no rick (2026-10-05)
+- LandingPage com props agrupadas em `form`/`room` + fallback de auth explícito para login; `backend Healthy`.
+
+## LandingPage: props agrupadas em form/room (2026-10-05)
+- Plano `docs/plans/2026-10-05-landing-page-melhorias.md` executado F1–F3 em 3 commits (`84cfc937`, `68bf231f`, `121a8b9e`): fallback de auth explícito para login, JSDoc no padrão do `CLAUDE.md`, `landingProps` com grupos `form`/`room` + topo de 7 (o plano dizia 6, mas o `createAccount` limpa o `joinError` — esse ficou no topo; `setAvailableSaves` manteve `{Function}` porque recebe updater). `RoomSelectScreen` intacto.
+- Achado: `disconnected` nunca chega à landing (vive no `GameContext`, em jogo) — passa sempre `undefined`, antes e depois; documentado no JSDoc em vez de inventar valor.
+- Checks: `check:types` 0 · `eslint` 0 erros nos 4 ficheiros (1 warning no `App.jsx` provado pré-existente com `stash`) · `build` OK · grep: só o `App.jsx` consome a landing. Sem `test:mobile` (mesmo DOM/classes, só canalização de props) nem audits (zero servidor/jogo/sockets). Fica para o utilizador: clicar login/registo/voltar/entrar em sala no browser (sem skill `run` neste ambiente).
+
+## Sombra subtil nos logotipos dos crests (2026-10-05)
+- Plano `docs/plans/2026-10-05-sombra-logotipos-crests.md`: a sombra desenhava-se à volta do tile, não do logótipo — o fundo colorido saiu do `<img>` para um wrapper `<span>` e o `<img>` ganhou `crest-shadow` (novo `@utility` em `index.css`, 2 `drop-shadow` curtos).
+- Fase 1: `shared/TeamCrest` e `live/TeamCrest` (no live o `mediaStyle` de rotação passou para o wrapper — resolvido o bug latente dos dois atributos `style`, o 2.º anulava o 1.º).
+- Fase 2: 9 sítios com `<img>` direto (PlayerHistoryModal, WelcomeModal, TransferHub, AuctionResultRow, CupFinalStage, LiveMatchHero, DuelHero, ClubTab, CalendarioTab) com o mesmo wrapper local; as 6 marcas de água têm `filter` inline (anula a classe) → drop-shadow mesclado no `filter`.
+- Fallback de iniciais/⚽ intacto; `shadow-md` do tile mantido nos wrappers.
+- Checks: `lint` limpo nos 12 ficheiros (3 pré-existentes noutros) · `check:types` 0 · `build` OK · `test:mobile` **185/185** + screenshots 360 lidos (Clube, Welcome, Classificações, Live, Briefing, Taça Final). Fica para o utilizador: ver no browser o crest real (logótipo escuro sobre cor escura), claro/escuro.
+
+## Clima no relvado do jogo (2026-10-04)
+- O relvado do `MatchView` mostra o clima do jogo: novo `WeatherOverlay.jsx` (chuva/neve/vento/nevoeiro/frio com partículas só em CSS, posições determinísticas) ligado ao emoji do evento `weather` que já existia; sem clima não pinta nada. Com movimento reduzido fica parado nas tintas estáticas.
+- Checks: `eslint` limpo nos 4 ficheiros · `check:types` 0 · `test:mobile` **185/185** + `match-spectate` 5/5 com captura 390 vista (relvado inteiro, sem overflow).
+
 ## Deploy v26.10.10 no rick (2026-10-03)
 - Funcionários completos (F1+F2+F3) com caricaturas SVG, clima no cartão do próximo jogo, gates por clube e não por presença, fadiga contínua com o clima; `backend Healthy`.
 
