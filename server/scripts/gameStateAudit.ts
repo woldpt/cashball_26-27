@@ -96,6 +96,7 @@ class GameStateAuditor {
       await this.auditContractExpiry();
       await this.auditMatchPhases();
       await this.auditTransfersIntegrity();
+      await this.auditFlowInvariants();
 
       return this.reportIssues();
     } catch (err) {
@@ -355,6 +356,53 @@ class GameStateAuditor {
         "transfers",
         `Player '${player.name}' is on transfer_status '${player.transfer_status}' without a price`,
         { playerId: player.id, teamId: player.team_id, status: player.transfer_status },
+      );
+    }
+  }
+
+  /** Invariantes do flow: fim de época por concluir, carências em slots, assentos duplicados. */
+  private async auditFlowInvariants() {
+    const { SEASON_CALENDAR, SEASON_WEEKS } = require("../gameConstants");
+
+    // 1. Lobby fora do calendário = fim de época interrompido (retoma no checkAllReady/arranque).
+    const st = await this.runQuery<any>(
+      "SELECT key, value FROM game_state WHERE key IN ('gamePhase', 'calendarIndex')",
+    ).catch(() => []);
+    const kv = Object.fromEntries(st.map((r: any) => [r.key, r.value]));
+    const idx = Number.parseInt(kv.calendarIndex ?? "", 10);
+    if (kv.gamePhase === "lobby" && Number.isFinite(idx) && idx >= SEASON_CALENDAR.length) {
+      this.addIssue(
+        "error",
+        "season_end",
+        `Lobby com calendarIndex=${idx} >= ${SEASON_CALENDAR.length} (fim de época por concluir)`,
+        { calendarIndex: idx, slots: SEASON_CALENDAR.length },
+      );
+    }
+
+    // 2. Carência de transferência em slots: acima de SEASON_WEEKS só pode ser lixo de escala velha.
+    const cooldowns = await this.runQuery<any>(
+      "SELECT id, name, team_id, transfer_cooldown_until_matchweek AS cd FROM players WHERE transfer_cooldown_until_matchweek > ?",
+      [SEASON_WEEKS],
+    );
+    if (cooldowns.length > 0) {
+      this.addIssue(
+        "warning",
+        "cooldown",
+        `${cooldowns.length} jogador(es) com transfer_cooldown_until_matchweek > ${SEASON_WEEKS}`,
+        { sample: cooldowns.slice(0, 5) },
+      );
+    }
+
+    // 3. Dois assentos member na mesma equipa.
+    const dupSeats = await this.runQuery<any>(
+      "SELECT team_id, GROUP_CONCAT(coach_name) AS coaches, COUNT(*) AS n FROM room_seats WHERE status = 'member' AND team_id IS NOT NULL GROUP BY team_id HAVING n > 1",
+    ).catch(() => []);
+    for (const d of dupSeats) {
+      this.addIssue(
+        "error",
+        "seats",
+        `Equipa ${d.team_id} tem ${d.n} assentos member: ${d.coaches}`,
+        { teamId: d.team_id },
       );
     }
   }
