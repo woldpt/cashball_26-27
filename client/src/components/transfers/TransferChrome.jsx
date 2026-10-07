@@ -170,13 +170,9 @@ export function TransferCardHead({ player, team, teamId, teamLabel, badges, corn
   const country = FLAG_TO_COUNTRY?.[player.nationality] || "";
   return (
     <div className="relative px-3 short:px-2 pt-3 short:pt-2">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-2 -top-1 font-headline font-black text-6xl leading-none tracking-tighter select-none"
-        style={{ color: posHex, opacity: 0.07 }}
-      >
-        {player.position}
-      </span>
+      <div aria-hidden className="pointer-events-none absolute right-1 top-1 opacity-20 select-none">
+        <TeamCrest team={team || { name: teamLabel }} size="w-24 h-24 text-5xl" />
+      </div>
       <div className="relative flex gap-3 short:gap-2">
         <div className="relative shrink-0 self-start">
           <div
