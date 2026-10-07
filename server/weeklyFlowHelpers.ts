@@ -1485,21 +1485,21 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             // processing (quality evolution, training bonuses, transfers…) so
             // the client's Classification screen shows fresh data immediately
             // instead of waiting for the whole post-match chain to finish.
-            getTeamsWithCoachNames(game.db)
-              .then((teams: any[]) => {
+            // standingsUpdated só sai depois dos três: o cliente refaz o pedido
+            // ao recebê-lo e não pode apanhar teamsData/forms/artilheiros velhos.
+            Promise.all([
+              getTeamsWithCoachNames(game.db).catch(() => null),
+              getAllTeamForms(game.db, game.season).catch(() => null),
+              fetchTopScorers(game.db).catch(() => null),
+            ]).then(([teams, forms, scorers]) => {
+              if (teams) {
                 io.to(game.roomCode).emit("teamsData", teams);
                 // O calendarIndex já avançou: o plantel (expulsos/lesões) tem
                 // de acompanhar, não chegar só no fim da cadeia.
                 emitHumanSquads(game).catch(() => {});
-              })
-              .catch(() => {});
-            getAllTeamForms(game.db, game.season)
-              .then((forms) => {
-                io.to(game.roomCode).emit("teamForms", forms);
-              })
-              .catch(() => {});
-            fetchTopScorers(game.db).then((scorers) => {
-              io.to(game.roomCode).emit("topScorers", scorers);
+              }
+              if (forms) io.to(game.roomCode).emit("teamForms", forms);
+              if (scorers) io.to(game.roomCode).emit("topScorers", scorers);
               io.to(game.roomCode).emit("standingsUpdated");
               io.to(game.roomCode).emit("globalNewsUpdated");
             });
