@@ -41,7 +41,7 @@ export function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }
 
   return (
     <div
-      className="mt-4 flex flex-wrap items-center gap-3"
+      className="mt-4 flex flex-wrap items-stretch gap-3"
     >
       {media.player && (
         <button

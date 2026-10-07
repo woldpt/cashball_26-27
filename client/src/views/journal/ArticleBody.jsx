@@ -62,7 +62,7 @@ export function RichNewsText({
 /**
  * Corpo da notícia partido em parágrafos visíveis, em registo de imprensa
  * clássica: o primeiro parágrafo é a entrada (maior, com capitular na cor
- * da categoria) e os restantes correm em corpo uniforme.
+ * da categoria; o texto fica na tinta normal) e os restantes correm em corpo uniforme.
  * @param {{ parts?: Array, fallback?: string, teams: Array, onOpenTeamSquad?: Function, onOpenPlayerHistory?: Function, category?: string, noLead?: boolean, query?: string }} props
  * @returns {JSX.Element}
  */
@@ -76,10 +76,14 @@ export function RichParagraphs({
   noLead,
   query = "",
 }) {
-  const cap = (FILTER_TONES[category] || FILTER_TONES.all).cap;
+  const capLetter = (FILTER_TONES[category] || FILTER_TONES.all).capLetter;
+  // Coluna de leitura de ~70 caracteres: em largura total as linhas
+  // passavam dos 130 e cansavam.
   const bodyCls =
-    "text-base short:text-sm leading-relaxed whitespace-pre-line text-left text-on-surface";
-  const leadCls = `text-lg short:text-base leading-relaxed whitespace-pre-line text-left first-letter:float-left first-letter:mr-2 first-letter:mt-1.5 first-letter:text-6xl first-letter:font-black first-letter:leading-[0.8] ${cap}`;
+    "max-w-[70ch] text-base short:text-sm leading-relaxed whitespace-pre-line text-left text-on-surface";
+  // Só a capitular leva a cor da categoria; `mr-1` para não se ler como
+  // palavra solta («A migável»).
+  const leadCls = `max-w-[70ch] text-lg short:text-base leading-relaxed whitespace-pre-line text-left text-on-surface first-letter:float-left first-letter:mr-1 first-letter:mt-1.5 first-letter:text-5xl first-letter:font-black first-letter:leading-[0.8] ${capLetter}`;
   const paragraphs =
     Array.isArray(parts) && parts.length > 0
       ? splitPartsByParagraphs(parts)

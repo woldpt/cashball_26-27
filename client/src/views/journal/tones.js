@@ -11,6 +11,7 @@ export const FILTER_TONES = {
     badge: "neutral",
     dot: "bg-on-surface-variant/40",
     cap: "text-on-surface",
+    capLetter: "first-letter:text-on-surface",
   },
   club: {
     icon: "shield",
@@ -19,6 +20,7 @@ export const FILTER_TONES = {
     badge: "warning",
     dot: "bg-amber-400",
     cap: "text-amber-300",
+    capLetter: "first-letter:text-amber-300",
   },
   competitions: {
     icon: "emoji_events",
@@ -27,6 +29,7 @@ export const FILTER_TONES = {
     badge: "cooldown",
     dot: "bg-sky-400",
     cap: "text-sky-300",
+    capLetter: "first-letter:text-sky-300",
   },
   squad: {
     icon: "groups",
@@ -35,6 +38,7 @@ export const FILTER_TONES = {
     badge: "sold",
     dot: "bg-emerald-400",
     cap: "text-emerald-300",
+    capLetter: "first-letter:text-emerald-300",
   },
   market: {
     icon: "swap_horiz",
@@ -43,6 +47,7 @@ export const FILTER_TONES = {
     badge: "junior",
     dot: "bg-violet-400",
     cap: "text-violet-300",
+    capLetter: "first-letter:text-violet-300",
   },
 };
 
@@ -52,11 +57,11 @@ export const TITLE_LINK_CLS =
   "font-black text-primary hover:text-on-surface transition-colors";
 
 /** Link de entidade clicável (jogador/equipa) no corpo das notícias: pílula
- * com fundo ténue em vez de sublinhado nu — o `px-1` garante que nunca cola
- * às margens e o `box-decoration-break` mantém a pílula legível quando parte
+ * com fundo ténue em vez de sublinhado nu — o `px-0.5` afasta-a das margens
+ * sem abrir um buraco antes da pontuação e o `box-decoration-break` mantém a pílula legível quando parte
  * em quebra de linha. `font-bold` (não `black`) para o corpo não pesar. */
 export const LINK_CLS =
-  "rounded-sm bg-primary/10 px-1 font-bold text-primary [box-decoration-break:clone] hover:bg-primary/20 hover:text-on-surface transition-colors";
+  "rounded-sm bg-primary/10 px-0.5 font-bold text-primary [box-decoration-break:clone] hover:bg-primary/20 hover:text-on-surface transition-colors";
 
 /** Invólucro, tabela e cabeçalho das tabelas do Jornal (Taça, classificação). */
 export const TABLE_WRAP_CLS =

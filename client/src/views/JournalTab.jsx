@@ -12,7 +12,7 @@
  * respostas reutilizam os fluxos existentes (diálogo do agente, emits).
  *
  * O detalhe segue registo de imprensa clássica: manchete em tinta forte,
- * entrada com capitular, leitura em largura total, como no FM,
+ * entrada com capitular, corpo numa coluna de leitura (~70ch),
  * filetes a separar corpo e ações; links de entidades em pílula para nunca
  * colarem às margens e tabelas centradas. A ação vive numa barra única
  * sticky no fundo do artigo (pendências, botões do tipo ou «Resolvido»).
