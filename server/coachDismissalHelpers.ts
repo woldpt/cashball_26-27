@@ -1116,7 +1116,40 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
   // ── ACCEPT / DECLINE JOB OFFER ────────────────────────────────────────────
 
+  // Reserva síncrona de clubes em atribuição (antes do primeiro await): dois
+  // treinadores a aceitar/trocar para o mesmo clube ao mesmo tempo não passam
+  // ambos a guarda «clube sem humano» enquanto o outro ainda está a gravar.
+  const teamClaims = (game: ActiveGame): Set<number> =>
+    ((game as any)._teamClaims ??= new Set<number>());
+
   const handleAcceptJobOffer = async (
+    game: ActiveGame,
+    coachName: string,
+  ): Promise<void> => {
+    const toTeamId = game.pendingJobOffers[coachName]?.toTeamId;
+    if (toTeamId == null) return acceptJobOfferNow(game, coachName);
+    const claims = teamClaims(game);
+    if (claims.has(toTeamId)) {
+      delete game.pendingJobOffers[coachName];
+      const socketId = game.playersByName[coachName]?.socketId;
+      if (socketId) {
+        io.to(socketId).emit("systemMessage", {
+          text: "Este clube já foi atribuído a outro treinador. O convite expirou.",
+          broadcast: false,
+        });
+      }
+      saveGameState(game);
+      return;
+    }
+    claims.add(toTeamId);
+    try {
+      await acceptJobOfferNow(game, coachName);
+    } finally {
+      claims.delete(toTeamId);
+    }
+  };
+
+  const acceptJobOfferNow = async (
     game: ActiveGame,
     coachName: string,
   ): Promise<void> => {
@@ -1280,52 +1313,60 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     if (MATCH_RUNNING_PHASES.has(game.gamePhase)) return;
 
     const fromTeamId = player.teamId;
-    const taken = Object.values(game.playersByName).some(
-      (p) => p.name !== coachName && p.teamId === toTeamId,
-    );
-    const [toTeam, fromTeam, mgr] = await Promise.all([
-      runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [toTeamId]),
-      runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [fromTeamId]),
-      runGet<{ id: number }>(
-        game.db,
-        "SELECT id FROM managers WHERE name = ?",
-        [coachName],
-      ),
-    ]);
-    if (taken || !toTeam || !fromTeam || !mgr) {
-      // Outro humano ficou com o clube entretanto: tira-o das alternativas.
-      game.dismissalOptions[coachName] = options.filter((id) => id !== toTeamId);
-      return;
+    const claims = teamClaims(game);
+    const taken =
+      claims.has(toTeamId) ||
+      Object.values(game.playersByName).some(
+        (p) => p.name !== coachName && p.teamId === toTeamId,
+      );
+    if (!taken) claims.add(toTeamId);
+    try {
+      const [toTeam, fromTeam, mgr] = await Promise.all([
+        runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [toTeamId]),
+        runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [fromTeamId]),
+        runGet<{ id: number }>(
+          game.db,
+          "SELECT id FROM managers WHERE name = ?",
+          [coachName],
+        ),
+      ]);
+      if (taken || !toTeam || !fromTeam || !mgr) {
+        // Outro humano ficou com o clube entretanto: tira-o das alternativas.
+        game.dismissalOptions[coachName] = options.filter((id) => id !== toTeamId);
+        return;
+      }
+
+      await assignCoachToTeam(game, coachName, mgr.id, toTeam);
+      // O clube largado volta a ter treinador NPC (e fica como alternativa).
+      await execQuiet(
+        game,
+        "UPDATE teams SET manager_id = NULL WHERE id = ?",
+        [fromTeamId],
+      );
+      await hireNpcManager(game, fromTeam, coachName);
+
+      game.dismissalOptions[coachName] = options.map((id) =>
+        id === toTeamId ? fromTeamId : id,
+      );
+      const alternatives = (
+        await Promise.all(
+          game.dismissalOptions[coachName]
+            .filter((id) => id !== toTeamId)
+            .map((id) => runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [id])),
+        )
+      ).filter((t): t is AnyRow => !!t);
+
+      await emitTeamAssigned(game, coachName, toTeam, true, alternatives);
+      io.to(game.roomCode).emit("systemMessage", {
+        text: `${coachName} passou de ${fromTeam.name} para ${toTeam.name}.`,
+        broadcast: true,
+        cm: true,
+      });
+      broadcastTeamsData(game);
+      saveGameState(game);
+    } finally {
+      if (!taken) claims.delete(toTeamId);
     }
-
-    await assignCoachToTeam(game, coachName, mgr.id, toTeam);
-    // O clube largado volta a ter treinador NPC (e fica como alternativa).
-    await execQuiet(
-      game,
-      "UPDATE teams SET manager_id = NULL WHERE id = ?",
-      [fromTeamId],
-    );
-    await hireNpcManager(game, fromTeam, coachName);
-
-    game.dismissalOptions[coachName] = options.map((id) =>
-      id === toTeamId ? fromTeamId : id,
-    );
-    const alternatives = (
-      await Promise.all(
-        game.dismissalOptions[coachName]
-          .filter((id) => id !== toTeamId)
-          .map((id) => runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [id])),
-      )
-    ).filter((t): t is AnyRow => !!t);
-
-    await emitTeamAssigned(game, coachName, toTeam, true, alternatives);
-    io.to(game.roomCode).emit("systemMessage", {
-      text: `${coachName} passou de ${fromTeam.name} para ${toTeam.name}.`,
-      broadcast: true,
-      cm: true,
-    });
-    broadcastTeamsData(game);
-    saveGameState(game);
   };
 
   return {

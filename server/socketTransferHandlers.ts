@@ -152,9 +152,10 @@ export function registerTransferSocketHandlers(
               [price, player.team_id],
             );
           }
-          await runExec(
+          // Guarda anti-concorrência: outro treinador pode ter comprado entretanto.
+          const moved = await runExec(
             game.db,
-            "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
+            "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id IS ? AND transfer_status != 'none'",
             [
               playerState.teamId,
               signingWage(player),
@@ -163,8 +164,10 @@ export function registerTransferSocketHandlers(
               currentSlot(game),
               currentSlot(game),
               validPlayerId,
+              player.team_id ?? null,
             ],
           );
+          if (moved.changes === 0) throw new Error("player_gone");
           await runExec(game.db, "COMMIT");
         } catch (txErr) {
           await runExec(game.db, "ROLLBACK").catch(() => {});
@@ -265,6 +268,11 @@ export function registerTransferSocketHandlers(
         source: "market",
       });
     } catch (err) {
+      if ((err as Error)?.message === "player_gone") {
+        socket.emit("systemMessage", "Este jogador já foi vendido.");
+        refreshMarket(game);
+        return;
+      }
       console.error("[buyPlayer] Error:", err);
       socket.emit("systemMessage", "Erro ao processar compra.");
     }
