@@ -658,6 +658,45 @@ function FormationCard({ className = "", desktop = false, dataTour = false, hear
 }
 
 /**
+ * LineStrength — força média do onze por linha (ATA/MED/DEF/GR), em barras.
+ * @returns {JSX.Element}
+ */
+function LineStrength() {
+  const { annotatedSquad } = useTactics();
+  const tits = annotatedSquad.filter((p) => p.status === "Titular");
+  const avg = (list) =>
+    list.length ? list.reduce((n, p) => n + (p.skill || 0), 0) / list.length : 0;
+  const lines = [
+    ["ATA", "Ataque"],
+    ["MED", "Meio-campo"],
+    ["DEF", "Defesa"],
+    ["GR", "Guarda-redes"],
+  ].map(([pos, label]) => ({ pos, label, v: avg(tits.filter((p) => p.position === pos)) }));
+  return (
+    <div className="bg-surface-container border border-outline-variant/25 rounded-2xl px-3 py-2.5 short:py-1.5 flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+          Força do onze
+        </span>
+        <span className="text-[10px] font-black text-white">{avg(tits).toFixed(1)}</span>
+      </div>
+      {lines.map(({ pos, label, v }) => (
+        <div key={pos} className="flex items-center gap-2" title={`${label}: ${v.toFixed(1)}`}>
+          <span className={`w-6 text-[9px] font-black ${POS_COLORS[pos].text}`}>{pos}</span>
+          <div className="flex-1 h-1.5 bg-surface-container-low/60 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${POS_COLORS[pos].bg}`}
+              style={{ width: `${Math.min(100, (v / 50) * 100)}%` }}
+            />
+          </div>
+          <span className="w-7 text-right text-[10px] font-black text-gray-300">{v ? v.toFixed(1) : "—"}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Pitch — campo de futebol (desktop only; mobile usa o FAB e a lista de
  * Titulares). Grelha SVG, avatares por linha e overlays de drag.
  * @returns {JSX.Element}
@@ -1044,67 +1083,17 @@ export function TacticsView() {
                   >
                     {playLabel}
                   </button>
-                ) : !myReady ? (
-                  <div
-                    className={`rounded-2xl border px-3 py-2.5 short:py-1.5 flex items-start gap-2 ${canPlay ? "border-[#4ade80]/30 bg-[#4ade80]/8" : "border-red-400/25 bg-red-400/5"}`}
-                  >
-                    <span
-                      aria-hidden
-                      className={`material-symbols-outlined text-[18px] leading-none ${canPlay ? "text-[#4ade80]" : "text-red-400/80"}`}
-                    >
-                      {canPlay ? "check_circle" : "error"}
+                ) : !myReady && !canPlay ? (
+                  <div className="rounded-2xl border border-red-400/25 bg-red-400/5 px-3 py-2.5 short:py-1.5 flex items-start gap-2">
+                    <span aria-hidden className="material-symbols-outlined text-[18px] leading-none text-red-400/80">
+                      error
                     </span>
-                    <p className={`text-[10px] font-bold leading-snug ${canPlay ? "text-[#4ade80]" : "text-red-400/80"}`}>
-                      {canPlay
-                        ? "Táctica pronta — carrega em Jogar! no cabeçalho. A jornada avança quando todos confirmarem."
-                        : `Faltam: 11 titulares (1 GR + 10) + ${MAX_BENCH_SIZE} suplentes (1 GR)`}
+                    <p className="text-[10px] font-bold leading-snug text-red-400/80">
+                      {`Faltam: 11 titulares (1 GR + 10) + ${MAX_BENCH_SIZE} suplentes (1 GR)`}
                     </p>
                   </div>
                 ) : null}
-                {/* Próximo jogo — preenche o espaço sob o botão (desktop):
-                    adversário, casa/fora e árbitro antes de clicar. */}
-                {nextMatchSummary && (
-                  <div className="bg-surface-container border border-outline-variant/25 rounded-2xl px-3 py-2.5 short:py-1.5 flex flex-col gap-1">
-                    <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                      {nextMatchSummary.isCup
-                        ? (nextMatchSummary.cupRoundName ?? "Taça")
-                        : `Jornada ${nextMatchSummary.matchweek ?? "—"}`}
-                    </span>
-                    {nextMatchOpponent ? (
-                      <>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            aria-hidden
-                            className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20"
-                            style={{
-                              background: nextMatchOpponent.color_primary ?? "#666",
-                            }}
-                          />
-                          <span className="text-xs font-black text-gray-200 truncate">
-                            {nextMatchOpponent.name}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-gray-500 truncate">
-                          {nextMatchSummary.venue}
-                          {nextMatchSummary.referee?.name
-                            ? ` · Árbitro ${nextMatchSummary.referee.name}`
-                            : ""}
-                        </p>
-                        {nextMatchSummary.weatherForecast && (
-                          <p className="text-[10px] text-gray-500 truncate">
-                            {nextMatchSummary.weatherForecast.emoji}{" "}
-                            {WEATHER_LABELS[nextMatchSummary.weatherForecast.condition] ??
-                              nextMatchSummary.weatherForecast.condition}
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-[10px] text-gray-500 leading-snug">
-                        {nextMatchSummary.headline ?? "Sem adversário definido."}
-                      </p>
-                    )}
-                  </div>
-                )}
+                {!isHalftime && <LineStrength />}
               </div>
             </div>
 
