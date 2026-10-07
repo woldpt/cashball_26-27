@@ -11,6 +11,7 @@ import { rankStandings } from "../../utils/standingsRank.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { usePlayCta } from "./usePlayCta.js";
 import { socket } from "../../socket.js";
+import { readableInk } from "../../utils/readableInk.js";
 
 const compactEuros = new Intl.NumberFormat("pt-PT", {
   notation: "compact",
@@ -211,7 +212,9 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
   }, [standingsOpen, budgetOpen]);
 
   // Texto sobre a cor do clube (o fundo do header é a cor primária).
-  const ink = teamInfo?.color_secondary || "var(--color-on-surface)";
+  const ink = teamInfo?.color_primary
+    ? readableInk(teamInfo.color_primary, teamInfo.color_secondary)
+    : "var(--color-on-surface)";
   const week = (calendarIndex ?? 0) + 1;
   const division = teams.find((t) => Number(t.id) === Number(me?.teamId))?.division;
   const divisionTeams =
