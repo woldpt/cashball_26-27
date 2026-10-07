@@ -1602,6 +1602,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			season: game.season,
 			year: game.year,
 		});
+		// O calendarIndex avançou: o plantel (expulsos/lesões da ronda) tem de
+		// acompanhar, senão só chegava no fim de época ou no próximo join.
+		emitFreshSquads(game).catch(() => {});
 		saveGameState(game);
 		// Retomar leilões pausados durante o jogo
 		resumeAllPausedAuctions(game);

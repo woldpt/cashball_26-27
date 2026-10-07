@@ -1488,6 +1488,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             getTeamsWithCoachNames(game.db)
               .then((teams: any[]) => {
                 io.to(game.roomCode).emit("teamsData", teams);
+                // O calendarIndex já avançou: o plantel (expulsos/lesões) tem
+                // de acompanhar, não chegar só no fim da cadeia.
+                emitHumanSquads(game).catch(() => {});
               })
               .catch(() => {});
             getAllTeamForms(game.db, game.season)
@@ -1626,62 +1629,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 // Standings (teamsData/teamForms/topScorers) were already
                 // broadcast right after persistMatchResults — only squad info
                 // and presence remain.
-                fetchTopScorers(game.db).then(() => {
-                    const connectedPlayers = getPlayerList(game);
-                    const activeTeamIds = connectedPlayers
-                      .filter((p) => p.socketId && p.teamId != null)
-                      .map((p) => p.teamId as number);
-
-                    const emitSquadsAndFinish = (
-                      byTeam: Map<number, any[]>,
-                    ) => {
-                      connectedPlayers.forEach((player) => {
-                        if (!player.socketId || player.teamId == null)
-                          return;
-                        const squad =
-                          byTeam.get(player.teamId as number) || [];
-                        io.to(player.socketId as string).emit(
-                          "mySquad",
-                          ensureFullBench(
-                            withJuniorGRs(
-                              squad,
-                              player.teamId as number,
-                              (game.calendarIndex ?? 0) + 1,
-                            ),
-                            player.teamId as number,
-                            (game.calendarIndex ?? 0) + 1,
-                          ),
-                        );
-                      });
-                      emitPresence(game);
-                      resolveOuter();
-                    };
-
-                    if (activeTeamIds.length === 0) {
-                      emitPresence(game);
-                      resolveOuter();
-                      return;
-                    }
-
-                    const placeholders = activeTeamIds
-                      .map(() => "?")
-                      .join(",");
-                    game.db.all(
-                      `SELECT * FROM players WHERE team_id IN (${placeholders})`,
-                      activeTeamIds,
-                      (err4: any, allPlayers: any[]) => {
-                        const byTeam = new Map<number, any[]>();
-                        if (!err4 && allPlayers) {
-                          for (const p of allPlayers) {
-                            const list = byTeam.get(p.team_id) || [];
-                            list.push(p);
-                            byTeam.set(p.team_id, list);
-                          }
-                        }
-                        emitSquadsAndFinish(byTeam);
-                      },
-                    );
-                    return;
+                emitHumanSquads(game)
+                  .catch(() => {})
+                  .then(() => {
+                    emitPresence(game);
+                    resolveOuter();
                   });
               })
               .catch((error: any) => {
@@ -1695,6 +1647,43 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         })();
       })();
     });
+  }
+
+  // Lê os plantéis dos humanos ligados e emite-lhes o `mySquad`. Chamado logo
+  // a seguir ao `teamsData` (o calendarIndex já avançou; sem isto um expulso
+  // aparecia disponível até ao fim da cadeia) e outra vez no fim, porque a
+  // evolução/treino/contratos mudam as skills.
+  async function emitHumanSquads(game: ActiveGame): Promise<void> {
+    const humans = getPlayerList(game).filter(
+      (p) => p.socketId && p.teamId != null,
+    );
+    const teamIds = [...new Set(humans.map((p) => p.teamId as number))];
+    if (teamIds.length === 0) return;
+    const allPlayers: any[] = await new Promise((resolve, reject) =>
+      game.db.all(
+        `SELECT * FROM players WHERE team_id IN (${teamIds.map(() => "?").join(",")})`,
+        teamIds,
+        (err: any, rows: any[]) => (err ? reject(err) : resolve(rows || [])),
+      ),
+    );
+    const byTeam = new Map<number, any[]>();
+    for (const p of allPlayers) {
+      const list = byTeam.get(p.team_id) || [];
+      list.push(p);
+      byTeam.set(p.team_id, list);
+    }
+    const slot = (game.calendarIndex ?? 0) + 1;
+    for (const player of humans) {
+      const squad = byTeam.get(player.teamId as number) || [];
+      io.to(player.socketId as string).emit(
+        "mySquad",
+        ensureFullBench(
+          withJuniorGRs(squad, player.teamId as number, slot),
+          player.teamId as number,
+          slot,
+        ),
+      );
+    }
   }
 
   // Falha no fecho da jornada: volta ao lobby do MESMO slot, sem Prontos nem
