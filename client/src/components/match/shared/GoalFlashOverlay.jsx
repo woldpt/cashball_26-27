@@ -30,9 +30,8 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  *
  * Variante `card` (cards de jogos com treinador humano no `LiveFixtureRow`):
  * a mesma fila, mas renderizada inline (`absolute inset-0`, sem portal) e em
- * ponto pequeno — wash + carimbo "GOLO!" quando marca o lado do humano,
- * variante vermelha quando marca o NPC. Confete compacto (`showBalls`
- * false) só no golo do lado do humano; o do NPC leva só o carimbo vermelho.
+ * ponto pequeno — wash + carimbo "GOLO!" (verde se marca o lado do humano,
+ * vermelho se marca o NPC), sem confete.
  * ─────────────────────────────────────────────────────────────────────────
  *
  * @param {Object} props
@@ -155,20 +154,6 @@ export function GoalFlashOverlay({
 
   // Variante card: festejo contido no card (confete só no golo do humano).
   if (variant === "card") {
-    // Confete por portal para o <body>: o card tem overflow-hidden, que cortava
-    // o festejo. O wash + "GOLO!" ficam contidos no card; só o confete escapa.
-    const confete =
-      mine &&
-      createPortal(
-        <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
-          <CelebrationBurst
-            seed={`${moment.side}-${moment.ts}-${moment.seq}`}
-            showBalls={false}
-            origin={origin}
-          />
-        </div>,
-        document.body,
-      );
     return (
       <div
         key={`${moment.side}-${moment.ts}-${moment.seq}`}
@@ -193,7 +178,6 @@ export function GoalFlashOverlay({
             transition={{ duration: 1.9, times: [0, 0.2, 0.8, 1] }}
           />
         )}
-        {confete}
         <motion.span
           className="relative font-headline font-black uppercase tracking-tight leading-none"
           style={{

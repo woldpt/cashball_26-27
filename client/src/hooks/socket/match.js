@@ -249,16 +249,12 @@ export function registerMatchListeners(handlers, refs, ctx) {
 				myTeamId != null &&
 				(f.homeTeamId === myTeamId || f.awayTeamId === myTeamId);
 			if (isMyFixture) continue;
-			const isHumanFixture = (refs.playersRef.current || []).some(
-				(p) => p.teamId === f.homeTeamId || p.teamId === f.awayTeamId,
-			);
 			for (const e of f.minuteEvents || []) {
 				if (e.penaltySuspense) {
 					const stillHere = roomGuard();
 					setTimeout(() => {
 						if (!stillHere()) return;
 						if (e.type === "penalty_goal") {
-							if (isHumanFixture) playGoalSound();
 							const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${e.team}`;
 							refs.setGoalFlashRef((prev) => ({
 								...prev,
@@ -347,9 +343,6 @@ export function registerMatchListeners(handlers, refs, ctx) {
 			const isMyFixtureVar =
 				myTeamId != null &&
 				(f.homeTeamId === myTeamId || f.awayTeamId === myTeamId);
-			const isHumanFixtureVar = (refs.playersRef.current || []).some(
-				(p) => p.teamId === f.homeTeamId || p.teamId === f.awayTeamId,
-			);
 			setTimeout(() => {
 				handlers.setMatchResults((prev) => {
 					if (!prev) return prev;
@@ -374,7 +367,7 @@ export function registerMatchListeners(handlers, refs, ctx) {
 					});
 					return { ...prev, results: updated };
 				});
-				if (isMyFixtureVar || isHumanFixtureVar) playVarSound();
+				if (isMyFixtureVar) playVarSound();
 			}, 1000);
 		});
 	});
