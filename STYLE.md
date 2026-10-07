@@ -242,7 +242,7 @@ Scout, Mercado e Leilões deram origem ao **padrão visual preferido** para pág
 | `TrainingTab` | Evolução líquida (níveis) | Chips foco/ganhos/perdas |
 | `FinancesTab` | Saldo | Chips resultado/previsão/dívida; substitui os `SummaryWidget` |
 | `UserSettingsPage` | Troféus | Chips clubes/salas; painéis por baixo |
-| `JournalTab` | Mensagens por ler | Estilo FM2005: caixa de entrada em cima (~6 linhas, `lg:h-64`) e leitor em largura total por baixo; pesquisa + «Próxima por ler» + «Marcar tudo como lido» no `children` |
+| `JournalTab` | — (sem `TransferHeader`) | **Exceção:** sem cabeçalho de página, para dar o espaço à lista. Estilo FM2005: barra de ações numa linha (pesquisa · por ler/mensagens · «Próxima por ler» · «Marcar tudo»), caixa de entrada em cima (`clamp(9rem,30dvh,16rem)`), leitor por baixo |
 | `AdminPage` (tab `admin`) | Utilizadores registados | Chips online/inscrições; lista \| detalhe em cartões; era o modal `AdminPanel` |
 | `TacticsView` (fase Tática) | Titulares `n/11` | Chips suplentes/fora; «Voltar ao Briefing» + `PrepStepper` no `children`. Intervalo e jogo ao vivo ficam sem topo |
 | `StadiumTab` | Capacidade | Chips receita máx./adeptos/ocupação; ilustração como faixa por baixo |

@@ -25,7 +25,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useInbox } from "../hooks/useInbox.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
-import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { PostMatchPitch } from "../components/shared/PostMatchPitch.jsx";
 import { SponsorChooseModal } from "../components/shared/SponsorChooseModal.jsx";
 import { flagSummary, searchText } from "./journal/utils.jsx";
@@ -128,49 +127,38 @@ export function JournalTab({
 
   return (
     <div className="space-y-2 short:space-y-1.5">
-      {/* ── Topo: por ler em destaque + barra de ações (estilo FM) ───── */}
-      <TransferHeader
-        icon="newspaper"
-        kicker={`Clube · ${inbox.items.length} mensagens`}
-        title="Jornal"
-        valueLabel="Por ler"
-        valueClass={inbox.unreadCount > 0 ? "text-primary" : "text-on-surface-variant"}
-        budget={inbox.unreadCount}
-        format={(n) => String(Math.round(n))}
-        chips={[
-          ...(inbox.redFlags > 0
-            ? [{ label: inbox.redFlags === 1 ? "pendência" : "pendências", value: inbox.redFlags, tone: "bad", icon: "flag" }]
-            : []),
-          ...(query ? [{ label: "resultados", value: visible.length, tone: "warn", icon: "search" }] : []),
-        ]}
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="journal-topic-search" className="sr-only">
-            Pesquisar notícias
-          </label>
-          <input
-            id="journal-topic-search"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Pesquisar (jogadores, equipas)…"
-            className="min-w-0 flex-1 basis-48 rounded-full border border-outline-variant/30 bg-surface px-3 py-1.5 text-xs font-bold text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary/60 focus:outline-none"
-          />
-          <Button
-            size="sm"
-            onClick={() => {
-              selectNextUnread();
-              if (!window.matchMedia("(min-width: 1024px)").matches) setMobileDetail(true);
-            }}
-            disabled={!inbox.hasNextUnread}
-          >
-            Próxima por ler
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => inbox.markAllRead()} disabled={!hasUnreadNonFlag}>
-            Marcar tudo como lido
-          </Button>
-        </div>
-      </TransferHeader>
+      {/* ── Barra de ações numa só linha (sem cabeçalho de página: o espaço é da lista) ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor="journal-topic-search" className="sr-only">
+          Pesquisar notícias
+        </label>
+        <input
+          id="journal-topic-search"
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Pesquisar (jogadores, equipas)…"
+          className="min-w-0 flex-1 basis-48 rounded-full border border-outline-variant/30 bg-surface-container-low px-3 py-1.5 text-xs font-bold text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary/60 focus:outline-none"
+        />
+        <span className="shrink-0 text-[10px] font-black uppercase tracking-widest tabular-nums text-on-surface-variant">
+          <span className={inbox.unreadCount > 0 ? "text-primary" : undefined}>{inbox.unreadCount} por ler</span>
+          {" · "}
+          {query ? `${visible.length} resultados` : `${inbox.items.length} mensagens`}
+        </span>
+        <Button
+          size="sm"
+          onClick={() => {
+            selectNextUnread();
+            if (!window.matchMedia("(min-width: 1024px)").matches) setMobileDetail(true);
+          }}
+          disabled={!inbox.hasNextUnread}
+        >
+          Próxima por ler
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => inbox.markAllRead()} disabled={!hasUnreadNonFlag}>
+          Marcar tudo como lido
+        </Button>
+      </div>
 
       {/* Pendências: uma faixa só, com atalho para a primeira */}
       {firstFlag && (
