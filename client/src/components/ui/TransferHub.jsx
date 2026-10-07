@@ -166,7 +166,14 @@ function TransferRow({ rec, teams = [], onOpenPlayer }) {
  */
 function DealTag({ pct }) {
   if (pct === 0) {
-    return <span className="text-[9px] font-black uppercase tracking-wider text-on-surface-variant">ao valor</span>;
+    return (
+      <span
+        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-outline-variant/30 bg-surface-container/60 text-[10px] font-black uppercase tracking-wider text-on-surface-variant"
+        title="Preço igual ao valor de mercado do jogador"
+      >
+        = valor de mercado
+      </span>
+    );
   }
   const bargain = pct < 0;
   return (
@@ -245,11 +252,15 @@ const MarketCard = memo(function MarketCard({
         }
       />
 
-      <p className="px-3 short:px-2 mt-2 text-[10px] text-on-surface-variant tabular-nums">
-        <b className="text-on-surface font-black">{player.games_played ?? 0}</b> jogos ·{" "}
-        <b className="text-emerald-400 font-black">{player.goals ?? 0}</b> golos ·{" "}
-        <b className="text-on-surface font-black">{formatCurrency(player.wage || 0)}</b>/sem
-      </p>
+      <div className="px-3 short:px-2 mt-2.5 flex items-center justify-between gap-2 text-[11px] text-on-surface-variant tabular-nums">
+        <p>
+          <b className="text-on-surface font-black">{player.games_played ?? 0}</b> jogos ·{" "}
+          <b className="text-emerald-400 font-black">{player.goals ?? 0}</b> golos
+        </p>
+        <p title="Ordenado semanal">
+          Ordenado <b className="text-on-surface font-black">{formatCurrency(player.wage || 0)}</b>/sem
+        </p>
+      </div>
 
       {/* Bilhete do negócio: preço, pechincha, peso no saldo e ação */}
       <div className="mt-auto pt-3 short:pt-2 px-2 pb-2">
@@ -257,7 +268,7 @@ const MarketCard = memo(function MarketCard({
           <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
             <div className="min-w-0">
               <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">Preço</p>
-              <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base ${isOwn || affordable ? "text-on-surface" : "text-rose-400"}`}>
+              <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base text-on-surface`}>
                 {formatCurrency(price)}
               </p>
             </div>
@@ -293,13 +304,12 @@ const MarketCard = memo(function MarketCard({
               type="button"
               onClick={askBuy}
               disabled={!affordable}
-              className="w-full min-h-10 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 inline-flex items-center justify-center gap-1.5 disabled:opacity-35 disabled:cursor-not-allowed"
-              style={{
-                background: affordable ? posHex : "transparent",
-                color: affordable ? "#0d0d14" : posHex,
-                border: `1px solid ${posHex}`,
-                boxShadow: affordable ? `0 6px 18px -8px ${posHex}` : "none",
-              }}
+              className="w-full min-h-10 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 inline-flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:bg-rose-500/10 disabled:text-rose-300 disabled:border-rose-500/40"
+              style={
+                affordable
+                  ? { background: posHex, color: "#0d0d14", border: `1px solid ${posHex}`, boxShadow: `0 6px 18px -8px ${posHex}` }
+                  : undefined
+              }
             >
               <span className="material-symbols-outlined text-[16px] leading-none w-[1em] overflow-hidden">{affordable ? "shopping_cart" : "block"}</span>
               {affordable ? "Comprar" : "Saldo insuficiente"}

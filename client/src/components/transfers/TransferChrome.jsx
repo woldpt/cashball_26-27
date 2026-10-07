@@ -229,7 +229,8 @@ export function TransferCardHead({ player, team, teamId, teamLabel, badges, corn
         </div>
       </div>
       <BadgeSkills
-        className="mt-2.5 short:mt-1.5"
+        className="mt-2.5 short:mt-1.5 w-full [&>div]:flex-1"
+        size="lg"
         skill={player.skill}
         form={player.form}
         morale={player.morale}
