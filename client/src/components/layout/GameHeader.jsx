@@ -405,19 +405,24 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                           <ul className="max-h-80 overflow-y-auto py-1">
                             {divisionTeams.map((t, i) => {
                               const mine = Number(t.id) === Number(me?.teamId);
+                              const gd = (t.goals_for || 0) - (t.goals_against || 0);
+                              const isPromo = division > 1 && i < 2;
+                              const isRelegate = i >= divisionTeams.length - 2;
                               return (
                                 <li
                                   key={t.id}
-                                  className={`flex items-center gap-2 px-3 py-1.5 text-xs ${
+                                  className={`flex items-center gap-2 px-3 py-1.5 text-xs border-l-2 ${
+                                    isPromo ? "border-l-emerald-500" : isRelegate ? "border-l-red-500" : "border-l-transparent"
+                                  } ${
                                     mine ? "bg-primary/15 font-black text-on-surface" : "text-on-surface-variant font-bold"
                                   }`}
                                 >
-                                  <span className="w-5 tabular-nums text-right opacity-70">{i + 1}</span>
+                                  <span className={`w-5 tabular-nums text-right ${isPromo ? "text-emerald-400" : isRelegate ? "text-red-400" : "opacity-70"}`}>{i + 1}</span>
                                   <TeamCrest team={t} size="w-5 h-5 text-[9px]" />
                                   <span className="flex-1 truncate">{t.name}</span>
-                                  <span className="tabular-nums opacity-70" title="Diferença de golos">
-                                    {(t.goals_for || 0) - (t.goals_against || 0) > 0 ? "+" : ""}
-                                    {(t.goals_for || 0) - (t.goals_against || 0)}
+                                  <span className={`tabular-nums ${gd > 0 ? "text-emerald-400" : gd < 0 ? "text-red-400" : "opacity-70"}`} title="Diferença de golos">
+                                    {gd > 0 ? "+" : ""}
+                                    {gd}
                                   </span>
                                   <span className="w-7 tabular-nums text-right font-black text-on-surface">{t.points || 0}</span>
                                 </li>
