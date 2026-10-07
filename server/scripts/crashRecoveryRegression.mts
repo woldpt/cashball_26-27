@@ -19,6 +19,9 @@
  *       invalidados).
  *  S6 — falha na transação do fecho da liga: lobby do MESMO slot, sem fixtures
  *       nem Pronto (nunca repete o jogo com o 11 antigo).
+ *  S7 — fim de época interrompido: lobby com calendarIndex = nº de slots →
+ *       checkAllReady retoma (época +1, índice 0) e uma 2.ª passagem por
+ *       applySeasonEnd não repete os prémios (marcadores por passo).
  *
  * Run: cd server && npm run test:crash-recovery
  * Env opcional: CRASHTEST_ROOM=XXXX  (fonte da cópia; default = primeira game_*.db)
@@ -66,6 +69,10 @@ const expectedWeeklyDelta = () =>
      ) AS delta FROM teams`,
   ).then((r) => r[0]?.delta ?? 0);
 const { createWeeklyFlowHelpers } = require("../weeklyFlowHelpers") as any;
+const { createCupFlowHelpers } = require("../cupFlowHelpers") as any;
+const { runAll, runGet, getStandingsRows } = require("../coreHelpers") as any;
+const { DIVISION_NAMES, CUP_TEAMS_BY_ROUND, CUP_ROUND_NAMES } = require("../gameConstants") as any;
+const { clearSeasonTrainingState } = require("../trainingHelpers") as any;
 
 // ── helpers de disco (conexões curtas e frescas — leem o que um restart veria) ──
 function rawGet(
@@ -164,7 +171,7 @@ function closeRoom(game: any): Promise<void> {
 }
 
 // ── deps do factory: reais onde a semântica conta, sentinelas onde não pode correr ─
-function buildHelpers(): any {
+function buildHelpers(overrides: Record<string, unknown> = {}): any {
   const noop = () => {};
   const mustNotRun = (name: string) => () => {
     throw new Error(`${name} foi chamado — inesperado no teste de crash-recovery`);
@@ -201,6 +208,7 @@ function buildHelpers(): any {
     processNpcTransferActivity: noop,
     refreshMarket: mustNotRun("refreshMarket"),
     processCoachEvents: noop,
+    ...overrides,
   });
 }
 
@@ -506,6 +514,62 @@ async function main(): Promise<void> {
     ok(game.calendarIndex === idx6, "mesmo slot (calendário não avançou)");
     ok(game.currentFixtures.length === 0, "fixtures descartadas");
     ok(game.seats[coach5]?.intent.ready === false, "nenhum assento pronto");
+
+    // ── S7 — fim de época interrompido: retoma e não repete prémios ──────────
+    console.log("\nS7 · fim de época retomável");
+    const noop7 = () => {};
+    const io7 = { to: () => ({ emit: noop7 }) };
+    const cupFlow = createCupFlowHelpers({
+      io: io7,
+      runAll,
+      runGet,
+      getStandingsRows,
+      DIVISION_NAMES,
+      CUP_TEAMS_BY_ROUND,
+      CUP_ROUND_NAMES,
+      saveGameState,
+      getTeamSquad: async () => [],
+      simulateExtraTime: noop7,
+      simulatePenaltyShootout: noop7,
+      getPlayerList: (g: any) => Object.values(g.playersByName ?? {}),
+      emitPresence: noop7,
+      applyTrainingBonuses: noop7,
+      clearSeasonTrainingState,
+      applyPostMatchQualityEvolution: async () => {},
+      resumeAllPausedAuctions: noop7,
+      processRelegatedHumanCoaches: async () => {},
+    });
+    const helpersE = buildHelpers({ applySeasonEnd: cupFlow.applySeasonEnd, refreshMarket: noop7 });
+    const year7 = game.year;
+    await closeRoom(game);
+    await kvSet("calendarIndex", String(SEASON_CALENDAR.length));
+    await kvSet("gamePhase", "lobby");
+    game = await loadRoom();
+    ok(game.calendarIndex === SEASON_CALENDAR.length, "setup: sala carrega no fim da época (índice = nº de slots)");
+    for (const seat of Object.values(game.seats) as any[]) {
+      if (seat?.status !== "member") continue;
+      setSeatIntent(game, seat.name, { ready: true }, { persist: false });
+      if (game.playersByName[seat.name]) game.playersByName[seat.name].socketId = `test-${seat.name}`;
+    }
+    await helpersE.checkAllReady(game);
+    ok(await waitForKv("season", String(season + 1), 15000), "checkAllReady retomou o fim de época (época +1)");
+    ok(game.calendarIndex === 0 && game.season === season + 1, "índice a 0 na época nova");
+    for (let i = 0; i < 100 && game._seasonEndRunning; i++) await new Promise((r) => setTimeout(r, 100));
+    ok(!game._seasonEndRunning, "fim de época terminou (single-flight libertado)");
+    const champRows = () =>
+      rawGet(dstPath, "SELECT COUNT(*) AS n FROM palmares WHERE achievement = 'Campeão Nacional' AND season = ?", [year7]).then((r) => r[0]?.n ?? 0);
+    const champNews = () =>
+      rawGet(dstPath, "SELECT COUNT(*) AS n FROM club_news WHERE title = 'Prémio de Campeão Nacional' AND year = ?", [year7 + 1]).then((r) => r[0]?.n ?? 0);
+    const palN = await champRows();
+    const newsN = await champNews();
+    ok(palN === 1, `palmarés do campeão gravado uma vez (${palN})`);
+    // Simula a quebra depois dos prémios: repõe a época/índice antigos com os marcadores gravados.
+    game.season = season;
+    game.year = year7;
+    game.calendarIndex = SEASON_CALENDAR.length;
+    await cupFlow.applySeasonEnd(game);
+    ok((await champRows()) === palN, "2.ª passagem NÃO repete o palmarés do campeão");
+    ok((await champNews()) === newsN, "2.ª passagem NÃO repete o prémio de campeão");
   } finally {
     if (activeGames[TEST_ROOM]) {
       await closeRoom(activeGames[TEST_ROOM]);

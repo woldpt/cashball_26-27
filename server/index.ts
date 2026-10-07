@@ -31,6 +31,7 @@ const {
 	closeAllDatabases,
 	flushAllGameStates,
 	activeGames,
+	setRoomLoadedHook,
 } = require("./gameManager") as typeof import("./gameManager");
 const {
 	findRoomDbFile,
@@ -1183,6 +1184,8 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 });
 
 const checkAllReady = weeklyFlowHelpers.checkAllReady;
+// Sala carregada com o fim de época por concluir (quebra) → retoma.
+setRoomLoadedHook(weeklyFlowHelpers.recoverSeasonEnd);
 
 /** Sala Socket.io dos coaches dentro de uma sala (presença/estado pós-join). */
 const GLOBAL_ROOM = "__global__";

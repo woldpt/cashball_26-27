@@ -900,6 +900,14 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                                     `[${roomCode}] 🪑 ${Object.keys(game.seats).length} assento(s) | eventSeq=${game.eventSeq}`,
                                   );
                                   game.initialized = true;
+                                  // Fim de época interrompido por uma quebra: retomar.
+                                  if (roomLoadedHook && game.calendarIndex >= SEASON_CALENDAR.length) {
+                                    try {
+                                      roomLoadedHook(game);
+                                    } catch (hookErr: any) {
+                                      console.error(`[${roomCode}] retoma do fim de época:`, hookErr?.message);
+                                    }
+                                  }
                                   if (onReady) onReady(game);
                                 });
                               });
@@ -1284,7 +1292,14 @@ function purgeGame(roomCode: string): boolean {
   return true;
 }
 
+// Registado pelo index.ts (o gameManager não conhece o fluxo de épocas).
+let roomLoadedHook: ((game: ActiveGame) => void) | null = null;
+function setRoomLoadedHook(fn: (game: ActiveGame) => void): void {
+  roomLoadedHook = fn;
+}
+
 module.exports = {
+  setRoomLoadedHook,
   getGame,
   purgeGame,
   getGameBySocket,

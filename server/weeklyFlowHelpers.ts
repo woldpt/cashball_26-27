@@ -2152,6 +2152,31 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     }
   }
 
+  // Fim de época interrompido (quebra entre o último slot e a época nova):
+  // volta a correr applySeasonEnd — idempotente por passo (applied_weeks) e
+  // single-flight, por isso é seguro chamar de vários sítios.
+  function recoverSeasonEnd(game: ActiveGame): boolean {
+    if (game.calendarIndex < SEASON_CALENDAR.length) return false;
+    if ((game as any)._seasonEndRunning) return true;
+    console.warn(
+      `[${game.roomCode}] ♻ Fim de época por concluir (calendarIndex=${game.calendarIndex}) — a retomar`,
+    );
+    applySeasonEnd(game)
+      .then(() => {
+        refreshMarket(game);
+        io.to(game.roomCode).emit("seasonState", {
+          matchweek: game.matchweek,
+          calendarIndex: game.calendarIndex,
+          season: game.season,
+          year: game.year,
+        });
+      })
+      .catch((seErr: any) =>
+        console.error(`[${game.roomCode}] Season end error (retoma):`, seErr),
+      );
+    return true;
+  }
+
   async function checkAllReady(game: ActiveGame) {
     // Web Push (Fase 2): antes do gate de presença — o em-falta está
     // tipicamente ausente. Leitura pura + fire-and-forget, sem await.
@@ -2256,6 +2281,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           `[${game.roomCode}] ⚠ checkAllReady: calendarIndex ${game.calendarIndex} out of range (calendar length: ${SEASON_CALENDAR.length})`,
         );
         segmentRunning[game.roomCode] = false;
+        recoverSeasonEnd(game);
         return;
       }
 
@@ -2332,5 +2358,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     applyWeeklyFinancesOnce,
     recoverFinalizedSlot,
     finalizeLeagueEvent,
+    recoverSeasonEnd,
   };
 }

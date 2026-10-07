@@ -668,6 +668,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						MATCH_TUNING.fansBaseByDivision[5],
 					],
 				);
+				// Marcador + resultado na mesma transação: uma quebra nunca repete as subidas.
+				await recordSeasonStep(game, "promotions", { promotions, relegatedFromDiv4 });
 				await dbRunOn(game, "COMMIT");
 			} catch (txErr) {
 				await dbRunOn(game, "ROLLBACK").catch(() => {});
@@ -778,11 +780,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				// last_appearance_matchweek stores calendar slots (0-based); it must reset with
 				// the season or the engine's per-slot replay guard blocks slot 0 of the new
 				// season for players who appeared late in the previous one.
-				"UPDATE players SET goals = 0, red_cards = 0, yellow_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0",
+				"UPDATE players SET goals = 0, red_cards = 0, yellow_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0, last_auctioned_matchweek = 0",
 				);
 				// Atribuição de golos por clube (liga + Taça): vive e morre com a época,
 				// como `players.goals` — o prémio de Melhor Marcador já foi pago acima.
 				await dbRunOn(game, "DELETE FROM player_season_goals");
+				await recordSeasonStep(game, "reset_player_stats");
 				await dbRunOn(game, "COMMIT");
 			} catch (txErr) {
 				await dbRunOn(game, "ROLLBACK").catch(() => {});
@@ -975,22 +978,82 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("globalNewsUpdated");
 	}
 
+	// ── Fim de época idempotente ─────────────────────────────────────────────
+	// Cada passo grava um marcador em applied_weeks (season, slot = nº de slots
+	// da época, kind) e, quando o resultado é usado depois, o JSON em game_state
+	// (`seasonEnd:<kind>`). Uma quebra a meio retoma sem repetir prémios nem
+	// reset (e sem ler classificações já zeradas).
+	async function recordSeasonStep(game: ActiveGame, kind: string, result?: any) {
+		await dbRunOn(
+			game,
+			"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, ?)",
+			[game.season, SEASON_CALENDAR.length, kind],
+		);
+		if (result !== undefined) {
+			await dbRunOn(
+				game,
+				"INSERT INTO game_state (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+				[`seasonEnd:${kind}`, JSON.stringify({ season: game.season, result })],
+			);
+		}
+	}
+
+	async function seasonStepOnce<T>(game: ActiveGame, kind: string, fn: () => Promise<T>): Promise<T | undefined> {
+		const done = await runGet(
+			game.db,
+			"SELECT 1 AS d FROM applied_weeks WHERE season = ? AND slot = ? AND kind = ?",
+			[game.season, SEASON_CALENDAR.length, kind],
+		);
+		if (done) {
+			const row = await runGet(game.db, "SELECT value FROM game_state WHERE key = ?", [`seasonEnd:${kind}`]);
+			try {
+				const saved = JSON.parse(row?.value ?? "null");
+				if (saved?.season === game.season) return saved.result ?? undefined;
+			} catch {
+				/* sem resultado gravado */
+			}
+			return undefined;
+		}
+		const result = await fn();
+		// ponytail: marcador pós-passo, janela de crash entre o passo e o marcador
+		// (os passos com transação própria gravam-no dentro dela).
+		await recordSeasonStep(game, kind, result === undefined ? undefined : result);
+		return result;
+	}
+
 	async function applySeasonEnd(game: ActiveGame) {
+		// Single-flight: o fim normal e a recuperação não correm em paralelo.
+		if ((game as any)._seasonEndRunning) return;
+		(game as any)._seasonEndRunning = true;
+		try {
+			await runSeasonEnd(game);
+		} finally {
+			(game as any)._seasonEndRunning = false;
+		}
+	}
+
+	async function runSeasonEnd(game: ActiveGame) {
 		const season = game.season;
 		const year = game.year;
-		const allTeams = await runAll(
-			game.db,
-			"SELECT * FROM teams ORDER BY division, id",
-		);
-
-		const byDiv: Record<number, any[]> = {};
-		for (const team of allTeams) {
-			if (!byDiv[team.division]) byDiv[team.division] = [];
-			byDiv[team.division].push(team);
-		}
-		for (const div in byDiv) {
-			byDiv[Number(div)] = getStandingsRows(byDiv[Number(div)]);
-		}
+		// Classificação final ANTES de qualquer passo: o reset de pontos/divisões
+		// acontece a meio, por isso uma retoma lê a foto gravada.
+		const snapshot: any = await seasonStepOnce(game, "snapshot", async () => {
+			const allTeams = await runAll(
+				game.db,
+				"SELECT * FROM teams ORDER BY division, id",
+			);
+			const byDiv: Record<number, any[]> = {};
+			for (const team of allTeams) {
+				if (!byDiv[team.division]) byDiv[team.division] = [];
+				byDiv[team.division].push(team);
+			}
+			for (const div in byDiv) {
+				byDiv[Number(div)] = getStandingsRows(byDiv[Number(div)]);
+			}
+			return { allTeams, byDiv };
+		});
+		const allTeams: any[] = snapshot.allTeams;
+		const byDiv: Record<number, any[]> = snapshot.byDiv;
 
 		// Posição global desta época (isenções da Taça na próxima).
 		await runAll(
@@ -1000,21 +1063,23 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				.join(" ")} END`,
 		);
 
-		const iLigaWinner = await payChampionPrizes(game, byDiv, year);
+		const iLigaWinner = await seasonStepOnce(game, "champion_prizes", () => payChampionPrizes(game, byDiv, year));
 
-		await paySponsorRevenue(game, allTeams, year);
+		await seasonStepOnce(game, "sponsor_revenue", () => paySponsorRevenue(game, allTeams, year));
 
-		const topScorers = await payTopScorerPrize(game, year);
+		const topScorers = await seasonStepOnce(game, "top_scorer_prize", () => payTopScorerPrize(game, year));
 
 		// Jornal do Clube persiste entre épocas — não apagar club_news.
 		// As notícias são agregadas por ano no frontend (ClubTab.jsx) para evitar lista infinita.
 
-		const { promotions, relegatedFromDiv4 } = await applyPromotionsAndRelegations(game, byDiv, allTeams, year);
+		const promoted: any = await seasonStepOnce(game, "promotions", () => applyPromotionsAndRelegations(game, byDiv, allTeams, year));
+		const promotions: Promotion[] = promoted?.promotions ?? [];
+		const relegatedFromDiv4: number[] = promoted?.relegatedFromDiv4 ?? [];
 
-		await evolveFanbase(game, byDiv, allTeams, promotions);
+		await seasonStepOnce(game, "fanbase", () => evolveFanbase(game, byDiv, allTeams, promotions));
 
-		await persistAvgAttendance(game, allTeams);
-		await resetPlayerSeasonStats(game);
+		await seasonStepOnce(game, "avg_attendance", () => persistAvgAttendance(game, allTeams));
+		await seasonStepOnce(game, "reset_player_stats", () => resetPlayerSeasonStats(game));
 
 		const updatedTeams = await startNewSeasonState(game);
 
