@@ -224,7 +224,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
           />
         </div>
       )}
-      <div className={`relative flex items-center gap-3 w-full ${teamInfo?.crest ? "pl-32 pr-3 lg:pr-6" : "px-3 lg:px-6"} md:grid md:grid-cols-[1fr_auto_1fr]`}>
+      <div className={`relative flex items-center gap-3 w-full ${teamInfo?.crest ? "pl-32 pr-3" : "px-3 lg:pl-6"} md:grid md:grid-cols-[1fr_auto_1fr]`}>
         {/* Esquerda: o meu clube + semana (no mobile, também o adversário) */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {!teamInfo?.crest && <TeamCrest team={teamInfo} size="w-9 h-9 text-sm" />}
@@ -681,10 +681,10 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
           )}
 
           {/* Slot do botão de continuar do MatchPage (intervalo/pausa) — último à direita, como o JOGAR */}
-          <div id="match-cta-slot" className="ml-2 flex items-center" />
+          <div id="match-cta-slot" className="ml-2 empty:ml-0 flex items-center" />
 
           {/* Slot do botão Pausa do jogo ao vivo (onde está o JOGAR fora do jogo) */}
-          <div id="match-pause-slot" className="ml-2 hidden lg:flex items-center" />
+          <div id="match-pause-slot" className="ml-2 empty:ml-0 hidden lg:flex items-center" />
         </div>
       </div>
     </header>
