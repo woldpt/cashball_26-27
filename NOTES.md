@@ -1,3 +1,8 @@
+## Deploy v26.10.32 no rick (2026-10-06)
+- Push + tag `v26.10.32` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.32` (rodapé da landing).
+- Mudanças desta ronda: nova `BriefingView` (rota + `GameRoutes`), CTA de jogo (`usePlayCta`, `PrepCtaCard`, `MatchBriefing`, `PrimaryCTA`), táticas (`TacticsView`/`TacticsContext`), jornal (`ArticleBody`, `NewsMedia`, `tones`) e `hooks/socket/match.js`.
+
 ## RoomHub + WaitingCoachesModal — redesign (2026-10-06)
 - RoomHub: bugs (mensagem perdida no gap, convites presos, kick sem confirmação), mensagens agrupadas + sistema intercalado + scroll inteligente, split (`RoomHub` casca + `RoomHubPanel` só aberto, `CoachRow`, `ChatMessages`, `ChatComposer`, `useRoomInvites`), layout novo (cabeçalho único, folha inferior no mobile). `chatMessagesRef` saiu do GameContext.
 - WaitingCoachesModal: hero "À espera de X" + barra segmentada, banner de pausa com coaches offline, reutiliza `ChatMessages`/`ChatComposer`. Planos em `docs/plans/2026-10-06-*`.
