@@ -6,7 +6,6 @@ import {
   buildBriefingViewModel,
   DuelHero,
   PrepCtaCard,
-  PrepStickyBar,
   CompareRadar,
   StadiumCard,
   OpponentFormation,
@@ -51,7 +50,7 @@ function VenueFallback({ venue }) {
 
 export function MatchBriefing() {
   const { teamInfo } = useTactics();
-  const { navigateTab, nextMatchSummary, handleOpenTeamSquad, nextMatchSummaryLoading, players } = useGame();
+  const { nextMatchSummary, handleOpenTeamSquad, nextMatchSummaryLoading, players } = useGame();
   const coachOf = (teamId) => players?.find((p) => p.teamId != null && String(p.teamId) === String(teamId))?.name;
   const vm = useMemo(
     () => buildBriefingViewModel(nextMatchSummary, teamInfo),
@@ -76,8 +75,6 @@ export function MatchBriefing() {
     return null;
   }
 
-  const advance = () => navigateTab("tactic");
-
   return (
     <div className="space-y-3 short:space-y-1.5 lg:space-y-4 short:lg:space-y-2">
       {/* Faixa do amigável: só para testar */}
@@ -96,7 +93,7 @@ export function MatchBriefing() {
             <div className="min-w-0 lg:col-span-2">
               <DuelHero vm={vm} coachOf={coachOf} onOpenTeamSquad={handleOpenTeamSquad} />
             </div>
-            <PrepCtaCard onAdvance={advance} />
+            <PrepCtaCard />
             <CompareRadar vm={vm} onOpenTeamSquad={handleOpenTeamSquad} />
             <div className="min-w-0 flex flex-col gap-3 short:gap-1.5">
               {vm.formation ? (
@@ -122,7 +119,7 @@ export function MatchBriefing() {
         ) : (
           <>
             <div className="min-w-0 lg:col-span-1">
-              <PrepCtaCard onAdvance={advance} />
+              <PrepCtaCard />
             </div>
             {vm.spyGames.length > 0 && (
               <div className="min-w-0 lg:col-span-2 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
@@ -160,7 +157,6 @@ export function MatchBriefing() {
           </>
         )}
       </div>
-      <PrepStickyBar onAdvance={advance} />
     </div>
   );
 }

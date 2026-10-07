@@ -1033,7 +1033,7 @@ export function TacticsView() {
 
               {/* TOPO 3 — Jogar (sobre Pitch) */}
               <div className="xl:w-72.5 shrink-0 self-start flex flex-col gap-2 short:gap-1.5">
-                {/* O JOGAR vive no cabeçalho ("Definir Táctica" → "Jogar!");
+                {/* O JOGAR vive no cabeçalho ("Continuar" → "Jogar!");
                     aqui só o estado da táctica. No intervalo mantém-se o botão. */}
                 {isHalftime ? (
                   <button

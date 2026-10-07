@@ -1,10 +1,12 @@
 import { socket } from "../../socket.js";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
+import { useInbox } from "../../hooks/useInbox.js";
 
 /**
- * Botão principal da jornada (JOGAR), partilhado pelo header desktop e pelo
- * bottom-nav mobile: reflete a fase em vez de ser só um atalho para a tática.
+ * Botão principal da jornada ("Continuar"), partilhado pelo header desktop e
+ * pelo bottom-nav mobile. Dinâmico: Jornal (se há red flags) → Briefing (1ª vez
+ * na jornada) → Tática → "Jogar!" com o 11 válido.
  *
  * - `idle` — por preparar; `active` — já na tab de tática;
  * - `waiting` — pronto, à espera dos outros treinadores (`readyCount/totalCoaches`);
@@ -24,8 +26,15 @@ export function usePlayCta(scrollToTop) {
     isMatchInProgress,
     setMobileSubMenu,
   } = useGame();
-  const { tactic, isLineupComplete, handleReady, nextMatchSummary, nextMatchOpponent } =
-    useTactics();
+  const {
+    tactic,
+    isLineupComplete,
+    handleReady,
+    nextMatchSummary,
+    nextMatchOpponent,
+    briefingSeen,
+  } = useTactics();
+  const { redFlags } = useInbox();
 
   const myReady = !!players.find((p) => p.name === me?.name)?.ready;
   const readyCount = players.filter((p) => p.ready).length;
@@ -51,10 +60,13 @@ export function usePlayCta(scrollToTop) {
   const onClick = () => {
     if (isMatchInProgress) return;
     if (canPlay) return handleReady();
-    navigateTab("tactic");
+    // Sem adversário (eliminado da Taça) não há briefing a ver.
+    const hasBriefing = !!nextMatchSummary && !(nextMatchSummary.isCup && !nextMatchOpponent);
+    const dest = redFlags > 0 ? "jornal" : hasBriefing && !briefingSeen ? "briefing" : "tactic";
+    navigateTab(dest);
     setMobileSubMenu(null);
     scrollToTop();
-    if (teamInfo?.id && tactic) {
+    if (dest === "tactic" && teamInfo?.id && tactic) {
       socket.emit("requestTacticFamiliarity", teamInfo.id);
       socket.emit("requestAllTacticFamiliarity");
     }
@@ -62,9 +74,9 @@ export function usePlayCta(scrollToTop) {
 
   return {
     state,
-    label: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : canPlay ? "Jogar!" : "Definir Táctica",
-    short: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : canPlay ? "JOGAR" : "TÁCTICA",
-    icon: state === "live" ? "sensors" : state === "waiting" ? "check_circle" : canPlay ? "play_arrow" : "strategy",
+    label: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : canPlay ? "Jogar!" : "Continuar",
+    short: state === "live" ? "AO VIVO" : state === "waiting" ? "PRONTO" : canPlay ? "JOGAR" : "CONTINUAR",
+    icon: state === "live" ? "sensors" : state === "waiting" ? "check_circle" : canPlay ? "play_arrow" : "arrow_forward",
     canPlay,
     readyCount,
     totalCoaches,

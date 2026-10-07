@@ -4,7 +4,7 @@ import { memo } from "react";
  * PrimaryCTA — CTA principal verde do pré-jogo/jornada.
  *
  * Unifica os botões de avanço com gradiente inline espalhados pelo
- * `MatchBriefing`/`TacticsView` ("Avançar para a Tática", "Jogar Jornada")
+ * `MatchBriefing`/`TacticsView` ("Jogar Jornada")
  * num único componente canónico.
  *
  * @param {{

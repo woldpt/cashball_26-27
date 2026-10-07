@@ -65,6 +65,21 @@ export function TacticsProvider({ children }) {
   const [dragOverSection, setDragOverSection] = useState(null);
   const dragPlayerStatusRef = useRef(null);
 
+  // Briefing visto 1x por jornada (liga: matchweek, taça: cupRound) — o
+  // "Continuar" salta-o depois. Não usa calendarIndex: o cliente só o recebe
+  // via gameState, nunca avança pós-jogo.
+  const matchdayKey = nextMatchSummary
+    ? nextMatchSummary.isCup
+      ? `cup:${nextMatchSummary.cupRound ?? "?"}`
+      : `league:${nextMatchSummary.matchweek ?? "?"}`
+    : null;
+  const [briefingSeenKey, setBriefingSeenKey] = useState(null);
+  const briefingSeen = matchdayKey != null && briefingSeenKey === matchdayKey;
+  const markBriefingSeen = useCallback(
+    () => setBriefingSeenKey(matchdayKey),
+    [matchdayKey],
+  );
+
   // Base única de disponibilidade (espelho de upcomingMatchweek no servidor):
   // a jornada que aí vem (calendarIndex + 1). matchweekCount é a jornada que
   // passou — usá-la aqui gerava juniores-fantasma no banco (FGPQH6).
@@ -576,6 +591,8 @@ export function TacticsProvider({ children }) {
     isLineupComplete,
     nextMatchOpponent,
     nextMatchReferee,
+    briefingSeen,
+    markBriefingSeen,
     // Handlers
     updateTactic,
     handleClearTactic,
