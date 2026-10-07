@@ -98,7 +98,7 @@ export function GameProvider({
 	const [activeTab, setActiveTab] = useState(() => {
 		try {
 			const saved = sessionStorage.getItem("cashball_tab");
-			if (saved && !["club", "standings", "players", "finances", "tactic", "live", "calendar", "market", "bracket", "user_settings", "squad", "jornal"].includes(saved)) return "jornal";
+			if (saved && !["club", "standings", "players", "finances", "tactic", "briefing", "live", "calendar", "market", "bracket", "user_settings", "squad", "jornal"].includes(saved)) return "jornal";
 			return saved || "jornal";
 		} catch {
 			return "club";
@@ -945,7 +945,7 @@ year: seasonYear,
 
 	useEffect(() => {
 		// Calendário também: traz o estado do amigável da semana da Taça.
-		if ((activeTab !== "tactic" && activeTab !== "calendario") || !me?.teamId) return;
+		if ((activeTab !== "tactic" && activeTab !== "briefing" && activeTab !== "calendario") || !me?.teamId) return;
 		startTransition(() => setNextMatchSummaryLoading(true));
 		socket.emit("requestNextMatchSummary", { teamId: me.teamId });
 	}, [activeTab, me?.teamId, matchweekCount, calendarIndex]);

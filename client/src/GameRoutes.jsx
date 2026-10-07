@@ -11,6 +11,7 @@ import { StadiumTab } from "./views/StadiumTab.jsx";
 import { MySquadTab } from "./views/MySquadTab.jsx";
 import { OtherSquadsTab } from "./views/OtherSquadsTab.jsx";
 import { TrainingTab } from "./views/TrainingTab.jsx";
+import { BriefingView } from "./views/BriefingView.jsx";
 import { TacticsView } from "./views/TacticsView.jsx";
 import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { AuctionsTab } from "./views/AuctionsTab.jsx";
@@ -316,6 +317,8 @@ export function GameRoutes({ handleLogout, setAuthPhase }) {
                         staff={staff}
                       />
                     )}
+
+                    {activeTab === "briefing" && <BriefingView />}
 
                     {activeTab === "tactic" && <TacticsView />}
 

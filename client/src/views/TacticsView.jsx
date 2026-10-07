@@ -3,7 +3,6 @@ import { useTactics } from "../contexts/TacticsContext.jsx";
 import { useGame } from "../contexts/GameContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { MatchIcon } from "../components/match/shared/MatchIcon.jsx";
-import { MatchBriefing } from "../components/live/MatchBriefing.jsx";
 import { PrepStepper } from "../components/live/briefing/index.js";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket, queueEmit } from "../socket.js";
@@ -867,8 +866,6 @@ export function TacticsView() {
     showHalftimePanel,
     isPlayingMatch,
     isCupMatch,
-    prepPhase,
-    setPrepPhase,
   } = t;
   const {
     lockedCoaches,
@@ -882,6 +879,7 @@ export function TacticsView() {
     dismissalModal,
     jobOfferModal,
     matchResults,
+    navigateTab,
   } = useGame();
 
   const myReady = players.find((p) => p.name === me?.name)?.ready;
@@ -904,17 +902,8 @@ export function TacticsView() {
       : myFixture;
   const awaitingOthers = isHalftime && !!matchResults?.results && !myGateFixture;
   const settled = myReady || awaitingOthers;
-  // Fase 1 — Briefing. Saltado em situações de jogo ativo (intervalo, a jogar)
-  // e para espectadores eliminados da Taça (só veem o cartão 🏆).
-  const showBriefing =
-    prepPhase === "briefing" &&
-    !isHalftime &&
-    !isEliminatedCupSpectator &&
-    !isPlayingMatch &&
-    !!nextMatchSummary;
   const canPlay = isEliminatedCupSpectator || isHalftime || isLineupComplete;
   const showBackToBriefing =
-    prepPhase === "tactics" &&
     !isHalftime &&
     !isEliminatedCupSpectator &&
     !isPlayingMatch;
@@ -943,8 +932,6 @@ export function TacticsView() {
 
   return (
     <div className="space-y-3 short:space-y-1.5 pb-20 short:pb-4 xl:pb-0">
-      {showBriefing && <MatchBriefing />}
-
       {showBackToBriefing && (
         <TransferHeader
           icon="strategy"
@@ -965,7 +952,7 @@ export function TacticsView() {
         >
           <div className="flex items-center justify-between gap-2">
             <button
-              onClick={() => setPrepPhase("briefing")}
+              onClick={() => navigateTab("briefing")}
               className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
             >
               <span className="material-symbols-outlined text-[16px] leading-none">arrow_back</span> Voltar ao Briefing
@@ -975,8 +962,7 @@ export function TacticsView() {
         </TransferHeader>
       )}
 
-      {!showBriefing &&
-        (isEliminatedCupSpectator ? (
+      {isEliminatedCupSpectator ? (
           <div className="bg-surface-container border border-outline-variant/25 rounded-2xl flex flex-col items-center gap-4 py-10 text-center px-6">
             <p className="text-5xl">🏆</p>
             <p className="text-gray-300 font-bold text-sm leading-relaxed">
@@ -1293,7 +1279,7 @@ export function TacticsView() {
               <Pitch />
             </div>
           </div>
-        ))}
+        )}
 
       {/* Modal de espera multiplayer — aparece após confirmar táctica */}
       {/* Espectador eliminado da Taça: só precisa de ficar ready para avançar;

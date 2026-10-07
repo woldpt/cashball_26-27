@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { fadeSlide } from "./motion.js";
 import { useGame } from "./contexts/GameContext.jsx";
-import { useTactics } from "./contexts/TacticsContext.jsx";
 import { GameHeader } from "./components/layout/GameHeader.jsx";
 import { Sidebar } from "./components/layout/Sidebar.jsx";
 import { MobileNav } from "./components/layout/MobileNav.jsx";
@@ -53,7 +52,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     toasts,
     dismissToast,
   } = useGame();
-  const { setPrepPhase } = useTactics();
 
   // ── Tutorial guiado (contas novas de Coach) ───────────────────────────
   const {
@@ -85,9 +83,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   const handleTutorialNavigate = (step) => {
     if (!step) return;
     if (step.tab && step.tab !== activeTab) navigateTab(step.tab);
-    // Passos da tática: avança o briefing (equivale a "Avançar para a tática")
-    // para o editor — e os alvos do tour — montar.
-    if (step.tab === "tactic") setPrepPhase("tactics");
     setMobileSubMenu(step.submenu ?? null);
     scrollToTop();
   };

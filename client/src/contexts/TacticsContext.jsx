@@ -65,30 +65,6 @@ export function TacticsProvider({ children }) {
   const [dragOverSection, setDragOverSection] = useState(null);
   const dragPlayerStatusRef = useRef(null);
 
-  // Fase de pré-jogo: "briefing" → "tactics". Estado derivado por jornada:
-  // nextMatchSummary identifica unicamente cada jornada (liga: matchweek,
-  // taça: cupRound) e é sempre refeito ao abrir a tab de tática. Quando a
-  // jornada muda, a fase volta a "briefing". Não usa calendarIndex porque o
-  // cliente só o recebe via gameState (reconexão) — nunca avança pós-jogo.
-  const matchdayKey = nextMatchSummary
-    ? nextMatchSummary.isCup
-      ? `cup:${nextMatchSummary.cupRound ?? "?"}`
-      : `league:${nextMatchSummary.matchweek ?? "?"}`
-    : null;
-
-  const [prepPhaseState, setPrepPhaseState] = useState(() => ({
-    phase: "briefing",
-    matchdayKey,
-  }));
-  const prepPhase =
-    prepPhaseState.matchdayKey === matchdayKey
-      ? prepPhaseState.phase
-      : "briefing";
-  const setPrepPhase = useCallback(
-    (phase) => setPrepPhaseState({ phase, matchdayKey }),
-    [matchdayKey],
-  );
-
   // Base única de disponibilidade (espelho de upcomingMatchweek no servidor):
   // a jornada que aí vem (calendarIndex + 1). matchweekCount é a jornada que
   // passou — usá-la aqui gerava juniores-fantasma no banco (FGPQH6).
@@ -593,8 +569,6 @@ export function TacticsProvider({ children }) {
     dragOverSection,
     setDragOverSection,
     dragPlayerStatusRef,
-    prepPhase,
-    setPrepPhase,
     // Computed
     annotatedSquad,
     titulares,

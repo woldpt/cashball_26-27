@@ -10,7 +10,6 @@ import { liveScore } from "../live/liveHelpers.js";
 import { rankStandings } from "../../utils/standingsRank.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { usePlayCta } from "./usePlayCta.js";
-import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { socket } from "../../socket.js";
 
 const compactEuros = new Intl.NumberFormat("pt-PT", {
@@ -185,12 +184,8 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     myMatch,
   } = useGame();
   const cta = usePlayCta(scrollToTop);
-  const { setPrepPhase } = useTactics();
-  // O badge do próximo jogo leva ao briefing (tab Tática, fase briefing).
-  const openBriefing = () => {
-    setPrepPhase("briefing");
-    navigateTab("tactic");
-  };
+  // O badge do próximo jogo leva ao briefing.
+  const openBriefing = () => navigateTab("briefing");
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
 

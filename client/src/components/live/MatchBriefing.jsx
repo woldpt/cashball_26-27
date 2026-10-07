@@ -50,8 +50,8 @@ function VenueFallback({ venue }) {
 }
 
 export function MatchBriefing() {
-  const { teamInfo, setPrepPhase } = useTactics();
-  const { nextMatchSummary, handleOpenTeamSquad, nextMatchSummaryLoading, players } = useGame();
+  const { teamInfo } = useTactics();
+  const { navigateTab, nextMatchSummary, handleOpenTeamSquad, nextMatchSummaryLoading, players } = useGame();
   const coachOf = (teamId) => players?.find((p) => p.teamId != null && String(p.teamId) === String(teamId))?.name;
   const vm = useMemo(
     () => buildBriefingViewModel(nextMatchSummary, teamInfo),
@@ -76,7 +76,7 @@ export function MatchBriefing() {
     return null;
   }
 
-  const advance = () => setPrepPhase("tactics");
+  const advance = () => navigateTab("tactic");
 
   return (
     <div className="space-y-3 short:space-y-1.5 lg:space-y-4 short:lg:space-y-2">
