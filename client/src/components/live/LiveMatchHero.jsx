@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
@@ -448,7 +449,7 @@ export function LiveMatchHero({
 
         {/* ── Feed de lances (mais recente em cima) ── */}
         <LiveFeed
-          feed={liveFeed(matchEvents, liveMinute).slice(0, 2)}
+          feed={liveFeed(matchEvents, liveMinute).slice(0, 3)}
           resolveSide={resolveSide}
           hInfo={hInfo}
           aInfo={aInfo}
@@ -510,8 +511,9 @@ function LiveFeed({ feed, resolveSide, hInfo, aInfo }) {
     <ol
       aria-label="Lances do jogo"
       aria-live="polite"
-      className="w-full max-w-2xl mt-4 flex flex-col gap-1"
+      className="relative w-full max-w-2xl mt-4 flex flex-col gap-1"
     >
+      <AnimatePresence initial={false} mode="popLayout">
       {feed.map((row, i) => {
         const e = row.event;
         const side = resolveSide(e);
@@ -524,15 +526,17 @@ function LiveFeed({ feed, resolveSide, hInfo, aInfo }) {
           tier?.pulseColor ||
           (teamColor ? `color-mix(in srgb, ${teamColor} 45%, transparent)` : undefined);
         return (
-          <li
+          <motion.li
             key={row.key}
+            layout
+            initial={{ opacity: 0, y: -18, scale: 0.96, filter: "blur(4px)" }}
+            animate={{ opacity: latest ? 1 : i === 1 ? 0.8 : 0.55, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: 14, scale: 0.96, filter: "blur(3px)" }}
+            transition={{ type: "spring", stiffness: 380, damping: 32, opacity: { duration: 0.35 } }}
             className={`flex items-start gap-2 rounded-md px-2.5 py-1.5 border-l-2 ${
               isGoal ? "bg-primary/10" : "bg-black/20"
             }`}
-            style={{
-              borderLeftColor: teamColor || "transparent",
-              animation: "commentaryFadeIn 0.6s ease",
-            }}
+            style={{ borderLeftColor: teamColor || "transparent" }}
           >
             <span className="shrink-0 w-7 text-[11px] leading-5 font-black tabular-nums text-on-surface-variant/70">
               {e.minute}&apos;
@@ -558,9 +562,10 @@ function LiveFeed({ feed, resolveSide, hInfo, aInfo }) {
             >
               {row.phrase}
             </p>
-          </li>
+          </motion.li>
         );
       })}
+      </AnimatePresence>
     </ol>
   );
 }
