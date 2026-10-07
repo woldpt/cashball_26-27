@@ -65,7 +65,14 @@ export function MatchPage({
 		handleResetAllSubs,
 	} = useTactics();
 
-	const { waitingForResults, resultsWaitTimedOut } = useGame();
+	const { waitingForResults, resultsWaitTimedOut, players, awaitingCoaches } =
+		useGame();
+	// Só há espera por outros se existir mais de um treinador humano (single player: não).
+	const hasOtherCoaches =
+		(players?.length ?? 0) +
+			(awaitingCoaches || []).filter((n) => !players?.some((p) => p.name === n))
+				.length >
+		1;
 
 	// MOM do jogo: o fixture da liga já traz `mom` no payload final
 	// (matchResults); na Taça o fixture (matchResults simplificado) não traz,
@@ -261,7 +268,9 @@ export function MatchPage({
 			? !canContinue
 				? `⏳ A AGUARDAR ${isFriendly ? "JOGO AMIGÁVEL" : "JOGO DA TAÇA"}...`
 				: isReady
-					? "⏳ A AGUARDAR OUTRO TREINADOR..."
+					? hasOtherCoaches
+						? "⏳ A AGUARDAR OUTRO TREINADOR..."
+						: "▶ A INICIAR..."
 					: cupPreMatch
 						? `▶ INICIAR JOGO — ${isFriendly ? "AMIGÁVEL" : "TAÇA"}`
 						: isCupMatch && !isFriendly && (liveMinute ?? 0) >= 90 && !isCupExtraTime
