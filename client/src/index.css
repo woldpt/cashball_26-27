@@ -810,16 +810,17 @@ body {
    Tintas estáticas sempre visíveis; partículas animadas só sem
    prefers-reduced-motion (sem animação ficam como pontos estáticos). */
 .wx-sol {
-  background: radial-gradient(ellipse at 85% 0%, rgba(255, 224, 130, 0.15), transparent 60%);
+  background: radial-gradient(ellipse at 15% 0%, rgba(255, 224, 130, 0.15), transparent 60%);
 }
 /* Raios: conic-gradient centrado no canto do sol, mascarado para desvanecer. */
 .wx-sol::before {
   content: "";
   position: absolute;
-  width: 220%;
+  width: 140vmax;
   aspect-ratio: 1;
-  left: -20%;
-  top: -110%;
+  left: 15%;
+  top: 0;
+  margin: -70vmax 0 0 -70vmax;
   background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 235, 160, 0.09) 0 6deg, transparent 6deg 18deg);
   -webkit-mask-image: radial-gradient(circle, #000, transparent 45%);
   mask-image: radial-gradient(circle, #000, transparent 45%);
@@ -936,7 +937,7 @@ body {
     animation: wx-blow calc(var(--wx-dur) * 3s) ease-in-out infinite;
   }
   .wx-sol::before { animation: wx-sun-spin 60s linear infinite; }
-  .wx-sol { animation: wx-sun-pulse 7s ease-in-out infinite alternate; transform-origin: 85% 0%; }
+  .wx-sol { animation: wx-sun-pulse 7s ease-in-out infinite alternate; transform-origin: 15% 0%; }
   .wx-fog { animation: wx-fog-drift calc(var(--wx-dur) * 30s) ease-in-out infinite alternate; }
   .wx-chuva_forte::after {
     content: "";
