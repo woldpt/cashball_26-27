@@ -255,14 +255,16 @@ export function buildMoodNewsArticle(mood) {
       ? { id: mood.opponentTeamId, label: mood.opponentName }
       : null;
   // Homem do Jogo: linha final do corpo + cartão do jogador (posição vinda do pitch).
+  const momRating = mood?.mom
+    ? Array.isArray(mood?.ratings) &&
+      mood.ratings.find((r) => r.id === mood.mom.playerId)
+    : null;
   const mom = mood?.mom
     ? {
         id: mood.mom.playerId,
         label: mood.mom.playerName,
-        position:
-          (Array.isArray(mood?.ratings) &&
-            mood.ratings.find((r) => r.id === mood.mom.playerId)?.position) ||
-          "ATA",
+        position: momRating?.position || "ATA",
+        photo: momRating?.photo || null,
       }
     : null;
   const momPrefix = "\n\nHomem do Jogo: ";
