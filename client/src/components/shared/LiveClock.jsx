@@ -18,6 +18,7 @@ import { AnimatePresence, motion } from "framer-motion";
  * @param {object} props
  * @param {number} props.liveMinute Minuto atual do jogo.
  * @param {boolean} props.isPlayingMatch Se o meu jogo está a decorrer.
+ * @param {boolean} [props.isHalftime] Painel de intervalo aberto (o jogo está parado, mas `isPlayingMatch` continua true).
  * @param {boolean} props.isCupMatch Se é jogo da taça.
  * @param {boolean} props.cupPreMatch Se ainda está em pré-jogo da taça.
  * @param {string} props.cupMatchRoundName Nome da ronda da taça.
@@ -28,6 +29,7 @@ import { AnimatePresence, motion } from "framer-motion";
 export function LiveClock({
   liveMinute,
   isPlayingMatch,
+  isHalftime = false,
   isCupMatch,
   cupPreMatch,
   cupMatchRoundName,
@@ -76,7 +78,8 @@ export function LiveClock({
       ? `Minuto ${liveMinute}, ${longPhase}`
       : `Jogo ${longPhase}`;
   // Resultado só nas pausas (intervalo / antes do prolongamento); a jogar, só o tempo.
-  const showScore = !!score && !isPlayingMatch && liveMinute >= 45;
+  const showScore = !!score && isHalftime;
+  const breakLabel = liveMinute >= 90 ? "Fim 90'" : "Intervalo";
   const ariaFull = showScore
     ? `${score.homeName ?? "Casa"} ${score.home}, ${score.awayName ?? "Fora"} ${score.away}. ${ariaLabel}`
     : ariaLabel;
@@ -85,11 +88,12 @@ export function LiveClock({
   // prolongamento (110'+) — fora disso o relógio fica quieto.
   const urgent =
     isPlayingMatch &&
+    !isHalftime &&
     (liveMinute >= 110 || (liveMinute >= 75 && liveMinute <= 90));
 
   // Progresso do jogo (90' ou 120' com prolongamento); só com minuto real.
   const total = liveMinute > 90 ? 120 : 90;
-  const showBar = isPlayingMatch ? liveMinute >= 1 : liveMinute >= 45;
+  const showBar = isPlayingMatch || isHalftime ? liveMinute >= 1 : liveMinute >= 45;
   const pct = Math.min(100, (Math.max(0, liveMinute) / total) * 100);
 
   const swap = {
@@ -127,12 +131,12 @@ export function LiveClock({
                 {score.awayName}
               </span>
               <span className="text-[9px] font-black uppercase tracking-widest leading-none text-primary">
-                {shortPhase}
+                {breakLabel}
               </span>
             </motion.span>
           ) : (
             <motion.span key="time" aria-hidden className="flex items-center gap-2" {...swap}>
-              {isPlayingMatch && liveMinute >= 1 && (
+              {isPlayingMatch && !isHalftime && liveMinute >= 1 && (
                 <span className="relative flex h-2 w-2 shrink-0">
                   <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${urgent ? "bg-amber-400" : "bg-red-500"}`} />
                   <span className={`relative inline-flex h-2 w-2 rounded-full ${urgent ? "bg-amber-400" : "bg-red-500"}`} />

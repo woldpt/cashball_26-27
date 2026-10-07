@@ -167,6 +167,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     resetGameState,
     isMatchInProgress,
     isPlayingMatch,
+    showHalftimePanel,
     liveMinute,
     isCupMatch,
     cupPreMatch,
@@ -277,6 +278,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
           <LiveClock
             liveMinute={liveMinute}
             isPlayingMatch={isPlayingMatch}
+            isHalftime={showHalftimePanel}
             isCupMatch={isCupMatch}
             cupPreMatch={cupPreMatch}
             cupMatchRoundName={cupMatchRoundName}
