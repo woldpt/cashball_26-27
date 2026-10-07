@@ -508,6 +508,26 @@ export function registerMatchListeners(handlers, refs, ctx) {
 				normalizedAction.onPitch = (normalizedAction.onPitch || [])
 					.map(toCandidate)
 					.filter(Boolean);
+				// O painel desta pausa lê Titular/Suplente da tática local. Rebase na
+				// verdade do servidor (XI + banco disponível) e fila de trocas vazia:
+				// senão "Limpar"/"Anular todas" revertiam localmente trocas de pausas
+				// anteriores já aplicadas (quem saiu voltava ao banco, quem entrou
+				// sumia — um "suplente" com golo e 10 em campo no ecrã).
+				const pitchIds = new Set(normalizedAction.onPitch.map((p) => p.id));
+				const benchIds = new Set(normalizedAction.benchPlayers.map((p) => p.id));
+				if (pitchIds.size > 0) {
+					handlers.setTactic((prevTactic) => {
+						const positions = { ...prevTactic.positions };
+						for (const [id, status] of Object.entries(positions)) {
+							if (status === "Titular" || status === "Suplente")
+								delete positions[id];
+						}
+						for (const id of benchIds) positions[id] = "Suplente";
+						for (const id of pitchIds) positions[id] = "Titular";
+						return { ...prevTactic, positions };
+					});
+				}
+				handlers.setConfirmedSubs([]);
 			}
 
 			if (normalizedAction.type === "gk_red_card") {

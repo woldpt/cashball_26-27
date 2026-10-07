@@ -312,9 +312,12 @@ export function TacticsProvider({ children }) {
       queueEmit("setTactic", next);
       return next;
     });
-    setSubbedOut([]);
+    // Só as trocas da fila: as já realizadas (1.ª parte, pausas anteriores)
+    // continuam a contar e quem saiu não volta.
+    const queuedOut = new Set(confirmedSubs.map((s) => s.out));
+    setSubbedOut((prev) => prev.filter((id) => !queuedOut.has(id)));
+    setSubsMade((n) => Math.max(0, n - confirmedSubs.length));
     setConfirmedSubs([]);
-    setSubsMade(0);
     setSwapSource(null);
     setSwapTarget(null);
   }, [
