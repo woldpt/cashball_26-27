@@ -1,8 +1,7 @@
 /**
  * JournalTab — a caixa de entrada do treinador (hub estilo CM2001).
  *
- * Estilo FM2005 no desktop: caixa de entrada baixa e larga em cima, leitor
- * em largura total por baixo; sem filtros de categoria (só a pesquisa). A notícia mais antiga
+ * Desktop: lista numa coluna estreita à esquerda (1/3), leitor à direita (2/3); sem filtros de categoria (só a pesquisa). A notícia mais antiga
  * por ler fica seleccionada (sem a marcar como lida) e o artigo tem
  * «Ler próxima». Só o clique na linha, o «Ler próxima» ou o Enter
  * marcam como lida.
@@ -178,9 +177,9 @@ export function JournalTab({
         </div>
       )}
 
-      <div className="grid gap-2">
-        {/* ── Inbox (em cima, ~6 linhas) ─────────────────────────────── */}
-        <div className={`${mobileDetail ? "max-lg:hidden " : ""}lg:flex lg:h-[clamp(9rem,30dvh,16rem)] lg:shrink-0 lg:flex-col`}>
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
+        {/* ── Inbox (coluna estreita à esquerda, ~1/3) ───────────────── */}
+        <div className={`${mobileDetail ? "max-lg:hidden " : ""}lg:sticky lg:top-2 lg:flex lg:h-[calc(100dvh-9rem)] lg:flex-col`}>
         <TopicList
           inbox={inbox}
           selected={selected}
@@ -191,7 +190,7 @@ export function JournalTab({
         />
         </div>
 
-        {/* ── Leitor (por baixo, largura total) ──────────────────────── */}
+        {/* ── Leitor (à direita, ~2/3) ───────────────────────────────── */}
         <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2`}>
           <Button
             variant="ghost"
