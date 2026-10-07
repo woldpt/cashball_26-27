@@ -252,9 +252,9 @@ export function registerGameplaySocketHandlers(
         socket.emit("teamSquadData", {
           teamId,
           squad: ensureFullBench(
-            withJuniorGRs(base, teamId, game.matchweek || 1),
+            withJuniorGRs(base, teamId, upcomingMatchweek(game)),
             teamId,
-            game.matchweek || 1,
+            upcomingMatchweek(game),
           ),
         });
       },

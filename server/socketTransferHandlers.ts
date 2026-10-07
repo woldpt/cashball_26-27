@@ -414,7 +414,7 @@ export function registerTransferSocketHandlers(
           const epoch = currentEpoch(game);
           game.db.run(
             "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-            [acceptedWage, seasonEnd, epoch, game.matchweek, playerId],
+            [acceptedWage, seasonEnd, epoch, currentSlot(game), playerId],
             (runErr: Error | null) => {
               if (runErr) {
                 console.error("[renewContract] Error:", runErr);
@@ -589,7 +589,7 @@ export function registerTransferSocketHandlers(
           const epoch = currentEpoch(game);
           game.db.run(
             "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-            [pending.demandedWage, seasonEnd, epoch, game.matchweek, playerId],
+            [pending.demandedWage, seasonEnd, epoch, currentSlot(game), playerId],
             (runErr: Error | null) => {
               if (runErr) {
                 console.error("[acceptCounterOffer] Error:", runErr);

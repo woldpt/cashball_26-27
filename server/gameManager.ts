@@ -3,7 +3,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, TEAMS_PER_DIVISION, FRIENDLY_ROUND, signingWage, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
-import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec, serializeRoomTask, slimMatchResult } from "./coreHelpers";
+import { currentEpoch, currentSlot, getSeasonEndMatchweek, isContractLocked, runGet, runExec, serializeRoomTask, slimMatchResult } from "./coreHelpers";
 import { dealDisplaySponsors } from "./game/sponsors";
 import { getOfflineCoaches, getRoomRoster } from "./presenceHelpers";
 import {
@@ -793,7 +793,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                               await runExec(
                                 db,
                                 "UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, morale = MIN(50, morale + 8), transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=?",
-                                [buyerTeamId, signingWage(player), seasonEndMw, currentEpoch(game as any), game.matchweek, game.matchweek, pid],
+                                [buyerTeamId, signingWage(player), seasonEndMw, currentEpoch(game as any), currentSlot(game as any), currentSlot(game as any), pid],
                               );
                               await runExec(db, "COMMIT");
                             } catch (txErr) {

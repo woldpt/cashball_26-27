@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch } from "./coreHelpers";
+import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot } from "./coreHelpers";
 import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
@@ -117,8 +117,8 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
               signingWage(player),
               getSeasonEndMatchweek(game.matchweek),
               currentEpoch(game),
-              game.matchweek,
-              game.matchweek,
+              currentSlot(game),
+              currentSlot(game),
               player.id,
               CONTRACT_LENGTH_WEEKS,
               currentEpoch(game),

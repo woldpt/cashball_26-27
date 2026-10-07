@@ -26,6 +26,7 @@ import {
 } from "./gameConstants";
 import {
   currentEpoch,
+  currentSlot,
   contractEndInfo,
   getAllTeamForms,
   logClubNews,
@@ -389,7 +390,7 @@ export function createContractHelpers(deps: ContractDeps) {
           await new Promise<void>((resolve) => {
             game.db.run(
               `UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, ${CONTRACT_REQUEST_RESET_SQL}, transfer_status = 'none', transfer_price = 0 WHERE id = ?`,
-              [fairWage, seasonEnd, now, game.matchweek, player.id],
+              [fairWage, seasonEnd, now, currentSlot(game), player.id],
               () => resolve(),
             );
           });
@@ -611,7 +612,7 @@ export function createContractHelpers(deps: ContractDeps) {
       const prospectId = await new Promise<number>((resolve) => {
         game.db.run(
           "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, morale, nationality, value, wage, potential, contract_until_matchweek, contract_start_epoch, joined_matchweek, transfer_cooldown_until_matchweek, transfer_status, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', ?)",
-          [name, needPos, skill, 17 + Math.floor(Math.random() * 3), FORM_NEUTRAL, RES_NEUTRAL, 3, MORALE_NEUTRAL, "🇵🇹", recalcPlayerValue(skill), wage, potential, getSeasonEndMatchweek(game.matchweek), currentEpoch(game), game.matchweek, game.matchweek, team.id],
+          [name, needPos, skill, 17 + Math.floor(Math.random() * 3), FORM_NEUTRAL, RES_NEUTRAL, 3, MORALE_NEUTRAL, "🇵🇹", recalcPlayerValue(skill), wage, potential, getSeasonEndMatchweek(game.matchweek), currentEpoch(game), currentSlot(game), currentSlot(game), team.id],
           function (this: any) { resolve(this?.lastID ?? 0); },
         );
       });
