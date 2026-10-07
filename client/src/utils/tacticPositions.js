@@ -23,3 +23,20 @@ export function buildClearedTactic(prev, squad) {
     ),
   };
 }
+
+/**
+ * Conta quantos jogadores têm um dado estado na tática, ignorando ids que já
+ * não estão no plantel (vendidos/leiloados) e o `excludeId`.
+ *
+ * @param {Object<string, string>} positions Mapa id → estado.
+ * @param {string} status "Titular" | "Suplente" | "Excluído".
+ * @param {Set<number>} squadIds Ids (Number) do plantel atual.
+ * @param {number} [excludeId] Jogador a não contar (o que está a ser movido).
+ * @returns {number}
+ */
+export function countStatus(positions, status, squadIds, excludeId) {
+  return Object.entries(positions || {}).filter(
+    ([id, s]) =>
+      s === status && squadIds.has(Number(id)) && Number(id) !== excludeId,
+  ).length;
+}

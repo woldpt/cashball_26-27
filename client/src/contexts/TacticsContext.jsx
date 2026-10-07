@@ -16,7 +16,7 @@ import {
   isPlayerAvailable,
 } from "../utils/playerHelpers.js";
 import { useGame } from "./GameContext.jsx";
-import { buildClearedTactic } from "../utils/tacticPositions.js";
+import { buildClearedTactic, countStatus } from "../utils/tacticPositions.js";
 
 const TacticsContext = createContext(null);
 
@@ -101,6 +101,11 @@ export function TacticsProvider({ children }) {
         ]),
       ),
     [availablePositionCounts],
+  );
+
+  const squadIds = useMemo(
+    () => new Set(mySquad.map((p) => Number(p.id))),
+    [mySquad],
   );
 
   const titulares = useMemo(
@@ -341,9 +346,7 @@ export function TacticsProvider({ children }) {
         }
 
         if (status === "Titular") {
-          const currentTitulares = Object.entries(newPositions).filter(
-            ([id, s]) => s === "Titular" && Number(id) !== playerId,
-          ).length;
+          const currentTitulares = countStatus(newPositions, "Titular", squadIds, playerId);
           if (currentTitulares >= 11) return prev;
           // Máximo 5 por posição de campo (DEF/MED/ATA)
           if (player && player.position !== "GR") {
@@ -356,9 +359,7 @@ export function TacticsProvider({ children }) {
           }
         }
         if (status === "Suplente") {
-          const currentSubs = Object.entries(newPositions).filter(
-            ([id, s]) => s === "Suplente" && Number(id) !== playerId,
-          ).length;
+          const currentSubs = countStatus(newPositions, "Suplente", squadIds, playerId);
           if (currentSubs >= MAX_BENCH_SIZE) return prev;
         }
 
@@ -372,9 +373,7 @@ export function TacticsProvider({ children }) {
                 newPositions[p.id] === "Titular"
               ) {
                 // Deslocar GR existente: verificar se há espaço nos suplentes
-                const currentSubs = Object.entries(newPositions).filter(
-                  ([id, s]) => s === "Suplente" && Number(id) !== p.id,
-                ).length;
+                const currentSubs = countStatus(newPositions, "Suplente", squadIds, p.id);
                 newPositions[p.id] =
                   currentSubs < MAX_BENCH_SIZE ? "Suplente" : "Excluído";
               }
@@ -389,7 +388,7 @@ export function TacticsProvider({ children }) {
       });
       setOpenStatusPickerId(null);
     },
-    [mySquad, upcomingBase, setTactic],
+    [mySquad, squadIds, upcomingBase, setTactic],
   );
 
   const handleSwapPlayerStatuses = useCallback(
@@ -479,9 +478,7 @@ export function TacticsProvider({ children }) {
 
         // Verificar capacidade
         if (targetSection === "Titular") {
-          const count = Object.entries(newPositions).filter(
-            ([id, s]) => s === "Titular" && Number(id) !== playerId,
-          ).length;
+          const count = countStatus(newPositions, "Titular", squadIds, playerId);
           if (count >= 11) return prev;
           // Máximo 5 por posição de campo (DEF/MED/ATA)
           if (player.position !== "GR") {
@@ -502,9 +499,7 @@ export function TacticsProvider({ children }) {
                 p.position === "GR" &&
                 s === "Titular"
               ) {
-                const currentSubs = Object.entries(newPositions).filter(
-                  ([sid, ss]) => ss === "Suplente" && Number(sid) !== p.id,
-                ).length;
+                const currentSubs = countStatus(newPositions, "Suplente", squadIds, p.id);
                 newPositions[id] =
                   currentSubs < MAX_BENCH_SIZE ? "Suplente" : "Excluído";
               }
@@ -512,9 +507,7 @@ export function TacticsProvider({ children }) {
           }
         }
         if (targetSection === "Suplente") {
-          const count = Object.entries(newPositions).filter(
-            ([id, s]) => s === "Suplente" && Number(id) !== playerId,
-          ).length;
+          const count = countStatus(newPositions, "Suplente", squadIds, playerId);
           if (count >= MAX_BENCH_SIZE) return prev;
         }
 
@@ -527,7 +520,7 @@ export function TacticsProvider({ children }) {
       setDragPlayerId(null);
       dragPlayerStatusRef.current = null;
     },
-    [mySquad, upcomingBase, setTactic],
+    [mySquad, squadIds, upcomingBase, setTactic],
   );
 
   const handleDragStart = useCallback((e) => {
