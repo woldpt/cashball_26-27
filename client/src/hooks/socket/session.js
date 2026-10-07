@@ -13,7 +13,9 @@ import { hasSeenWelcome, hasSeenWelcomeThisSession } from "./helpers.js";
  * @returns {Function} cleanup (remove os listeners).
  */
 export function registerSessionListeners(handlers, refs, ctx) {
-	socket.on("teamAssigned", (data) => {
+	// Handlers com referência: o `off` sem handler apagava os listeners de módulo
+	// (socket.js) e de outros componentes no mesmo evento.
+	const onTeamAssigned = (data) => {
 		// O teamAssigned confirma que o join terminou; sem cancelar este
 		// timeout, o cliente repetia o join a cada 10 segundos.
 		if (refs.joinTimerRef?.current) {
@@ -89,7 +91,8 @@ export function registerSessionListeners(handlers, refs, ctx) {
 			// segundo é no-op porque a fila já está vazia.)
 		flushOutbox();
 		ensureJoinState();
-	});
+	};
+	socket.on("teamAssigned", onTeamAssigned);
 	// Rede de segurança pós-join (X4Z1BI): se a rajada do join (mySquad +
 	// gameState) se perdeu mas o sinal de join completo chegou, pedir o
 	// snapshot ao servidor — sem isto o cliente fica preso nos defaults (S1,
@@ -101,7 +104,7 @@ export function registerSessionListeners(handlers, refs, ctx) {
 			socket.emit("requestResync");
 		}
 	};
-	socket.on("gameState", (data) => {
+	const onGameState = (data) => {
 		if (!ctx.inRoom()) return;
 		refs.joinStateSeenRef.current = true;
 		if (data.allMatchResults)
@@ -195,7 +198,8 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		// O join já está ligado no servidor: esvaziar a fila offline
 		// (tática, resoluções) + repor intenções sticky.
 		flushOutbox();
-	});
+	};
+	socket.on("gameState", onGameState);
 
 	socket.on("roomLocked", ({ coaches }) => {
 		if (!ctx.inRoom()) return;
@@ -216,9 +220,10 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		if (!ctx.inRoom()) return;
 	});
 
-	socket.on("globalPlayersUpdate", (players) => {
+	const onGlobalPlayersUpdate = (players) => {
 		handlers.setGlobalPlayers(players || []);
-	});
+	};
+	socket.on("globalPlayersUpdate", onGlobalPlayersUpdate);
 
 	// Convite para mudar de sala vindo de outro treinador (estamos online
 	// noutra sala). Mostra um modal Aceitar/Recusar no jogo.
@@ -230,11 +235,15 @@ export function registerSessionListeners(handlers, refs, ctx) {
 
 	// BUG-15 FIX: Track socket connection state
 	let disconnectedAt = 0;
+	// Sessão reclamada noutro dispositivo: este cliente não volta a entrar sozinho
+	// (senão os dois roubavam o assento um ao outro); «Retomar aqui» recarrega.
+	let displaced = false;
 	const onConnect = () => {
 		const downMs = disconnectedAt ? Date.now() - disconnectedAt : 0;
 		disconnectedAt = 0;
 		handlers.setDisconnected(false);
 		handlers.setJoining(false);
+		if (displaced) return;
 		// Re-join on reconnect using the meRef to avoid stale closure.
 		// Também cobre o estado "à espera do teamAssigned" (roomCode
 		// definido mas teamId ainda ausente): se o socket cair nesse
@@ -269,7 +278,10 @@ export function registerSessionListeners(handlers, refs, ctx) {
 
 	socket.on("connect", onConnect);
 	socket.on("disconnect", onDisconnect);
-	const unsubDisplaced = subscribeSessionDisplaced(() => handlers.setSessionDisplaced(true));
+	const unsubDisplaced = subscribeSessionDisplaced(() => {
+		displaced = true;
+		handlers.setSessionDisplaced(true);
+	});
 	socket.on("kicked", ({ reason } = {}) => {
 		// Notificar o coach expulso e forçar saída da sala
 		handlers.setGameDialog({
@@ -309,13 +321,13 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		}
 	});
 	return () => {
-		socket.off("teamAssigned");
+		socket.off("teamAssigned", onTeamAssigned);
 		socket.off("roomLocked");
 		socket.off("awaitingCoaches");
 		socket.off("roomRoster");
-		socket.off("gameState");
+		socket.off("gameState", onGameState);
 		socket.off("coachDisconnected");
-		socket.off("globalPlayersUpdate");
+		socket.off("globalPlayersUpdate", onGlobalPlayersUpdate);
 		socket.off("roomInvite");
 		socket.off("connect", onConnect);
 		socket.off("disconnect", onDisconnect);

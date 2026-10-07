@@ -85,7 +85,8 @@ export function registerCoreListeners(handlers, refs, ctx) {
 		handlers.setNextMatchSummary(data);
 		handlers.setNextMatchSummaryLoading(false);
 	});
-	socket.on("systemMessage", (msg) => {
+	// Referência guardada: o `off` sem handler apagava o listener do RoomHub.jsx.
+	const onSystemMessage = (msg) => {
 		const text = typeof msg === "string" ? msg : msg.text;
 		if (!text) return;
 		// Anúncio de sala (campeões, prémios, treinadores): o RoomHub › Sala
@@ -106,7 +107,8 @@ export function registerCoreListeners(handlers, refs, ctx) {
 			return;
 		}
 		handlers.addToast(text);
-	});
+	};
+	socket.on("systemMessage", onSystemMessage);
 	socket.on("seasonState", (data) => {
 		if (!ctx.inRoom()) return;
 		// Broadcast pós-jogo (liga E taça): mantém matchweekCount/calendarIndex
@@ -159,6 +161,6 @@ export function registerCoreListeners(handlers, refs, ctx) {
 		socket.off("seasonEnd");
 		socket.off("tacticFamiliarity");
 		socket.off("allTacticFamiliarity");
-		socket.off("systemMessage");
+		socket.off("systemMessage", onSystemMessage);
 	};
 }

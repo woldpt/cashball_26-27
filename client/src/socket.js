@@ -84,7 +84,18 @@ socket.on("roomResumed", () => notifyPause({ paused: false }));
 // o cliente pede o estado completo — em vez de ficar com uma UI parcialmente
 // velha, que era o que acontecia com os one-shot sem garantia.
 let lastSeq = 0;
+// Gate de join: depois de (re)ligar, o servidor só conhece este socket quando o
+// join termina (gameState/teamAssigned). Até lá os emits vão para a fila.
+// Listeners de módulo (nunca removidos): os hooks usam `off` com referência.
+let joined = false;
+socket.on("disconnect", () => {
+  joined = false;
+});
+socket.on("teamAssigned", () => {
+  joined = true;
+});
 socket.on("gameState", (data) => {
+  joined = true;
   if (typeof data?.seq === "number") lastSeq = data.seq;
   if (_pendingRestartReload) {
     _pendingRestartReload = false;
@@ -194,7 +205,7 @@ function enqueue(entry) {
 export function queueEmit(event, payload) {
   const entry = { event, payload, needsAck: false };
   if (STICKY_EVENTS.has(event)) stickyIntents.set(event, payload);
-  if (socket.connected) {
+  if (socket.connected && joined) {
     sendNow(entry);
     return;
   }
@@ -232,7 +243,7 @@ export function emitComAck(event, payload, opts = {}) {
     onOk: opts.onOk,
     onError: opts.onError,
   };
-  if (socket.connected) {
+  if (socket.connected && joined) {
     sendNow(entry);
     return;
   }
@@ -279,8 +290,21 @@ window.addEventListener("online", () => {
   forceReconnect();
 });
 
+// Socket "zombie": ao voltar do segundo plano o `connected` pode estar a true
+// com a ligação já morta (o telemóvel cortou a rede sem fechar o socket). Depois
+// de >5 s oculto, um ping com ack prova que está vivo; sem resposta, fecha-se o
+// engine — o Manager do socket.io trata o fecho como queda e reconecta sozinho.
+let hiddenAt = 0;
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
+  if (document.visibilityState === "hidden") {
+    hiddenAt = Date.now();
+    return;
+  }
+  if (!socket.connected) {
     forceReconnect();
+  } else if (hiddenAt && Date.now() - hiddenAt > 5000) {
+    socket.timeout(2500).emit("presencePing", (err) => {
+      if (err) socket.io.engine?.close();
+    });
   }
 });

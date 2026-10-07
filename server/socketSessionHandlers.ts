@@ -1379,6 +1379,12 @@ export function registerSessionSocketHandlers(
 		},
 	);
 
+	// Prova de vida do cliente ao voltar do segundo plano: o ack é a prova; o
+	// `socket.use` (index.ts) já renova o lease com qualquer pacote recebido.
+	socket.on("presencePing", (ack) => {
+		if (typeof ack === "function") ack({ ok: true });
+	});
+
 	socket.on("presenceSubscribe", () => {
 		// Pré-jogo (escolha de salas): junta o socket ao canal de presença para
 		// receber updates e devolve o snapshot actual dos coaches online.

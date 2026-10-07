@@ -38,13 +38,16 @@ export function registerChatListeners(handlers, refs) {
 		}
 	});
 
-	socket.on("chatHistory", ({ channel, messages }) => {
+	// Referência guardada: `socket.off(evento)` sem handler apagava também o
+	// listener do ChatMessages.jsx.
+	const onChatHistory = ({ channel, messages }) => {
 		if (channel === "room") handlers.setRoomMessages(messages || []);
 		else if (channel === "global") handlers.setGlobalMessages(messages || []);
-	});
+	};
+	socket.on("chatHistory", onChatHistory);
 
 	return () => {
 		socket.off("chatMessage");
-		socket.off("chatHistory");
+		socket.off("chatHistory", onChatHistory);
 	};
 }
