@@ -269,7 +269,7 @@ export function MatchPage({
 				? `⏳ A AGUARDAR ${isFriendly ? "JOGO AMIGÁVEL" : "JOGO DA TAÇA"}...`
 				: isReady
 					? hasOtherCoaches
-						? "⏳ A AGUARDAR OUTRO TREINADOR..."
+						? "⏳ A AGUARDAR..."
 						: "▶ A INICIAR..."
 					: cupPreMatch
 						? `▶ INICIAR JOGO — ${isFriendly ? "AMIGÁVEL" : "TAÇA"}`
