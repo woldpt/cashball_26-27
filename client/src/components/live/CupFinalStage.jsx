@@ -122,7 +122,7 @@ export function CupFinalStage({
           aria-hidden
           loading="lazy"
           onError={(e) => { e.currentTarget.style.display = "none"; }}
-          className="absolute -left-8 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
+          className="absolute -left-2 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-28 h-28 sm:w-48 sm:h-48 object-contain opacity-10 sm:opacity-[0.12] pointer-events-none select-none"
           style={{
             /* crest-shadow mesclado: o `filter` inline anula a classe */
             filter: "brightness(0.75) saturate(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.45)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.25))",
@@ -138,7 +138,7 @@ export function CupFinalStage({
           aria-hidden
           loading="lazy"
           onError={(e) => { e.currentTarget.style.display = "none"; }}
-          className="absolute -right-8 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-72 sm:h-72 object-contain opacity-20 sm:opacity-30 pointer-events-none select-none"
+          className="absolute -right-2 top-2 translate-y-0 sm:top-1/2 sm:-translate-y-1/2 w-28 h-28 sm:w-48 sm:h-48 object-contain opacity-10 sm:opacity-[0.12] pointer-events-none select-none"
           style={{
             filter: "brightness(0.75) saturate(1) drop-shadow(0 1px 2px rgb(0 0 0 / 0.45)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.25))",
             maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
@@ -173,7 +173,7 @@ export function CupFinalStage({
               aria-hidden
               loading="lazy"
               onError={(e) => { e.currentTarget.style.display = "none"; }}
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-28 sm:h-36 w-auto opacity-30 select-none"
+              className="pointer-events-none h-8 sm:h-10 w-auto select-none"
               style={{ filter: "drop-shadow(0 0 14px rgba(251,191,36,0.45))" }}
             />
             <button
