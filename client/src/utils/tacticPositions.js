@@ -40,3 +40,41 @@ export function countStatus(positions, status, squadIds, excludeId) {
       s === status && squadIds.has(Number(id)) && Number(id) !== excludeId,
   ).length;
 }
+
+/**
+ * Estado das substituições da minha equipa tal como o servidor o tem
+ * (`subsUsed`/`subbedOutIds` do payload de intervalo).
+ *
+ * @param {Object|null|undefined} fixture Fixture do payload de intervalo.
+ * @param {number|string|null|undefined} myTeamId Id da minha equipa.
+ * @param {Array<number|string>} mySquadIds Ids do plantel atual.
+ * @returns {{subsMade: number, subbedOut: number[]}|null} `null` se o fixture
+ *   não trouxer `subsUsed` (servidor antigo → o cliente não mexe no estado).
+ */
+export function subsStateFromFixture(fixture, myTeamId, mySquadIds) {
+  if (!fixture?.subsUsed) return null;
+  const squad = new Set((mySquadIds || []).map(Number));
+  return {
+    subsMade: Number(fixture.subsUsed[myTeamId] ?? 0),
+    subbedOut: (fixture.subbedOutIds || []).map(Number).filter((id) => squad.has(id)),
+  };
+}
+
+/**
+ * Procura o fixture da minha equipa (liga: `homeTeamId`/`awayTeamId`; taça:
+ * `homeTeam.id`/`awayTeam.id`) e devolve o seu estado de substituições.
+ *
+ * @param {Array<Object>|undefined} fixtures Fixtures do payload.
+ * @param {number|string|null|undefined} myTeamId Id da minha equipa.
+ * @param {Array<{id: number|string}>} mySquad Plantel atual.
+ * @returns {{subsMade: number, subbedOut: number[]}|null}
+ */
+export function subsStateFromFixtures(fixtures, myTeamId, mySquad) {
+  if (myTeamId == null) return null;
+  const mine = (fixtures || []).find((fx) =>
+    [fx.homeTeamId ?? fx.homeTeam?.id, fx.awayTeamId ?? fx.awayTeam?.id].some(
+      (id) => Number(id) === Number(myTeamId),
+    ),
+  );
+  return subsStateFromFixture(mine, myTeamId, (mySquad || []).map((p) => p.id));
+}

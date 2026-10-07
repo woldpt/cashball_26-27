@@ -1,3 +1,4 @@
+import { subsStateFromFixtures } from "../../utils/tacticPositions.js";
 import { socket, queueEmit } from "../../socket.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
 import { playGoalSound, playVarSound } from "../../utils/audio.js";
@@ -394,11 +395,21 @@ export function registerMatchListeners(handlers, refs, ctx) {
 				attendance: fx.attendance || null,
 				homePossession: fx.homePossession ?? fx._homePossession ?? 50,
 				awayPossession: fx.awayPossession ?? fx._awayPossession ?? 50,
+				subsUsed: fx.subsUsed,
+				subbedOutIds: fx.subbedOutIds,
 			})),
 		});
-		// Preservar subsMade/subbedOut — substituições da 1.ª parte contam
-		// para o limite de 3 no intervalo (fix: sum diverged between mid-half
-		// pause and halftime view).
+		// Substituições da 1.ª parte contam para o limite de 3 no intervalo; o
+		// servidor é a fonte (um reload ao intervalo perdia o contador local).
+		const subsState = subsStateFromFixtures(
+			data.results,
+			refs.meRef.current?.teamId,
+			refs.mySquadRef.current,
+		);
+		if (subsState) {
+			handlers.setSubsMade(subsState.subsMade);
+			handlers.setSubbedOut(subsState.subbedOut);
+		}
 		handlers.setConfirmedSubs([]);
 		handlers.setSwapSource(null);
 		handlers.setSwapTarget(null);

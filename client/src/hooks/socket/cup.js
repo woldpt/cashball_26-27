@@ -1,3 +1,4 @@
+import { subsStateFromFixtures } from "../../utils/tacticPositions.js";
 import { socket } from "../../socket.js";
 import { cupFlowLog } from "../../utils/cupFlowLog.js";
 
@@ -73,8 +74,19 @@ export function registerCupListeners(handlers, refs, ctx) {
 				attendance: fx.attendance || null,
 				homePossession: fx.homePossession ?? fx._homePossession ?? 50,
 				awayPossession: fx.awayPossession ?? fx._awayPossession ?? 50,
+				subsUsed: fx.subsUsed,
+				subbedOutIds: fx.subbedOutIds,
 			})),
 		});
+		const subsState = subsStateFromFixtures(
+			fixtures,
+			refs.meRef.current?.teamId,
+			refs.mySquadRef.current,
+		);
+		if (subsState) {
+			handlers.setSubsMade(subsState.subsMade);
+			handlers.setSubbedOut(subsState.subbedOut);
+		}
 			handlers.setLiveMinute(45);
 			handlers.setActiveTab("live");
 			// Preservar subsMade/subbedOut do 1.º tempo — substituições a meio
@@ -119,8 +131,19 @@ export function registerCupListeners(handlers, refs, ctx) {
 				attendance: fx.attendance || null,
 				homePossession: fx.homePossession ?? fx._homePossession ?? 50,
 				awayPossession: fx.awayPossession ?? fx._awayPossession ?? 50,
+				subsUsed: fx.subsUsed,
+				subbedOutIds: fx.subbedOutIds,
 			})),
 		});
+		const subsState = subsStateFromFixtures(
+			fixtures,
+			refs.meRef.current?.teamId,
+			refs.mySquadRef.current,
+		);
+		if (subsState) {
+			handlers.setSubsMade(subsState.subsMade);
+			handlers.setSubbedOut(subsState.subbedOut);
+		}
 			handlers.setLiveMinute(90);
 			// Preservar subsMade/subbedOut — ET continua a contar para o limite de 3.
 			handlers.setConfirmedSubs([]);

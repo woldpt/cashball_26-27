@@ -1050,6 +1050,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             attendance: fixture.attendance || null,
             homePossession: fixture._homePossession ?? 50,
             awayPossession: fixture._awayPossession ?? 50,
+            // Estado das substituições: o cliente só o tem em memória e perde-o
+            // num reload ao intervalo.
+            subsUsed: { ...(fixture._subCountByTeam || {}) },
+            subbedOutIds: [...(fixture._subbedOut || [])],
             referee: pickRefereeSummary(
               game.roomCode,
               fixture.homeTeamId,
@@ -1067,6 +1071,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       } else {
         const halfTimeFixtures = game.currentFixtures.map((fixture) => ({
           ...fixture,
+          subsUsed: { ...(fixture._subCountByTeam || {}) },
+          subbedOutIds: [...(fixture._subbedOut || [])],
           referee: pickRefereeSummary(
             game.roomCode,
             fixture.homeTeamId,

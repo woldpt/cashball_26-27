@@ -1,3 +1,4 @@
+import { subsStateFromFixtures } from "../../utils/tacticPositions.js";
 import { socket, flushOutbox, queueEmit, subscribeSessionDisplaced } from "../../socket.js";
 import { getDeviceId, loadSavedSession } from "../../utils/localStorage.js";
 import { loadTacticSnapshot } from "../../utils/uiSnapshot.js";
@@ -169,6 +170,15 @@ export function registerSessionListeners(handlers, refs, ctx) {
 		// Restore match-in-progress state on reconnect
 		if (data.matchState === "halftime" && data.lastHalfTimePayload) {
 			handlers.setMatchResults(data.lastHalfTimePayload);
+			const subsState = subsStateFromFixtures(
+				data.lastHalfTimePayload.results || data.lastHalfTimePayload.fixtures,
+				refs.meRef.current?.teamId,
+				refs.mySquadRef.current,
+			);
+			if (subsState) {
+				handlers.setSubsMade(subsState.subsMade);
+				handlers.setSubbedOut(subsState.subbedOut);
+			}
 			handlers.setIsPlayingMatch(true);
 			handlers.setShowHalftimePanel(true);
 			handlers.setActiveTab("live");

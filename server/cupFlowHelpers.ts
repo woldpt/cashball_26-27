@@ -1661,6 +1661,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					attendance: fx.attendance || null,
 					homePossession: fx._homePossession ?? 50,
 					awayPossession: fx._awayPossession ?? 50,
+					subsUsed: { ...(fx._subCountByTeam || {}) },
+					subbedOutIds: [...(fx._subbedOut || [])],
 				})),
 			};
 			game.lastHalftimePayload = etGatePayload;
