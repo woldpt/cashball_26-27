@@ -1,3 +1,8 @@
+## Robustez de sessão/presença (2026-10-07)
+- Lease começa na queda do socket; janelas de decisão nunca decidem `auto` por quem só tem lease; join passivo (separador oculto) não rouba o assento; `presencePing` + gate de join no cliente; contra-proposta/convite sobrevivem à queda. Plano: `docs/plans/2026-10-07-sessao-presenca-mobile.md`.
+- Porquê: bloqueios de ecrã do telemóvel congelavam/descongelavam a sala e a lista `players` tratava a equipa como NPC.
+- Testado: `test:session-freeze` (novos F13–F15), `test:segment-barrier`, `test:connect-smoke`, `test:crash-recovery`, typecheck, lint, check:types. Telemóvel real com bloqueio de ecrã por testar.
+
 ## Deploy v26.10.33 no rick (2026-10-07)
 - Push + tag `v26.10.33` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
 - O pull travou por `HEAD.lock` de um `git gc` em curso e por ficheiros staged duplicados (idênticos ao origin) — descartados com OK do utilizador.
