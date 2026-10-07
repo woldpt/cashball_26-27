@@ -10,6 +10,7 @@ import { liveScore } from "../live/liveHelpers.js";
 import { rankStandings } from "../../utils/standingsRank.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { usePlayCta } from "./usePlayCta.js";
+import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { socket } from "../../socket.js";
 
 const compactEuros = new Intl.NumberFormat("pt-PT", {
@@ -27,17 +28,21 @@ const compactEuros = new Intl.NumberFormat("pt-PT", {
  * @param {Object|null} props.summary `nextMatchSummary` do servidor.
  * @param {number} props.jornada Jornada da liga que aí vem.
  * @param {string} props.ink Cor do texto sobre a cor do clube.
+ * @param {() => void} [props.onOpen] Abre o briefing do jogo (só com adversário).
  * @returns {JSX.Element|null}
  */
-function NextMatch({ summary, jornada, ink }) {
+function NextMatch({ summary, jornada, ink, onOpen }) {
   if (!summary) return null;
   const opp = summary.opponent;
   const competition = summary.isCup
     ? summary.cupRoundName || "Taça"
     : `Liga · J${jornada}`;
   return (
-    <div className="hidden md:flex min-w-0 max-w-[min(30rem,40vw)] justify-center">
-      <div
+    // Absoluto a 50%: o centro do ecrã, não o da coluna (que depende da largura das laterais).
+    <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 min-w-0 max-w-[min(30rem,30vw)] justify-center">
+      <Pill
+        onClick={opp ? onOpen : undefined}
+        title={opp ? "Abrir o briefing do jogo" : undefined}
         className="flex items-center gap-2 min-w-0 rounded-full bg-black/25 pl-3 pr-1.5 py-1"
         style={{ color: ink }}
       >
@@ -62,7 +67,25 @@ function NextMatch({ summary, jornada, ink }) {
             Sem jogo esta semana
           </span>
         )}
-      </div>
+      </Pill>
+    </div>
+  );
+}
+
+/** Pílula do próximo jogo: botão quando há ação, caso contrário um div. */
+function Pill({ onClick, className, children, ...rest }) {
+  return onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      {...rest}
+      className={`${className} cursor-pointer transition hover:bg-black/40 focus-visible:outline-2 focus-visible:outline-offset-2`}
+    >
+      {children}
+    </button>
+  ) : (
+    <div {...rest} className={className}>
+      {children}
     </div>
   );
 }
@@ -161,6 +184,12 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
     myMatch,
   } = useGame();
   const cta = usePlayCta(scrollToTop);
+  const { setPrepPhase } = useTactics();
+  // O badge do próximo jogo leva ao briefing (tab Tática, fase briefing).
+  const openBriefing = () => {
+    setPrepPhase("briefing");
+    navigateTab("tactic");
+  };
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
 
@@ -255,7 +284,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
             score={score}
           />
         ) : (
-          <NextMatch summary={nextMatchSummary} jornada={currentJornada} ink={ink} />
+          <NextMatch summary={nextMatchSummary} jornada={currentJornada} ink={ink} onOpen={openBriefing} />
         )}
 
         {/* Direita: números do clube, JOGAR, sala/chat e utilizador */}
