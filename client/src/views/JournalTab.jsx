@@ -19,7 +19,7 @@
  * Orquestrador fino: lista, corpo, tabelas, ações e tons vivem em
  * `client/src/views/journal/`.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useInbox } from "../hooks/useInbox.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -50,6 +50,7 @@ export function JournalTab({
   const [search, setSearch] = useState("");
   // Mobile: lista e artigo são vistas separadas (no desktop ficam lado a lado).
   const [mobileDetail, setMobileDetail] = useState(false);
+  const readerRef = useRef(null);
 
   // Atalho de teclado: Enter fora de controlos = próxima não lida.
   // Dentro de botões/links/inputs o teclado comporta-se nativamente.
@@ -191,7 +192,7 @@ export function JournalTab({
         </div>
 
         {/* ── Leitor (à direita, ~2/3) ───────────────────────────────── */}
-        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:sticky lg:top-2 lg:h-[calc(100dvh-9rem)] lg:overflow-y-auto`}>
+        <section ref={readerRef} aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:sticky lg:top-2 lg:h-[calc(100dvh-9rem)] lg:overflow-y-auto`}>
           <Button
             variant="ghost"
             size="sm"
@@ -200,7 +201,7 @@ export function JournalTab({
           >
             ‹ Notícias
           </Button>
-          <AnimatePresence>
+          <AnimatePresence mode="wait" onExitComplete={() => readerRef.current?.scrollTo({ top: 0 })}>
             {!selected && (
               <div className="rounded-md border border-outline-variant/20 bg-surface-container px-4 py-8">
                 <EmptyState
