@@ -16,6 +16,7 @@ import {
   isPlayerAvailable,
 } from "../utils/playerHelpers.js";
 import { useGame } from "./GameContext.jsx";
+import { buildClearedTactic } from "../utils/tacticPositions.js";
 
 const TacticsContext = createContext(null);
 
@@ -153,10 +154,7 @@ export function TacticsProvider({ children }) {
 
   const handleClearTactic = useCallback(() => {
     setTactic((prev) => {
-      const allExcluded = Object.fromEntries(
-        mySquad.map((p) => [p.id, "Excluído"]),
-      );
-      const next = { ...prev, formation: "", positions: allExcluded };
+      const next = buildClearedTactic(prev, mySquad);
       queueEmit("setTactic", next);
       return next;
     });

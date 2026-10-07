@@ -707,7 +707,6 @@ function Pitch() {
   const {
     annotatedSquad,
     titulares,
-    tactic,
     dragPlayerId,
     dragOverSection,
     dragOverPlayerId,
@@ -869,7 +868,7 @@ function Pitch() {
             </div>
           )}
 
-        {!tactic.formation && titulares.length === 0 && (
+        {titulares.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="text-white/30 text-xs font-bold text-center px-8 leading-relaxed">
               Arrasta jogadores para o campo ou escolhe uma formação
