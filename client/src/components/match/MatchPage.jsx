@@ -456,6 +456,8 @@ export function MatchPage({
 						onClick={mode === "halftime" ? onReady : handlePauseContinue}
 						disabled={ctaDisabled}
 						className={`h-9 px-4 rounded-lg text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+							!ctaDisabled ? "animate-heartbeat motion-reduce:animate-none " : ""
+						}${
 							ctaDisabled
 								? "bg-black/30 text-on-surface-variant cursor-not-allowed"
 								: cupPreMatch && mode === "halftime"
