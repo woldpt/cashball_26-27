@@ -158,7 +158,6 @@ export function CompactPlayerCard({
             form={player.form}
             morale={player.morale}
             aggressiveness={player.aggressiveness}
-            prevSkill={player.prev_skill}
             skillLast={skillLast}
             size="sm"
           />

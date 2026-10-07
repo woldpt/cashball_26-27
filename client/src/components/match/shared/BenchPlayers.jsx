@@ -30,7 +30,7 @@ export function BenchPlayerCard({ player, posStyle, showSkill = true, showStar =
           <FatigueIndicator player={player} compact />
         </span>
         {showSkill && (
-          <BadgeSkills skill={player.skill} prevSkill={player.prev_skill} hideStats size="sm" />
+          <BadgeSkills skill={player.skill} hideStats size="sm" />
         )}
       </div>
     </div>
