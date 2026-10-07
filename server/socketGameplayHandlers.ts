@@ -273,7 +273,7 @@ export function registerGameplaySocketHandlers(
     });
   });
 
-  socket.on("resolveMatchAction", ({ actionId, teamId, playerId, choice }) => {
+  socket.on("resolveMatchAction", ({ actionId, playerId, choice }) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
 

@@ -829,6 +829,16 @@ export function registerSessionSocketHandlers(
 			}; // end proceedWithManagerLookup
 
 			const doJoin = () => {
+				// Sala cheia recusa ANTES do sucesso: o cliente já não recebe
+				// «entraste» seguido de «recusado».
+				const connectedCount = Object.values(game.playersByName).filter(
+					(player) => player.socketId,
+				).length;
+				if (connectedCount >= 8 && !game.playersByName[trimmedName]) {
+					socket.emit("joinError", "Sala cheia (Máximo 8 Treinadores).");
+					return;
+				}
+
 				socket.join(finalRoomCode);
 				socket.join("__global__");
 
@@ -836,15 +846,6 @@ export function registerSessionSocketHandlers(
 					roomCode: finalRoomCode,
 					roomName: (game as any).roomName || finalRoomCode,
 				});
-
-				const connectedCount = Object.values(game.playersByName).filter(
-					(player) => player.socketId,
-				).length;
-				if (connectedCount >= 8 && !game.playersByName[trimmedName]) {
-					socket.leave(finalRoomCode);
-					socket.emit("joinError", "Sala cheia (Máximo 8 Treinadores).");
-					return;
-				}
 
 				doJoinContinue();
 			}; // end doJoin
