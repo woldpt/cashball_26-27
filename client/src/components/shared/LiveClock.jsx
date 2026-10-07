@@ -1,5 +1,8 @@
+import { AnimatePresence, motion } from "framer-motion";
+
 /**
- * LiveClock.jsx — chip único do relógio do jogo no header.
+ * LiveClock.jsx — relógio do jogo no header: minuto com barra de progresso;
+ * o resultado só aparece ao intervalo (transição animada) e depois volta ao tempo.
  *
  * Antes, o `GameLayout` tinha 4 variantes inline (jogo a decorrer em coluna
  * no portrait / linha no landscape, intervalo, taça, `null`), cada uma com o
@@ -72,7 +75,9 @@ export function LiveClock({
     isPlayingMatch && liveMinute >= 1
       ? `Minuto ${liveMinute}, ${longPhase}`
       : `Jogo ${longPhase}`;
-  const ariaFull = score
+  // Resultado só nas pausas (intervalo / antes do prolongamento); a jogar, só o tempo.
+  const showScore = !!score && !isPlayingMatch && liveMinute >= 45;
+  const ariaFull = showScore
     ? `${score.homeName ?? "Casa"} ${score.home}, ${score.awayName ?? "Fora"} ${score.away}. ${ariaLabel}`
     : ariaLabel;
 
@@ -82,41 +87,75 @@ export function LiveClock({
     isPlayingMatch &&
     (liveMinute >= 110 || (liveMinute >= 75 && liveMinute <= 90));
 
+  // Progresso do jogo (90' ou 120' com prolongamento); só com minuto real.
+  const total = liveMinute > 90 ? 120 : 90;
+  const showBar = isPlayingMatch ? liveMinute >= 1 : liveMinute >= 45;
+  const pct = Math.min(100, (Math.max(0, liveMinute) / total) * 100);
+
+  const swap = {
+    initial: { opacity: 0, y: 10, scale: 0.9, filter: "blur(6px)" },
+    animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+    exit: { opacity: 0, y: -10, scale: 0.9, filter: "blur(6px)" },
+    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+  };
+
   return (
     <div className={`absolute left-1/2 -translate-x-1/2 max-w-[38vw] pointer-events-none ${urgent ? "liveclock-urgent" : ""}`}>
       <span
         role="timer"
         aria-label={ariaFull}
-        className={`flex items-center gap-1.5 px-3 py-1 rounded-full border max-w-full ${urgent ? "border-amber-400 bg-amber-950" : "bg-surface border-outline-variant/50"}`}
+        className={`relative flex items-center justify-center min-w-32 max-w-full overflow-hidden rounded-2xl border px-4 pt-1.5 pb-2.5 backdrop-blur-md shadow-lg shadow-black/30 transition-colors duration-500 ${
+          urgent
+            ? "border-amber-400/80 bg-amber-950/80"
+            : showScore
+              ? "border-primary/60 bg-black/55"
+              : "border-white/15 bg-black/45"
+        }`}
       >
-        {score && (
-          <>
-            <span aria-hidden className="hidden lg:block max-w-28 truncate text-[10px] font-black uppercase tracking-wide text-on-surface-variant">
-              {score.homeName}
-            </span>
-            <span aria-hidden className="shrink-0 font-headline font-black tabular-nums leading-none text-base text-on-surface">
-              <span key={`h${score.home}`} className="score-pop inline-block">{score.home}</span>
-              <span className="mx-1 text-on-surface-variant/50">–</span>
-              <span key={`a${score.away}`} className="score-pop inline-block">{score.away}</span>
-            </span>
-            <span aria-hidden className="hidden lg:block max-w-28 truncate text-[10px] font-black uppercase tracking-wide text-on-surface-variant">
-              {score.awayName}
-            </span>
-            <span aria-hidden className="h-4 w-px bg-outline-variant/50 shrink-0" />
-          </>
+        <AnimatePresence mode="wait" initial={false}>
+          {showScore ? (
+            <motion.span key="score" aria-hidden className="flex items-center gap-2" {...swap}>
+              <span className="hidden lg:block max-w-24 truncate text-[10px] font-black uppercase tracking-wide text-on-surface-variant">
+                {score.homeName}
+              </span>
+              <span className="shrink-0 font-headline font-black tabular-nums leading-none text-xl text-on-surface">
+                <span key={`h${score.home}`} className="score-pop inline-block">{score.home}</span>
+                <span className="mx-1.5 text-primary">–</span>
+                <span key={`a${score.away}`} className="score-pop inline-block">{score.away}</span>
+              </span>
+              <span className="hidden lg:block max-w-24 truncate text-[10px] font-black uppercase tracking-wide text-on-surface-variant">
+                {score.awayName}
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-widest leading-none text-primary">
+                {shortPhase}
+              </span>
+            </motion.span>
+          ) : (
+            <motion.span key="time" aria-hidden className="flex items-center gap-2" {...swap}>
+              {isPlayingMatch && liveMinute >= 1 && (
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${urgent ? "bg-amber-400" : "bg-red-500"}`} />
+                  <span className={`relative inline-flex h-2 w-2 rounded-full ${urgent ? "bg-amber-400" : "bg-red-500"}`} />
+                </span>
+              )}
+              <span className={`shrink-0 font-headline font-black tabular-nums leading-none text-xl ${urgent ? "text-amber-400" : "text-on-surface"}`}>
+                {time}
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-widest leading-none text-on-surface/70 truncate">
+                {shortPhase}
+              </span>
+            </motion.span>
+          )}
+        </AnimatePresence>
+        {showBar && (
+          <span aria-hidden className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
+            <span
+              className={`block h-full transition-[width] duration-1000 ease-linear ${urgent ? "bg-amber-400" : "bg-primary"}`}
+              style={{ width: `${pct}%` }}
+            />
+            {total === 90 && <span className="absolute left-1/2 top-0 h-full w-px bg-white/40" />}
+          </span>
         )}
-        <span
-          aria-hidden
-          className={`text-sm font-headline font-black tabular-nums leading-none ${urgent ? "text-amber-400" : "text-on-surface"} shrink-0`}
-        >
-          {time}
-        </span>
-        <span
-          aria-hidden
-          className="text-[9px] font-bold uppercase tracking-widest leading-none text-on-surface opacity-70 truncate"
-        >
-          {shortPhase}
-        </span>
       </span>
     </div>
   );
