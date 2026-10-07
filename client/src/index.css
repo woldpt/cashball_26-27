@@ -820,7 +820,7 @@ body {
   aspect-ratio: 1;
   left: -20%;
   top: -110%;
-  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 235, 160, 0.16) 0 6deg, transparent 6deg 18deg);
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 235, 160, 0.09) 0 6deg, transparent 6deg 18deg);
   -webkit-mask-image: radial-gradient(circle, #000, transparent 45%);
   mask-image: radial-gradient(circle, #000, transparent 45%);
 }
