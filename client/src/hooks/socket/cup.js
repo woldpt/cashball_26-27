@@ -41,10 +41,6 @@ export function registerCupListeners(handlers, refs, ctx) {
 		cupFlowLog("sorteio a abrir popup", { round: data?.round });
 		refs.isCupDrawRef.current = true;
 		// Close any open auction modal to avoid overlap with the draw animation
-		handlers.setSelectedAuctionPlayer(null);
-		handlers.setAuctionBid("");
-		handlers.setMyAuctionBid(null);
-		handlers.setAuctionResult(null);
 		handlers.setCupDrawRevealIdx(0);
 		handlers.setShowCupDrawPopup(true);
 	});

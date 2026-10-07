@@ -109,11 +109,6 @@ export function GameProvider({
 	const [marketPositionFilter, setMarketPositionFilter] = useState("all");
 	const [marketSort, setMarketSort] = useState("quality-desc");
 	const [showOwnMarketPlayers, setShowOwnMarketPlayers] = useState(false);
-	const [auctionBid, setAuctionBid] = useState("");
-	const [selectedAuctionPlayer, setSelectedAuctionPlayer] = useState(null);
-	const [isAuctionExpanded, setIsAuctionExpanded] = useState(false);
-	const [myAuctionBid, setMyAuctionBid] = useState(null);
-	const [auctionResult, setAuctionResult] = useState(null);
 	const [activeAuctions, setActiveAuctions] = useState([]);
 	const [highlightedAuctionId, setHighlightedAuctionId] = useState(null);
 	const [transferHistory, setTransferHistory] = useState([]);
@@ -374,10 +369,6 @@ export function GameProvider({
 		pendingCupDrawRef.current = false;
 		isCupDrawRef.current = true;
 		startTransition(() => {
-			setSelectedAuctionPlayer(null);
-			setAuctionBid("");
-			setMyAuctionBid(null);
-			setAuctionResult(null);
 			setCupDrawRevealIdx(0);
 			setShowCupDrawPopup(true);
 		});
@@ -387,10 +378,6 @@ export function GameProvider({
 		isPlayingMatchRef.current = isPlayingMatch;
 		if (isPlayingMatch) {
 			startTransition(() => {
-				setSelectedAuctionPlayer(null);
-				setAuctionBid("");
-				setMyAuctionBid(null);
-				setAuctionResult(null);
 				setShowCupDrawPopup(false);
 				setTransferProposalModal(null);
 			});
@@ -1069,11 +1056,6 @@ year: seasonYear,
 			setPlayers,
 			setMySquad,
 			setMarketPairs,
-			setSelectedAuctionPlayer,
-			setIsAuctionExpanded,
-			setAuctionBid,
-			setMyAuctionBid,
-			setAuctionResult,
 			setActiveAuctions,
 			setTransferHistory,
 			setGlobalNews,
@@ -1766,10 +1748,6 @@ year: seasonYear,
 		setSelectedTeam(null);
 		setSelectedTeamSquad([]);
 		setSelectedTeamLoading(false);
-		setSelectedAuctionPlayer(null);
-		setAuctionBid("");
-		setMyAuctionBid(null);
-		setAuctionResult(null);
 		setCalendarData(null);
 		setCalFilter("all");
 		setCupBracketData(null);
@@ -1869,13 +1847,6 @@ year: seasonYear,
 		setMarketSort,
 		showOwnMarketPlayers,
 		setShowOwnMarketPlayers,
-		auctionBid,
-		selectedAuctionPlayer,
-		isAuctionExpanded,
-		setIsAuctionExpanded,
-		myAuctionBid,
-		setMyAuctionBid,
-		auctionResult,
 		activeAuctions,
 		highlightedAuctionId,
 		setHighlightedAuctionId,
@@ -2087,8 +2058,8 @@ year: seasonYear,
 		awaitingCoaches, roomRoster, roomCreator, simSpeed, matchResults, allMatchResults, matchweekCount,
 		season, seasonYear, activeTab, setActiveTab, navigateTab, topScorers,
 		standingsStale, marketPairs, marketPositionFilter, setMarketPositionFilter, marketSort, setMarketSort,
-		showOwnMarketPlayers, setShowOwnMarketPlayers, auctionBid, selectedAuctionPlayer, isAuctionExpanded, setIsAuctionExpanded,
-		myAuctionBid, setMyAuctionBid, auctionResult, activeAuctions, highlightedAuctionId, setHighlightedAuctionId,
+		showOwnMarketPlayers, setShowOwnMarketPlayers, activeAuctions,
+		highlightedAuctionId, setHighlightedAuctionId,
 		transferHistory, globalNews, nextMatchSummary, nextMatchSummaryLoading, setNextMatchSummaryLoading, refereePopup,
 		setRefereePopup, gameDialog, setGameDialog, contractQueue, contractAnswering, respondContractRequest,
 pendingRoomInvite, setPendingRoomInvite, onAcceptRoomInvite, cupDraw, setCupDraw, showCupDrawPopup, setShowCupDrawPopup,

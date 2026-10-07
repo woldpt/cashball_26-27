@@ -48,24 +48,6 @@ export function registerMarketListeners(handlers, refs, ctx) {
 				},
 			];
 		});
-		// Legacy: keep selectedAuctionPlayer for any remaining compatibility
-		if (
-			refs.isPlayingMatchRef.current ||
-			refs.showHalftimePanelRef?.current ||
-			!!refs.matchActionRef?.current ||
-			refs.isCupDrawRef.current
-		) {
-			return;
-		}
-		const myTeamId = refs.meRef.current?.teamId;
-		const myTeamBudget =
-			refs.teamsRef.current.find((t) => t.id == myTeamId)?.budget ?? 0;
-		if (auctionData.startingPrice > myTeamBudget) return;
-		handlers.setSelectedAuctionPlayer(auctionData);
-		handlers.setIsAuctionExpanded(false);
-		handlers.setAuctionBid("");
-		handlers.setMyAuctionBid(null);
-		handlers.setAuctionResult(null);
 	});
 	socket.on(
 		"auctionBidPlaced",
@@ -85,15 +67,6 @@ export function registerMarketListeners(handlers, refs, ctx) {
 			);
 		},
 	);
-	socket.on("auctionBidConfirmed", ({ playerId, bidAmount }) => {
-		if (!ctx.inRoom()) return;
-		handlers.setSelectedAuctionPlayer((prev) => {
-			if (prev && prev.playerId === playerId) {
-				handlers.setMyAuctionBid(bidAmount);
-			}
-			return prev;
-		});
-	});
 	socket.on("auctionClosed", (result) => {
 		if (!ctx.inRoom()) return;
 			// Mark auction with result in activeAuctions; removal happens when matchweek advances
@@ -102,21 +75,6 @@ export function registerMarketListeners(handlers, refs, ctx) {
 				a.playerId === result.playerId ? { ...a, result, closed: true } : a,
 			),
 		);
-		// Legacy cleanup
-		handlers.setSelectedAuctionPlayer((prev) => {
-			if (prev && prev.playerId === result.playerId) {
-				handlers.setAuctionResult(result);
-				setTimeout(() => {
-					handlers.setSelectedAuctionPlayer(null);
-					handlers.setIsAuctionExpanded(false);
-					handlers.setAuctionBid("");
-					handlers.setMyAuctionBid(null);
-					handlers.setAuctionResult(null);
-				}, 5000);
-				return prev;
-			}
-			return prev?.playerId === result.playerId ? null : prev;
-		});
 	});
 	socket.on("auctionPaused", ({ playerId }) => {
 		if (!ctx.inRoom()) return;
@@ -325,7 +283,6 @@ export function registerMarketListeners(handlers, refs, ctx) {
 		socket.off("transferHistory");
 		socket.off("transferCompleted");
 		socket.off("auctionStarted");
-		socket.off("auctionBidConfirmed");
 		socket.off("auctionBidPlaced");
 		socket.off("auctionClosed");
 		socket.off("auctionPaused");
