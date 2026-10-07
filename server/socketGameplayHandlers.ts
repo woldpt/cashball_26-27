@@ -429,16 +429,8 @@ export function registerGameplaySocketHandlers(
       // Salas com 2+ coaches humanos ficam bloqueadas no início da semana
       // até TODOS estarem online (a remoção só acontece em leaveRoom/kick/despedimento).
 
-      // Discard any pending contract counter-offer for this coach's team
-      if (game.pendingRenewalCounterOffers) {
-        for (const [pid, offer] of Object.entries(
-          game.pendingRenewalCounterOffers as Record<string, any>,
-        )) {
-          if (offer.teamId === playerState.teamId) {
-            delete (game.pendingRenewalCounterOffers as any)[pid];
-          }
-        }
-      }
+      // NOTA: as contra-propostas de renovação pendentes NÃO se apagam aqui —
+      // uma queda de rede não pode matar a contra-proposta do treinador.
 
       // NOTA: as pendingMatchActions deste treinador NÃO são resolvidas aqui.
       // Era isto que fazia a lesão/substituição dele ser decidida sozinha
@@ -472,12 +464,6 @@ export function registerGameplaySocketHandlers(
       emitPresence(game);
       emitPresencePause(game, io);
     }, PRESENCE_GRACE_MS + 1000);
-
-    // Clear phase timer to prevent stale timeouts after disconnect/reconnect
-    if (game.phaseTimer) {
-      clearTimeout(game.phaseTimer);
-      game.phaseTimer = null;
-    }
 
     const resumeIfUnblocked = () => {
       // A disconnect must never auto-start a match or interfere with simulation.

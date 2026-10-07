@@ -356,7 +356,10 @@ export function registerSessionSocketHandlers(
 
 		getTeamsWithCoachNames(game.db)
 			.then((teams: any[]) => {
-				io.to(roomCode).emit("teamsData", teams);
+				// À sala só quando entra um treinador novo; num rejoin só ao próprio
+				// (cada desbloqueio do telemóvel inundava a sala com a lista toda).
+				if (isNew) io.to(roomCode).emit("teamsData", teams);
+				else socket.emit("teamsData", teams);
 				getAllTeamForms(game.db, game.season)
 					.then((forms) => {
 						socket.emit("teamForms", forms);

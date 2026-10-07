@@ -529,7 +529,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     fromTeam: AnyRow,
   ): Promise<void> {
     const player = game.playersByName[coachName];
-    if (!player || !player.socketId) return;
+    if (!player) return;
 
     game.pendingJobOffers[coachName] = {
       fromTeamId,
@@ -563,7 +563,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     } catch (e) {
       console.warn(`[${game.roomCode}] job_offer news failed:`, (e as Error)?.message);
     }
-    io.to(player.socketId).emit("jobOffer", payload);
+    // Sem socket (queda de rede): o pendente fica e o resendPendingJobOffer
+    // entrega-o no rejoin.
+    if (player.socketId) io.to(player.socketId).emit("jobOffer", payload);
   }
 
   /**

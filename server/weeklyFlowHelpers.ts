@@ -2136,7 +2136,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // já jogada. Agora espera-se, e re-despacha-se quando ele voltar.
     if (computeAbsentees(game).length > 0) {
       maybeNotifyWaiting(game);
+      // Um só waiter por sala: cada checkAllReady durante a ausência empilhava
+      // mais um waitForPresence (e um re-despacho por cada um ao voltar).
+      if ((game as any)._readyWaitArmed) return;
+      (game as any)._readyWaitArmed = true;
       waitForPresence(game, io).then(() => {
+        (game as any)._readyWaitArmed = false;
         checkAllReady(game).catch((err) =>
           console.error(`[${game.roomCode}] checkAllReady (pós-pausa):`, err),
         );
