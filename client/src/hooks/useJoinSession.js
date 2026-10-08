@@ -296,6 +296,10 @@ export function useJoinSession({ setRoomCode, onRoomGone }) {
 		const target = (roomCode || "").toUpperCase();
 		if (!target) return;
 		if (me?.roomCode) socket.emit("leaveRoom");
+		// A sessão guardada aponta para a sala antiga: com `me.teamId` limpo, o
+		// auto-join reentrava lá logo a seguir e desfazia o convite aceite.
+		savedSessionRef.current = null;
+		setSavedSession(null);
 		setJoinError("");
 		setJoining(true);
 		const payload = {
