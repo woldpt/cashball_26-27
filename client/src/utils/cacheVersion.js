@@ -1,15 +1,9 @@
 const CACHE_VERSION_KEY = "cashball_cache_version";
-// Sessão (ver utils/localStorage.js): sem isto cada restart do servidor
-// fazia logout no próximo reload — no telemóvel, a cada volta à app.
-const PRESERVED_LOCAL_KEYS = [
-  "cashball_auth",
-  "cashball_rooms",
-  "cashball_device",
-  "cashballSession",
-  "cashballAdminSession",
-  CACHE_VERSION_KEY,
-];
-const PRESERVED_LOCAL_PREFIXES = ["cashball_inbox_read:"];
+// Tudo o que é da app (prefixo `cashball`: sessão, salas, dispositivo,
+// leituras do inbox…) sobrevive ao reset. Uma lista fixa esquecia as chaves
+// novas — cada restart do servidor fazia logout no reload seguinte.
+const PRESERVED_LOCAL_KEYS = [];
+const PRESERVED_LOCAL_PREFIXES = ["cashball"];
 
 function preserveLocalStorageKeys(keys) {
   const preserved = new Map();

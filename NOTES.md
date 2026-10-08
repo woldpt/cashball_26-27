@@ -1,3 +1,9 @@
+## Contenção de "buracos negros" (2026-10-08)
+- Linhas de `matches` da liga passam a ser gravadas na transação do fecho (com classificação + marker 'finalized', `leagueMatchRowWrites`); `persistMatchResults` fica só com forma/notas/MOM/rescaldo.
+- `socket.on` envolvido por ligação (index.ts): erro/rejeição num handler é registado e não chega ao `fatalShutdown`.
+- `cacheVersion.js` preserva todas as chaves com prefixo `cashball` (lista fixa esquecia chaves novas).
+- Testado: novo S6b em `test:crash-recovery` (falha sem a correção), typecheck, connect-smoke, session-freeze, segment-barrier, lint, check:types.
+
 ## Deploy v26.10.35 no rick (2026-10-08)
 - Push + tag `v26.10.35` + rebuild; J1 da época 2 de PYG2GT reposta em `matches` a partir de `allMatchResults` (só resultados; backup `game_PYG2GT.db.bak-20261008-J1`).
 

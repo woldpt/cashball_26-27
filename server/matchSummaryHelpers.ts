@@ -41,6 +41,47 @@ interface MatchSummaryDeps {
   prepareFriendlyFixtures: (game: ActiveGame) => Promise<void>;
 }
 
+/**
+ * DELETE+INSERT da linha de cada jogo da liga — corre dentro da transação do
+ * fecho da jornada, junto com a classificação e o marker 'finalized': um crash
+ * a seguir ao COMMIT já não deixa a jornada sem histórico.
+ */
+export function leagueMatchRowWrites(
+  season: number,
+  matchweek: number,
+  match: any,
+): Array<[string, any[]]> {
+  // Fadiga/minutos são só do jogo ao vivo: não vão para o histórico.
+  const historicalLineup = (lineup: any[] = []) =>
+    lineup.map(({ matchMinutes, fatigueLoss, ...player }) => player);
+  return [
+    [
+      "DELETE FROM matches WHERE season = ? AND matchweek = ? AND home_team_id = ? AND away_team_id = ? AND competition = 'League'",
+      [season, matchweek, match.homeTeamId, match.awayTeamId],
+    ],
+    [
+      `INSERT INTO matches (
+        season, matchweek, home_team_id, away_team_id, home_score, away_score, played, narrative, competition, attendance, ticket_revenue, home_lineup, away_lineup
+      ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'League', ?, ?, ?, ?)`,
+      [
+        season,
+        matchweek,
+        match.homeTeamId,
+        match.awayTeamId,
+        match.finalHomeGoals,
+        match.finalAwayGoals,
+        JSON.stringify(match.events || []),
+        match.attendance || 0,
+        // Receita faturada à altura (mesma fórmula do crédito no fecho da
+        // jornada: attendance × preço do bilhete de então).
+        (match.attendance || 0) * (match._ticketPrice || 15),
+        JSON.stringify(historicalLineup(match.homeLineup || [])),
+        JSON.stringify(historicalLineup(match.awayLineup || [])),
+      ],
+    ],
+  ];
+}
+
 export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
   const {
     runAll,
@@ -1076,11 +1117,6 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     // O fecho da jornada avança o calendário antes desta chamada: a semana das
     // notícias do jogo (rescaldo, lesões) sai do matchweek jogado, não do relógio.
     const slot = slotForLeagueMatchweek(matchweek);
-    // Match fatigue is live-only. Keep the historical lineup skill snapshot,
-    // but do not carry minutes/fatigue badges into the next match or history.
-    const historicalLineup = (lineup: any[] = []) =>
-      lineup.map(({ matchMinutes, fatigueLoss, ...player }) => player);
-
     let remaining = fixtures.length;
     if (remaining === 0) {
       if (onDone) onDone();
@@ -1124,195 +1160,169 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
 
     game.db.serialize(() => {
       fixtures.forEach((match) => {
-        game.db.run(
-          "DELETE FROM matches WHERE season = ? AND matchweek = ? AND home_team_id = ? AND away_team_id = ? AND competition = 'League'",
-          [game.season, matchweek, match.homeTeamId, match.awayTeamId],
-          () => {
+        // As linhas de `matches` já foram gravadas na transação da
+        // classificação (leagueMatchRowWrites) — aqui só o resto.
+        // Update player form after match
+        const homeLineupIds = (match.homeLineup || [])
+          .map((p: any) => p.id)
+          .filter((id: number) => id > 0);
+        const awayLineupIds = (match.awayLineup || [])
+          .map((p: any) => p.id)
+          .filter((id: number) => id > 0);
+        const homeWon = match.finalHomeGoals > match.finalAwayGoals;
+        const awayWon = match.finalAwayGoals > match.finalHomeGoals;
+        const drew = !homeWon && !awayWon;
+
+        const applyFormDelta = (ids: number[], won: boolean) => {
+          if (ids.length === 0) return;
+          const delta = drew
+            ? Math.floor(Math.random() * 3) - 1 // -1 a +1
+            : won
+              ? 3 + Math.floor(Math.random() * 4) // +3 a +6
+              : -(3 + Math.floor(Math.random() * 4)); // -3 a -6
+          const ph = ids.map(() => "?").join(",");
+          game.db.run(
+            `UPDATE players SET form = MIN(${FORM_MAX}, MAX(${FORM_MATCH_MIN}, form + ?)) WHERE id IN (${ph})`,
+            [delta, ...ids],
+          );
+        };
+
+        applyFormDelta(homeLineupIds, homeWon);
+        applyFormDelta(awayLineupIds, awayWon);
+
+        // Classificação 0–10 do último jogo por participante (mantém
+        // quem não jogou). Idempotente → seguro no replay.
+        try {
+          persistLastRatings(game.db, match);
+        } catch (ratingErr: any) {
+          console.warn(
+            `[persistMatchResults] last_rating persistence failed (matchweek ${matchweek}):`,
+            ratingErr?.message,
+          );
+        }
+
+        // Registra táctica para cada equipa (humana ou NPC) nos fixtures
+        const recordTacticHistory = (
+          teamId: number,
+          tactic: any,
+          result: string,
+          firstTactic?: any,
+        ) => {
+          if (!tactic?.formation || !tactic?.style) return;
+          // Memória táctica: 0.5 estrelas (1.ª parte) + 0.5 (2.ª parte)
+          updateTacticFamiliarity(game, teamId, firstTactic ?? tactic, tactic, matchweek, result);
+          const playerState = Object.values(game.playersByName).find(
+            (p) => p.teamId === teamId && p.socketId,
+          );
+          if (playerState) {
+            // Linha de auditoria (apenas coaches humanos)
             game.db.run(
-              `INSERT INTO matches (
-                season, matchweek, home_team_id, away_team_id, home_score, away_score, played, narrative, competition, attendance, ticket_revenue, home_lineup, away_lineup
-              ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'League', ?, ?, ?, ?)`,
+              "INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
               [
-                game.season,
+                teamId,
+                playerState.name,
+                tactic.formation,
+                tactic.style,
                 matchweek,
-                match.homeTeamId,
-                match.awayTeamId,
-                match.finalHomeGoals,
-                match.finalAwayGoals,
-                JSON.stringify(match.events || []),
-                match.attendance || 0,
-                // Receita faturada à altura (mesma fórmula do crédito em
-                // finalizeLeagueEvent: attendance × preço do bilhete de então).
-                (match.attendance || 0) * ((match as any)._ticketPrice || 15),
-                JSON.stringify(historicalLineup(match.homeLineup || [])),
-                JSON.stringify(historicalLineup(match.awayLineup || [])),
+                "league",
+                result,
               ],
-              () => {
-                // Update player form after match
-                const homeLineupIds = (match.homeLineup || [])
-                  .map((p: any) => p.id)
-                  .filter((id: number) => id > 0);
-                const awayLineupIds = (match.awayLineup || [])
-                  .map((p: any) => p.id)
-                  .filter((id: number) => id > 0);
-                const homeWon = match.finalHomeGoals > match.finalAwayGoals;
-                const awayWon = match.finalAwayGoals > match.finalHomeGoals;
-                const drew = !homeWon && !awayWon;
-
-                const applyFormDelta = (ids: number[], won: boolean) => {
-                  if (ids.length === 0) return;
-                  const delta = drew
-                    ? Math.floor(Math.random() * 3) - 1 // -1 a +1
-                    : won
-                      ? 3 + Math.floor(Math.random() * 4) // +3 a +6
-                      : -(3 + Math.floor(Math.random() * 4)); // -3 a -6
-                  const ph = ids.map(() => "?").join(",");
-                  game.db.run(
-                    `UPDATE players SET form = MIN(${FORM_MAX}, MAX(${FORM_MATCH_MIN}, form + ?)) WHERE id IN (${ph})`,
-                    [delta, ...ids],
-                  );
-                };
-
-                applyFormDelta(homeLineupIds, homeWon);
-                applyFormDelta(awayLineupIds, awayWon);
-
-                // Classificação 0–10 do último jogo por participante (mantém
-                // quem não jogou). Idempotente → seguro no replay.
-                try {
-                  persistLastRatings(game.db, match);
-                } catch (ratingErr: any) {
-                  console.warn(
-                    `[persistMatchResults] last_rating persistence failed (matchweek ${matchweek}):`,
-                    ratingErr?.message,
-                  );
-                }
-
-                // Registra táctica para cada equipa (humana ou NPC) nos fixtures
-                const recordTacticHistory = (
-                  teamId: number,
-                  tactic: any,
-                  result: string,
-                  firstTactic?: any,
-                ) => {
-                  if (!tactic?.formation || !tactic?.style) return;
-                  // Memória táctica: 0.5 estrelas (1.ª parte) + 0.5 (2.ª parte)
-                  updateTacticFamiliarity(game, teamId, firstTactic ?? tactic, tactic, matchweek, result);
-                  const playerState = Object.values(game.playersByName).find(
-                    (p) => p.teamId === teamId && p.socketId,
-                  );
-                  if (playerState) {
-                    // Linha de auditoria (apenas coaches humanos)
-                    game.db.run(
-                      "INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                      [
-                        teamId,
-                        playerState.name,
-                        tactic.formation,
-                        tactic.style,
-                        matchweek,
-                        "league",
-                        result,
-                      ],
-                    );
-                  }
-                };
-
-                const homeResult = homeWon ? "V" : drew ? "E" : "D";
-                const awayResult = awayWon ? "V" : drew ? "E" : "D";
-                recordTacticHistory(match.homeTeamId, match._t1, homeResult, (match as any)._firstHalfT1);
-                recordTacticHistory(match.awayTeamId, match._t2, awayResult, (match as any)._firstHalfT2);
-
-                // MOM por equipa (Jornal Global) — mesmo callback atómico do INSERT
-                try {
-                  persistMoms(game.db, game, match, "League", matchweek, null);
-                } catch (momErr: any) {
-                  console.warn(
-                    `[persistMatchResults] MOM persistence failed (matchweek ${matchweek}):`,
-                    momErr?.message,
-                  );
-                }
-
-                // Rescaldo persistente do Jornal, um por equipa (replay seguro:
-                // o helper substitui a linha do mesmo jogo).
-                try {
-                  const hG = match.finalHomeGoals ?? 0;
-                  const aG = match.finalAwayGoals ?? 0;
-                  const home = snapshot(match.homeTeamId);
-                  const away = snapshot(match.awayTeamId);
-                  const homeRevenue =
-                    (match.attendance || 0) * ((match as any)._ticketPrice || 15);
-                  // 15% da bilheteira para o visitante (como no crédito semanal).
-                  const awayShare = Math.floor(homeRevenue * AWAY_TICKET_SHARE);
-                  const homeShare = homeRevenue - awayShare;
-                  const key = `league:${game.season}:${matchweek}`;
-                  const roundLabel = `Jornada ${matchweek}`;
-                  const ratings = computeMatchRatings(match);
-                  const moms = computeMoms(match.events || [], match.homeLineup || [], match.awayLineup || []);
-                  logPostMatchRecap(game, {
-                    teamId: match.homeTeamId,
-                    teamName: home.name,
-                    opponentId: match.awayTeamId,
-                    opponentName: away.name,
-                    myGoals: hG,
-                    oppGoals: aG,
-                    outcome: hG > aG ? "win" : hG < aG ? "loss" : "draw",
-                    source: "league",
-                    roundLabel,
-                    key,
-                    ratings: ratings.home,
-                    mom: moms.home,
-                    ticketRevenue: homeShare,
-                    myDivision: home.division,
-                    opponentDivision: away.division,
-                    opponentRank: away.rank,
-                    opponentTeamCount: away.count,
-                    matchweek,
-                    slot,
-                  });
-                  logPostMatchRecap(game, {
-                    teamId: match.awayTeamId,
-                    teamName: away.name,
-                    opponentId: match.homeTeamId,
-                    opponentName: home.name,
-                    myGoals: aG,
-                    oppGoals: hG,
-                    outcome: aG > hG ? "win" : aG < hG ? "loss" : "draw",
-                    source: "league",
-                    roundLabel,
-                    key,
-                    ratings: ratings.away,
-                    mom: moms.away,
-                    ticketRevenue: awayShare,
-                    myDivision: away.division,
-                    opponentDivision: home.division,
-                    opponentRank: home.rank,
-                    opponentTeamCount: home.count,
-                    matchweek,
-                    slot,
-                  });
-                } catch (recapErr: any) {
-                  console.warn(
-                    `[persistMatchResults] recap failed (matchweek ${matchweek}):`,
-                    recapErr?.message,
-                  );
-                }
-                // Lesões/castigos novos com data fixa (a jornada do jogo).
-                try {
-                  logMatchMedicalNews(game, match.homeTeamId, matchweek, undefined, slot);
-                  logMatchMedicalNews(game, match.awayTeamId, matchweek, undefined, slot);
-                } catch (medErr: any) {
-                  console.warn(
-                    `[persistMatchResults] medical failed (matchweek ${matchweek}):`,
-                    medErr?.message,
-                  );
-                }
-
-                remaining -= 1;
-                if (remaining === 0 && onDone) onDone();
-              },
             );
-          },
-        );
+          }
+        };
+
+        const homeResult = homeWon ? "V" : drew ? "E" : "D";
+        const awayResult = awayWon ? "V" : drew ? "E" : "D";
+        recordTacticHistory(match.homeTeamId, match._t1, homeResult, (match as any)._firstHalfT1);
+        recordTacticHistory(match.awayTeamId, match._t2, awayResult, (match as any)._firstHalfT2);
+
+        // MOM por equipa (Jornal Global) — mesmo callback atómico do INSERT
+        try {
+          persistMoms(game.db, game, match, "League", matchweek, null);
+        } catch (momErr: any) {
+          console.warn(
+            `[persistMatchResults] MOM persistence failed (matchweek ${matchweek}):`,
+            momErr?.message,
+          );
+        }
+
+        // Rescaldo persistente do Jornal, um por equipa (replay seguro:
+        // o helper substitui a linha do mesmo jogo).
+        try {
+          const hG = match.finalHomeGoals ?? 0;
+          const aG = match.finalAwayGoals ?? 0;
+          const home = snapshot(match.homeTeamId);
+          const away = snapshot(match.awayTeamId);
+          const homeRevenue =
+            (match.attendance || 0) * ((match as any)._ticketPrice || 15);
+          // 15% da bilheteira para o visitante (como no crédito semanal).
+          const awayShare = Math.floor(homeRevenue * AWAY_TICKET_SHARE);
+          const homeShare = homeRevenue - awayShare;
+          const key = `league:${game.season}:${matchweek}`;
+          const roundLabel = `Jornada ${matchweek}`;
+          const ratings = computeMatchRatings(match);
+          const moms = computeMoms(match.events || [], match.homeLineup || [], match.awayLineup || []);
+          logPostMatchRecap(game, {
+            teamId: match.homeTeamId,
+            teamName: home.name,
+            opponentId: match.awayTeamId,
+            opponentName: away.name,
+            myGoals: hG,
+            oppGoals: aG,
+            outcome: hG > aG ? "win" : hG < aG ? "loss" : "draw",
+            source: "league",
+            roundLabel,
+            key,
+            ratings: ratings.home,
+            mom: moms.home,
+            ticketRevenue: homeShare,
+            myDivision: home.division,
+            opponentDivision: away.division,
+            opponentRank: away.rank,
+            opponentTeamCount: away.count,
+            matchweek,
+            slot,
+          });
+          logPostMatchRecap(game, {
+            teamId: match.awayTeamId,
+            teamName: away.name,
+            opponentId: match.homeTeamId,
+            opponentName: home.name,
+            myGoals: aG,
+            oppGoals: hG,
+            outcome: aG > hG ? "win" : aG < hG ? "loss" : "draw",
+            source: "league",
+            roundLabel,
+            key,
+            ratings: ratings.away,
+            mom: moms.away,
+            ticketRevenue: awayShare,
+            myDivision: away.division,
+            opponentDivision: home.division,
+            opponentRank: home.rank,
+            opponentTeamCount: home.count,
+            matchweek,
+            slot,
+          });
+        } catch (recapErr: any) {
+          console.warn(
+            `[persistMatchResults] recap failed (matchweek ${matchweek}):`,
+            recapErr?.message,
+          );
+        }
+        // Lesões/castigos novos com data fixa (a jornada do jogo).
+        try {
+          logMatchMedicalNews(game, match.homeTeamId, matchweek, undefined, slot);
+          logMatchMedicalNews(game, match.awayTeamId, matchweek, undefined, slot);
+        } catch (medErr: any) {
+          console.warn(
+            `[persistMatchResults] medical failed (matchweek ${matchweek}):`,
+            medErr?.message,
+          );
+        }
+
+        remaining -= 1;
+        if (remaining === 0 && onDone) onDone();
       });
     });
       },

@@ -515,6 +515,39 @@ async function main(): Promise<void> {
     ok(game.currentFixtures.length === 0, "fixtures descartadas");
     ok(game.seats[coach5]?.intent.ready === false, "nenhum assento pronto");
 
+    // ── S6b — crash logo após o COMMIT do fecho: o histórico já lá está ─────
+    // persistMatchResults "nunca corre" (processo morreu); as linhas de
+    // `matches` têm de ter entrado na mesma transação do marker 'finalized'.
+    console.log("\nS6b · crash após o COMMIT do fecho → jogos já gravados");
+    const idx6b = game.calendarIndex;
+    const mw6b = game.matchweek;
+    game.currentEvent = SEASON_CALENDAR[idx6b];
+    game.gamePhase = "match_finalizing";
+    game.currentFixtures = [
+      { homeTeamId: 1, awayTeamId: 2, finalHomeGoals: 3, finalAwayGoals: 2, events: [], homeLineup: [], awayLineup: [] },
+    ];
+    await rawExec(dstPath, "DELETE FROM matches WHERE season = ? AND matchweek = ?", [game.season, mw6b]);
+    const helpers6b = buildHelpers({ persistMatchResults: () => {}, refreshMarket: () => {} });
+    // Sem await: o fecho fica à espera do onDone que o "processo morto" nunca chama.
+    void helpers6b.finalizeLeagueEvent(game);
+    const season6b = game.season;
+    let fin6b: any[] = [];
+    for (let i = 0; i < 50 && fin6b.length === 0; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+      fin6b = await rawGet(
+        dstPath,
+        "SELECT 1 AS done FROM applied_weeks WHERE season = ? AND slot = ? AND kind = 'finalized'",
+        [season6b, idx6b],
+      );
+    }
+    ok(fin6b.length === 1, "marker 'finalized' comitado");
+    const rows6b = await rawGet(
+      dstPath,
+      "SELECT home_score, away_score FROM matches WHERE season = ? AND matchweek = ? AND home_team_id = 1 AND away_team_id = 2",
+      [season6b, mw6b],
+    );
+    ok(rows6b.length === 1 && rows6b[0].home_score === 3 && rows6b[0].away_score === 2, "jogo gravado na mesma transação");
+
     // ── S7 — fim de época interrompido: retoma e não repete prémios ──────────
     console.log("\nS7 · fim de época retomável");
     const noop7 = () => {};

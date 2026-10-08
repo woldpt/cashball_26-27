@@ -1236,6 +1236,21 @@ function findOnlineCoachSocket(
 io.on("connection", (socket) => {
 	socket.emit("serverStartTime", SERVER_START_TIME);
 
+	// Um erro num handler fica nesse evento: antes chegava ao uncaughtException
+	// e o fatalShutdown derrubava todas as salas (e cortava gravações a meio).
+	const rawOn = socket.on.bind(socket);
+	socket.on = (event: string, handler: (...args: any[]) => any) =>
+		rawOn(event, (...args: any[]) => {
+			const fail = (err: any) =>
+				console.error(`[socket] handler "${event}" falhou:`, err?.stack || err);
+			try {
+				const result = handler(...args);
+				if (result && typeof result.catch === "function") result.catch(fail);
+			} catch (err) {
+				fail(err);
+			}
+		});
+
 	// Lease de presença: qualquer evento de um socket ligado renova o sinal de
 	// vida do assento. Sem isto, a grace de presença só seria renovada no join.
 	socket.use((_packet: any, next: any) => {

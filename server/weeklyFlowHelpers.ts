@@ -17,6 +17,7 @@ import {
 } from "./cmNews";
 import { ensureNpcStaff, fetchStaffSalaryTotals } from "./staffHelpers";
 import { logProgressNews } from "./progressNewsHelpers";
+import { leagueMatchRowWrites } from "./matchSummaryHelpers";
 import {
   SEASON_CALENDAR,
   DIVISION_NAMES,
@@ -1299,6 +1300,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               // memória pela engine — comitados atomicamente com classificações +
               // receita + marker 'finalized' (janela de crash fechada).
               queueMatchDeltaWrites(game.db, fixtures);
+
+              for (const match of fixtures) {
+                for (const [sql, params] of leagueMatchRowWrites(game.season, completedMatchweek, match)) {
+                  await dbRun(game.db, sql, params);
+                }
+              }
 
               for (const match of fixtures) {
                 const hG = match.finalHomeGoals;
