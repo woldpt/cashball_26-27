@@ -1,3 +1,8 @@
+## Deploy v26.10.34 no rick (2026-10-08)
+- Push + tag `v26.10.34` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.34` (rodapé da landing).
+- Mudanças desta ronda: robustez de sessão/presença (lease, `presencePing`, gate de join, join passivo sem roubo de assento) e utilitário de posições táticas (`tacticPositions.js`).
+
 ## Robustez de sessão/presença (2026-10-07)
 - Lease começa na queda do socket; janelas de decisão nunca decidem `auto` por quem só tem lease; join passivo (separador oculto) não rouba o assento; `presencePing` + gate de join no cliente; contra-proposta/convite sobrevivem à queda. Plano: `docs/plans/2026-10-07-sessao-presenca-mobile.md`.
 - Porquê: bloqueios de ecrã do telemóvel congelavam/descongelavam a sala e a lista `players` tratava a equipa como NPC.
