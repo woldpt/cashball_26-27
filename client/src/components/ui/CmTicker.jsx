@@ -40,10 +40,11 @@ export function CmTicker({ hidden = false, paused = false }) {
   // a meio. Novidades entram no lote seguinte.
   const [batchIds, setBatchIds] = useState(null);
 
-  // Todas as pendentes passam seguidas numa só tira.
+  // Todas as pendentes passam seguidas numa só tira. Em movimento reduzido o
+  // texto é estático: uma de cada vez, senão a fila vira um bloco gigante.
   const pending = items.filter((it) => !shownIds.has(it.id));
   if (batchIds === null && pending.length > 0 && !hidden && !paused) {
-    setBatchIds(pending.map((it) => it.id));
+    setBatchIds((reduced ? pending.slice(0, 1) : pending).map((it) => it.id));
   }
   const batch = batchIds ? items.filter((it) => batchIds.includes(it.id)) : [];
   const visible = !hidden && !paused && (batch.length > 0 || pending.length > 0);
@@ -101,7 +102,7 @@ export function CmTicker({ hidden = false, paused = false }) {
             <div
               key={batchIds?.join("-") || "empty"}
               onAnimationEnd={() => markShown(batchIds || [])}
-              className={`${reduced ? "cm-ticker-still relative py-1.5 pr-2" : "cm-ticker-pass absolute top-0 h-full flex items-center whitespace-nowrap"} pl-2 text-[11px] lg:text-xs text-zinc-100`}
+              className={`${reduced ? "cm-ticker-still relative py-1.5 pr-2 line-clamp-2" : "cm-ticker-pass absolute top-0 h-full flex items-center whitespace-nowrap"} pl-2 text-[11px] lg:text-xs text-zinc-100`}
               style={{ "--cm-dur": `${duration}ms` }}
             >
               {batch.map((it) => (
