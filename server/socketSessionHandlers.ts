@@ -271,6 +271,29 @@ export function registerSessionSocketHandlers(
 		});
 	}
 
+	// O mesmo socket a entrar noutra sala sem `leaveRoom` (troca de sala com o
+	// pedido de saída perdido): desliga-o da anterior como numa queda — o
+	// assento fica, a presença cai. Sem isto a sala antiga guardava o socketId
+	// e via o treinador presente (e o convite ia para a sala errada).
+	function detachFromOtherRoom(roomCode: string) {
+		const prev = getGameBySocket(socket.id);
+		if (!prev || prev.roomCode === roomCode) return;
+		const prevPlayer = getPlayerBySocket(prev, socket.id);
+		console.log(
+			`[${prev.roomCode}] 🔀 socket ${socket.id} (${prevPlayer?.name ?? "unknown"}) mudou para ${roomCode} sem leaveRoom`,
+		);
+		unbindSocket(prev, socket.id);
+		socket.leave(prev.roomCode);
+		if (prevPlayer?.teamId) {
+			io.to(prev.roomCode).emit("coachDisconnected", {
+				coachName: prevPlayer.name,
+				teamId: prevPlayer.teamId,
+			});
+		}
+		emitPresence(prev);
+		emitPresencePause(prev, io);
+	}
+
 	function assignPlayer(
 		game: ActiveGame,
 		name: string,
@@ -326,6 +349,7 @@ export function registerSessionSocketHandlers(
 		setSeatTeamId(game, name, team.id);
 		const previousDevice = game.seats[name]?.deviceId ?? null;
 		claimSeat(game, name, { teamId: team.id, deviceId });
+		detachFromOtherRoom(roomCode);
 		const displacedSocketId = bindSocket(game, name, socket.id);
 
 		// Cada treinador recebe a sua peça de boas-vindas no Jornal da sua
@@ -747,6 +771,7 @@ export function registerSessionSocketHandlers(
 											};
 										}
 										const dismissedPrevDevice = game.seats[trimmedName]?.deviceId ?? null;
+										detachFromOtherRoom(finalRoomCode);
 										const displacedSocketId = bindSocket(game, trimmedName, socket.id);
 										notifyDisplaced(displacedSocketId, dismissedPrevDevice, deviceId ?? null);
 
