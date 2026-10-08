@@ -428,7 +428,7 @@ export function OtherSquadsTab({
     ? `${selectedTeam.coach_name}|${sharedCoachSeed}`
     : isOwnTeam
       ? `${me?.name ?? "?"}|${avatarSeed}`
-      : `coach|${selectedTeam?.coach_name ?? selectedTeam?.id ?? "?"}`;
+      : `${selectedTeam?.coach_name ?? selectedTeam?.id ?? "?"}|`;
 
   const selectedTeamDivision = selectedTeam?.division;
   const seasonYear = calendarData?.year ?? new Date().getFullYear();

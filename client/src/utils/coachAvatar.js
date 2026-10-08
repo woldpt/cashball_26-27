@@ -4,8 +4,8 @@
  * Convenção partilhada com GameLayout / UserSettingsPage / OtherSquadsTab:
  * - Seed partilhado (`sharedSeeds[name]`, difundido pelo servidor): todos os
  *   clientes renderizam `nome|seed` — a mesma cara para toda a gente.
- * - Fallback (sem seed partilhado): coach próprio `nome|avatarSeed`, outros
- *   coaches `coach|nome` (estável entre clientes, mas diferente da do dono).
+ * - Fallback (sem seed partilhado / avatar automático): `nome|` para todos,
+ *   igual ao que o dono vê com seed vazio (`nome|avatarSeed`).
  *
  * @param {string} name Nome do coach
  * @param {string|null} meName Nome do utilizador atual
@@ -17,5 +17,5 @@ export function coachAvatarSeed(name, meName, avatarSeed = "", sharedSeeds = nul
   if (!name) return "coach|?";
   const shared = sharedSeeds?.[name];
   if (shared) return `${name}|${shared}`;
-  return name === meName ? `${name}|${avatarSeed}` : `coach|${name}`;
+  return name === meName ? `${name}|${avatarSeed}` : `${name}|`;
 }
