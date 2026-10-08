@@ -1740,7 +1740,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	// Phase 2: prolongamento + penáltis dos jogos empatados aos 90'.
 	// Devolve se houve algum prolongamento (para o gate de animação).
 	async function playExtraTimeAndPenalties(game: ActiveGame, setups: FixtureSetup[], round: number, roundName: string): Promise<boolean> {
-		const drawnSetups = setups.filter((s) => s.goals90Home === s.goals90Away);
+		// Amigáveis (ronda 0) nunca vão a prolongamento nem penáltis.
+		const drawnSetups = setups.filter((s) => s.fixture.round !== FRIENDLY_ROUND && s.goals90Home === s.goals90Away);
 		const hasAnyET = drawnSetups.length > 0;
 
 		if (hasAnyET) {

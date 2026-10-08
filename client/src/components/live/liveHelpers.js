@@ -57,6 +57,7 @@ export function isGoalType(type) {
  * (ex.: 1-0 de penálti) aparecerem na lista de jogos do prolongamento.
  */
 export function isDrawnAt90(match) {
+  if (match?.isFriendly) return false; // amigáveis nunca têm prolongamento
   const goals90Home = (match?.events || []).filter(
     (e) => e.minute <= 90 && isGoalType(e.type) && e.team === "home",
   ).length;

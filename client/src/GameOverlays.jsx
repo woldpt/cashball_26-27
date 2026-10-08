@@ -137,7 +137,7 @@ export function GameOverlays() {
     if (!showHalftimePanel || !isCupMatch || liveMinute < 90) return null;
     const drawn = new Set(
       (matchResults?.results || [])
-        .filter((r) => r.finalHomeGoals === r.finalAwayGoals)
+        .filter((r) => !r.isFriendly && r.finalHomeGoals === r.finalAwayGoals)
         .flatMap((r) => [String(r.homeTeamId), String(r.awayTeamId)]),
     );
     if (drawn.size === 0) return null;

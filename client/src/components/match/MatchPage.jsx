@@ -243,7 +243,7 @@ export function MatchPage({
 	const myDrawnFixture = gateResults.some(
 		(fx) =>
 			(fx.homeTeamId === myTeamId || fx.awayTeamId === myTeamId) &&
-			fx.finalHomeGoals === fx.finalAwayGoals,
+			!fx.isFriendly && fx.finalHomeGoals === fx.finalAwayGoals,
 	);
 	const canContinue =
 		!isCupContext || (isEtGate && gateResults.length > 0 ? myDrawnFixture : myTeamInCup);
