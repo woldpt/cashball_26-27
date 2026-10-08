@@ -1,5 +1,10 @@
 const CACHE_VERSION_KEY = "cashball_cache_version";
+// Sessão (ver utils/localStorage.js): sem isto cada restart do servidor
+// fazia logout no próximo reload — no telemóvel, a cada volta à app.
 const PRESERVED_LOCAL_KEYS = [
+  "cashball_auth",
+  "cashball_rooms",
+  "cashball_device",
   "cashballSession",
   "cashballAdminSession",
   CACHE_VERSION_KEY,

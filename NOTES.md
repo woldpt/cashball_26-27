@@ -1,3 +1,8 @@
+## FARMACIA3: jornada perdida + logout no telemóvel (2026-10-08)
+- Crash: `setTactic` de um socket sem sala → `getPlayerBySocket(null)` → `fatalShutdown` fechou a BD a meio do `persistMatchResults` (época 2, J1 sem linhas em `matches`; classificação OK). Guarda de `null` na função partilhada.
+- Logout: `cacheVersion.js` (versão = arranque do servidor) fazia `localStorage.clear()` sem preservar `cashball_auth/rooms/device` — cada restart deslogava no reload seguinte.
+- `DELETE FROM matches` do replay passa a filtrar `season`. Testado: typecheck, connect-smoke, lint, check:types.
+
 ## Deploy v26.10.34 no rick (2026-10-08)
 - Push + tag `v26.10.34` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
 - `APP_VERSION` bumpado para `v26.10.34` (rodapé da landing).

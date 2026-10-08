@@ -1125,8 +1125,8 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     game.db.serialize(() => {
       fixtures.forEach((match) => {
         game.db.run(
-          "DELETE FROM matches WHERE matchweek = ? AND home_team_id = ? AND away_team_id = ? AND competition = 'League'",
-          [matchweek, match.homeTeamId, match.awayTeamId],
+          "DELETE FROM matches WHERE season = ? AND matchweek = ? AND home_team_id = ? AND away_team_id = ? AND competition = 'League'",
+          [game.season, matchweek, match.homeTeamId, match.awayTeamId],
           () => {
             game.db.run(
               `INSERT INTO matches (

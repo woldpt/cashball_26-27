@@ -1125,9 +1125,12 @@ function saveGameState(game: ActiveGame): void {
 }
 
 function getPlayerBySocket(
-  game: ActiveGame,
+  game: ActiveGame | null,
   socketId: string,
 ): PlayerSession | null {
+  // Socket sem sala (saiu, ou ligado a outra): muitos handlers chamam isto
+  // antes de testar `game` — um throw aqui derrubava o servidor inteiro.
+  if (!game) return null;
   const name = game.socketToName[socketId];
   return name ? game.playersByName[name] : null;
 }
