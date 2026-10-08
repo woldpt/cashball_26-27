@@ -1,3 +1,6 @@
+## Deploy v26.10.35 no rick (2026-10-08)
+- Push + tag `v26.10.35` + rebuild; J1 da época 2 de PYG2GT reposta em `matches` a partir de `allMatchResults` (só resultados; backup `game_PYG2GT.db.bak-20261008-J1`).
+
 ## FARMACIA3: jornada perdida + logout no telemóvel (2026-10-08)
 - Crash: `setTactic` de um socket sem sala → `getPlayerBySocket(null)` → `fatalShutdown` fechou a BD a meio do `persistMatchResults` (época 2, J1 sem linhas em `matches`; classificação OK). Guarda de `null` na função partilhada.
 - Logout: `cacheVersion.js` (versão = arranque do servidor) fazia `localStorage.clear()` sem preservar `cashball_auth/rooms/device` — cada restart deslogava no reload seguinte.
