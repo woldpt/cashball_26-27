@@ -217,7 +217,7 @@ const measure = () => {
 };
 
 setTimeout(async () => {
-  let data = null;
+  let data;
   try {
     // Wait for the Material Symbols font (same Google Fonts link as the app's
     // index.html): tab icons are 24px glyph boxes; without the font they render
