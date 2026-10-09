@@ -321,26 +321,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				"SELECT m.name as coach_name, m.is_human as is_human FROM teams t JOIN managers m ON t.manager_id = m.id WHERE t.id = ?",
 				[iLigaWinner.id],
 			);
-			await new Promise((resolve) => {
-				game.db.run(
-					"INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach) VALUES (?, ?, ?, ?, ?)",
-					[
+			await dbRunOn(game, "INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach) VALUES (?, ?, ?, ?, ?)", [
 						iLigaWinner.id,
 						year,
 						"Campeão Nacional",
 						coachInfo?.coach_name || null,
 						coachInfo?.is_human || 0,
-					],
-					resolve,
-				);
-			});
-			await new Promise((resolve) => {
-				game.db.run(
-					"UPDATE teams SET budget = budget + ? WHERE id = ?",
-					[CHAMPION_PRIZE[1], iLigaWinner.id],
-					resolve,
-				);
-			});
+					]);
+			await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [CHAMPION_PRIZE[1], iLigaWinner.id]);
 			// Registar no diário financeiro etiquetado no início da nova época
 			// (year+1/jornada 1) para o gráfico de saldo mostrar um salto limpo em
 			// vez de somar o prémio nas semanas do ano anterior.
@@ -380,13 +368,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					);
 				});
 				const prize = CHAMPION_PRIZE[div];
-				await new Promise((resolve) => {
-					game.db.run(
-						"UPDATE teams SET budget = budget + ? WHERE id = ?",
-						[prize, winner.id],
-						resolve,
-					);
-				});
+				await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [prize, winner.id]);
 				const prizeFormatted = new Intl.NumberFormat("pt-PT").format(prize);
 				logClubNews(game, "prize", `Prémio de Campeão ${DIVISION_NAMES[div]}`, winner.id, {
 					amount: prize,
@@ -414,13 +396,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			if ((team.sponsor_season || 0) === season) continue;
 			const sponsorAmount = SPONSOR_REVENUE_BY_DIVISION[team.division] || 0;
 			if (sponsorAmount > 0) {
-				await new Promise((resolve) => {
-					game.db.run(
-						"UPDATE teams SET budget = budget + ? WHERE id = ?",
-						[sponsorAmount, team.id],
-						resolve,
-					);
-				});
+				await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [sponsorAmount, team.id]);
 				logClubNews(game, "prize", "Patrocinadores", team.id, {
 					amount: sponsorAmount,
 					description: `Receita anual de patrocinadores (época ${year})`,
@@ -2118,14 +2094,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				const cupAwayShare = Math.floor(cupRevenue * AWAY_TICKET_SHARE);
 				const cupHomeShare = cupRevenue - cupAwayShare;
 				if (cupHomeShare > 0) {
-					await new Promise<void>((resolve) => {
-						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupHomeShare, fixture.homeTeamId], () => resolve());
-					});
+					await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [cupHomeShare, fixture.homeTeamId]);
 				}
 				if (cupAwayShare > 0) {
-					await new Promise<void>((resolve) => {
-						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupAwayShare, fixture.awayTeamId], () => resolve());
-					});
+					await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [cupAwayShare, fixture.awayTeamId]);
 				}
 				// Persiste attendance + receita faturada mesmo quando 0 (auditoria e finances)
 				await new Promise<void>((resolve) => {
@@ -2143,9 +2115,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				// não só a quem a levanta (a final tem o prémio próprio de 500K€).
 				const roundPrize = CUP_ROUND_PRIZE[round] || 0;
 				if (roundPrize > 0) {
-					await new Promise<void>((resolve) => {
-						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [roundPrize, winnerId], () => resolve());
-					});
+					await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [roundPrize, winnerId]);
 					logClubNews(game, "prize", `Prémio da Taça — ${roundLabel}`, winnerId, {
 						amount: roundPrize,
 						description: `Apuramento na ${roundLabel} (época ${season})`,
@@ -2440,26 +2410,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						"SELECT m.name as coach_name, m.is_human as is_human FROM teams t JOIN managers m ON t.manager_id = m.id WHERE t.id = ?",
 						[winnerId],
 					);
-					await new Promise((resolve) => {
-						game.db.run(
-							"INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach) VALUES (?, ?, ?, ?, ?)",
-							[
+					await dbRunOn(game, "INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach) VALUES (?, ?, ?, ?, ?)", [
 								winnerId,
 								game.year,
 								"Vencedor da Taça de Portugal",
 								coachInfo?.coach_name || null,
 								coachInfo?.is_human || 0,
-							],
-							resolve,
-						);
-					});
-					await new Promise((resolve) => {
-						game.db.run(
-							"UPDATE teams SET budget = budget + 500000 WHERE id = ?",
-							[winnerId],
-							resolve,
-						);
-					});
+							]);
+					await dbRunOn(game, "UPDATE teams SET budget = budget + 500000 WHERE id = ?", [winnerId]);
 					logClubNews(game, "prize", "Prémio da Taça", winnerId, {
 						amount: 500000,
 						description: "Vencedor da Taça de Portugal",
@@ -2482,13 +2440,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					results.push(...friendlyResults.map((r) => ({ ...r, isFriendly: true })));
 				}
 				// Fecha transacção atómica da Taça (receita + resultados + attendance)
-				await new Promise<void>((resolve) => {
-					game.db.run(
-						"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
-						[game.season, game.calendarIndex],
-						() => resolve(),
-					);
-				});
+				await dbRunOn(game, "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')", [game.season, game.calendarIndex]);
 				await dbRunOn(game, "COMMIT");
 			} catch (cupTxErr) {
 				cupTxFailed = true;
@@ -2731,14 +2683,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			const awayShare = Math.floor(revenue / 2);
 			const homeShare = revenue - awayShare;
 			if (homeShare > 0) {
-				await new Promise<void>((resolve) => {
-					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [homeShare, fixture.homeTeamId], () => resolve());
-				});
+				await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [homeShare, fixture.homeTeamId]);
 			}
 			if (awayShare > 0) {
-				await new Promise<void>((resolve) => {
-					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [awayShare, fixture.awayTeamId], () => resolve());
-				});
+				await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [awayShare, fixture.awayTeamId]);
 			}
 			await new Promise<void>((resolve) => {
 				game.db.run(
@@ -2887,13 +2835,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			queueMatchDeltaWrites(game.db, fixtures);
 			try {
 				results.push(...(await commitFriendlyFixtures(game, fixtures, FRIENDLY_ROUND)));
-				await new Promise<void>((resolve) => {
-					game.db.run(
-						"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
-						[game.season, game.calendarIndex],
-						() => resolve(),
-					);
-				});
+				await dbRunOn(game, "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')", [game.season, game.calendarIndex]);
 				await dbRunOn(game, "COMMIT");
 			} catch (friendlyTxErr) {
 				friendlyTxFailed = true;
