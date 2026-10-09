@@ -131,6 +131,10 @@ export interface MatchFixture {
   _subCountByTeam?: Record<number, number>;
   _minutesPlayed?: { home: Record<number, number>; away: Record<number, number> };
   _fatigueLoss?: { home: Record<number, number>; away: Record<number, number> };
+  /** Ímpeto: lado que marcou e o minuto do golo (ver MATCH_TUNING.momentum*). */
+  _momentum?: { side: MatchSide; from: number };
+  /** Estilo pré-jogo dos NPCs, para voltarem a ele quando o resultado o pede. */
+  _npcBaseStyle?: Partial<Record<MatchSide, string>>;
   _deltas?: {
     calendarIndex: number;
     appearances: Set<number>;

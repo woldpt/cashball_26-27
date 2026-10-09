@@ -44,6 +44,10 @@
  *   U24 — cartões: o mais agressivo leva mais, o GR raramente
  *   U25 — lesão: o cansado lesiona-se mais, e é o mesmo do teste de resistência
  *   U26 — golo possível no minuto a seguir a um golo; lances com xG
+ *   U27 — posse recalculada: estilo, jogador a menos e ímpeto mexem nela
+ *   U28 — NPC muda de estilo pelo resultado; equipa humana nunca é tocada
+ *   U29 — NPC troca o cansado (avançado se perde), guarda troca p/ lesões,
+ *        não troca para pior
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -82,7 +86,7 @@ const {
   shortHandedChanceMult,
   selectPenaltyTaker,
 } = require("../game/matchCalculations.ts");
-const { resolvePenaltyKick } = require("../game/engine.ts");
+const { resolvePenaltyKick, refreshPossession, resolveNpcManagement } = require("../game/engine.ts");
 
 // ── U1 ──────────────────────────────────────────────────────────────────────
 test("U1 — normalizeMatchChoice cobre as formas do contrato", () => {
@@ -865,4 +869,65 @@ test("U26 — golo possível no minuto a seguir a um golo; lances com xG", () =>
   const shot = fixture.events.find((e) => e.xg != null);
   assert.ok(shot, "houve lance no minuto a seguir ao golo");
   assert.ok(shot.xg > 0 && shot.xg < 1, `xG (${shot.xg})`);
+});
+
+// ── U27–U29: Fase 2 do roadmap tático (o jogo reage) ────────────────────────
+test("U27 — posse recalculada: estilo, jogador a menos e ímpeto mexem nela", () => {
+  const { tick, fixture } = minuteTick(1);
+  const t = tick.homeTactic;
+  const eq = computeSidePower(tick.homeSquad, t, 25, 0, 1);
+  const away = tick.powers.away;
+  refreshPossession(fixture, eq, away, 30);
+  const base = fixture._homePossession;
+  refreshPossession(fixture, computeSidePower(tick.homeSquad, { ...t, style: "OFENSIVO" }, 25, 0, 1), away, 30);
+  assert.ok(fixture._homePossession > base, `ofensivo tem mais bola (${fixture._homePossession} vs ${base})`);
+  refreshPossession(fixture, computeSidePower(tick.homeSquad.slice(0, 10), t, 25, 0, 1), away, 30);
+  assert.ok(fixture._homePossession <= base - 5, `com 10 perde a bola (${fixture._homePossession} vs ${base})`);
+  fixture._momentum = { side: "away", from: 28 };
+  refreshPossession(fixture, eq, away, 30);
+  assert.ok(fixture._homePossession < base, "o adversário marcou há 2' e está por cima");
+  refreshPossession(fixture, eq, away, 40);
+  assert.equal(fixture._homePossession, base, "o ímpeto passa ao fim de uns minutos");
+  assert.equal(fixture._homePossession + fixture._awayPossession, 100);
+});
+
+test("U28 — NPC muda de estilo pelo resultado; equipa humana nunca é tocada", () => {
+  const run = (players = {}) => {
+    const { tick, fixture } = minuteTick(1, { minute: 70, fixture: { finalHomeGoals: 0, finalAwayGoals: 1 } });
+    tick.awayTactic = { ...tick.homeTactic };
+    tick.game.playersByName = players;
+    resolveNpcManagement(tick);
+    return { tick, fixture };
+  };
+  const npc = run();
+  assert.equal(npc.tick.homeTactic.style, "OFENSIVO", "a perder aos 70' → ofensivo");
+  assert.equal(npc.tick.awayTactic.style, "DEFENSIVO", "a ganhar aos 70' → defensivo");
+  assert.equal(npc.fixture.events.filter((e) => e.type === "tactic_change").length, 2);
+  const human = run({ Ana: { teamId: 1 } });
+  assert.equal(human.tick.homeTactic.style, "EQUILIBRADO", "o servidor não decide pelo humano");
+  assert.equal(human.tick.awayTactic.style, "DEFENSIVO");
+});
+
+test("U29 — NPC troca o cansado, guarda uma troca para lesões e não troca para pior", () => {
+  const withBench = (over, benchPlayer) => {
+    const r = minuteTick(1, over);
+    r.tick.homeFullRoster.push(benchPlayer);
+    r.tick.homeTactic = { ...r.tick.homeTactic, positions: { [benchPlayer.id]: "Suplente" } };
+    r.fixture._fatigueLoss = { home: { 3: 4 }, away: {} }; // DEF id 3 rebentado
+    return r;
+  };
+  const striker = { id: 50, name: "Ponta", position: "ATA", skill: 20, form: 32, morale: 25 };
+  // A perder aos 60': sai o defesa cansado, entra o avançado.
+  const losing = withBench({ minute: 60, fixture: { finalHomeGoals: 0, finalAwayGoals: 1 } }, striker);
+  resolveNpcManagement(losing.tick);
+  assert.ok(!losing.tick.homeLineupIds.has(3) && losing.tick.homeLineupIds.has(50));
+  assert.equal(losing.fixture.events.filter((e) => e.type === "substitution" && e.team === "home").length, 1);
+  // Só resta 1 troca (reserva para lesões): não mexe.
+  const reserve = withBench({ minute: 60, fixture: { finalHomeGoals: 0, finalAwayGoals: 1, _subCountByTeam: { 1: 2 } } }, striker);
+  resolveNpcManagement(reserve.tick);
+  assert.ok(reserve.tick.homeLineupIds.has(3), "guarda a última troca");
+  // Empate: troca direta só se quem entra não for pior (defesa 5 < cansado 27).
+  const weak = withBench({ minute: 60 }, { id: 51, name: "Fraco", position: "DEF", skill: 5, form: 32, morale: 25 });
+  resolveNpcManagement(weak.tick);
+  assert.ok(weak.tick.homeLineupIds.has(3) && !weak.tick.homeLineupIds.has(51));
 });

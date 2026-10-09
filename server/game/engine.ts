@@ -1,4 +1,4 @@
-import type { ActiveGame, Tactic, PlayerRow, MatchFixture, MatchSide } from "../types";
+import type { ActiveGame, Tactic, TacticStyle, PlayerRow, MatchFixture, MatchSide } from "../types";
 import {
   generateJuniorGR,
   withJuniorGRs,
@@ -14,6 +14,7 @@ import {
 import {
   canMakeSubstitution,
   incrementSubCount,
+  remainingSubstitutions,
   RES_NEUTRAL,
   EMERGENCY_GK_SKILL,
   CUP_FINAL_SPECTATOR_MS_PER_MINUTE,
@@ -1383,6 +1384,7 @@ async function applyPenaltyEvent({
   if (scored) {
     if (teamSide === "home") fixture.finalHomeGoals++;
     else fixture.finalAwayGoals++;
+    startMomentum(fixture, teamSide, Number(fixture._minute) || 0);
     // Acumulado em memória — flush transacional no apito final.
     recordMatchGoal(fixture, taker.id, teamId);
     fixture.events.push({
@@ -2016,20 +2018,9 @@ export async function simulateMatchSegment(
   };
 
   // Posse e nº de chances (hatrick-style): os médios repartem o total de
-  // chances, fixado no 1.º apito (não por minuto). A curva de tempo
-  // espalha-as; a qualidade (ATA vs DEF+GR) decide a conversão.
-  if (fixture._homeChances == null) {
-    const possH = computePossession(
-      powers.home.midStrength || 0,
-      powers.away.midStrength || 0,
-      homeTactic?.style,
-      awayTactic?.style,
-    );
-    fixture._homePossession = Math.round(possH * 100);
-    fixture._awayPossession = 100 - fixture._homePossession;
-    fixture._homeChances = MATCH_TUNING.chancesTotal * possH;
-    fixture._awayChances = MATCH_TUNING.chancesTotal * (1 - possH);
-  }
+  // chances; recalculada a cada minuto (refreshPossession). Aqui só para a
+  // posse já estar certa nos eventos de abertura do segmento.
+  refreshPossession(fixture, powers.home, powers.away, startMin);
 
   for (let minute = startMin; minute <= endMin; minute++) {
     fixture._minute = minute;
@@ -2205,6 +2196,109 @@ function pushPhaseStartComments(tick: MinuteTickContext): void {
   }
 }
 
+/** Equipa sem treinador humano (mesmo critério de waitForMatchAction). */
+function isNpcTeam(game: ActiveGame, teamId: number): boolean {
+  return !Object.values(game.playersByName || {}).some((p: any) => p?.teamId === teamId);
+}
+
+/**
+ * Passo do minuto: os NPCs gerem o jogo — estilo pelo resultado
+ * (npcTacticMinutes) e trocas (npcSubMinutes). Nunca toca em equipas com
+ * treinador humano: o servidor não decide por eles.
+ */
+export function resolveNpcManagement(tick: MinuteTickContext): void {
+  const { fixture, game, minute } = tick;
+  const doStyle = MATCH_TUNING.npcTacticMinutes.includes(minute);
+  const doSub = MATCH_TUNING.npcSubMinutes.includes(minute);
+  if (!doStyle && !doSub) return;
+  for (const side of ["home", "away"] as const) {
+    const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+    if (!isNpcTeam(game, teamId)) continue;
+    const diff =
+      side === "home"
+        ? fixture.finalHomeGoals - fixture.finalAwayGoals
+        : fixture.finalAwayGoals - fixture.finalHomeGoals;
+    if (doStyle) npcAdjustStyle(tick, side, diff);
+    if (doSub) npcSubstitute(tick, side, diff);
+  }
+}
+
+/** A perder → ofensivo; a ganhar a partir dos 70' → defensivo; senão o estilo de origem. */
+function npcAdjustStyle(tick: MinuteTickContext, side: MatchSide, diff: number): void {
+  const { fixture, minute, powers } = tick;
+  const tactic = side === "home" ? tick.homeTactic : tick.awayTactic;
+  if (!tactic) return;
+  const base = ((fixture._npcBaseStyle ??= {})[side] ??= normaliseStyle(tactic.style)) as TacticStyle;
+  const want: TacticStyle = diff < 0 ? "OFENSIVO" : diff > 0 && minute >= 70 ? "DEFENSIVO" : base;
+  if (normaliseStyle(tactic.style) === want) return;
+  tactic.style = want;
+  bumpPowerVersion(fixture, side);
+  const team = side === "home" ? fixture.homeTeam : fixture.awayTeam;
+  const formation = powers[side]?.formation || tactic.formation || "4-4-2";
+  fixture.events.push({
+    minute,
+    type: "tactic_change",
+    team: side,
+    emoji: "🔄",
+    text: `[${minute}'] ${tacticChangePhrase(team?.name || String(side === "home" ? fixture.homeTeamId : fixture.awayTeamId), formation, want)}`,
+  });
+}
+
+/**
+ * Uma troca, guardando npcSubsReserve para lesões. A perder: sai o defesa/
+ * médio mais cansado e entra um avançado; a ganhar (70'+): sai um avançado e
+ * entra um defesa; senão o mais cansado dá lugar a alguém da mesma posição —
+ * só se quem entra não for pior do que quem sai (já com o cansaço).
+ */
+function npcSubstitute(tick: MinuteTickContext, side: MatchSide, diff: number): void {
+  const { fixture, game, minute, powers } = tick;
+  const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+  if (remainingSubstitutions(fixture, teamId) <= MATCH_TUNING.npcSubsReserve) return;
+  const squad = powers[side].squad;
+  const lineupIds = side === "home" ? tick.homeLineupIds : tick.awayLineupIds;
+  const tactic = side === "home" ? tick.homeTactic : tick.awayTactic;
+  const bench = deriveBench({
+    roster: side === "home" ? tick.homeFullRoster : tick.awayFullRoster,
+    tacticPositions: tactic?.positions,
+    lineupIds,
+    fixture,
+    allowUnlisted: false,
+  }).availableBench.filter((p) => p.position !== "GR");
+  if (!bench.length) return;
+  const fatigue = fixture._fatigueLoss?.[side] ?? {};
+  const mostTired = (pool: PlayerRow[]) =>
+    [...pool].sort(
+      (a, b) => (fatigue[b.id] ?? 0) - (fatigue[a.id] ?? 0) || getEffectiveSkill(a) - getEffectiveSkill(b),
+    )[0] ?? null;
+  const bestOnBench = (pos: string) => pickBestPlayer(bench.filter((p) => p.position === pos));
+  const field = squad.filter((p) => p.position !== "GR" && lineupIds.has(p.id));
+
+  let out: PlayerRow | null = null;
+  let incoming: PlayerRow | null = null;
+  const plan: [string[], string] | null =
+    diff < 0 ? [["DEF", "MED"], "ATA"] : diff > 0 && minute >= 70 ? [["ATA"], "DEF"] : null;
+  if (plan && bestOnBench(plan[1])) {
+    out = mostTired(field.filter((p) => plan[0].includes(p.position)));
+    incoming = out ? bestOnBench(plan[1]) : null;
+  }
+  if (!out || !incoming) {
+    out = mostTired(field.filter((p) => bench.some((b) => b.position === p.position)));
+    incoming = out ? bestOnBench(out.position) : null;
+    if (incoming && getEffectiveSkill(incoming) < getEffectiveSkill(out)) return;
+  }
+  if (!out || !incoming) return;
+  swapOnPitch({ fixture, game, side, squad, lineupIds, outId: out.id, incoming, countSub: true });
+  fixture.events.push({
+    minute,
+    type: "substitution",
+    team: side,
+    emoji: "🔁",
+    playerId: incoming.id,
+    playerName: incoming.name,
+    text: `[${minute}'] 🔁 ${subPhrase(out.name, incoming.name)}`,
+  });
+}
+
 /**
  * Passo do minuto: fadiga progressiva do XI + desgaste extra com frio/neve.
  */
@@ -2260,10 +2354,12 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
 
   applyLiveTacticAdoption(tick);
   pushPhaseStartComments(tick);
+  resolveNpcManagement(tick);
   applyMinuteFatigue(tick);
 
   const currentHome = refreshPower("home");
   const currentAway = refreshPower("away");
+  refreshPossession(fixture, currentHome, currentAway, minute);
 
   const isCupExtraTime =
     minute >= 91 && game?.currentEvent?.type === "cup";
@@ -2308,16 +2404,54 @@ export type MinuteShared = {
 };
 
 /**
- * Oportunidades por jogo de um lado (repartidas pela posse no apito inicial),
- * ajustadas à inferioridade numérica atual dos dois lados. null = sem posse
- * calculada (o lado não cria oportunidades).
+ * Oportunidades por jogo de um lado (repartidas pela posse), ajustadas à
+ * inferioridade numérica dos dois lados e ao ímpeto de quem marcou há pouco.
+ * null = sem posse calculada (o lado não cria oportunidades).
  */
-function sideChances(fixture: MatchFixture, shared: MinuteShared, side: MatchSide): number | null {
+function sideChances(
+  fixture: MatchFixture,
+  side: MatchSide,
+  home: SidePower,
+  away: SidePower,
+  minute: number,
+): number | null {
   const base = side === "home" ? fixture._homeChances : fixture._awayChances;
   if (base == null) return null;
-  const own = side === "home" ? shared.currentHome : shared.currentAway;
-  const opp = side === "home" ? shared.currentAway : shared.currentHome;
-  return base * shortHandedChanceMult(own?.missing ?? 0, opp?.missing ?? 0);
+  const [own, opp] = side === "home" ? [home, away] : [away, home];
+  const m = fixture._momentum;
+  const momentum =
+    m && minute > m.from && minute <= m.from + MATCH_TUNING.momentumMinutes
+      ? m.side === side
+        ? MATCH_TUNING.momentumChanceMult
+        : 1 / MATCH_TUNING.momentumChanceMult
+      : 1;
+  return base * shortHandedChanceMult(own?.missing ?? 0, opp?.missing ?? 0) * momentum;
+}
+
+/** Quem marca fica por cima nos minutos seguintes (ver sideChances). */
+function startMomentum(fixture: MatchFixture, side: MatchSide, minute: number): void {
+  fixture._momentum = { side, from: minute };
+}
+
+/**
+ * Posse e repartição das oportunidades a partir das forças ATUAIS (médios,
+ * estilo) — recalculada a cada minuto: mudar de estilo, trocar um médio,
+ * cansaço, expulsões e ímpeto mexem no domínio. A posse mostrada é a
+ * repartição efetiva das oportunidades.
+ */
+export function refreshPossession(
+  fixture: MatchFixture,
+  home: SidePower,
+  away: SidePower,
+  minute: number,
+): void {
+  const possH = computePossession(home.midStrength || 0, away.midStrength || 0, home.style, away.style);
+  fixture._homeChances = MATCH_TUNING.chancesTotal * possH;
+  fixture._awayChances = MATCH_TUNING.chancesTotal * (1 - possH);
+  const h = sideChances(fixture, "home", home, away, minute);
+  const a = sideChances(fixture, "away", home, away, minute);
+  fixture._homePossession = Math.round((h / (h + a)) * 100);
+  fixture._awayPossession = 100 - fixture._homePossession;
 }
 
 export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShared, attackingSide: MatchSide): void {
@@ -2330,7 +2464,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
     // Hatrick-style: posse (médios, fixa no apito) → nº de chances → cada
     // chance é um evento concreto: vira golo ou vai para o log do jogo
     // (defesa do GR, poste, ao lado).
-    const nChances = sideChances(fixture, shared, attackingSide);
+    const nChances = sideChances(fixture, attackingSide, shared.currentHome, shared.currentAway, minute);
     if (nChances == null) return;
     // Logo a seguir a um golo há menos oportunidades (mas não zero).
     const afterGoal =
@@ -2431,6 +2565,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
       if (isHome) fixture.finalHomeGoals++;
       else fixture.finalAwayGoals++;
       shared.goalScored = true;
+      startMomentum(fixture, attackingSide, minute);
 
       fixture.events.push({
         minute,
@@ -2468,6 +2603,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
     if (isHome) fixture.finalHomeGoals++;
     else fixture.finalAwayGoals++;
     shared.goalScored = true;
+    startMomentum(fixture, attackingSide, minute);
 
     const scoredSideGoals = isHome
       ? fixture.finalHomeGoals
@@ -2524,8 +2660,8 @@ export async function resolvePenaltyKick(tick: MinuteTickContext, shared: Minute
     minute < 90 || shared.isCupExtraTime ? MATCH_TUNING.penaltyPerMinute : 0;
   if (rng() < penaltyChance) {
     // Quem mais ataca é quem mais vezes é derrubado na área.
-    const h = sideChances(fixture, shared, "home") ?? 1;
-    const a = sideChances(fixture, shared, "away") ?? 1;
+    const h = sideChances(fixture, "home", shared.currentHome, shared.currentAway, minute) ?? 1;
+    const a = sideChances(fixture, "away", shared.currentHome, shared.currentAway, minute) ?? 1;
     const attackingSide = rng() < (h + a > 0 ? h / (h + a) : 0.5) ? "home" : "away";
     const attackingSquad = attackingSide === "home" ? powers.home.squad : powers.away.squad;
     const defendingSquad = attackingSide === "home" ? powers.away.squad : powers.home.squad;

@@ -640,6 +640,15 @@ export const MATCH_TUNING = {
   // Minuto a seguir a um golo: metade das oportunidades (antes zero — o golo
   // de resposta imediata existe no futebol real).
   goalAfterGoalChanceMult: 0.5,
+  // Ímpeto: quem marca fica por cima uns minutos — oportunidades próprias
+  // ×mult e do adversário ÷mult (soma ~zero: o total de golos não se move).
+  momentumMinutes: 8,
+  momentumChanceMult: 1.15,
+  // NPCs a gerir o jogo (só equipas sem treinador humano): estilo pelo
+  // resultado e trocas dos mais cansados, guardando trocas para lesões.
+  npcTacticMinutes: [46, 70] as number[],
+  npcSubMinutes: [60, 75] as number[],
+  npcSubsReserve: 1,
   // Inferioridade numérica (expulsão, lesão sem troca), POR jogador a menos:
   // menos oportunidades próprias, mais para o adversário, defesa mais curta.
   // Com 10: marca ~-18%, sofre ~+28%.

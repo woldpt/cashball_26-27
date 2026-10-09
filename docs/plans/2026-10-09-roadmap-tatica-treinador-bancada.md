@@ -66,7 +66,10 @@ P = pequeno · M = médio · G = grande.
 - **A9** — reduzir em vez de proibir o golo seguido.
 - **B1** — mostrar oportunidades/"golos esperados".
 
-### Fase 2 — O jogo reage
+### Fase 2 — O jogo reage — ✅ feita 2026-10-10
+> Feito: posse/oportunidades recalculadas a cada minuto a partir das forças atuais (`refreshPossession`: estilo, médios, cansaço, jogadores a menos, ímpeto) — a posse mostrada é a repartição efetiva das oportunidades; ímpeto: quem marca tem ×1,15 das oportunidades (adversário ÷1,15) durante 8'; NPCs (só equipas sem treinador humano): estilo aos 46'/70' (a perder → ofensivo; a ganhar 70'+ → defensivo; senão o de origem) e trocas aos 60'/75' (a perder: sai DEF/MED cansado, entra ATA; a ganhar 70'+: sai ATA, entra DEF; senão troca direta só se quem entra não for pior), guardando 1 troca para lesões.
+> Medido (8000 jogos NPC, motor real): 2,46→2,50 golos/jogo (quem perde arrisca), empates 25%, 3,8 trocas e 1,5 mudanças de estilo por jogo, posse oscila até 25 pp num jogo.
+
 - **A2** — recalcular posse/oportunidades restantes quando muda a tática, há substituição de médio ou expulsão (apenas para os minutos que faltam).
 - **B6** — NPCs ajustam ao intervalo e aos 70'.
 - **B9** — ímpeto.
