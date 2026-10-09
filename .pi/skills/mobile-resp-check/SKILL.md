@@ -32,8 +32,8 @@ cd client && npm run test:mobile
 ```
 
 > **Fast:** the runner runs all `*-test.html` harnesses × the 5 widths in
-> **parallel** (default `--concurrency 20`). Full 38-harness run takes
-> **~45 seconds** (exit 0, RESULT `190/190`). Use a modest bash timeout (e.g.
+> **parallel** (default `--concurrency 20`). Full 39-harness run takes
+> **~45 seconds** (exit 0, RESULT `195/195`). Use a modest bash timeout (e.g.
 > `timeout 180s`) — no need for `600s` anymore. Tune with `--concurrency <n>`
 > (lower on constrained machines; `1` reproduces the old sequential behaviour).
 
@@ -84,6 +84,7 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 | `cup-resp-test.html` | `views/CupTab.jsx` |
 | `cupfinal-resp-test.html` | `components/live/CupFinalStage.jsx` |
 | `finances-resp-test.html` | `views/FinancesTab.jsx` |
+| `gameheader-resp-test.html` | `components/layout/GameHeader.jsx` + `shared/LiveClock.jsx` (header em 10 situações de jogo; mede colisões clube/centro/direita) |
 | `gamebar-resp-test.html` | `components/layout/SystemOverlays.jsx` + `RoomPauseBanner.jsx` (avisos/toasts do topo) |
 | `intervencao-test.html` | `components/match/tabs/IntervencaoView.jsx` |
 | `journal-resp-test.html` | `views/JournalTab.jsx` |
