@@ -1749,6 +1749,17 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           return false;
         }
         try {
+          // Relê o marcador já dentro da fila: se outra chamada cobrou esta
+          // semana entre a verificação de cima e aqui, não se cobra outra vez.
+          const already = await dbGet(
+            game.db,
+            "SELECT 1 AS done FROM applied_weeks WHERE season = ? AND slot = ? AND kind = 'weekly_finance'",
+            [game.season, slot],
+          );
+          if (already) {
+            await rollback();
+            return true;
+          }
           // Weekly base income by division (keeps lower-division teams viable)
           for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
             await dbRun(

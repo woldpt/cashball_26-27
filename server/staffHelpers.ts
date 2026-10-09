@@ -347,7 +347,7 @@ export async function fireStaff(
       );
       if (paid.changes === 0) {
         await runExec(game.db, "ROLLBACK").catch(() => {});
-        return { ok: false, error: "db" };
+        return { ok: false, error: "no_budget" };
       }
       await runExec(game.db, "COMMIT");
       return null;

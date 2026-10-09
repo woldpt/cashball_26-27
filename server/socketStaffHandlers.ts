@@ -24,7 +24,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_level: "Nível inválido (1 a 5).",
   role_taken: "Já tens um funcionário nesse papel — despede-o primeiro.",
   no_slots: "Sem lugares livres na equipa técnica (3 no total).",
-  no_budget: "Sem fundo de maneio para pagar a assinatura.",
+  no_budget: "Sem fundo de maneio para pagar (assinatura ou indemnização).",
   not_found: "Esse funcionário já não está no clube.",
   db: "Erro ao processar a operação. Tenta outra vez.",
 };

@@ -245,6 +245,21 @@ test("F10 — fecho de leilão: dono mudou não paga; venda garantida sem lances
   assert.equal(await budgetOf(db, 3), 5050, "vendedor recebe o preço-base");
 });
 
+test("F11 — renda semanal chamada 2× em paralelo cobra uma só vez", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000 });
+  const game = makeGame(db);
+  const w = weeklyHelpers();
+  const [a, b] = await Promise.all([w.applyWeeklyFinancesOnce(game), w.applyWeeklyFinancesOnce(game)]);
+  assert.equal(a && b, true);
+  // Referência: uma única cobrança numa sala igual.
+  const refDb = await openDb();
+  await seedTeams(refDb, { 1: 1000 });
+  await weeklyHelpers().applyWeeklyFinancesOnce(makeGame(refDb));
+  assert.equal(await budgetOf(db, 1), await budgetOf(refDb, 1), "cobrado uma só vez");
+  assert.notEqual(await budgetOf(db, 1), 1000, "e cobrado de facto");
+});
+
 const transferDeps = {
   isMatchInProgress: () => false,
   getSeasonEndMatchweek: () => 30,
