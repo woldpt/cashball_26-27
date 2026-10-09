@@ -34,15 +34,15 @@ export function TabBar({ tabs, active, onChange, size = "sm", expand = false, di
   const itemClass =
     size === "md"
       ? expand
-        ? "px-0 py-2 text-sm"
+        ? "px-0 py-2 text-xs sm:text-sm"
         : "px-4 py-2 text-sm tracking-wide"
       : expand
-        ? "px-0 py-1 text-xs"
+        ? "px-0 py-1 text-[10px] min-[360px]:text-[11px] sm:text-xs"
         : "px-3 py-1 text-xs tracking-wide";
   // normal-case: uppercase é ~15% mais largo — em telas pequenas os labels
   // cabem melhor em mixed case (o expand existe exatamente para isso).
   const expandClass = expand
-    ? "flex-1 min-w-0 justify-center whitespace-nowrap overflow-hidden tracking-tight normal-case"
+    ? "flex-1 min-w-0 justify-center whitespace-nowrap overflow-hidden text-ellipsis tracking-tight normal-case"
     : "";
   return (
     <div
