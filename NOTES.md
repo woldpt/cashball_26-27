@@ -1,3 +1,8 @@
+## Lances dos NPCs só na janela final do leilão (2026-10-09)
+- Antes: NPCs licitavam 2–18 s após cada lance (rajadas no início), com valor fixo que muitas vezes já não passava o mínimo (rejeição silenciosa). Agora: entram numa fila por leilão, só nos últimos 30 s, com 6–10 s entre lances de NPCs; o lance é recalculado (preço atual + 10 000 €) quando sai, e desiste se não couber no limite.
+- Constantes em `gameConstants.ts` (`AUCTION_NPC_*`); `npcTransferHelpers.ts` (`pumpNpcQueue`/`releaseNpcBid`); plano `docs/plans/2026-10-09-lances-npc-janela-final.md`.
+- Testado: typecheck, `test:npc-bid-window` (5/5), connect-smoke, audit:socketio (registo inalterado), audit:gamestate numa sala local (0 erros). Simulação com dados reais de PYG2GT: preço mediano 1,04 (real 1,09; antes 1,58).
+
 ## Vento mais realista (2026-10-09)
 - Rajadas (`WeatherOverlay.jsx` + `wx-blow`): comprimento, inclinação e intensidade próprios, trajetória com ondulação; faixas de luz a deslizar pelo relvado (`.wx-vento`, só com movimento). Estádio (`StadiumIllustration.jsx`): bandeiras a bater com vento em qualquer mood; nuvens a deslizar (cópia para o ciclo não saltar).
 - Porquê: as rajadas eram riscos retos e iguais, e nada no estádio reagia ao vento.

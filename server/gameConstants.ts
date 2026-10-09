@@ -263,6 +263,16 @@ export const NPC_WAGE_CUT_PER_EVENT = 2;
 export const AUCTION_BID_STEP = 10000;
 
 /**
+ * Lances dos NPCs só na janela final do leilão (ms antes do fecho).
+ * Espaçamento sorteado entre dois lances de NPCs no mesmo leilão.
+ * Margem: nenhum lance de NPC nos últimos ms antes do fecho.
+ */
+export const AUCTION_NPC_WINDOW_MS = 30000;
+export const AUCTION_NPC_GAP_MIN_MS = 6000;
+export const AUCTION_NPC_GAP_MAX_MS = 10000;
+export const AUCTION_NPC_CLOSE_MARGIN_MS = 2000;
+
+/**
  * Amortização semanal do empréstimo bancário (pagamento de capital),
  * escalonada por divisão: a prestação fixa única (35K/sem) valia 3 mesadas
  * para uma Distrital e meia para a 1.ª Liga. Cada divisão paga à medida

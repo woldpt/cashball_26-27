@@ -40,6 +40,7 @@
     "test:segment-barrier": "tsx scripts/segmentBarrierSmoke.mts",
     "test:session-freeze": "tsx --test scripts/sessionFreezeRegression.mts",
     "test:push": "tsx --test scripts/pushRegression.mts",
+    "test:npc-bid-window": "tsx --test scripts/npcBidWindowRegression.mts",
     "test:connect-smoke": "tsx scripts/connectSmoke.mts",
     "test:finalize": "tsx scripts/finalizeRepro.mts",
     "test:newsslot": "tsx --test scripts/newsSlotRegression.mts",

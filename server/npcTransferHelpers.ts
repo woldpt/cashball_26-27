@@ -1,8 +1,102 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot } from "./coreHelpers";
-import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
+
+type NpcQueueItem = { kind: "entry" | "counter"; npcTeamId: number; maxBid: number };
+
+/**
+ * Próximo instante em que um NPC pode licitar: nunca antes da janela final,
+ * nunca antes de `gapMs` depois do lance de NPC anterior, nunca perto do fecho.
+ * Devolve null se já não há tempo.
+ */
+export function nextNpcReleaseAt(args: {
+  now: number;
+  endsAt: number;
+  lastReleaseAt: number | null;
+  gapMs: number;
+}): number | null {
+  const windowStart = args.endsAt - AUCTION_NPC_WINDOW_MS;
+  const closeAt = args.endsAt - AUCTION_NPC_CLOSE_MARGIN_MS;
+  let at = Math.max(args.now, windowStart);
+  if (args.lastReleaseAt != null) at = Math.max(at, args.lastReleaseAt + args.gapMs);
+  return at < closeAt ? at : null;
+}
+
+type PlaceBid = (game: ActiveGame, teamId: number, playerId: number, bidAmount: number) => Promise<any>;
+
+/** Fila de lances de NPC de um leilão: um lance libertado de cada vez, espaçado e só na janela final. */
+function enqueueNpcBid(game: ActiveGame, playerId: number, item: NpcQueueItem, placeAuctionBid: PlaceBid) {
+  const auction = game.auctions?.[playerId] as any;
+  if (!auction) return;
+  if (!auction.npcQueue) auction.npcQueue = [];
+  // Um NPC só fica uma vez na fila (o sorteio repete-se a cada lance)
+  if (auction.npcQueue.some((q: NpcQueueItem) => q.npcTeamId === item.npcTeamId)) return;
+  auction.npcQueue.push(item);
+  pumpNpcQueue(game, playerId, placeAuctionBid);
+}
+
+function pumpNpcQueue(game: ActiveGame, playerId: number, placeAuctionBid: PlaceBid) {
+  const auction = game.auctions?.[playerId] as any;
+  if (!auction) return;
+  if (auction.status !== "open") {
+    auction.npcQueue = [];
+    return;
+  }
+  if (auction.npcPumpTimer || !auction.npcQueue?.length) return;
+  const at = nextNpcReleaseAt({
+    now: Date.now(),
+    endsAt: auction.endsAt,
+    lastReleaseAt: auction.npcLastReleaseAt ?? null,
+    gapMs: AUCTION_NPC_GAP_MIN_MS + Math.random() * (AUCTION_NPC_GAP_MAX_MS - AUCTION_NPC_GAP_MIN_MS),
+  });
+  if (at == null) {
+    auction.npcQueue = [];
+    return;
+  }
+  auction.npcPumpTimer = setTimeout(() => {
+    auction.npcPumpTimer = null;
+    releaseNpcBid(game, playerId, placeAuctionBid);
+  }, at - Date.now());
+}
+
+function releaseNpcBid(game: ActiveGame, playerId: number, placeAuctionBid: PlaceBid) {
+  const auction = game.auctions?.[playerId] as any;
+  if (!auction || auction.status !== "open") return;
+  // Temporizador antigo (ex.: antes de uma pausa): reagenda dentro da janela certa
+  if (Date.now() < auction.endsAt - AUCTION_NPC_WINDOW_MS) {
+    pumpNpcQueue(game, playerId, placeAuctionBid);
+    return;
+  }
+  const item: NpcQueueItem | undefined = auction.npcQueue?.shift();
+  if (item) {
+    auction.npcLastReleaseAt = Date.now();
+    let highAmt = -1;
+    let highTeam: number | null = null;
+    for (const [tid, val] of Object.entries(auction.bids || {})) {
+      const b = Number((val as any)?.amount || 0);
+      if (b > highAmt) { highAmt = b; highTeam = Number(tid); }
+    }
+    const leaderIsNpc = highTeam === item.npcTeamId;
+    if (item.kind === "entry") {
+      // Preço atual + incremento; se já não couber no limite do NPC, desiste em silêncio
+      const amount = highTeam != null ? highAmt + AUCTION_BID_STEP : auction.startingPrice;
+      if (auction.bids[item.npcTeamId] == null && !leaderIsNpc && amount <= item.maxBid) {
+        placeAuctionBid(game, item.npcTeamId, playerId, amount);
+      }
+    } else if (!leaderIsNpc && Math.random() <= 0.6) {
+      // Contra-lance: 60% de hipótese, e só uma vez por leilão
+      if (!auction.npcRelicitationCount) auction.npcRelicitationCount = {};
+      const counterBid = highAmt + AUCTION_BID_STEP;
+      if (counterBid <= item.maxBid) {
+        auction.npcRelicitationCount[item.npcTeamId] = (auction.npcRelicitationCount[item.npcTeamId] ?? 0) + 1;
+        placeAuctionBid(game, item.npcTeamId, playerId, counterBid);
+      }
+    }
+  }
+  pumpNpcQueue(game, playerId, placeAuctionBid);
+}
 
 type RunAll = <T extends AnyRow = AnyRow>(
   db: any,
@@ -251,6 +345,8 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
   ) => {
     const auction = game.auctions?.[playerId] as any;
     if (!auction) return;
+    // Também chamado na retoma após pausa: a fila tem de voltar a andar mesmo sem sorteios novos
+    pumpNpcQueue(game, playerId, placeAuctionBid);
 
     const humanTeamIds = new Set(
       Object.values(game.playersByName)
@@ -356,31 +452,8 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                       const maxBid = Math.min(budgetCap, valueCap);
                       if (maxBid < auction.startingPrice) return;
 
-                      // Valor de interesse — urgência e divisão influenciam o topo
-                      const interestMultMin = hasUrgentNeed ? 1.0 : 0.85;
-                      const interestMultMax = hasUrgentNeed
-                        ? (npcDiv < sellerDivision ? 1.45 : 1.25)
-                        : (npcDiv < sellerDivision ? 1.15 : 1.0);
-                      const interestMult =
-                        interestMultMin + Math.random() * (interestMultMax - interestMultMin);
-                      let bidAmount = Math.round(playerValue * interestMult);
-
-                      // Garantir mínimo e máximo
-                      bidAmount = Math.max(auction.startingPrice, Math.min(bidAmount, maxBid));
-
-                      // Delay humano realista: equipas de divisão superior respondem mais rápido
-                      const delayMin = npcDiv < sellerDivision ? 2000 : 4000;
-                      const delayMax = npcDiv < sellerDivision ? 9000 : 16000;
-                      const bidDelay = delayMin + Math.floor(Math.random() * (delayMax - delayMin));
-
-                      setTimeout(() => {
-                        const currentAuction = game.auctions?.[playerId] as any;
-                        if (!currentAuction || currentAuction.status !== "open") return;
-                        // Não relicitar aqui — só o mecanismo de counter-bid faz isso
-                        if (currentAuction.bids[npcTeam.id] != null) return;
-
-                        placeAuctionBid(game, npcTeam.id, playerId, bidAmount);
-                      }, bidDelay);
+                      // Entra na fila da janela final; o valor é recalculado ao libertar
+                      enqueueNpcBid(game, playerId, { kind: "entry", npcTeamId: npcTeam.id, maxBid }, placeAuctionBid);
                     },
                   );
                 }
@@ -414,47 +487,15 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
     if (!auction.npcRelicitationCount) auction.npcRelicitationCount = {};
     if ((auction.npcRelicitationCount[npcTeamId] ?? 0) >= 1) return; // já relicitou
 
-    // Delay realista de ponderação: o NPC "pensa" se vale a pena
-    const counterDelay = 4000 + Math.floor(Math.random() * 14000); // 4s a 18s
-
-    setTimeout(() => {
-      const currentAuction = game.auctions?.[playerId] as any;
-      if (!currentAuction || currentAuction.status !== "open") return;
-
-      // 60% de hipótese de realmente contra-atacar (40% desiste)
-      if (Math.random() > 0.60) return;
-
-      // Recalcular o lance mais alto actual
-      let currentHighBid = -1;
-      for (const amt of Object.values(currentAuction.bids || {})) {
-        const b = Number(
-          typeof amt === "object" && amt !== null ? (amt as any).amount : amt || 0,
-        );
-        if (b > currentHighBid) currentHighBid = b;
-      }
-      if (currentHighBid < 0) currentHighBid = 0;
-
-      // Superar por exatamente um incremento de leilão
-      const counterBid = currentHighBid + AUCTION_BID_STEP;
-
-      // Verificar se o NPC tem orçamento para este lance
-      game.db.get(
-        "SELECT budget FROM teams WHERE id = ?",
-        [npcTeamId],
-        (err: any, teamRow: any) => {
-          if (err || !teamRow) return;
-          const maxAffordable = Math.round(teamRow.budget * 0.6);
-          if (counterBid > maxAffordable) return; // demasiado caro, desiste
-
-          // Registar relicitação antes de colocar o lance
-          if (!currentAuction.npcRelicitationCount) currentAuction.npcRelicitationCount = {};
-          currentAuction.npcRelicitationCount[npcTeamId] =
-            (currentAuction.npcRelicitationCount[npcTeamId] ?? 0) + 1;
-
-          placeAuctionBid(game, npcTeamId, playerId, counterBid);
-        },
-      );
-    }, counterDelay);
+    // Orçamento lido já: o limite de 60% fixa-se aqui; o lance é decidido na janela final
+    game.db.get(
+      "SELECT budget FROM teams WHERE id = ?",
+      [npcTeamId],
+      (err: any, teamRow: any) => {
+        if (err || !teamRow) return;
+        enqueueNpcBid(game, playerId, { kind: "counter", npcTeamId, maxBid: Math.round(teamRow.budget * 0.6) }, placeAuctionBid);
+      },
+    );
   };
 
   return {
