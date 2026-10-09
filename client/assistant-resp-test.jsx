@@ -42,11 +42,12 @@ const squad = (n, extra = {}) =>
 // deixa de ser o pior caso (é o `catalogueComplete` a travar isso).
 const worstCaseState = {
   squad: [
-    ...squad(7, { form: 50, resistance: 50 }),
-    ...squad(3, { form: 44, injury_until_matchweek: 9 }),
+    ...squad(7, { form: 15, resistance: 50 }),
+    ...squad(3, { form: 15, injury_until_matchweek: 9 }),
   ],
   matchweek: 3,
   hasRedFlag: true,
+  cupWeekFriendly: { nextWeek: true, signedUp: false },
   hasTraining: false,
   focusName: "Resistência",
   fansMood: 10,
@@ -155,8 +156,8 @@ function Harness() {
     const t1 = setTimeout(() => {
       passA.current = measure(
         "A",
-        "rodape-cm",
-        '[data-collision="ticker"]',
+        "mobile-nav",
+        '[data-collision="nav"]',
       );
       setMenuOpen(true);
     }, 1200);
@@ -182,8 +183,13 @@ function Harness() {
         <div className="h-40 rounded-xl bg-surface-container" />
       </div>
       {/* Barra do bottom-nav mobile (h-16), como no GameLayout. */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-high/95" />
-      {/* Rodapé Notícias CM (`bottom-16 h-8 z-30`), como no CmTicker. */}
+      <div
+        data-collision="nav"
+        className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-high/95"
+      />
+      {/* Rodapé Notícias CM (`bottom-16 h-8 z-30`), como no CmTicker. O adjunto
+          cobre-o de propósito (a2b881bb): o ticker fica em pausa enquanto ele
+          aparece, por isso não entra nas colisões. */}
       <div
         data-collision="ticker"
         className="lg:hidden fixed bottom-16 left-0 right-0 h-8 z-30 bg-black"
