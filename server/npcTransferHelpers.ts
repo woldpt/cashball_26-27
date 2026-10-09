@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot } from "./coreHelpers";
+import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot, runRoomTask, runExec } from "./coreHelpers";
 import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
@@ -183,66 +183,57 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
             : listedPrice;
         if (price <= 0) continue;
 
-        await new Promise((resolve) => {
-          game.db.run(
-            "UPDATE teams SET budget = budget - ? WHERE id = ?",
-            [price, npcTeam.id],
-            resolve,
-          );
-        });
-
-        if (player.team_id) {
-          await new Promise((resolve) => {
-            game.db.run(
-              "UPDATE teams SET budget = budget + ? WHERE id = ?",
-              [price, player.team_id],
-              resolve,
+        // Transação na fila da sala: jogador primeiro (só se ainda listado),
+        // depois os saldos. Sem isto um crash a meio deixava o vendedor com o
+        // dinheiro e o jogador, e escritas soltas caíam dentro de transações
+        // alheias (um ROLLBACK de outro fluxo desfazia-as a meio).
+        const bought = await runRoomTask(game.roomCode, async () => {
+          await runExec(game.db, "BEGIN");
+          try {
+            const moved = await runExec(
+              game.db,
+              `UPDATE players SET team_id = ?, wage = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ? AND team_id IS ? AND transfer_status = 'fixed' AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?)`,
+              [
+                npcTeam.id,
+                signingWage(player),
+                getSeasonEndMatchweek(game.matchweek),
+                currentEpoch(game),
+                currentSlot(game),
+                currentSlot(game),
+                player.id,
+                player.team_id ?? null,
+                CONTRACT_LENGTH_WEEKS,
+                currentEpoch(game),
+              ],
             );
-          });
-        }
-
-        // Conditional UPDATE: only proceed if the player is still on the transfer list.
-        // This prevents a double-sale when two NPC teams share the same marketPlayers snapshot.
-        const changes = await new Promise<number>((resolve) => {
-          game.db.run(
-            `UPDATE players SET team_id = ?, wage = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ? AND transfer_status = 'fixed' AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?)`,
-            [
-              npcTeam.id,
-              signingWage(player),
-              getSeasonEndMatchweek(game.matchweek),
-              currentEpoch(game),
-              currentSlot(game),
-              currentSlot(game),
-              player.id,
-              CONTRACT_LENGTH_WEEKS,
-              currentEpoch(game),
-            ],
-            function (this: any) {
-              resolve(this.changes ?? 0);
-            },
-          );
-        });
-
-        if (changes === 0) {
-          // Player was already sold to another NPC — roll back the budget deduction
-          await new Promise((resolve) => {
-            game.db.run(
-              "UPDATE teams SET budget = budget + ? WHERE id = ?",
-              [price, npcTeam.id],
-              resolve,
-            );
-          });
-          if (player.team_id) {
-            await new Promise((resolve) => {
-              game.db.run(
-                "UPDATE teams SET budget = budget - ? WHERE id = ?",
-                [price, player.team_id],
-                resolve,
-              );
-            });
+            const paid = moved.changes
+              ? await runExec(
+                  game.db,
+                  "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
+                  [price, npcTeam.id, price],
+                )
+              : { changes: 0 };
+            if (paid.changes === 0) {
+              await runExec(game.db, "ROLLBACK").catch(() => {});
+              return false;
+            }
+            if (player.team_id) {
+              await runExec(game.db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [
+                price,
+                player.team_id,
+              ]);
+            }
+            await runExec(game.db, "COMMIT");
+            return true;
+          } catch (txErr) {
+            await runExec(game.db, "ROLLBACK").catch(() => {});
+            throw txErr;
           }
-          continue; // try next player
-        }
+        }).catch((err) => {
+          console.error(`[${game.roomCode}] ❌ compra NPC falhou:`, err);
+          return false;
+        });
+        if (!bought) continue; // vendido entretanto ou sem saldo — tenta o próximo
 
         // Remove from in-memory snapshot so no other NPC can re-buy this player
         const idx = marketPlayers.indexOf(player);

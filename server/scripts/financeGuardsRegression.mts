@@ -6,6 +6,7 @@
  *   F3 — buyPlayer recusa jogador em leilão
  *   F4 — 2 buyPlayer em paralelo acima do saldo: o saldo nunca fica < 0
  *   F5 — fireStaff 2× em paralelo paga uma só indemnização
+ *   F6 — compra NPC: movimento certo; jogador já vendido não mexe em saldos
  *
  * BD em memória com o schema real (db/schema.sql).
  * Run: cd server && npm run test:finance-guards
@@ -23,6 +24,7 @@ const { createAuctionHelpers } = require("../auctionHelpers");
 const { registerSessionSocketHandlers } = require("../socketSessionHandlers");
 const { registerTransferSocketHandlers } = require("../socketTransferHandlers");
 const { fireStaff } = require("../staffHelpers");
+const { createNpcTransferHelpers } = require("../npcTransferHelpers");
 const { staffSeverance } = require("../gameConstants");
 
 const SCHEMA = fs.readFileSync(
@@ -208,4 +210,44 @@ test("F5 — fireStaff 2× em paralelo paga uma só indemnização", async () =>
   const [a, b] = await Promise.all([fireStaff(game, 1, "assistant"), fireStaff(game, 1, "assistant")]);
   assert.equal([a, b].filter((r: any) => r.ok).length, 1, "só um despedimento conta");
   assert.equal(await budgetOf(db, 1), 1_000_000 - staffSeverance(2));
+});
+
+test("F6 — compra NPC: movimento certo; jogador já vendido não mexe em saldos", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000, 2: 100_000, 3: 1000 });
+  await runExec(
+    db,
+    "INSERT INTO players (id, name, position, skill, value, wage, team_id, transfer_status, transfer_price) VALUES (10, 'Listado', 'MED', 50, 100, 10, 1, 'fixed', 100)",
+  );
+  // Já vendido à equipa 3 (e relistado por ela), mas a foto do mercado ainda
+  // o mostra listado na 1: não pode ser comprado a crédito do clube errado.
+  await runExec(
+    db,
+    "INSERT INTO players (id, name, position, skill, value, wage, team_id, transfer_status, transfer_price) VALUES (11, 'Vendido', 'MED', 60, 100, 10, 3, 'fixed', 100)",
+  );
+  const realAll = (sql: string, p: any[] = []) =>
+    new Promise<any[]>((res, rej) => db.all(sql, p, (e: any, r: any) => (e ? rej(e) : res(r))));
+  const runAllStub = async (_db: any, sql: string, p: any[] = []) => {
+    const rows = await realAll(sql, p);
+    if (sql.includes("transfer_status = 'fixed'") && sql.includes("ORDER BY skill DESC")) {
+      return rows.map((r) => (r.id === 11 ? { ...r, team_id: 1 } : r));
+    }
+    return rows;
+  };
+  const game = makeGame(db);
+  game.playersByName = { H: { name: "H", teamId: 1 }, H3: { name: "H3", teamId: 3 } };
+  const npc = createNpcTransferHelpers({ runAll: runAllStub, getSeasonEndMatchweek: () => 30, io: ioStub });
+  const rnd = Math.random;
+  Math.random = () => 0;
+  try {
+    await npc.processNpcTransferActivity(game, () => {});
+  } finally {
+    Math.random = rnd;
+  }
+  await drain(game);
+  assert.equal((await runGet(db, "SELECT team_id FROM players WHERE id = 11")).team_id, 3, "vendido fica onde está");
+  assert.equal((await runGet(db, "SELECT team_id FROM players WHERE id = 10")).team_id, 2, "listado muda para o NPC");
+  assert.equal(await budgetOf(db, 2), 100_000 - 100, "NPC paga uma vez");
+  assert.equal(await budgetOf(db, 1), 1100, "vendedor recebe uma vez");
+  assert.equal(await budgetOf(db, 3), 1000, "equipa 3 intacta");
 });
