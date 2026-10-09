@@ -135,22 +135,6 @@
 - Treino: jogadores muito abaixo da média sobem depressa até 70% da média; NPCs não renovam esses jogadores.
 - Campo em perspetiva fixo no fundo no lugar da navegação mobile; anúncio de prolongamento só no 91'; `backend Healthy`.
 
-## Deploy v26.10.19 no rick (2026-10-05)
-- Campo em perspetiva no mobile com o tempo ao fundo; pausa pré-jogo de 7s com a análise de volta e anúncio de fase animado no placar.
-- Casaco do adjunto na cor do clube; staff contratado com nome, papel e nível à medida da tesouraria; mentalidade em 3 botões no mobile; `backend Healthy`.
-
-## Deploy v26.10.18 no rick (2026-10-05)
-- Barra de notícias junta as pendentes numa só tira; pill «AO VIVO» e o espaço reservado saem do mobile.
-- Indicador do separador ativo passa para baixo no mobile; parcelas de patrocínio só no resumo financeiro semanal; `backend Healthy`.
-
-## Deploy v26.10.17 no rick (2026-10-05)
-- Direto com suspense no penálti (popup animado em paralelo com o festejo), golo novo substitui o festejo em curso, meteorologia em ecrã inteiro com vento novo; ritmo de golos afinado (sem golo de bola corrida no minuto após golo).
-- Barra de notícias entra pela direita e mais baixa no mobile, sem contador nem dispensar; convite de clube pendente sobrevive ao restart; amigáveis pedem confirmação acima de 3 substituições; `backend Healthy`.
-
-## Deploy v26.10.16 no rick (2026-10-05)
-- Nomes de clubes e jogadores passam a abrir a página do clube e o histórico do jogador; treino com spinner, níveis no relatório e grupos com cabeçalho único; meteorologia animada no hero do direto.
-- Posse por estilo corrigida (ofensivo tem a bola, defensivo cede-a); jornal sem tabela duplicada na classificação final; brasão na árvore da Taça; `backend Healthy`.
-
 ## Briefing: relvado do adversário visível em mobile (2026-10-11)
 - Bug: no Briefing pré-jogo (<`lg`) o cartão «Confronto tático em campo» só mostrava o cabeçalho — o wrapper do `OpponentFormation` só tinha `min-h` e o `PitchFormation` é `h-full` com conteúdo `absolute` (colapsava a 0px; em `lg` o cartão é flex column e `flex-1` dava altura).
 - Fix (plano `docs/plans/briefing-pitch-mobile.md`): wrapper passa a `h-80 short:h-56` em mobile e `lg:h-auto lg:flex-1` em desktop — altura definida → `h-full` do filho resolve. `PitchFormation` e `MatchBriefing` intactos.

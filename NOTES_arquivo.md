@@ -2,6 +2,22 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Deploy v26.10.19 no rick (2026-10-05)
+- Campo em perspetiva no mobile com o tempo ao fundo; pausa pré-jogo de 7s com a análise de volta e anúncio de fase animado no placar.
+- Casaco do adjunto na cor do clube; staff contratado com nome, papel e nível à medida da tesouraria; mentalidade em 3 botões no mobile; `backend Healthy`.
+
+## Deploy v26.10.18 no rick (2026-10-05)
+- Barra de notícias junta as pendentes numa só tira; pill «AO VIVO» e o espaço reservado saem do mobile.
+- Indicador do separador ativo passa para baixo no mobile; parcelas de patrocínio só no resumo financeiro semanal; `backend Healthy`.
+
+## Deploy v26.10.17 no rick (2026-10-05)
+- Direto com suspense no penálti (popup animado em paralelo com o festejo), golo novo substitui o festejo em curso, meteorologia em ecrã inteiro com vento novo; ritmo de golos afinado (sem golo de bola corrida no minuto após golo).
+- Barra de notícias entra pela direita e mais baixa no mobile, sem contador nem dispensar; convite de clube pendente sobrevive ao restart; amigáveis pedem confirmação acima de 3 substituições; `backend Healthy`.
+
+## Deploy v26.10.16 no rick (2026-10-05)
+- Nomes de clubes e jogadores passam a abrir a página do clube e o histórico do jogador; treino com spinner, níveis no relatório e grupos com cabeçalho único; meteorologia animada no hero do direto.
+- Posse por estilo corrigida (ofensivo tem a bola, defensivo cede-a); jornal sem tabela duplicada na classificação final; brasão na árvore da Taça; `backend Healthy`.
+
 ## Lista de melhores marcadores cortada a 7 (2026-10-05)
 - Pedido: harmonizar a altura da lista com a da classificação geral do campeonato.
 - `LeagueStandings.jsx` (`GoldenBootSidebar`): `rows` passa a `.slice(0, 7)` — o servidor continua a enviar 10 por divisão; o corte é só na renderização. Os emblemas de posição usam o índice do array → continuam correctos (1–7).
