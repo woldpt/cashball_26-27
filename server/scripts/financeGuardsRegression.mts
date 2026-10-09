@@ -5,6 +5,7 @@
  *   F2 — chooseSponsor 2× em paralelo credita o adiantamento uma vez
  *   F3 — buyPlayer recusa jogador em leilão
  *   F4 — 2 buyPlayer em paralelo acima do saldo: o saldo nunca fica < 0
+ *   F5 — fireStaff 2× em paralelo paga uma só indemnização
  *
  * BD em memória com o schema real (db/schema.sql).
  * Run: cd server && npm run test:finance-guards
@@ -21,6 +22,8 @@ const { runRoomTask, runExec, runGet } = require("../coreHelpers");
 const { createAuctionHelpers } = require("../auctionHelpers");
 const { registerSessionSocketHandlers } = require("../socketSessionHandlers");
 const { registerTransferSocketHandlers } = require("../socketTransferHandlers");
+const { fireStaff } = require("../staffHelpers");
+const { staffSeverance } = require("../gameConstants");
 
 const SCHEMA = fs.readFileSync(
   path.join(path.dirname(new URL(import.meta.url).pathname), "../db/schema.sql"),
@@ -192,4 +195,17 @@ test("F4 — 2 buyPlayer em paralelo acima do saldo: o saldo nunca fica < 0", as
   assert.equal(await budgetOf(db, 1), 1800, "vendedor recebe uma vez");
   const n = await runGet(db, "SELECT COUNT(*) AS n FROM players WHERE team_id = 2");
   assert.equal(n.n, 1, "comprador fica só com um jogador");
+});
+
+test("F5 — fireStaff 2× em paralelo paga uma só indemnização", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1_000_000 });
+  await runExec(
+    db,
+    "INSERT INTO team_staff (team_id, role, level, name, salary_weekly, hired_slot) VALUES (1, 'assistant', 2, 'Aux', 1000, 0)",
+  );
+  const game = makeGame(db);
+  const [a, b] = await Promise.all([fireStaff(game, 1, "assistant"), fireStaff(game, 1, "assistant")]);
+  assert.equal([a, b].filter((r: any) => r.ok).length, 1, "só um despedimento conta");
+  assert.equal(await budgetOf(db, 1), 1_000_000 - staffSeverance(2));
 });

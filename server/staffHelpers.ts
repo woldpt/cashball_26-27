@@ -329,6 +329,17 @@ export async function fireStaff(
       return { ok: false, error: "db" };
     }
     try {
+      // Apagar primeiro: um 2.º clique já não encontra o funcionário e não
+      // paga a indemnização outra vez.
+      const removed = await runExec(
+        game.db,
+        "DELETE FROM team_staff WHERE team_id = ? AND role = ?",
+        [teamId, role],
+      );
+      if (removed.changes === 0) {
+        await runExec(game.db, "ROLLBACK").catch(() => {});
+        return { ok: false, error: "not_found" };
+      }
       const paid = await runExec(
         game.db,
         "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
@@ -338,10 +349,6 @@ export async function fireStaff(
         await runExec(game.db, "ROLLBACK").catch(() => {});
         return { ok: false, error: "db" };
       }
-      await runExec(game.db, "DELETE FROM team_staff WHERE team_id = ? AND role = ?", [
-        teamId,
-        role,
-      ]);
       await runExec(game.db, "COMMIT");
       return null;
     } catch (err) {
