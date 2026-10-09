@@ -321,16 +321,17 @@ async function main() {
        (12, 'NPC D5 rico', 5, 2000000),
        (13, 'NPC D4 pobre', 4, 40000)`,
   );
+  // Papel sorteado entre os livres e nível conforme a tesouraria (2e79a350).
   await ensureNpcStaff(moneyGame);
   assertEq(
-    (await get(dbMoney, "SELECT level FROM team_staff WHERE team_id = 10 AND role = 'auxiliar'")).level,
-    3,
-    "NPC de D1 contrata auxiliar nível 3",
+    (await get(dbMoney, "SELECT level FROM team_staff WHERE team_id = 10")).level,
+    4,
+    "NPC de D1 com folga contrata ao nível base + 1 (3 → 4)",
   );
   assertEq(
-    (await get(dbMoney, "SELECT level FROM team_staff WHERE team_id = 11 AND role = 'auxiliar'")).level,
-    1,
-    "NPC de D4 contrata auxiliar nível 1",
+    (await get(dbMoney, "SELECT level FROM team_staff WHERE team_id = 11")).level,
+    2,
+    "NPC de D4 com folga contrata ao nível base + 1 (1 → 2)",
   );
   assertEq(
     (await get(dbMoney, "SELECT COUNT(*) AS n FROM team_staff WHERE team_id = 12")).n,
