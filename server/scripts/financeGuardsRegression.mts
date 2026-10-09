@@ -3,6 +3,8 @@
  *
  *   F1 — leilão restaurado depois de pago não volta a mexer em saldos
  *   F2 — chooseSponsor 2× em paralelo credita o adiantamento uma vez
+ *   F3 — buyPlayer recusa jogador em leilão
+ *   F4 — 2 buyPlayer em paralelo acima do saldo: o saldo nunca fica < 0
  *
  * BD em memória com o schema real (db/schema.sql).
  * Run: cd server && npm run test:finance-guards
@@ -18,6 +20,7 @@ const sqlite3 = require("sqlite3").verbose();
 const { runRoomTask, runExec, runGet } = require("../coreHelpers");
 const { createAuctionHelpers } = require("../auctionHelpers");
 const { registerSessionSocketHandlers } = require("../socketSessionHandlers");
+const { registerTransferSocketHandlers } = require("../socketTransferHandlers");
 
 const SCHEMA = fs.readFileSync(
   path.join(path.dirname(new URL(import.meta.url).pathname), "../db/schema.sql"),
@@ -144,4 +147,49 @@ test("F2 — chooseSponsor 2× em paralelo credita o adiantamento uma vez", asyn
   assert.equal(await budgetOf(db, 1), 1500, "adiantamento creditado uma só vez");
   const news = await runGet(db, "SELECT COUNT(*) AS n FROM club_news WHERE team_id = 1 AND type = 'sponsor'");
   assert.equal(news.n, 1, "uma só notícia de patrocinador");
+});
+
+const transferDeps = {
+  isMatchInProgress: () => false,
+  getSeasonEndMatchweek: () => 30,
+  refreshMarket: () => {},
+  emitSquadForPlayer: () => {},
+};
+
+test("F3 — buyPlayer recusa jogador em leilão", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000, 2: 1000 });
+  await runExec(
+    db,
+    "INSERT INTO players (id, name, position, skill, value, wage, team_id, transfer_status, transfer_price) VALUES (10, 'Leiloado', 'MED', 50, 100, 10, 1, 'auction', 50)",
+  );
+  const game = makeGame(db);
+  const h = fakeSocket(registerTransferSocketHandlers, game, 2, transferDeps);
+  await h.buyPlayer(10);
+  await drain(game);
+  assert.equal(await budgetOf(db, 1), 1000);
+  assert.equal(await budgetOf(db, 2), 1000);
+  const p = await runGet(db, "SELECT team_id, transfer_status FROM players WHERE id = 10");
+  assert.equal(p.team_id, 1);
+  assert.equal(p.transfer_status, "auction");
+});
+
+test("F4 — 2 buyPlayer em paralelo acima do saldo: o saldo nunca fica < 0", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000, 2: 1000 });
+  for (const id of [10, 11]) {
+    await runExec(
+      db,
+      "INSERT INTO players (id, name, position, skill, value, wage, team_id, transfer_status, transfer_price) VALUES (?, 'Listado', 'MED', 50, 800, 10, 1, 'fixed', 800)",
+      [id],
+    );
+  }
+  const game = makeGame(db);
+  const h = fakeSocket(registerTransferSocketHandlers, game, 2, transferDeps);
+  await Promise.all([h.buyPlayer(10), h.buyPlayer(11)]);
+  await drain(game);
+  assert.equal(await budgetOf(db, 2), 200, "só uma compra paga");
+  assert.equal(await budgetOf(db, 1), 1800, "vendedor recebe uma vez");
+  const n = await runGet(db, "SELECT COUNT(*) AS n FROM players WHERE team_id = 2");
+  assert.equal(n.n, 1, "comprador fica só com um jogador");
 });

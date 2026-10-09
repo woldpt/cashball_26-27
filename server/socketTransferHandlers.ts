@@ -112,7 +112,13 @@ export function registerTransferSocketHandlers(
         );
         return;
       }
-      if (!player.transfer_status || player.transfer_status === "none") {
+      // Só listagem fixa: um jogador em leilão compra-se licitando — comprá-lo
+      // aqui pagava ao vendedor e o fecho do leilão pagava-lhe outra vez.
+      if (player.transfer_status === "auction") {
+        socket.emit("systemMessage", "Este jogador está em leilão — faz um lance.");
+        return;
+      }
+      if (player.transfer_status !== "fixed") {
         socket.emit("systemMessage", "Este jogador não está no mercado.");
         return;
       }
@@ -140,11 +146,14 @@ export function registerTransferSocketHandlers(
       await runRoomTask(game.roomCode, async () => {
         await runExec(game.db, "BEGIN");
         try {
-          await runExec(
+          // Saldo revalidado no débito: dois cliques rápidos passavam ambos a
+          // verificação de cima e deixavam o clube negativo.
+          const debit = await runExec(
             game.db,
-            "UPDATE teams SET budget = budget - ? WHERE id = ?",
-            [price, playerState.teamId],
+            "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
+            [price, playerState.teamId, price],
           );
+          if (debit.changes === 0) throw new Error("insufficient_budget");
           if (player.team_id && player.team_id !== playerState.teamId) {
             await runExec(
               game.db,
@@ -155,7 +164,7 @@ export function registerTransferSocketHandlers(
           // Guarda anti-concorrência: outro treinador pode ter comprado entretanto.
           const moved = await runExec(
             game.db,
-            "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id IS ? AND transfer_status != 'none'",
+            "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id IS ? AND transfer_status = 'fixed'",
             [
               playerState.teamId,
               signingWage(player),
@@ -268,6 +277,10 @@ export function registerTransferSocketHandlers(
         source: "market",
       });
     } catch (err) {
+      if ((err as Error)?.message === "insufficient_budget") {
+        socket.emit("systemMessage", "Não tens fundo de maneio suficiente!");
+        return;
+      }
       if ((err as Error)?.message === "player_gone") {
         socket.emit("systemMessage", "Este jogador já foi vendido.");
         refreshMarket(game);
