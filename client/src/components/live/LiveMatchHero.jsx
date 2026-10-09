@@ -252,6 +252,7 @@ export function LiveMatchHero({
                 aColor={aInfo?.color_primary}
                 hName={hInfo?.name}
                 aName={aInfo?.name}
+                score={score}
               />
             )}
           </div>

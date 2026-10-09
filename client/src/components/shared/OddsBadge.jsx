@@ -2,8 +2,9 @@
  *
  * Badge estruturado em 3 segmentos (label em cima, valor em baixo) para
  * leitura rápida das odds. "1" e "2" carregam um dot na cor da respetiva
- * equipa; o "X" leva um traço neutro. A menor odd (favorito) destaca-se com
- * fundo âmbar e as restantes ficam esbatidas.
+ * equipa; o "X" leva um traço neutro. A aposta que está a ganhar neste momento
+ * (1, X ou 2 conforme o resultado) destaca-se com fundo âmbar; as restantes
+ * ficam esbatidas.
  */
 
 const SEGMENT_LABELS = ["1", "X", "2"];
@@ -15,14 +16,14 @@ const SEGMENT_LABELS = ["1", "X", "2"];
  * @param {string|undefined} props.aColor — cor primária da equipa de fora
  * @param {string|undefined} props.hName — nome da equipa da casa
  * @param {string|undefined} props.aName — nome da equipa de fora
+ * @param {{home: number, away: number}} props.score — resultado atual
  * @returns {JSX.Element}
  */
-export function OddsBadge({ odds, hColor, aColor, hName, aName }) {
+export function OddsBadge({ odds, hColor, aColor, hName, aName, score }) {
   const colors = [hColor || "#6366f1", null, aColor || "#f43f5e"];
   const names = [hName || "Casa", "Empate", aName || "Fora"];
-  const nums = odds.map(Number);
-  const fav = nums.indexOf(Math.min(...nums));
-  const summary = `Odds: ${names.map((n, i) => `${n} ${odds[i]}`).join(", ")}. Menor odd = favorito.`;
+  const fav = score.home > score.away ? 0 : score.home < score.away ? 2 : 1;
+  const summary = `Odds: ${names.map((n, i) => `${n} ${odds[i]}`).join(", ")}. Aposta a ganhar agora: ${["1", "X", "2"][fav]}.`;
 
   return (
     <span
