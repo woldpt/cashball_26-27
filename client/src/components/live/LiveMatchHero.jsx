@@ -485,7 +485,7 @@ export function ScoreKit({ team, isMine, coach, away = false }) {
       )}
       {coach && (
         <span
-          className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm font-black text-[9px] tracking-widest uppercase whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-[11rem] shadow-lg ${
+          className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm font-black text-[9px] tracking-widest uppercase whitespace-nowrap truncate max-w-[6.5rem] min-[400px]:max-w-[8.5rem] sm:max-w-[11rem] shadow-lg ${
             isMine ? "bg-primary text-on-primary" : "bg-amber-500 text-zinc-950"
           }`}
         >
