@@ -341,7 +341,9 @@ for (const harness of harnesses) {
       );
     for (const c of d.collisions || [])
       console.log(
-        `        · colisão: balão cobre ${c.target} (${c.covered}/${c.samples} pontos)`,
+        typeof c === "string"
+          ? `        · colisão: ${c}`
+          : `        · colisão: balão cobre ${c.target} (${c.covered}/${c.samples} pontos)`,
       );
     for (const s of d.stepFailures || [])
       console.log(

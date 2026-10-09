@@ -104,11 +104,12 @@ export function LiveClock({
   };
 
   return (
-    <div className={`absolute left-1/2 -translate-x-1/2 max-w-[38vw] pointer-events-none ${urgent ? "liveclock-urgent" : ""}`}>
+    // Abaixo de md é um item normal da linha (o nome do clube encolhe e trunca); de md para cima fica absoluto, no centro do ecrã.
+    <div className={`relative shrink-0 min-w-0 max-w-[38vw] pointer-events-none md:absolute md:left-1/2 md:-translate-x-1/2 ${urgent ? "liveclock-urgent" : ""}`}>
       <span
         role="timer"
         aria-label={ariaFull}
-        className={`relative flex items-center justify-center min-w-32 max-w-full overflow-hidden rounded-2xl border px-4 pt-1.5 pb-2.5 backdrop-blur-md shadow-lg shadow-black/30 transition-colors duration-500 ${
+        className={`relative flex items-center justify-center min-w-24 sm:min-w-32 max-w-full overflow-hidden rounded-2xl border px-3 sm:px-4 pt-1.5 pb-2.5 backdrop-blur-md shadow-lg shadow-black/30 transition-colors duration-500 ${
           urgent
             ? "border-amber-400/80 bg-amber-950/80"
             : showScore
@@ -130,12 +131,12 @@ export function LiveClock({
               <span className="hidden lg:block max-w-24 truncate text-[10px] font-black uppercase tracking-wide text-on-surface-variant">
                 {score.awayName}
               </span>
-              <span className="text-[9px] font-black uppercase tracking-widest leading-none text-primary">
+              <span className="hidden min-[400px]:block min-w-0 truncate text-[9px] font-black uppercase tracking-widest leading-none text-primary">
                 {breakLabel}
               </span>
             </motion.span>
           ) : (
-            <motion.span key="time" aria-hidden className="flex items-center gap-2" {...swap}>
+            <motion.span key="time" aria-hidden className="flex min-w-0 max-w-full items-center gap-2" {...swap}>
               {isPlayingMatch && !isHalftime && liveMinute >= 1 && (
                 <span className="relative flex h-2 w-2 shrink-0">
                   <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${urgent ? "bg-amber-400" : "bg-red-500"}`} />
@@ -145,7 +146,7 @@ export function LiveClock({
               <span className={`shrink-0 font-headline font-black tabular-nums leading-none text-xl ${urgent ? "text-amber-400" : "text-on-surface"}`}>
                 {time}
               </span>
-              <span className="text-[9px] font-black uppercase tracking-widest leading-none text-on-surface/70 truncate">
+              <span className="min-w-0 text-[9px] font-black uppercase tracking-widest leading-none text-on-surface/70 truncate">
                 {shortPhase}
               </span>
             </motion.span>
