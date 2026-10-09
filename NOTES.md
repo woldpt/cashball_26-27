@@ -2,6 +2,7 @@
 - Contenção de crashes e sessão/convites, varrimento pt-PT e equipa de agentes (desde v26.10.35); `backend Healthy`.
 
 ## Equipa de agentes + varrimento pt-PT (2026-10-09)
+- Equipa removida no mesmo dia (gastava créditos demais); fica só o atalho `.claude/skills`.
 - Equipa no Claude Code: orquestrador/revisor (Opus), `coder` (Sonnet), `scout` e `ops` (Haiku) em `.claude/agents/`; `.claude/skills` → `.pi/skills`; `CLAUDE.md` importa `AGENTS.md`.
 - Varrimento pt-PT (scout → coder → revisão): «Técnicos»→«Treinadores», coluna «Gol»→«Golos», narração sem «marcar contra»/«sacou o cartão»; mensagens de testes sem «placares»/«chute».
 - Testado: server typecheck + test:engine-unit + test:own-goal; client check:types; lint só com o erro antigo do `landing-resp-test.jsx`.
