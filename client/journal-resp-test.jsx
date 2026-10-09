@@ -336,7 +336,8 @@ async function checkDrawDate() {
   const row = [...document.querySelectorAll("ol button")].find((b) =>
     b.textContent.includes("Sorteio:"),
   );
-  const date = row?.querySelector("span")?.textContent;
+  // A data vive no cabeçalho de grupo («Semana 5 · 2026») do <li> da linha.
+  const date = row?.closest("li")?.querySelector("div")?.textContent;
   row?.click();
   await new Promise((r) => setTimeout(r, 500));
   const table = document.querySelector(
@@ -355,7 +356,7 @@ async function checkDrawDate() {
     date: date || null,
     rowCount,
     listsAll,
-    ok: !!row && date === "S5/2026" && listsAll,
+    ok: !!row && date === "Semana 5 · 2026" && listsAll,
   };
 }
 
@@ -371,7 +372,7 @@ async function checkSharedReads() {
   const initialIsRead =
     !!initialRow &&
     !initialRow
-      .querySelector("span.min-w-0")
+      .querySelector("span.truncate")
       .className.includes("font-black");
   // Uma linha seguinte sem bandeira vermelha — clicar nela deve baixar o
   // badge partilhado entre o Jornal e o GameLayout.
@@ -436,13 +437,22 @@ function measure() {
 
 setTimeout(async () => {
   const report = measure();
+  // Cada check corre isolado: se um rebenta, o relatório escreve-se na mesma
+  // (com o erro) em vez de o runner ficar 20s à espera do data-status.
+  const safe = async (fn) => {
+    try {
+      return await fn();
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  };
   // Ordem importa: o clique numa linha marca-a como lida, por isso o
   // check do estado inicial (seleccionada + por ler) corre antes dos
   // checks que seleccionam notícias.
-  report.quickSearch = await checkQuickSearch();
-  report.inboxBadge = await checkSharedReads();
-  report.moodArticle = await checkMoodArticle();
-  report.drawDate = await checkDrawDate();
+  report.quickSearch = await safe(checkQuickSearch);
+  report.inboxBadge = await safe(checkSharedReads);
+  report.moodArticle = await safe(checkMoodArticle);
+  report.drawDate = await safe(checkDrawDate);
   if (
     !report.quickSearch.ok ||
     !report.moodArticle.ok ||

@@ -178,7 +178,7 @@ export function JournalTab({
         </div>
       )}
 
-      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
         {/* ── Inbox (coluna estreita à esquerda, ~1/3) ───────────────── */}
         <div className={`${mobileDetail ? "max-lg:hidden " : ""}lg:sticky lg:top-2 lg:flex lg:h-[calc(100dvh-9rem)] lg:flex-col`}>
         <TopicList
