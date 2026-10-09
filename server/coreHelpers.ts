@@ -901,16 +901,30 @@ export function logMedicalNews(
 ) {
   if (!isHumanTeam(game, teamId)) return;
   game.db.get(
-    `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND amount = ? LIMIT 1`,
-    [teamId, kind, player.id, until],
+    // Castigos: qualquer linha do mesmo jogador na mesma semana conta (amarelo
+    // + vermelho no mesmo jogo = uma só notícia, atualizada para o castigo mais longo).
+    kind === "suspension"
+      ? `SELECT id, amount, title FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND (amount = ? OR (year = ? AND slot = ?)) LIMIT 1`
+      : `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND amount = ? LIMIT 1`,
+    kind === "suspension"
+      ? [teamId, kind, player.id, until, year ?? game.year ?? 0, slot ?? currentSlot(game)]
+      : [teamId, kind, player.id, until],
     (err: any, row: any) => {
-      if (err || row) return;
+      if (err) return;
+      if (row && !(kind === "suspension" && until > Number(row.amount))) return;
       const title =
         kind === "injury"
           ? `🩹 ${player.name} lesionado`
           : source === "yellow"
             ? `🟨 ${player.name} castigado (3 amarelos)`
             : `🟥 ${player.name} castigado`;
+      if (row) {
+        game.db.run(
+          `UPDATE club_news SET title = ?, amount = ?, description = ? WHERE id = ?`,
+          [title, until, JSON.stringify({ v: 1, until, position: player.position ?? null, skill: player.skill ?? null }), row.id],
+        );
+        return;
+      }
       logClubNews(game, kind, title, teamId, {
         player_id: player.id,
         player_name: player.name,

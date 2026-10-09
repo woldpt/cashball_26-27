@@ -19,7 +19,7 @@
  * Orquestrador fino: lista, corpo, tabelas, ações e tons vivem em
  * `client/src/views/journal/`.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useInbox } from "../hooks/useInbox.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -50,7 +50,6 @@ export function JournalTab({
   const [search, setSearch] = useState("");
   // Mobile: lista e artigo são vistas separadas (no desktop ficam lado a lado).
   const [mobileDetail, setMobileDetail] = useState(false);
-  const readerRef = useRef(null);
 
   // Atalho de teclado: Enter fora de controlos = próxima não lida.
   // Dentro de botões/links/inputs o teclado comporta-se nativamente.
@@ -99,14 +98,6 @@ export function JournalTab({
     inboxSelected && visible.some((it) => it.id === inboxSelected.id)
       ? inboxSelected
       : visible[0] ?? null;
-  const detailIndex = selected
-    ? visible.findIndex((it) => it.id === selected.id)
-    : -1;
-  const newerItem = detailIndex > 0 ? visible[detailIndex - 1] : null;
-  const olderItem =
-    detailIndex >= 0 && detailIndex < visible.length - 1
-      ? visible[detailIndex + 1]
-      : null;
 
   const firstFlag = inbox.redFlags > 0 ? inbox.items.find((it) => it.redFlag) : null;
   const labelOf = (id) => inbox.cats.find((c) => c.id === id)?.label || id;
@@ -192,7 +183,7 @@ export function JournalTab({
         </div>
 
         {/* ── Leitor (à direita, ~2/3) ───────────────────────────────── */}
-        <section ref={readerRef} aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:sticky lg:top-2 lg:h-[calc(100dvh-9rem)] lg:overflow-y-auto`}>
+        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:sticky lg:top-2 lg:flex lg:h-[calc(100dvh-9rem)] lg:flex-col lg:space-y-0`}>
           <Button
             variant="ghost"
             size="sm"
@@ -201,7 +192,7 @@ export function JournalTab({
           >
             ‹ Notícias
           </Button>
-          <AnimatePresence mode="wait" onExitComplete={() => readerRef.current?.scrollTo({ top: 0 })}>
+          <AnimatePresence mode="wait">
             {!selected && (
               <div className="rounded-md border border-outline-variant/20 bg-surface-container px-4 py-8">
                 <EmptyState
@@ -222,7 +213,7 @@ export function JournalTab({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="relative rounded-md border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:min-h-[22rem]"
+                className="relative rounded-md border border-outline-variant/20 bg-surface-container-high px-4 py-3 short:py-2 sm:px-6 sm:py-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
               >
                 {/* Faixa lateral: categoria, ou error nas pendências */}
                 <CategoryAccentBar category={selected.cat} urgent={selected.redFlag} />
@@ -327,42 +318,6 @@ export function JournalTab({
                   onOpenSponsor={() => setSponsorOpen(true)}
                 />
 
-                </div>
-                </div>
-
-                {/* Rodapé fixo no fundo do cartão: mais recente / mais antiga + próxima por ler */}
-                <div className="mt-2 w-full max-w-5xl shrink-0 border-t border-outline-variant/25 pt-3">
-                <div className="flex items-center justify-between gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => newerItem && handleSelectItem(newerItem.id)}
-                    disabled={!newerItem}
-                    aria-label="Notícia mais recente"
-                  >
-                    ‹ Recente
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold tabular-nums text-on-surface-variant">
-                      {detailIndex + 1} / {visible.length}
-                    </span>
-                    <Button
-                      size="sm"
-                      onClick={selectNextUnread}
-                      disabled={!inbox.hasNextUnread}
-                    >
-                      Ler próxima
-                    </Button>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => olderItem && handleSelectItem(olderItem.id)}
-                    disabled={!olderItem}
-                    aria-label="Notícia mais antiga"
-                  >
-                    Antiga ›
-                  </Button>
                 </div>
                 </div>
               </motion.section>

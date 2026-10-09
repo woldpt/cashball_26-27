@@ -1516,7 +1516,16 @@ export function newsRowsToItems(rows, fallbackDate, viewerTeamId = null) {
   }
   const done = new Set();
   const items = [];
+  // Amarelo + vermelho na mesma semana: fica só o castigo mais longo.
+  const susKey = (n) => `${n.player_id}|${n.year}|${n.slot ?? n.matchweek}`;
+  const longestSus = new Map();
   for (const n of list) {
+    if (n?.type !== "suspension") continue;
+    const k = susKey(n);
+    longestSus.set(k, Math.max(longestSus.get(k) ?? 0, Number(n.amount) || 0));
+  }
+  for (const n of list) {
+    if (n?.type === "suspension" && (Number(n.amount) || 0) < longestSus.get(susKey(n))) continue;
     // Parcelas de patrocínio só contam no resumo financeiro semanal.
     if (n?.type === "sponsor" && /prestação semanal|2\.ª tranche/.test(String(n.title || ""))) continue;
     const key = dealKey(n);

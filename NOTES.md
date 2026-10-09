@@ -1,3 +1,7 @@
+## Jornal: castigo duplicado e leitor com altura fixa (2026-10-09)
+- Amarelo + vermelho do mesmo jogador na mesma semana davam 2 notícias (sala TVV6WB): `logMedicalNews` atualiza a linha existente para o castigo mais longo e o cliente (`newsRowsToItems`) mostra só o mais longo (limpa também as já duplicadas). Leitor do Jornal: sem rodapé Recente/Antiga/Ler próxima, cartão com altura da área livre e scroll interno (só desktop).
+- Testado: server typecheck, client lint + check:types, test:mobile (195/195).
+
 ## Mini classificação do cabeçalho (2026-10-09)
 - Tirado o scroll da lista e adicionado crachá âmbar com o nome do treinador humano ("TU" na própria linha), como na `LiveStandings`. Plano em `docs/plans/2026-10-09-mini-classificacao.md`.
 - Testado: lint, check:types.
