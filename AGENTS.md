@@ -65,3 +65,15 @@ Replay seguro pós-restart (`applied_weeks`, `recoverFinalizedSlot`), WAL e back
 - **Memória:** ao fim de cada tarefa atualizar `NOTES.md` antes de commitar/terminar. Regra permanente → mover para os docs acima e remover de `NOTES.md`. **Teto: 30 apontamentos** — passou disso, os mais antigos mudam para `NOTES_arquivo.md` (nada se apaga). Apontamento novo: máx. 5 linhas (o quê, porquê, como foi testado); deploys: 1 linha.
 - **Mudança estrutural de layout** (nova view/tab/modal, `GameLayout.jsx`, `index.css`, componente partilhado, grid/flex/larguras) → skill `mobile-resp-check` com as **duas** passagens antes de terminar/commitar. Tweaks (padding, cores, texto, `className` pontual) não disparam.
 - **Design:** seguir `STYLE.md`; referência: `client/src/views/MySquadTab.jsx`.
+
+## 👥 Equipa de agentes (Claude Code)
+
+| Papel | Quem | Faz |
+|---|---|---|
+| Orquestrador + revisor | Sessão principal (Opus, esforço médio) | Protocolo antes de editar, plano, OK do utilizador, revisão do diff, commit |
+| Coder | `.claude/agents/coder.md` (Sonnet, médio) | Implementa um plano **já aprovado** + corre os checks; não commita |
+| Scout | `.claude/agents/scout.md` (Haiku, médio) | Só leitura: localizar código e fluxos, resumo com `ficheiro:linha` |
+
+- Delegar só tarefas grandes (vários ficheiros/áreas); mudanças pequenas o orquestrador faz direto — cada agente arranca sem contexto.
+- O orquestrador revê sempre o diff do coder e confirma os checks antes de commitar.
+- Skills: `.claude/skills` é atalho para `.pi/skills` (fonte única).

@@ -1,6 +1,8 @@
 # CLAUDE.md — CashBall · Arquitetura & Padrões
 
-> Operações/comandos/regressões: `AGENTS.md` · Design/tokens: `STYLE.md` · UI de referência: `client/src/views/MySquadTab.jsx`.
+> Operações/comandos/regressões: `AGENTS.md` (importado abaixo) · Design/tokens: `STYLE.md` · UI de referência: `client/src/views/MySquadTab.jsx`.
+
+@AGENTS.md
 
 ## 🛠️ Stack
 
