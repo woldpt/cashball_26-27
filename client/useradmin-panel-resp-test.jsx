@@ -21,7 +21,7 @@
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { GameProvider } from "./src/contexts/GameContext.jsx";
-import { AdminPanel } from "./src/components/admin/AdminPanel.jsx";
+import { AdminPage } from "./src/pages/AdminPage.jsx";
 import { socket } from "./src/socket.js";
 
 // ── Fixture: edge-case users ─────────────────────────────────────────────────
@@ -102,9 +102,11 @@ root.render(
     joinTimerRef={{ current: null }}
     backendUrl=""
   >
-    {/* Backdrop idêntico ao ModalShell xl (non-fullscreen): p-3 abaixo de sm */}
-    <div className="fixed inset-0 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center p-3">
-      <AdminPanel open onClose={noop} />
+    {/* Mimetiza o <main> > div.p-4 do GameLayout */}
+    <div className="min-h-screen bg-surface">
+      <div className="p-4 lg:p-6">
+        <AdminPage onBack={noop} />
+      </div>
     </div>
   </GameProvider>,
 );

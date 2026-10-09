@@ -46,10 +46,20 @@ function base(over = {}) {
   };
 }
 
+/** Junta as props planas nos grupos `form`/`room` que o LandingPage recebe (ver App.jsx). */
+function group(a) {
+  const pick = (keys) => Object.fromEntries(keys.map((k) => [k, a[k]]));
+  return {
+    ...pick(["authPhase", "setAuthPhase", "resetAuthFlow", "handleAuthenticate", "me", "setJoinError", "disconnected"]),
+    form: pick(["name", "setName", "password", "setPassword", "confirmPassword", "setConfirmPassword", "authSubmitting", "authError", "setAuthError"]),
+    room: pick(["roomCode", "setRoomCode", "joining", "joinError", "joinMode", "selectJoinMode", "handleLogout", "handleJoin", "token", "isNewAccount", "availableSaves", "setAvailableSaves", "backendUrl"]),
+  };
+}
+
 function inst(id, props) {
   return (
     <div data-inst={id}>
-      <LandingPage {...base(props)} {...props} />
+      <LandingPage {...group(base(props))} />
     </div>
   );
 }
