@@ -26,6 +26,7 @@ const { registerTransferSocketHandlers } = require("../socketTransferHandlers");
 const { fireStaff } = require("../staffHelpers");
 const { createNpcTransferHelpers } = require("../npcTransferHelpers");
 const { staffSeverance } = require("../gameConstants");
+const { createWeeklyFlowHelpers } = require("../weeklyFlowHelpers");
 
 const SCHEMA = fs.readFileSync(
   path.join(path.dirname(new URL(import.meta.url).pathname), "../db/schema.sql"),
@@ -166,6 +167,27 @@ test("F7 — patrocínio perfil B: a notícia não regista a época inteira como
   assert.equal(await budgetOf(db, 1), 1000, "perfil B não credita nada no dia 1");
   const sum = await runGet(db, "SELECT COALESCE(SUM(amount), 0) AS s FROM club_news WHERE team_id = 1 AND type = 'sponsor'");
   assert.equal(sum.s, 0, "soma das notícias = dinheiro realmente creditado");
+});
+
+/** Helpers semanais com todas as dependências a no-op (só a renda é exercitada). */
+const weeklyHelpers = () =>
+  createWeeklyFlowHelpers(new Proxy({}, { get: () => () => {} }));
+
+test("F8 — patrocínio por escolher sem treinador humano é escolhido na renda semanal", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000, 2: 1000 });
+  await runExec(db, "INSERT INTO managers (id, name, is_human) VALUES (7, 'Humano', 1)");
+  await runExec(db, "UPDATE teams SET manager_id = 7 WHERE id = 2");
+  await runExec(db, "UPDATE teams SET sponsor_pending = 1, sponsor_season = 1, sponsor_offers = '[]' WHERE id IN (1, 2)");
+  const game = makeGame(db);
+  assert.equal(await weeklyHelpers().applyWeeklyFinancesOnce(game), true);
+  const orphan = await runGet(db, "SELECT sponsor_pending, sponsor_id, sponsor_season FROM teams WHERE id = 1");
+  assert.equal(orphan.sponsor_pending, 0, "clube sem humano deixou de estar pendente");
+  assert.ok(orphan.sponsor_id, "tem patrocinador");
+  assert.equal(orphan.sponsor_season, 1);
+  const human = await runGet(db, "SELECT sponsor_pending, sponsor_id FROM teams WHERE id = 2");
+  assert.equal(human.sponsor_pending, 1, "clube com humano continua à espera da escolha");
+  assert.equal(human.sponsor_id, null);
 });
 
 const transferDeps = {

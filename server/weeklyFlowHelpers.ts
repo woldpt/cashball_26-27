@@ -6,7 +6,7 @@ import {
 } from "./push";
 import type { CalendarEntry } from "./gameConstants";
 import { CUP_FINAL_ROUND } from "./gameConstants";
-import { SPONSOR_SECOND_TRANCHE_SLOT, sponsorById } from "./game/sponsors";
+import { SPONSOR_SECOND_TRANCHE_SLOT, sponsorById, drawNpcChoice, drawOffersAny } from "./game/sponsors";
 import {
   emitCmNews,
   readCmLeaders,
@@ -1763,6 +1763,39 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // para a reconciliação do gráfico não esmagar valores (bug antigo
           // dos prémios creditados sem diário). Salas antigas sem as colunas
           // caem no catch com lista vazia.
+          // Clube com patrocinador por escolher mas sem treinador humano
+          // (despedido ou saído antes de escolher): escolha automática, como os
+          // NPC. Sem isto o clube perdia o patrocínio da época inteira.
+          try {
+            const orphans: any[] = await dbAll(
+              game.db,
+              `SELECT t.id, t.division FROM teams t LEFT JOIN managers m ON t.manager_id = m.id
+               WHERE t.sponsor_pending = 1 AND COALESCE(m.is_human, 0) = 0`,
+            );
+            if (orphans.length > 0) {
+              const takenRows: any[] = await dbAll(
+                game.db,
+                "SELECT sponsor_id FROM teams WHERE sponsor_season = ? AND sponsor_id IS NOT NULL",
+                [game.season],
+              );
+              const taken = new Set<string>(takenRows.map((r) => String(r.sponsor_id)));
+              for (const t of orphans) {
+                const choice = drawNpcChoice(t.division, taken) ?? drawOffersAny(taken, 1)[0] ?? null;
+                if (!choice) continue;
+                taken.add(choice.sponsorId);
+                await dbRun(
+                  game.db,
+                  `UPDATE teams SET sponsor_id = ?, sponsor_profile = ?, sponsor_pending = 0, sponsor_offers = NULL,
+                     sponsor_upfront = ?, sponsor_weekly = ?, sponsor_second_half = ?, sponsor_paid_second = 0,
+                     sponsor_season = ?, budget = budget + ?
+                   WHERE id = ? AND sponsor_pending = 1`,
+                  [choice.sponsorId, choice.profile, choice.upfront, choice.weekly, choice.secondHalf, game.season, choice.upfront, t.id],
+                );
+              }
+            }
+          } catch (orphanErr) {
+            console.error(`[${game.roomCode}] ⚠ sponsor auto-pick failed:`, orphanErr);
+          }
           const paidSponsor: Record<number, number> = {};
           try {
             const sponsorRows: any[] = await dbAll(
