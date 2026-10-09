@@ -314,14 +314,14 @@ export function LiveMatchHero({
                   {phaseAnnounce}
                 </div>
               ) : (
-              <div key={`${score.home}-${score.away}`} className={`${canSub && !readOnly ? "group-hover:invisible " : ""}goal-shake font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap`}>
+              <div key={`${score.home}-${score.away}`} className={`${canSub && !readOnly ? "transition-all duration-300 ease-out motion-reduce:transition-opacity group-hover:opacity-0 group-hover:scale-90 group-hover:blur-[2px] " : ""}goal-shake font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap`}>
                 <span style={flashStyle(myHomeFlashing)}>{score.home}</span>
                 <span className="text-on-surface/20 text-xl sm:text-3xl">:</span>
                 <span style={flashStyle(myAwayFlashing)}>{score.away}</span>
               </div>
               )}
               {canSub && !readOnly && !phaseAnnounce && (
-                <span aria-hidden className="absolute inset-x-0 top-2 hidden group-hover:flex items-center justify-center gap-1.5 font-headline font-black text-xl sm:text-3xl uppercase tracking-[0.15em] text-primary">
+                <span aria-hidden className="pointer-events-none absolute inset-x-0 top-2 flex items-center justify-center gap-1.5 font-headline font-black text-xl sm:text-3xl uppercase tracking-[0.15em] text-primary opacity-0 translate-y-1 scale-90 transition-all duration-300 ease-out motion-reduce:transition-opacity motion-reduce:translate-y-0 motion-reduce:scale-100 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 [text-shadow:0_0_14px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                   <span className="material-symbols-outlined text-[1.1em] leading-none">swap_horiz</span>
                   Pausa
                 </span>

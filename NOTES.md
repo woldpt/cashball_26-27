@@ -1,3 +1,7 @@
+## Transição do PAUSA no marcador (2026-10-09)
+- `LiveMatchHero.jsx`: ao passar o rato, o resultado esbate/encolhe e o "PAUSA" sobe com brilho (300ms; só esbater com movimento reduzido), em vez de trocar de repente.
+- Testado: lint, check:types.
+
 ## Jornal: castigo duplicado e leitor com altura fixa (2026-10-09)
 - Amarelo + vermelho do mesmo jogador na mesma semana davam 2 notícias (sala TVV6WB): `logMedicalNews` atualiza a linha existente para o castigo mais longo e o cliente (`newsRowsToItems`) mostra só o mais longo (limpa também as já duplicadas). Leitor do Jornal: sem rodapé Recente/Antiga/Ler próxima, cartão com altura da área livre e scroll interno (só desktop).
 - Testado: server typecheck, client lint + check:types, test:mobile (195/195).
