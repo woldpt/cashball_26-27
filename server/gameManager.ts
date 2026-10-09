@@ -765,6 +765,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                               db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
                               delete (game.auctions as any)[pid];
                               delete (game.auctionTimers as any)[pid];
+                              saveGameState(game);
                             };
                             const bidsDesc = Object.entries(auc.bids || {})
                               .map(([tid2, val]) => ({
@@ -787,14 +788,17 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                             const finalBid = winner.amount;
                             await runExec(db, "BEGIN");
                             try {
-                              await runExec(db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [finalBid, auc.sellerTeamId]);
-                              await runExec(db, "UPDATE teams SET budget = budget - ? WHERE id = ?", [finalBid, buyerTeamId]);
+                              // Jogador primeiro, só se ainda em leilão: um leilão já
+                              // pago antes do reinício não volta a mexer em saldos.
                               const seasonEndMw = getSeasonEndMatchweek(game.matchweek || 1);
-                              await runExec(
+                              const moved = await runExec(
                                 db,
-                                "UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, morale = MIN(50, morale + 8), transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=?",
+                                "UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, morale = MIN(50, morale + 8), transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=? AND transfer_status='auction'",
                                 [buyerTeamId, signingWage(player), seasonEndMw, currentEpoch(game as any), currentSlot(game as any), currentSlot(game as any), pid],
                               );
+                              if (moved.changes === 0) throw new Error("auction_already_closed");
+                              await runExec(db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [finalBid, auc.sellerTeamId]);
+                              await runExec(db, "UPDATE teams SET budget = budget - ? WHERE id = ?", [finalBid, buyerTeamId]);
                               await runExec(db, "COMMIT");
                             } catch (txErr) {
                               await runExec(db, "ROLLBACK").catch(() => {});
@@ -804,6 +808,9 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                             }
                             const buyerTeam = await runGet<any>(db, "SELECT name FROM teams WHERE id=?", [buyerTeamId]);
                             pushRecent(player, { playerId: pid, playerName: player.name, sold: true, buyerTeamId, buyerTeamName: buyerTeam?.name ?? "?", finalBid });
+                            delete (game.auctions as any)[pid];
+                            delete (game.auctionTimers as any)[pid];
+                            saveGameState(game);
                           })().catch((err) => {
                             console.error(`[${roomCode}] ❌ finalizeAuction (crash-recovery):`, err);
                           }),
@@ -1076,6 +1083,7 @@ function saveGameState(game: ActiveGame): void {
       pausedRemainingMs: a.pausedRemainingMs ?? (a.endsAt ? Math.max(0, a.endsAt - Date.now()) : undefined),
       npcRelicitationCount: a.npcRelicitationCount || {},
       isExClub: !!a.isExClub,
+      guaranteed: !!a.guaranteed,
     }));
   // compat: antigos restores liam só pausedAuctions
   const legacyPaused = activeAuctions.filter((a: any) => a.status === "paused");

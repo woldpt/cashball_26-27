@@ -48,7 +48,8 @@
     "test:topscorer": "tsx scripts/topScorerPrizeRegression.mts",
     "test:sponsor": "tsx scripts/sponsorRegression.mts",
     "test:staff": "tsx scripts/staffRegression.mts",
-    "test:room-tx": "tsx --test scripts/roomTxRegression.mts"
+    "test:room-tx": "tsx --test scripts/roomTxRegression.mts",
+    "test:finance-guards": "tsx --test scripts/financeGuardsRegression.mts"
   },
   "keywords": [],
   "author": "",

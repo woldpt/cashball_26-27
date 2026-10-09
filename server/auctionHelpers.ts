@@ -27,6 +27,7 @@ interface AuctionDeps {
   getSeasonEndMatchweek: (matchweek: number) => number;
   scheduleNpcAuctionBids: (game: ActiveGame, playerId: number) => void;
   scheduleNpcCounterBid: (game: ActiveGame, playerId: number, npcTeamId: number) => void;
+  saveGameState: (game: ActiveGame) => void;
 }
 
 // Recentes visíveis na jornada de fecho e nas 2 seguintes (saem na +3).
@@ -119,6 +120,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     getSeasonEndMatchweek,
     scheduleNpcAuctionBids,
     scheduleNpcCounterBid,
+    saveGameState,
   } = deps;
 
   const refreshMarket = (game: ActiveGame, emitToRoom = true) => {
@@ -324,6 +326,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           });
           delete game.auctions![playerId];
           delete game.auctionTimers?.[playerId];
+          // Grava já: sem isto um reinício restaurava o leilão fechado.
+          saveGameState(game);
           refreshMarket(game);
           io.to(game.roomCode).emit("auctionClosed", {
             playerId,
@@ -423,22 +427,14 @@ export function createAuctionHelpers(deps: AuctionDeps) {
 
     // Dinheiro + transferência numa transação (mesmo padrão de
     // socketTransferHandlers): crash a meio não deixa orçamentos movidos
-    // sem o jogador transferido, nem vice-versa.
+    // sem o jogador transferido, nem vice-versa. O jogador muda PRIMEIRO e só
+    // se ainda estiver em leilão: um leilão já fechado (restaurado após
+    // reinício, ou comprado entretanto) não volta a mexer em saldos.
     await runExec(game.db, "BEGIN");
     try {
-      await runExec(
+      const moved = await runExec(
         game.db,
-        "UPDATE teams SET budget = budget + ? WHERE id = ?",
-        [finalBid, auction.sellerTeamId],
-      );
-      await runExec(
-        game.db,
-        "UPDATE teams SET budget = budget - ? WHERE id = ?",
-        [finalBid, buyerTeamId],
-      );
-      await runExec(
-        game.db,
-        `UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ?`,
+        `UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ? AND transfer_status = 'auction'`,
         [
           buyerTeamId,
           signingWage(player),
@@ -448,6 +444,17 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           currentSlot(game),
           playerId,
         ],
+      );
+      if (moved.changes === 0) throw new Error("auction_already_closed");
+      await runExec(
+        game.db,
+        "UPDATE teams SET budget = budget + ? WHERE id = ?",
+        [finalBid, auction.sellerTeamId],
+      );
+      await runExec(
+        game.db,
+        "UPDATE teams SET budget = budget - ? WHERE id = ?",
+        [finalBid, buyerTeamId],
       );
       await runExec(game.db, "COMMIT");
     } catch (txErr) {
@@ -545,6 +552,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     });
     delete game.auctions?.[playerId];
     delete game.auctionTimers?.[playerId];
+    // Grava já: sem isto um reinício restaurava o leilão e pagava outra vez.
+    saveGameState(game);
     refreshMarket(game);
     getTeamsWithCoachNames(game.db)
       .then((teams) => {

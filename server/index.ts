@@ -1021,6 +1021,7 @@ const auctionHelpers = createAuctionHelpers({
 	getSeasonEndMatchweek,
 	scheduleNpcAuctionBids,
 	scheduleNpcCounterBid,
+	saveGameState,
 });
 
 const startAuction = auctionHelpers.startAuction;
