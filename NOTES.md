@@ -1,3 +1,7 @@
+## Tática: aviso e Força do onze (2026-10-09)
+- Aviso "Faltam: 11 titulares…" passou para debaixo das Formações (e aparece também no telemóvel); Força do onze estica até à altura da linha de topo, por cima do campo.
+- Testado: lint, check:types, test:mobile (195/195).
+
 ## Guardas financeiras 2 (2026-10-09)
 - Re-auditoria → `docs/plans/2026-10-09-guardas-financas-2.md`: patrocínio perfil B já não conta a época inteira como receita; clube sem treinador humano escolhe patrocinador sozinho na renda semanal; empréstimos/investimento NPC/crédito NPC de patrocínio passam pela fila da sala; erros de escrita dos prémios da Taça fazem ROLLBACK; leilão restaurado fecha pelo caminho único (`auctionHooks`) com guarda de dono e saldo; renda relê o marcador na fila; Finanças mostram amigáveis 50/50.
 - Por decidir (não mexido): lances ao sair da sala, cláusula sobre jogador sem clube, marca de patrocinador duplicada em cliques simultâneos (cosmético).

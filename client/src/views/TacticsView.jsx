@@ -674,17 +674,17 @@ function LineStrength() {
     ["GR", "Guarda-redes"],
   ].map(([pos, label]) => ({ pos, label, v: avg(tits.filter((p) => p.position === pos)) }));
   return (
-    <div className="bg-surface-container border border-outline-variant/25 rounded-2xl px-3 py-2.5 short:py-1.5 flex flex-col gap-1.5">
+    <div className="bg-surface-container border border-outline-variant/25 rounded-2xl px-4 py-3 short:py-1.5 flex flex-col justify-between gap-1.5 flex-1">
       <div className="flex items-center justify-between">
         <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
           Força do onze
         </span>
-        <span className="text-[10px] font-black text-white">{avg(tits).toFixed(1)}</span>
+        <span className="text-lg font-black text-white">{avg(tits).toFixed(1)}</span>
       </div>
       {lines.map(({ pos, label, v }) => (
         <div key={pos} className="flex items-center gap-2" title={`${label}: ${v.toFixed(1)}`}>
           <span className={`w-6 text-[9px] font-black ${POS_COLORS[pos].text}`}>{pos}</span>
-          <div className="flex-1 h-1.5 bg-surface-container-low/60 rounded-full overflow-hidden">
+          <div className="flex-1 h-2.5 bg-surface-container-low/60 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${POS_COLORS[pos].bg}`}
               style={{ width: `${Math.min(100, (v / 50) * 100)}%` }}
@@ -942,6 +942,17 @@ export function TacticsView() {
   const awaitingOthers = isHalftime && !!matchResults?.results && !myGateFixture;
   const settled = myReady || awaitingOthers;
   const canPlay = isEliminatedCupSpectator || isHalftime || isLineupComplete;
+  const missingWarning =
+    !isHalftime && !myReady && !canPlay ? (
+      <div className="rounded-2xl border border-red-400/25 bg-red-400/5 px-3 py-2.5 short:py-1.5 flex items-start gap-2">
+        <span aria-hidden className="material-symbols-outlined text-[18px] leading-none text-red-400/80">
+          error
+        </span>
+        <p className="text-[10px] font-bold leading-snug text-red-400/80">
+          {`Faltam: 11 titulares (1 GR + 10) + ${MAX_BENCH_SIZE} suplentes (1 GR)`}
+        </p>
+      </div>
+    ) : null;
   const showBackToBriefing =
     !isHalftime &&
     !isEliminatedCupSpectator &&
@@ -1045,17 +1056,16 @@ export function TacticsView() {
 
               {/* Formação mobile — chips horizontais */}
               <FormationCard className="xl:hidden" dataTour heartbeat={heartbeat} />
+              {missingWarning}
             </div>
 
             {/* TOPO desktop — controlos em linha, 1 cartão por coluna */}
             <div className="hidden xl:flex gap-3 short:gap-1.5">
               {/* TOPO 1 — Formação (sobre Titulares) */}
-              <FormationCard
-                className="flex-1 min-w-0"
-                desktop
-                dataTour
-                heartbeat={heartbeat}
-              />
+              <div className="flex-1 min-w-0 flex flex-col gap-2 short:gap-1.5">
+                <FormationCard className="flex-1" desktop dataTour heartbeat={heartbeat} />
+                {missingWarning}
+              </div>
 
               {/* TOPO 2 — Moral + Mentalidade (sobre Suplentes) */}
               <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
@@ -1071,7 +1081,7 @@ export function TacticsView() {
               </div>
 
               {/* TOPO 3 — Jogar (sobre Pitch) */}
-              <div className="xl:w-72.5 shrink-0 self-start flex flex-col gap-2 short:gap-1.5">
+              <div className="xl:w-72.5 shrink-0 flex flex-col gap-2 short:gap-1.5">
                 {/* O JOGAR vive no cabeçalho ("Continuar" → "Jogar!");
                     aqui só o estado da táctica. No intervalo mantém-se o botão. */}
                 {isHalftime ? (
@@ -1083,15 +1093,6 @@ export function TacticsView() {
                   >
                     {playLabel}
                   </button>
-                ) : !myReady && !canPlay ? (
-                  <div className="rounded-2xl border border-red-400/25 bg-red-400/5 px-3 py-2.5 short:py-1.5 flex items-start gap-2">
-                    <span aria-hidden className="material-symbols-outlined text-[18px] leading-none text-red-400/80">
-                      error
-                    </span>
-                    <p className="text-[10px] font-bold leading-snug text-red-400/80">
-                      {`Faltam: 11 titulares (1 GR + 10) + ${MAX_BENCH_SIZE} suplentes (1 GR)`}
-                    </p>
-                  </div>
                 ) : null}
                 {!isHalftime && <LineStrength />}
               </div>
