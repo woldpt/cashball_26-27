@@ -154,6 +154,20 @@ test("F2 — chooseSponsor 2× em paralelo credita o adiantamento uma vez", asyn
   assert.equal(news.n, 1, "uma só notícia de patrocinador");
 });
 
+test("F7 — patrocínio perfil B: a notícia não regista a época inteira como receita", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000 });
+  const offer = { sponsorId: "x1", name: "Marca X", profile: "B", upfront: 0, weekly: 100, secondHalf: 0, total: 2500 };
+  await runExec(db, "UPDATE teams SET sponsor_pending = 1, sponsor_offers = ? WHERE id = 1", [JSON.stringify([offer])]);
+  const game = makeGame(db);
+  const h = fakeSocket(registerSessionSocketHandlers, game, 1);
+  await h.chooseSponsor({ teamId: 1, sponsorId: "x1" });
+  await drain(game);
+  assert.equal(await budgetOf(db, 1), 1000, "perfil B não credita nada no dia 1");
+  const sum = await runGet(db, "SELECT COALESCE(SUM(amount), 0) AS s FROM club_news WHERE team_id = 1 AND type = 'sponsor'");
+  assert.equal(sum.s, 0, "soma das notícias = dinheiro realmente creditado");
+});
+
 const transferDeps = {
   isMatchInProgress: () => false,
   getSeasonEndMatchweek: () => 30,

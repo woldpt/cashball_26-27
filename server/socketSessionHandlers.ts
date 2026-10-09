@@ -1815,7 +1815,7 @@ export function registerSessionSocketHandlers(
 					await dbRunRaw(
 						`INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, slot, year)
 						 VALUES (?, 'sponsor', ?, ?, NULL, NULL, NULL, NULL, ?, ?, ?, ?)`,
-						[teamId, `${offer.name} é o novo patrocinador`, `Escolha do treinador (perfil ${offer.profile}, total ${offer.total}€)`, offer.upfront > 0 ? offer.upfront : offer.total, game.matchweek, 1, game.year],
+						[teamId, `${offer.name} é o novo patrocinador`, `Escolha do treinador (perfil ${offer.profile}, total ${offer.total}€)`, offer.upfront || 0, game.matchweek, 1, game.year],
 					);
 					await dbRunRaw("COMMIT");
 				} catch (txErr) {

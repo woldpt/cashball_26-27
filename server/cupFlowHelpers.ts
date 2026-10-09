@@ -474,7 +474,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			}
 			try {
 				logClubNews(game, "sponsor", `${choice.name} patrocina o clube`, team.id, {
-					amount: choice.upfront > 0 ? choice.upfront : choice.total,
+					amount: choice.upfront || 0,
 					description: `Patrocinador da época (perfil ${choice.profile}, total ${choice.total}€)`,
 					year: (game as any).year,
 					matchweek: 1,
