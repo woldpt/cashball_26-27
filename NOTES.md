@@ -1,3 +1,8 @@
+## Camisola do adversário sem patrocinador (2026-10-09)
+- Bug: no Briefing o logótipo do patrocinador aparecia na nossa camisola mas não na do adversário, porque o resumo do adversário (`buildOpponentSummary` em `matchSummaryHelpers.ts`) não levava `sponsorBrand`.
+- Fix: `withSponsorBrand` (coreHelpers.ts, agora exportada) aplicado ao adversário; cobre liga e taça.
+- Testado: server `typecheck` OK. Visual no briefing por confirmar após reiniciar o servidor.
+
 ## Lances dos NPCs só na janela final do leilão (2026-10-09)
 - Antes: NPCs licitavam 2–18 s após cada lance (rajadas no início), com valor fixo que muitas vezes já não passava o mínimo (rejeição silenciosa). Agora: entram numa fila por leilão, só nos últimos 30 s, com 6–10 s entre lances de NPCs; o lance é recalculado (preço atual + 10 000 €) quando sai, e desiste se não couber no limite.
 - Constantes em `gameConstants.ts` (`AUCTION_NPC_*`); `npcTransferHelpers.ts` (`pumpNpcQueue`/`releaseNpcBid`); plano `docs/plans/2026-10-09-lances-npc-janela-final.md`.

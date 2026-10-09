@@ -319,7 +319,7 @@ export function getTeamsWithCoachNames(db: Db): Promise<AnyRow[]> {
 }
 
 /** Junta os parâmetros do logo (`sponsorBrand`) à equipa com marca. */
-function withSponsorBrand(t: AnyRow): AnyRow {
+export function withSponsorBrand(t: AnyRow): AnyRow {
   if (!t?.sponsor_id) return t;
   const s = sponsorById(String(t.sponsor_id));
   if (!s) return t;

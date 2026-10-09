@@ -7,7 +7,7 @@ import { computeMatchRatings, persistLastRatings } from "./game/ratings";
 import { computeMatchOdds } from "./game/commentary";
 import { loadSquadRatings } from "./game/oddsSquad";
 import { getWeatherForFixture } from "./game/matchCalculations";
-import { explainAttendance, logMatchMedicalNews, logPostMatchRecap } from "./coreHelpers";
+import { explainAttendance, logMatchMedicalNews, logPostMatchRecap, withSponsorBrand } from "./coreHelpers";
 import {
   isPlayerAvailable,
   withJuniorGRs,
@@ -793,6 +793,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       color_primary: opponent.color_primary || null,
       color_secondary: opponent.color_secondary || null,
       crest: opponent.crest || null,
+      sponsorBrand: withSponsorBrand(opponent).sponsorBrand ?? null,
       morale: opponent.morale ?? 25,
       wins: opponent.wins || 0,
       draws: opponent.draws || 0,
