@@ -2,6 +2,7 @@
  * Regression — guardas financeiras (plano 2026-10-09-guardas-financas.md).
  *
  *   F1 — leilão restaurado depois de pago não volta a mexer em saldos
+ *   F2 — chooseSponsor 2× em paralelo credita o adiantamento uma vez
  *
  * BD em memória com o schema real (db/schema.sql).
  * Run: cd server && npm run test:finance-guards
@@ -16,6 +17,7 @@ const require = createRequire(import.meta.url);
 const sqlite3 = require("sqlite3").verbose();
 const { runRoomTask, runExec, runGet } = require("../coreHelpers");
 const { createAuctionHelpers } = require("../auctionHelpers");
+const { registerSessionSocketHandlers } = require("../socketSessionHandlers");
 
 const SCHEMA = fs.readFileSync(
   path.join(path.dirname(new URL(import.meta.url).pathname), "../db/schema.sql"),
@@ -109,4 +111,37 @@ test("F1 — leilão restaurado depois de pago não paga outra vez", async () =>
   assert.equal(await budgetOf(db, 2), 700, "comprador não paga 2×");
   const p = await runGet(db, "SELECT team_id FROM players WHERE id = 10");
   assert.equal(p.team_id, 2);
+});
+
+/** Regista os handlers de um módulo num socket falso e devolve-os por nome. */
+function fakeSocket(register: (socket: any, deps: any) => void, game: any, teamId: number, extra: any = {}) {
+  const handlers: Record<string, (...a: any[]) => any> = {};
+  const socket = { id: "s1", on: (ev: string, fn: any) => (handlers[ev] = fn), emit: () => {}, join: () => {} };
+  register(socket, {
+    io: ioStub,
+    getGameBySocket: () => game,
+    getPlayerBySocket: () => ({ name: "Treinador", teamId, socketId: "s1" }),
+    runAll: (db: any, sql: string, p: any[] = []) =>
+      new Promise((res, rej) => db.all(sql, p, (e: any, r: any) => (e ? rej(e) : res(r)))),
+    runGet,
+    ...extra,
+  });
+  return handlers;
+}
+
+test("F2 — chooseSponsor 2× em paralelo credita o adiantamento uma vez", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000 });
+  const offer = { sponsorId: "x1", name: "Marca X", profile: "A", upfront: 500, weekly: 0, secondHalf: 0, total: 500 };
+  await runExec(db, "UPDATE teams SET sponsor_pending = 1, sponsor_offers = ? WHERE id = 1", [JSON.stringify([offer])]);
+  const game = makeGame(db);
+  const h = fakeSocket(registerSessionSocketHandlers, game, 1);
+  await Promise.all([
+    h.chooseSponsor({ teamId: 1, sponsorId: "x1" }),
+    h.chooseSponsor({ teamId: 1, sponsorId: "x1" }),
+  ]);
+  await drain(game);
+  assert.equal(await budgetOf(db, 1), 1500, "adiantamento creditado uma só vez");
+  const news = await runGet(db, "SELECT COUNT(*) AS n FROM club_news WHERE team_id = 1 AND type = 'sponsor'");
+  assert.equal(news.n, 1, "uma só notícia de patrocinador");
 });

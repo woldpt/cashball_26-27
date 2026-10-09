@@ -1,5 +1,5 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, fetchTopScorers, logClubNews, runRoomTask } from "./coreHelpers";
+import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, fetchTopScorers, logClubNews, runRoomTask, runExec } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, FRIENDLY_ROUND_NAME, SEASON_CALENDAR, AWAY_TICKET_SHARE, loanInstallment, WEEKLY_BASE_INCOME, STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK } from "./gameConstants";
 import { drawOffers, drawOffersAny, sponsorById, SPONSOR_WEEKS } from "./game/sponsors";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
@@ -1798,10 +1798,17 @@ export function registerSessionSocketHandlers(
 			await runRoomTask(game.roomCode, async () => {
 				await dbRunRaw("BEGIN TRANSACTION");
 				try {
-					await dbRunRaw(
-						"UPDATE teams SET sponsor_id = ?, sponsor_profile = ?, sponsor_pending = 0, sponsor_upfront = ?, sponsor_weekly = ?, sponsor_second_half = ?, sponsor_paid_second = 0, sponsor_season = ? WHERE id = ?",
+					// Guarda no próprio UPDATE: um 2.º clique (ou retry) já não
+					// encontra sponsor_pending = 1 e não credita o adiantamento outra vez.
+					const chosen = await runExec(
+						game.db,
+						"UPDATE teams SET sponsor_id = ?, sponsor_profile = ?, sponsor_pending = 0, sponsor_upfront = ?, sponsor_weekly = ?, sponsor_second_half = ?, sponsor_paid_second = 0, sponsor_season = ? WHERE id = ? AND sponsor_pending = 1",
 						[offer.sponsorId, offer.profile, offer.upfront || 0, offer.weekly || 0, offer.secondHalf || 0, game.season, teamId],
 					);
+					if (chosen.changes === 0) {
+						await dbRunRaw("ROLLBACK");
+						return;
+					}
 					if ((offer.upfront || 0) > 0) {
 						await dbRunRaw("UPDATE teams SET budget = budget + ? WHERE id = ?", [offer.upfront, teamId]);
 					}
