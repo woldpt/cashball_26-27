@@ -124,6 +124,11 @@ function LiveFixtureRowInner({
           <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-amber-400 shrink-0">
             <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
             Treinador humano
+            {match.isFriendly && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                🤝 Amigável
+              </span>
+            )}
           </span>
           <span
             className="text-[11px] font-bold text-amber-300/80 truncate"
