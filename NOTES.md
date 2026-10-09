@@ -9,7 +9,7 @@ Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10
 ## Motor: Fase 2 do roadmap tático (2026-10-10)
 - Posse recalculada a cada minuto (estilo, médios, cansaço, jogadores a menos, ímpeto de quem marcou — 8' a ×1,15); NPCs mudam de estilo pelo resultado (46'/70') e fazem trocas (60'/75', guardam 1 para lesões); humanos nunca tocados.
 - Testado: engine-unit 37/37 (U27–U29 falham no código da Fase 1), simulação 8000 jogos (2,50 golos/jogo), own-goal, penalty-ordering, emergency-gk, substitutions, segment-barrier, finalize, ratings, connect-smoke, audits 0 erros, typecheck.
-- ⚠ Por investigar (não é do motor, falha também no HEAD): `test:crash-recovery` S1 "finanças exatas" falha com as salas B8N0ZH/HP9S2L como origem (sempre 534 000 € a mais de despesa); passa com `CRASHTEST_ROOM=GRMTZM`. B8N0ZH foi criada pelo `test:finalize`.
+- ✅ Resolvido (2026-10-10): o `test:crash-recovery` S1 "finanças exatas" falhava com B8N0ZH/HP9S2L porque a conta esperada do teste não incluía os salários dos funcionários (534 000 €/semana nessas salas) nem a prestação do patrocínio; o jogo estava certo. Teste corrigido (e escolha sorteada de patrocinador neutralizada no setup); passa com B8N0ZH, HP9S2L, GRMTZM e uma cópia com patrocínio semanal.
 
 ## Motor: Fase 1 do roadmap tático (2026-10-09)
 - Formação contada no onze real; jogar com 10 custa (oportunidades/defesa); penáltis pelo domínio + GR conta; cartões pela agressividade; lesões pelo cansaço (+ erro: resistência testada num jogador e lesão noutro); golo possível no minuto após golo; `xg` por lance → "Remates"/"Golos esperados" no jogo ao vivo. Plano: `docs/plans/2026-10-09-roadmap-tatica-treinador-bancada.md`.

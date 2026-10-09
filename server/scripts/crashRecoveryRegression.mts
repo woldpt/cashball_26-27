@@ -50,7 +50,9 @@ const { setSeatIntent } = require("../roomStateHelpers") as any;
 
 // Espelho de applyWeeklyFinancesOnce (weeklyFlowHelpers.ts): o delta da 1ª
 // aplicação deve bater EXATAMENTE com esta fórmula — se derivar no server, o
-// teste falha.
+// teste falha. Inclui funcionários (team_staff) e a prestação semanal do
+// patrocínio; a 2.ª tranche (slot 12) não entra porque o S1 usa o slot 2, e a
+// escolha automática de patrocinador (sorteada) é neutralizada no setup do S1.
 const WEEKLY_BASE_INCOME_SQL = `CASE division
   WHEN 1 THEN 80000 WHEN 2 THEN 50000 WHEN 3 THEN 35000
   WHEN 4 THEN 25000 WHEN 5 THEN 20000 ELSE 0 END`;
@@ -66,6 +68,9 @@ const expectedWeeklyDelta = () =>
        - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
        - MIN(${LOAN_DIV_CASE_SQL}, loan_amount)
        - CAST((MAX(0, COALESCE(stadium_capacity, 0) - ${STADIUM_UPKEEP_EXEMPT_SEATS}) * ${STADIUM_UPKEEP_PER_SEAT_WEEK}) AS INTEGER)
+       - (SELECT COALESCE(SUM(salary_weekly), 0) FROM team_staff WHERE team_staff.team_id = teams.id)
+       + CASE WHEN sponsor_season = (SELECT CAST(value AS INTEGER) FROM game_state WHERE key = 'season')
+              THEN COALESCE(sponsor_weekly, 0) ELSE 0 END
      ) AS delta FROM teams`,
   ).then((r) => r[0]?.delta ?? 0);
 const { createWeeklyFlowHelpers } = require("../weeklyFlowHelpers") as any;
@@ -278,6 +283,14 @@ async function main(): Promise<void> {
 
     game = await loadRoom();
     ok(game.calendarIndex === 2, "sala carrega em calendarIndex=2");
+    // Patrocinador por escolher num clube sem humano → escolha sorteada com
+    // prémio de assinatura (imprevisível): fora deste teste de exatidão.
+    await rawExec(
+      dstPath,
+      `UPDATE teams SET sponsor_pending = 0 WHERE id IN (
+         SELECT t.id FROM teams t LEFT JOIN managers m ON t.manager_id = m.id
+         WHERE t.sponsor_pending = 1 AND COALESCE(m.is_human, 0) = 0)`,
+    );
     const B0 = await sumBudget();
     const news0 = await newsCount("weekly_income");
     const wagesNews0 = await newsCount("wages");
