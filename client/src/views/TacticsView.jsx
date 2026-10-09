@@ -923,7 +923,8 @@ export function TacticsView() {
 
   const myReady = players.find((p) => p.name === me?.name)?.ready;
   const isHalftime = showHalftimePanel && !isPlayingMatch;
-  const isPreExtraTime = isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
+  const isFriendlyNext = !!nextMatchSummary?.isFriendly;
+  const isPreExtraTime = isHalftime && isCupMatch && !isFriendlyNext && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
   const isEliminatedCupSpectator =
     nextMatchSummary?.isCup && !nextMatchOpponent;
   // Sem jogo neste gate (eliminado, ou fora do prolongamento por já ter ganho):
@@ -961,7 +962,7 @@ export function TacticsView() {
     ? "⏳ A aguardar..."
     : isPreExtraTime
       ? "Ir para prolongamento"
-      : isHalftime && isCupMatch
+      : isHalftime && isCupMatch && !isFriendlyNext
         ? "2ª Parte — Taça"
         : isHalftime
           ? "2ª Parte"

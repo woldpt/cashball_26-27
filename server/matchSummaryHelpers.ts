@@ -932,6 +932,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         matchweek: game.matchweek,
         isCup: true,
         fixtureKey: `${cupMatch.home_team_id}-${cupMatch.away_team_id}`,
+        isFriendly: isFriendly || weekFriendly,
         cupRound: currentEntry.round,
         cupRoundName: weekFriendly ? "Amigável" : currentEntry.roundName,
         venue,

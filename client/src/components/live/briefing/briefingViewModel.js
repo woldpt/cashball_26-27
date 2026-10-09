@@ -145,6 +145,7 @@ export function buildBriefingViewModel(s, teamInfo) {
     hasOpponent,
     isHome,
     isCup: !!s.isCup,
+    isFriendly: !!s.isFriendly,
     cupRound: s.cupRound ?? null,
     spyGames: Array.isArray(s.roundFixtures) ? s.roundFixtures : [],
     venue: s.venue ?? null,

@@ -75,7 +75,7 @@ export const DuelHero = memo(function DuelHero({ vm, coachOf, onOpenTeamSquad })
           <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
             <span aria-hidden>📋</span> Briefing · {vm.competition}
           </span>
-          {vm.isCup && vm.cupRound === 0 ? (
+          {vm.isFriendly ? (
             <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
               <span aria-hidden>🤝</span> Amigável
             </span>
