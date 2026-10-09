@@ -1,3 +1,8 @@
+## Auditoria financeira — prompt p/ Opus (2026-10-09)
+- Guardado o prompt de auditoria financeira (10 cenários: renda em dobro, salário de vendido, leilão, patrocínio, empréstimo, despedida) em `docs/plans/2026-10-09-auditoria-financas-economia.md`.
+- Porquê: relatório de corrupção silenciosa de estado (pagamentos duplos/orçamento dessincronizado) antes de tocar no código financeiro.
+- Segue: correr com o Opus → relatório → plano de execução no estilo dos outros de `docs/plans/`.
+
 ## Camisola do adversário sem patrocinador (2026-10-09)
 - Bug: no Briefing o logótipo do patrocinador aparecia na nossa camisola mas não na do adversário, porque o resumo do adversário (`buildOpponentSummary` em `matchSummaryHelpers.ts`) não levava `sponsorBrand`.
 - Fix: `withSponsorBrand` (coreHelpers.ts, agora exportada) aplicado ao adversário; cobre liga e taça.
