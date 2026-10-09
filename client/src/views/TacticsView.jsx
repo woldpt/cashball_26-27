@@ -336,6 +336,7 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
         )}
       </span>
       <BadgeSkills
+        size="sm"
         skill={player.skill}
         resistance={player.resistance}
         form={player.form}
