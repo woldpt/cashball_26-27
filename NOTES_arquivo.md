@@ -2,6 +2,12 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Push: avisos com contexto, duráveis e com interruptor (2026-10-04)
+- `push.ts` ganha tipos (`waiting|auction|matchday|invite`), sempre só para ausentes, cooldown de 5 min por `(treinador, tipo, sala)` na BD (`push_throttle`), preferências em `push_prefs` (rotas `/api/push/prefs`, nome pela sessão/Bearer), 1 retry em falha transitória (respeita `Retry-After`), tecto de 10 subscrições por treinador + purga aos 180 dias, contadores em `/health`.
+- Gatilhos novos: sala parada à tua espera (`maybeNotifyWaiting` no `checkAllReady`, na barreira dos minutos, no intervalo, no prolongamento e no `waitForMatchAction`), ultrapassado num leilão, fim de jornada com resultado + posição, e convite para quem está offline (antes o socket falhava com «já não está online»).
+- Cliente: `sw.v10.js` (tag `<tipo>:<sala>`, navega para o deep link `/?room=`, `pushsubscriptionchange`), re-registo da subscrição no arranque, interruptores por tipo no painel Avisos; o painel passa a mudar o texto-base (antes só falava do lobby).
+- Verificação: `test:push` 12 testes · server `typecheck` + `test:connect-smoke` + `test:session-freeze` + `test:engine-unit` + `test:segment-barrier` + `cupLobbyAdvanceRegression` + `audit:socketio` 0 erros · client `lint` + `check:types` · `test:mobile` 185/185 + screenshots do painel · `audit:gamestate` sem sala viva fica para a próxima.
+
 ## Deploy v26.10.35 no rick (2026-10-08)
 - Push + tag `v26.10.35` + rebuild; J1 da época 2 de PYG2GT reposta em `matches` a partir de `allMatchResults` (só resultados; backup `game_PYG2GT.db.bak-20261008-J1`).
 

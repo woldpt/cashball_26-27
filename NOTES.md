@@ -1,3 +1,7 @@
+## Deploy v26.10.38 no rick (2026-10-10)
+Push, tag e rebuild feitos; backend Healthy.
+Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10, xG, posse viva, ímpeto, NPCs que gerem o jogo, duelo, pressão, conversa ao intervalo, ordens).
+
 ## Motor: Fase 3 do roadmap tático (2026-10-10)
 - Duelo de formações (linhas reais: médios a mais → posse; avançados vs sobra de defesas → finalização), pressão alta/média/baixa, conversa ao intervalo e até 2 ordens programadas (aplicadas pelo servidor só a humanos; evento `order` alinha a tática do cliente). UI: Tática (duelo, pressão, "Ordens para o jogo") e Intervenção (pressão + conversa só no intervalo).
 - Testado: engine-unit 41/41 (U30–U33 falham no código da Fase 2), simulação 8000 jogos (2,52 golos/jogo), own-goal, penalty-ordering, emergency-gk, substitutions, segment-barrier, finalize, ratings, connect-smoke, session-freeze, crash-recovery (GRMTZM), audits 0 erros, typecheck; client lint + check:types + test:mobile 195/195 + screenshots 320/360/390/1440 vistos. Validação do setTactic sem teste automático.
@@ -139,9 +143,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Bug: no Briefing pré-jogo (<`lg`) o cartão «Confronto tático em campo» só mostrava o cabeçalho — o wrapper do `OpponentFormation` só tinha `min-h` e o `PitchFormation` é `h-full` com conteúdo `absolute` (colapsava a 0px; em `lg` o cartão é flex column e `flex-1` dava altura).
 - Fix (plano `docs/plans/briefing-pitch-mobile.md`): wrapper passa a `h-80 short:h-56` em mobile e `lg:h-auto lg:flex-1` em desktop — altura definida → `h-full` do filho resolve. `PitchFormation` e `MatchBriefing` intactos.
 - Verificação: `check:types` 0 · `lint` 0 no ficheiro (3 erros pré-existentes noutros) · `build` OK · `test:mobile -- briefing-resp-test` PASS 360/390 · screenshots full-page 360/390 lidos (relvado com os 11 nas 4 linhas; desktop CSS idêntico ao anterior).
-
-## Push: avisos com contexto, duráveis e com interruptor (2026-10-04)
-- `push.ts` ganha tipos (`waiting|auction|matchday|invite`), sempre só para ausentes, cooldown de 5 min por `(treinador, tipo, sala)` na BD (`push_throttle`), preferências em `push_prefs` (rotas `/api/push/prefs`, nome pela sessão/Bearer), 1 retry em falha transitória (respeita `Retry-After`), tecto de 10 subscrições por treinador + purga aos 180 dias, contadores em `/health`.
-- Gatilhos novos: sala parada à tua espera (`maybeNotifyWaiting` no `checkAllReady`, na barreira dos minutos, no intervalo, no prolongamento e no `waitForMatchAction`), ultrapassado num leilão, fim de jornada com resultado + posição, e convite para quem está offline (antes o socket falhava com «já não está online»).
-- Cliente: `sw.v10.js` (tag `<tipo>:<sala>`, navega para o deep link `/?room=`, `pushsubscriptionchange`), re-registo da subscrição no arranque, interruptores por tipo no painel Avisos; o painel passa a mudar o texto-base (antes só falava do lobby).
-- Verificação: `test:push` 12 testes · server `typecheck` + `test:connect-smoke` + `test:session-freeze` + `test:engine-unit` + `test:segment-barrier` + `cupLobbyAdvanceRegression` + `audit:socketio` 0 erros · client `lint` + `check:types` · `test:mobile` 185/185 + screenshots do painel · `audit:gamestate` sem sala viva fica para a próxima.
