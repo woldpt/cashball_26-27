@@ -1,3 +1,8 @@
+## Vento mais realista (2026-10-09)
+- Rajadas (`WeatherOverlay.jsx` + `wx-blow`): comprimento, inclinação e intensidade próprios, trajetória com ondulação; faixas de luz a deslizar pelo relvado (`.wx-vento`, só com movimento). Estádio (`StadiumIllustration.jsx`): bandeiras a bater com vento em qualquer mood; nuvens a deslizar (cópia para o ciclo não saltar).
+- Porquê: as rajadas eram riscos retos e iguais, e nada no estádio reagia ao vento.
+- Testado: client `lint`, `check:types`, `test:stadium`, `test:weather` e `test:mobile stadium-resp-test` (PASS nos 5 widths; aviso de consola `resErr` variável também no HEAD). Captura antes/depois do Chromium; movimento das nuvens e bandeiras só verificado pelo CSS, não numa captura em vídeo.
+
 ## Versão do build na barra lateral (2026-10-09)
 - `Sidebar.jsx`: `APP_VERSION` no fundo da barra (`text-outline-variant`, 10px); escondida com a barra encolhida (não cabe em 3.5rem).
 - Porquê: ver a versão em uso sem ir à página de entrada.

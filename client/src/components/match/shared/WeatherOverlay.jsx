@@ -39,6 +39,10 @@ export function WeatherOverlay({ emoji, condition, fullscreen = false }) {
       delay: `${(-seeded(i, 2) * 6).toFixed(2)}s`,
       dur: `${(0.5 + seeded(i, 3) * 0.6).toFixed(2)}`,
       size: (0.6 + seeded(i, 5) * 0.8).toFixed(2),
+      /* Vento: cada rajada com comprimento, inclinação e intensidade próprios (fortes e fracas). */
+      len: `${(60 + seeded(i, 6) * 140).toFixed(0)}px`,
+      tilt: `${(-3 + seeded(i, 7) * 9).toFixed(1)}deg`,
+      peak: (0.4 + seeded(i, 8) * 0.6).toFixed(2),
     }));
   }, [spec]);
 
@@ -64,6 +68,9 @@ export function WeatherOverlay({ emoji, condition, fullscreen = false }) {
             animationDelay: p.delay,
             "--wx-dur": p.dur,
             "--wx-size": p.size,
+            "--wx-len": p.len,
+            "--wx-tilt": p.tilt,
+            "--wx-peak": p.peak,
           }}
         />
       ))}

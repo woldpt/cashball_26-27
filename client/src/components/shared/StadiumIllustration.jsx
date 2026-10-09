@@ -309,6 +309,8 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const CLOUD_OP = night ? 0.5 : overcast ? 0.95 : 0.85;
   // Vento estica as nuvens; o céu encoberto engrossa-as.
   const cloudScale = weather === "vento" ? [1.8, 0.7] : overcast ? [1.6, 1.5] : [1, 1];
+  // Sentido em que o vento leva as nuvens no ecrã (o céu está espelhado com o sol à esquerda).
+  const cloudDir = sunLeft ? -1 : 1;
   const HILL_OP = night ? 0.75 : 0.38;
   const HILL_OP_NEAR = night ? 0.9 : 0.55;
   const CONCRETE_HI = night ? "#7f8fa6" : "#cbd5e1";
@@ -729,13 +731,24 @@ export const StadiumIllustration = memo(function StadiumIllustration({
           [[140, 66, 36, 10], [168, 60, 24, 8]],
           [[430, 62, 30, 8], [452, 57, 20, 7]],
           [[620, 72, 26, 7]],
-        ].map((group, gi) => (
-          <g key={`cloud-${gi}`} transform={seed == null ? undefined : `translate(${((style(5 + gi) - 0.5) * 140).toFixed(1)} 0)`}>
-            {group.map(([cx, cy, rx, ry]) => (
-              <ellipse key={cx} cx={cx} cy={cy} rx={rx * cloudScale[0]} ry={ry * cloudScale[1]} />
-            ))}
-          </g>
-        ))}
+        ].map((group, gi) => {
+          const shapes = group.map(([cx, cy, rx, ry]) => (
+            <ellipse key={cx} cx={cx} cy={cy} rx={rx * cloudScale[0]} ry={ry * cloudScale[1]} />
+          ));
+          return (
+            <g key={`cloud-${gi}`} transform={seed == null ? undefined : `translate(${((style(5 + gi) - 0.5) * 140).toFixed(1)} 0)`}>
+              {weather === "vento" ? (
+                <g className="stadium-cloud-drift" style={{ animationDuration: `${80 + gi * 20}s`, "--cloud-dir": cloudDir }}>
+                  {/* Cópia uma largura de céu atrás: quando a original sai, a cópia entra. */}
+                  <g transform={`translate(${-cloudDir * W} 0)`}>{shapes}</g>
+                  {shapes}
+                </g>
+              ) : (
+                shapes
+              )}
+            </g>
+          );
+        })}
       </g>
       {/* Colinas ao longe (silhuetas com base escondida atrás do recinto) + haze */}
       <path d="M -20 164 Q 130 76 280 164 Z" fill={HILL_FAR} opacity={HILL_OP} />
@@ -927,12 +940,12 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         </g>
       )}
 
-      {/* ── Festa: bandeiras à frente da cobertura (só mood em alta) ── */}
-      {moodBand === "high" &&
+      {/* ── Festa (mood em alta) ou vento: bandeiras à frente da cobertura ── */}
+      {(moodBand === "high" || weather === "vento") &&
         flags.map((f, i) => (
           <g key={`flag-${i}`}>
             <line x1={f.fx} y1={f.fy} x2={f.fx} y2={f.fy - 30} stroke="#cbd5e1" strokeWidth="2" />
-            <g className="stadium-flag-wave" style={{ animationDelay: `${f.delay.toFixed(2)}s` }}>
+            <g className={weather === "vento" ? "stadium-flag-gust" : "stadium-flag-wave"} style={{ animationDelay: `${f.delay.toFixed(2)}s` }}>
               <polygon
                 points={`${f.fx},${f.fy - 30} ${f.fx + 24},${f.fy - 25} ${f.fx},${f.fy - 19}`}
                 fill={f.fill}

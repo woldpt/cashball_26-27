@@ -710,6 +710,33 @@ body {
   transform-origin: left center;
   animation: stadium-flag-wave 0.9s ease-in-out infinite alternate;
 }
+/* Vento: bandeira mais aberta e a bater mais depressa que na festa. */
+@keyframes stadium-flag-gust {
+  from {
+    transform: skewY(-12deg);
+  }
+  to {
+    transform: skewY(10deg);
+  }
+}
+.stadium-flag-gust {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: stadium-flag-gust 0.55s ease-in-out infinite alternate;
+}
+/* Nuvens do vento: cópia deslocada de uma largura do céu (viewBox 800) para o ciclo fechar sem salto.
+   A direção (--cloud-dir) acompanha o espelho do céu quando o sol está à esquerda. */
+@keyframes stadium-cloud-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(var(--cloud-dir, 1) * 800px));
+  }
+}
+.stadium-cloud-drift {
+  animation: stadium-cloud-drift 80s linear infinite;
+}
 /* Meteo: o padrão tem período 20 (user units) — deslizar 20 fecha o ciclo. */
 @keyframes stadium-fall {
   from {
@@ -731,7 +758,9 @@ body {
   .stadium-weed,
   .stadium-sway,
   .stadium-flicker,
-  .stadium-flag-wave {
+  .stadium-flag-wave,
+  .stadium-flag-gust,
+  .stadium-cloud-drift {
     animation: none;
   }
 }
@@ -879,7 +908,7 @@ body {
 .wx-vento { background: linear-gradient(100deg, rgba(200, 215, 230, 0.06), transparent 60%); }
 .wx-gust {
   position: absolute;
-  width: calc(120px * var(--wx-size, 1));
+  width: calc(var(--wx-len, 120px) * var(--wx-size, 1));
   height: 2px;
   border-radius: 9999px;
   background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.45) 60%, transparent);
@@ -900,13 +929,21 @@ body {
   50% { transform: translate(14px, 60vh); }
   100% { transform: translate(-6px, 120vh); }
 }
-/* Rajada atravessa a camada toda com ligeira ondulação e fade nas pontas. */
+/* Rajada atravessa a camada toda: sobe e desce como o ar em turbilhão, inclinada
+   pela direção do vento, com fade nas pontas e intensidade própria (--wx-peak). */
 @keyframes wx-blow {
-  0% { transform: translate(-30vw, 0); opacity: 0; }
-  15% { opacity: 0.7; }
-  50% { transform: translate(50vw, -14px); }
-  85% { opacity: 0.7; }
-  100% { transform: translate(130vw, 8px); opacity: 0; }
+  0% { transform: translate(-30vw, 0) rotate(var(--wx-tilt, 0deg)); opacity: 0; }
+  12% { opacity: var(--wx-peak, 0.7); }
+  30% { transform: translate(-6vw, -12px) rotate(var(--wx-tilt, 0deg)); }
+  50% { transform: translate(26vw, 10px) rotate(var(--wx-tilt, 0deg)); }
+  70% { transform: translate(60vw, -16px) rotate(var(--wx-tilt, 0deg)); opacity: var(--wx-peak, 0.7); }
+  88% { opacity: var(--wx-peak, 0.7); }
+  100% { transform: translate(130vw, 4px) rotate(var(--wx-tilt, 0deg)); opacity: 0; }
+}
+/* Faixas de luz que deslizam devagar pelo relvado (o vento a passar por cima da erva). */
+@keyframes wx-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
 @keyframes wx-fog-drift {
   0% { transform: translateX(-18%) scale(0.9); opacity: 0.5; }
@@ -935,6 +972,18 @@ body {
   .wx-gust {
     left: 0 !important;
     animation: wx-blow calc(var(--wx-dur) * 3s) ease-in-out infinite;
+  }
+  .wx-vento::before,
+  .wx-vento::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(214, 255, 170, 0.08) 50%, transparent 70%);
+    animation: wx-sweep 11s linear infinite;
+  }
+  .wx-vento::after {
+    animation-duration: 17s;
+    animation-delay: -6s;
   }
   .wx-sol::before { animation: wx-sun-spin 60s linear infinite; }
   .wx-sol { animation: wx-sun-pulse 7s ease-in-out infinite alternate; transform-origin: 15% 0%; }
