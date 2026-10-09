@@ -1,12 +1,13 @@
-// TacticsView harness — renders the REAL TacticsView (prep phase, empty game
-// state) inside the real GameProvider + TacticsProvider. NOT part of the app;
+// TacticsView harness — renders the REAL TacticsView com um plantel de teste
+// (11 titulares + banco + lesionado) dentro do GameProvider + TacticsProvider reais.
+// NOT part of the app;
 // used only for mobile responsiveness verification (see .pi/skills/mobile-resp-check).
 import { createRoot } from "react-dom/client";
 import { useEffect } from "react";
 /* eslint-disable react-refresh/only-export-components -- harness de teste sem exports */
 import "./src/index.css";
 import { GameContext, GameProvider, useGame } from "./src/contexts/GameContext.jsx";
-import { TacticsProvider, useTactics } from "./src/contexts/TacticsContext.jsx";
+import { TacticsProvider } from "./src/contexts/TacticsContext.jsx";
 import { TacticsView } from "./src/views/TacticsView.jsx";
 
 const noop = () => {};
@@ -36,10 +37,43 @@ function SeedNextMatch({ children }) {
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
 
-/** Salta a fase briefing (default) → vista de táticas. */
-function SeedPrepPhase() {
-  const { setPrepPhase } = useTactics();
-  useEffect(() => setPrepPhase("tactics"), [setPrepPhase]);
+
+/* Plantel de teste: 11 titulares + 7 suplentes + 2 de fora, com os nomes mais
+ * compridos e os estados difíceis (lesão, suspensão, estrela, júnior). */
+const NAMES = [
+  "Manuel José Carlos Ferreira", "Rui Pinto", "Alexandros Konstantinopoulos", "João",
+  "Bruno Miguel Fernandes da Silva", "Tiago", "Duarte Faria", "Hélio Ramos",
+  "Sérgio Tavares", "André Lopes", "Leandro Moura", "Nuno Martins", "Ricardo Gomes",
+  "Vasco Pinto", "Ivo Cardoso", "Tomás Silva", "Pedro Miguel Fernandes Alves",
+  "Santos", "Rocha", "Alves",
+];
+const POS = ["GR", "GR", "DEF", "DEF", "DEF", "DEF", "MED", "MED", "MED", "MED", "ATA", "ATA", "ATA", "DEF", "MED", "GR", "ATA", "MED", "DEF", "ATA"];
+const SQUAD = NAMES.map((name, i) => ({
+  id: i + 1, name, position: POS[i], nationality: "🇵🇹", skill: 30 + i, age: 24,
+  form: 100, resistance: 3, morale: 25, aggressiveness: 50, value: 200000, wage: 8000,
+  goals: 2, games_played: 12, is_star: i === 2, isJunior: i === 1, isUnavailable: false,
+  transfer_status: "none", contract_start_epoch: 0, suspension_until_matchweek: 0,
+  injury_until_matchweek: i === 15 ? 99 : 0, transfer_cooldown_until_matchweek: 0,
+}));
+// Titulares: 1 GR, 4 DEF, 4 MED, 2 ATA (4-4-2); suplentes: os 7 seguintes disponíveis.
+const TIT = [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const SUB = [2, 13, 14, 15, 17, 18, 19];
+
+/** Semeia plantel + 11 inicial + banco no GameContext (o Provider real não expõe o estado de fora). */
+function SeedSquad() {
+  const { setMySquad, setTactic } = useGame();
+  useEffect(() => {
+    setMySquad(SQUAD);
+    setTactic((t) => ({
+      ...t,
+      formation: "4-4-2",
+      positions: Object.fromEntries([
+        ...TIT.map((id) => [id, "Titular"]),
+        ...SUB.map((id) => [id, "Suplente"]),
+        ...SQUAD.filter((p) => !TIT.includes(p.id) && !SUB.includes(p.id)).map((p) => [p.id, "Excluído"]),
+      ]),
+    }));
+  }, [setMySquad, setTactic]);
   return null;
 }
 
@@ -57,7 +91,7 @@ createRoot(document.getElementById("root")).render(
   >
     <SeedNextMatch>
       <TacticsProvider>
-        <SeedPrepPhase />
+        <SeedSquad />
         <div className="min-h-screen bg-surface p-4 lg:p-6">
           <TacticsView />
         </div>
@@ -110,33 +144,8 @@ function measure() {
 }
 
 setTimeout(() => {
-  // Reproduce the PRODUCTION mobile row: in-game the MORAL card sits
-  // side-by-side with the Mentalidade card (both flex-1). The harness has no
-  // nextMatchSummary, so inject a look-alike MORAL card in the mobile row
-  // before measuring. Desktop needs no fake: the Moral + Mentalidade cell
-  // always renders there — morale only adds height, never width.
-  const FAKE = {
-      cls: "flex-1 min-w-0 flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden",
-      html: '<div class="shrink-0 flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]"><span class="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Moral</span><span class="text-[9px] font-black uppercase text-red-400">Baixa</span></div><div class="flex flex-1 flex-col items-center justify-center gap-2.5 px-4 pb-3"><span class="text-[38px] leading-none font-black tabular-nums text-red-400">32</span><div class="h-2 w-full bg-[#1a1a1a] rounded-full overflow-hidden"><div class="h-full w-[32%] bg-red-500 rounded-full"></div></div></div>',
-  };
-  for (const header of [...document.querySelectorAll("span")]) {
-    if (header.textContent?.trim().toLowerCase() !== "mentalidade") continue;
-    const card = header.parentElement?.parentElement;
-    const row = card?.parentElement;
-    if (!card || !row || row.querySelector('[data-morale-fake]')) continue;
-    if (/hidden xl:flex/.test(row.className)) continue;
-    const fake = FAKE;
-    const morale = document.createElement("div");
-    morale.setAttribute("data-morale-fake", "1");
-    morale.className = fake.cls;
-    morale.innerHTML = fake.html;
-    row.insertBefore(morale, card);
-  }
-
-  setTimeout(() => {
-    const report = measure();
-    const el = document.getElementById("report");
-    el.setAttribute("data-status", "done");
-    el.textContent = "REPORT:" + JSON.stringify(report, null, 2);
-  }, 400);
-}, 2500);
+  const report = measure();
+  const el = document.getElementById("report");
+  el.setAttribute("data-status", "done");
+  el.textContent = "REPORT:" + JSON.stringify(report, null, 2);
+}, 2900);

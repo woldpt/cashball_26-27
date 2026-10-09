@@ -104,7 +104,7 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 | `stadium-resp-test.html` | `components/shared/StadiumIllustration.jsx` |
 | `stadiumtab-resp-test.html` | `views/StadiumTab.jsx` |
 | `standings-resp-test.html` | `components/ui/LeagueStandings.jsx` |
-| `tactics-resp-test.html` | `views/TacticsView.jsx` (⚠ renderiza em branco sem estado de jogo — o PASS não prova nada) |
+| `tactics-resp-test.html` | `views/TacticsView.jsx` |
 | `teamhistory-resp-test.html` | `views/TeamHistoryView.jsx` |
 | `teamsquad-resp-test.html` | `views/OtherSquadsTab.jsx` |
 | `topwidgets-resp-test.html` | widgets de topo (SummaryWidget e irmãos) sobre várias tabs (precisa de `GameProvider` + `TacticsProvider`) |
