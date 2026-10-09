@@ -1,5 +1,5 @@
 /**
- * Panel — painel de conteúdo com header padronizado (STYLE.md §3).
+ * Panel — painel de conteúdo com header padronizado (STYLE.md §4).
  *
  * Container canónico: `bg-surface-container rounded-md overflow-hidden`
  * com header `px-5 py-4 bg-surface-container-high/50` e título
