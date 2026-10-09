@@ -1,7 +1,7 @@
-## Auditoria financeira — prompt p/ Opus (2026-10-09)
-- Guardado o prompt de auditoria financeira (10 cenários: renda em dobro, salário de vendido, leilão, patrocínio, empréstimo, despedida) em `docs/plans/2026-10-09-auditoria-financas-economia.md`.
-- Porquê: relatório de corrupção silenciosa de estado (pagamentos duplos/orçamento dessincronizado) antes de tocar no código financeiro.
-- Segue: correr com o Opus → relatório → plano de execução no estilo dos outros de `docs/plans/`.
+## Guardas financeiras contra pagamentos duplos (2026-10-09)
+- Auditoria (`docs/plans/2026-10-09-auditoria-financas-economia.md`) → plano `2026-10-09-guardas-financas.md`, aplicado todo: leilão já pago não volta a pagar após reinício (guarda `transfer_status='auction'` + `saveGameState` no fecho), `chooseSponsor`/`fireStaff` sem duplo crédito, `buyPlayer` só listagem fixa e com `budget >= ?`, compras NPC numa transação na fila da sala, prémios de fim de época atómicos com o marcador.
+- Pontas: renda semanal não cobra se o marcador não se lê; teto de empréstimo 2,5M real (+ botão); lances do treinador despedido retirados; `audit:gamestate` com 4 verificações novas.
+- Testado: novo `test:finance-guards` (F1–F6, cada um falha no código antigo), typecheck, crash-recovery, topscorer, sponsor, staff, connect-smoke, npc-bid-window, room-tx, testes de despedimento, finalize E2E; client lint + check:types.
 
 ## Camisola do adversário sem patrocinador (2026-10-09)
 - Bug: no Briefing o logótipo do patrocinador aparecia na nossa camisola mas não na do adversário, porque o resumo do adversário (`buildOpponentSummary` em `matchSummaryHelpers.ts`) não levava `sponsorBrand`.
