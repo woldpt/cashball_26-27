@@ -98,36 +98,27 @@ function StubRail() {
   );
 }
 
-/** Barra inferior mobile (<lg): jornal + grupos + FAB de jogar. */
+/** Barra inferior mobile (<lg), como a MobileNav: Jornal | Gestão | JOGAR (redondo) | Compet. | Transfer. */
 function StubBottomNav() {
+  const cell = "flex-1 flex items-center justify-center text-[10px]";
   return (
     <>
       <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-high/95 z-40 flex items-stretch">
-        <div
-          data-tour="nav-jornal-mobile"
-          className="flex-1 flex items-center justify-center text-[10px]"
-        >
-          Jornal
+        <div data-tour="nav-jornal-mobile" className={cell}>Jornal</div>
+        <div data-tour="nav-gestao" className={cell}>Gestão</div>
+        <div className="flex-1 flex items-center justify-center">
+          <div
+            data-tour="nav-play-mobile"
+            className="mb-2.5 w-14 h-14 rounded-full bg-primary text-on-primary text-[9px] font-black uppercase flex items-center justify-center"
+          >
+            Jogar
+          </div>
         </div>
-        <div
-          data-tour="nav-gestao"
-          className="flex-1 flex items-center justify-center text-[10px]"
-        >
-          Gestão
-        </div>
-        <div
-          data-tour="nav-transferencias"
-          className="flex-1 flex items-center justify-center text-[10px]"
-        >
-          Transfer.
-        </div>
+        <div data-tour="nav-competicao" className={cell}>Compet.</div>
+        <div data-tour="nav-transferencias" className={cell}>Transfer.</div>
       </div>
       {/* Rodapé Notícias CM (`bottom-16 h-8`), como na app. */}
       <div className="lg:hidden fixed bottom-16 left-0 right-0 h-8 bg-black/80 z-30" />
-      <button
-        data-tour="tactic-play-fab"
-        className="xl:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-green-500"
-      />
     </>
   );
 }
