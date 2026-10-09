@@ -623,7 +623,7 @@ export const MATCH_TUNING = {
   awayGoalFactor: 0.92,
   // Posse (hatrick-style): médios decidem a repartição das chances, fixada
   // no apito inicial. 50% ± diferença de médios × possePorPonto + estilo.
-  chancesTotal: 31.2, // chances/jogo no total, divididas pela posse (+4%: compensa o minuto sem golo após um golo)
+  chancesTotal: 30.7, // chances/jogo no total, divididas pela posse (compensa o minuto a meio gás após um golo — goalAfterGoalChanceMult)
   possePerPoint: 0.014, // 10 pts de diferença de médios ≈ 14pp de posse (antes 7.5pp — o gap de qualidade não se via nas chances)
   posseStyleDefensiva: 0.02, // estilo inclina: OFENSIVO + / DEFENSIVO −
   // Conversão de chance: p = base × ATA/(ATA + defWeight×(DEF+GR)).
@@ -637,6 +637,15 @@ export const MATCH_TUNING = {
   // Chance sem golo: repartição (cumulativo) GR defende · poste · resto ao lado.
   chanceSaveShare: 0.55,
   chancePostShare: 0.7,
+  // Minuto a seguir a um golo: metade das oportunidades (antes zero — o golo
+  // de resposta imediata existe no futebol real).
+  goalAfterGoalChanceMult: 0.5,
+  // Inferioridade numérica (expulsão, lesão sem troca), POR jogador a menos:
+  // menos oportunidades próprias, mais para o adversário, defesa mais curta.
+  // Com 10: marca ~-18%, sofre ~+28%.
+  shortHandedOwnChanceMult: 0.82,
+  shortHandedOppChanceMult: 1.2,
+  shortHandedDefenseMult: 0.9,
   // Prolongamento (91'–120'): sem o pico de 1.62 dos 86'–90'. Medido com
   // 1500 jogos (harness): 1.62 → 1.17 golos/ET e 70% dos ET decididos; a 1.0
   // ficam 0.72 golos/ET e 51% decididos no ET (49% para penáltis).
@@ -672,6 +681,10 @@ export const MATCH_TUNING = {
   cardAggPerPoint: 0.01,
   secondYellowRedShare: 0.15,
   directRedShare: 0.005,
+  // Quem leva o cartão: peso = agressividade individual; o GR raramente.
+  cardGrWeight: 0.3,
+  // Quem se lesiona: peso = 1 + este fator × pontos de cansaço no jogo.
+  injuryFatigueWeightPerPoint: 0.3,
   // Lesões: ~0.3% por minuto (antes do multiplicador de clima). Alvo: poucas
   // por época; clima adverso agrava.
   injuryPerMinute: 0.003,

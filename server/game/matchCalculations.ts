@@ -5,8 +5,10 @@ import { MAX_BENCH_SIZE, FORM_NEUTRAL, MORALE_NEUTRAL, MATCH_TUNING, CUP_FINAL_R
 
 type PlayerRow = any;
 
+/** Batedor automático: o melhor jogador de campo (o GR só se não houver mais ninguém). */
 export function selectPenaltyTaker(squad: PlayerRow[] = []) {
-  return pickBestPlayer(squad) || null;
+  const outfield = squad.filter((p) => p.position !== "GR");
+  return pickBestPlayer(outfield.length ? outfield : squad) || null;
 }
 
 export function clampSkill(value: number) {
@@ -350,6 +352,10 @@ export type SidePower = {
   style: string;
   squad: PlayerRow[];
   midStrength: number;
+  /** Formação jogada de facto (ver effectiveFormation). */
+  formation: string;
+  /** Jogadores a menos em campo (0 com 11). */
+  missing: number;
 };
 
 /**
@@ -375,6 +381,44 @@ export function crowdFactorForOccupancy(
   return 1;
 }
 
+// Abaixo disto o onze está incompleto (testes, chamadas parciais): fica a
+// formação declarada e não se conta inferioridade numérica.
+const MIN_FIELD_FOR_SHAPE = 7;
+
+/**
+ * Formação jogada DE FACTO: contada no onze em campo (DEF-MED-ATA), não a
+ * declarada — declarar 5-4-1 e jogar com 5 avançados já não dá a defesa do
+ * 5-4-1. Fora da tabela (2-3-5, ou com 10 em campo) → a formação conhecida
+ * mais próxima; em empate, a declarada, depois a de nº de avançados mais parecido.
+ */
+export function effectiveFormation(squad: PlayerRow[], declared: string): string {
+  const n = { DEF: 0, MED: 0, ATA: 0 };
+  for (const p of squad) if (p.position in n) n[p.position]++;
+  if (n.DEF + n.MED + n.ATA < MIN_FIELD_FOR_SHAPE) return declared;
+  const key = `${n.DEF}-${n.MED}-${n.ATA}`;
+  if (FORMATION_ATTACK_FACTORS[key] != null) return key;
+  const rank = (f: string) => {
+    const [d, m, a] = f.split("-").map(Number);
+    return [
+      Math.abs(d - n.DEF) + Math.abs(m - n.MED) + Math.abs(a - n.ATA),
+      f === declared ? 0 : 1,
+      Math.abs(a - n.ATA),
+    ];
+  };
+  return [...FORMATIONS].sort((x, y) => {
+    const [rx, ry] = [rank(x), rank(y)];
+    return rx[0] - ry[0] || rx[1] - ry[1] || rx[2] - ry[2];
+  })[0];
+}
+
+/** Multiplicador das oportunidades de um lado pela inferioridade numérica (dos dois lados). */
+export function shortHandedChanceMult(ownMissing = 0, oppMissing = 0): number {
+  return (
+    MATCH_TUNING.shortHandedOwnChanceMult ** ownMissing *
+    MATCH_TUNING.shortHandedOppChanceMult ** oppMissing
+  );
+}
+
 export function computeSidePower(
   squad: PlayerRow[],
   tactic: { formation?: string; style?: string } | null,
@@ -382,8 +426,13 @@ export function computeSidePower(
   familiarityBonus = 0,
   crowdFactor = 1,
 ): SidePower {
-  const formation = String(tactic?.formation || "4-4-2");
+  const declared = String(tactic?.formation || "4-4-2");
+  const formation = effectiveFormation(squad, declared);
+  // A familiaridade é da formação treinada: só conta se for a que se joga.
+  if (formation !== declared) familiarityBonus = 0;
   const style = normaliseStyle(tactic?.style);
+  // Jogadores a menos (expulsão, lesão sem troca). Onze incompleto → 0.
+  const missing = squad.length >= MIN_FIELD_FOR_SHAPE + 1 ? Math.max(0, 11 - squad.length) : 0;
 
   const midfielders = squad.filter((p) => p.position === "MED");
   const forwards = squad.filter((p) => p.position === "ATA");
@@ -446,10 +495,13 @@ export function computeSidePower(
       STYLE_DEFENSE_FACTORS[style] *
       formFactor *
       familiarityDefenseFactor *
-      crowdDefenseFactor,
+      crowdDefenseFactor *
+      MATCH_TUNING.shortHandedDefenseMult ** missing,
     style,
     squad,
     midStrength: avgMidfielderQuality,
+    formation,
+    missing,
   };
 }
 

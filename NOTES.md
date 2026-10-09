@@ -1,3 +1,7 @@
+## Motor: Fase 1 do roadmap tático (2026-10-09)
+- Formação contada no onze real; jogar com 10 custa (oportunidades/defesa); penáltis pelo domínio + GR conta; cartões pela agressividade; lesões pelo cansaço (+ erro: resistência testada num jogador e lesão noutro); golo possível no minuto após golo; `xg` por lance → "Remates"/"Golos esperados" no jogo ao vivo. Plano: `docs/plans/2026-10-09-roadmap-tatica-treinador-bancada.md`.
+- Testado: engine-unit 34/34 (U21–U26 novos, falham no código antigo), simulação 8000 jogos (golos/jogo iguais 2,465), own-goal, penalty-ordering, emergency-gk, substitutions, crash-recovery, segment-barrier, finalize, ratings, connect-smoke, audit:socketio, audit:gamestate B8N0ZH (0 erros), typecheck; client lint + check:types + test:mobile (2 falhas intermitentes no cabeçalho/jornal, passam ao repetir). Visual das estatísticas por ver num jogo real.
+
 ## Deploy v26.10.37 no rick (2026-10-09)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).

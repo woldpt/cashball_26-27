@@ -55,7 +55,11 @@ P = pequeno · M = médio · G = grande.
 
 ## Parte C — Roadmap por fases
 
-### Fase 1 — Coerência (correções baratas, alto retorno)
+### Fase 1 — Coerência (correções baratas, alto retorno) — ✅ feita 2026-10-09
+> Feito: formação contada no onze em campo (`effectiveFormation`; familiaridade só para a formação jogada); com N a menos: oportunidades ×0,82ᴺ / adversário ×1,2ᴺ / defesa ×0,9ᴺ; penálti pelo domínio + GR adversário conta + batedor automático nunca o GR; cartões pela agressividade (GR ×0,3); lesões pelo cansaço — e corrigido o erro em que o teste de resistência era de um jogador e a lesão ia para outro; minuto após golo a ×0,5 (`chancesTotal` 31,2→30,7 para manter os golos); `xg` em cada lance → "Remates" e "Golos esperados" na barra de posse do jogo ao vivo.
+> Medido (8000 jogos, motor real): 2,465 golos/jogo antes e depois; com 10: marca −19%, sofre +44%; penáltis para quem domina 52%→60%; cartões ao GR 8,9%→3,2%.
+> Por fazer: a % de posse mostrada não muda com a expulsão (é a A2, Fase 2); estatísticas também no intervalo/resumo.
+
 - **A3** — formação passa a ser *derivada do onze real* no servidor (já existe `deriveFormationFromLineup` em `matchSummaryHelpers.ts`), ou o cliente impede troca entre linhas. Recomendo a 1.ª (servidor = verdade).
 - **A1** — expulsão custa: cada jogador a menos tira ~8–10% à força da linha onde jogava e à posse.
 - **A6/A7/A8** — sorteios ponderados: penálti pelo domínio, culpado do cartão pela agressividade, lesão pelo cansaço; batedor automático nunca o GR.

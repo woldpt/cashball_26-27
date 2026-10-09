@@ -283,21 +283,34 @@ export function pickBestPlayer(players: PlayerRow[] = []) {
  * `rng` injetável para simulações determinísticas (omissão = Math.random).
  */
 export function weightedPickScorer(players: PlayerRow[] = [], rng: () => number = Math.random) {
+  return weightedPick(
+    players,
+    (p) => {
+      const positionWeight =
+        p.position === "ATA"
+          ? MATCH_TUNING.scorerAtaWeight
+          : p.position === "DEF"
+            ? (MATCH_TUNING.scorerDefWeight ?? 0.3)
+            : 1;
+      const starMultiplier = p.is_star ? MATCH_TUNING.scorerStarMult : 1;
+      const formMultiplier = Math.max(
+        MATCH_TUNING.scorerFormMin,
+        Math.min(MATCH_TUNING.scorerFormMax, (p.form ?? FORM_NEUTRAL) / FORM_NEUTRAL),
+      );
+      return positionWeight * starMultiplier * formMultiplier;
+    },
+    rng,
+  );
+}
+
+/** Sorteio ponderado (um só rng()). Lista vazia → null. */
+export function weightedPick(
+  players: PlayerRow[] = [],
+  weightOf: (p: PlayerRow) => number,
+  rng: () => number = Math.random,
+) {
   if (!players.length) return null;
-  const weights = players.map((p) => {
-    const positionWeight =
-      p.position === "ATA"
-        ? MATCH_TUNING.scorerAtaWeight
-        : p.position === "DEF"
-          ? (MATCH_TUNING.scorerDefWeight ?? 0.3)
-          : 1;
-    const starMultiplier = p.is_star ? MATCH_TUNING.scorerStarMult : 1;
-    const formMultiplier = Math.max(
-      MATCH_TUNING.scorerFormMin,
-      Math.min(MATCH_TUNING.scorerFormMax, (p.form ?? FORM_NEUTRAL) / FORM_NEUTRAL),
-    );
-    return positionWeight * starMultiplier * formMultiplier;
-  });
+  const weights = players.map(weightOf);
   const total = weights.reduce((s, w) => s + w, 0);
   let r = rng() * total;
   for (let i = 0; i < players.length; i++) {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { getPosStyle, PITCH_POS_COLORS, buildPositionRows, filterMatchEvents } from "../matchConstants.js";
+import { getPosStyle, PITCH_POS_COLORS, buildPositionRows, filterMatchEvents, buildShotStats } from "../matchConstants.js";
 import { CUP_FINAL_STADIUM } from "../../../constants/index.js";
 import {
   MatchPitch,
@@ -127,7 +127,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
 
           {/* Possession */}
           <div className="rounded-md overflow-hidden">
-            <PossessionBar homePossession={fixture.homePossession} awayPossession={fixture.awayPossession} homeColor={hInfo?.color_primary} awayColor={aInfo?.color_primary} />
+            <PossessionBar homePossession={fixture.homePossession} awayPossession={fixture.awayPossession} homeColor={hInfo?.color_primary} awayColor={aInfo?.color_primary} shots={buildShotStats(evts, liveMinute)} />
           </div>
 
           <div className="flex flex-col gap-1 px-1 py-0.5 border-b border-outline-variant/20 pb-3">

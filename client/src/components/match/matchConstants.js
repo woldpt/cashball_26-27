@@ -123,6 +123,25 @@ export function filterMatchEvents(events, liveMinute) {
 }
 
 /**
+ * Remates e "golos esperados" por equipa até `liveMinute`: cada lance de golo
+ * (oportunidade, golo, penálti, golo anulado) traz `xg` do servidor.
+ *
+ * @param {Array<{minute: number, team: string, xg?: number}>} events - fixture.events.
+ * @param {number} [liveMinute] - Minuto atual (omisso = jogo todo).
+ * @returns {{home: {shots: number, xg: number}, away: {shots: number, xg: number}}}
+ */
+export function buildShotStats(events, liveMinute) {
+  const stats = { home: { shots: 0, xg: 0 }, away: { shots: 0, xg: 0 } };
+  for (const e of events || []) {
+    if (e.xg == null || !stats[e.team]) continue;
+    if (liveMinute != null && e.minute > liveMinute) continue;
+    stats[e.team].shots++;
+    stats[e.team].xg += e.xg;
+  }
+  return stats;
+}
+
+/**
  * Build per-player match stats (goals + yellow cards) from match events,
  * counting only the events visible up to `liveMinute` (same window as the
  * chronology). Returns a Map keyed by player id.

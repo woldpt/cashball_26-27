@@ -6,6 +6,7 @@ import {
   ensureFullBench,
   pickBestPlayer,
   weightedPickScorer,
+  weightedPick,
   isPlayerAvailable,
   convertToEmergencyGK,
   getEffectiveSkill,
@@ -77,6 +78,7 @@ import {
   getGoalTimeMultiplier,
   getWeatherGoalMultiplier,
   quotaFromFormation,
+  shortHandedChanceMult,
 } from "./matchCalculations";
 import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
@@ -1074,6 +1076,7 @@ async function openEmergencyGKAction({
 async function applyInjuryEvent({
   fixture,
   teamSide,
+  injuredPlayer,
   squad,
   fullRoster,
   lineupIds,
@@ -1084,6 +1087,8 @@ async function applyInjuryEvent({
 }: {
   fixture: MatchFixture;
   teamSide: "home" | "away";
+  /** O mesmo jogador que falhou o teste de resistência (antes sorteava-se outro). */
+  injuredPlayer: PlayerRow;
   squad: PlayerRow[];
   fullRoster: PlayerRow[];
   lineupIds: Set<number>;
@@ -1092,9 +1097,8 @@ async function applyInjuryEvent({
   game: ActiveGame;
   rng?: Rng;
 }) {
-  if (!squad.length) return { replaced: false, injuredPlayer: null };
+  if (!squad.length || !injuredPlayer) return { replaced: false, injuredPlayer: null };
 
-  const injuredPlayer = squad[Math.floor(rng() * squad.length)];
   const severityRoll = rng();
   // Médico da equipa: encurta a lesão e poupa skill nas graves.
   const medicLevel = Number(fixture._staffInjury?.[teamSide]) || 0;
@@ -1311,6 +1315,7 @@ async function applyPenaltyEvent({
   fixture,
   teamSide,
   squad,
+  keeper = null,
   currentMatchweek,
   io,
   game,
@@ -1319,6 +1324,8 @@ async function applyPenaltyEvent({
   fixture: MatchFixture;
   teamSide: "home" | "away";
   squad: PlayerRow[];
+  /** GR adversário — desvia a conversão na mesma escala do batedor. */
+  keeper?: PlayerRow | null;
   currentMatchweek: number;
   io: any;
   game: ActiveGame;
@@ -1358,17 +1365,19 @@ async function applyPenaltyEvent({
     null;
   if (!taker) return;
 
-  // Base 82% goal rate, skill efetiva (range 5–50) shifts it ±6 pp around the mean (30)
+  // Base 82% goal rate, skill efetiva (range 5–50) shifts it ±6 pp around the
+  // mean (30); o GR adversário desvia no sentido contrário, na mesma escala.
   const penaltySkill = getEffectiveSkill(taker) || 0;
+  const keeperSkill = keeper ? getEffectiveSkill(keeper) || 0 : MATCH_TUNING.penaltySkillMid;
   const goalChance = Math.max(
     MATCH_TUNING.penaltyMin,
     Math.min(
       MATCH_TUNING.penaltyMax,
       MATCH_TUNING.penaltyBase +
-        (penaltySkill - MATCH_TUNING.penaltySkillMid) /
-          MATCH_TUNING.penaltySkillDivisor,
+        (penaltySkill - keeperSkill) / MATCH_TUNING.penaltySkillDivisor,
     ),
   );
+  const xg = Math.round(goalChance * 100) / 100;
   const scored = rng() < goalChance;
 
   if (scored) {
@@ -1386,6 +1395,7 @@ async function applyPenaltyEvent({
       text: `[${fixture._minute}'] ⚽ ${penaltyGoalPhrase(taker.name)}`,
       penaltySuspense: true,
       penaltyResult: "GOLO!!!",
+      xg,
     });
   } else {
     // Miss type proportions: 60% save · 10% post · 10% wide · 20% panenka
@@ -1410,6 +1420,7 @@ async function applyPenaltyEvent({
       text: `[${fixture._minute}'] ❌ ${penaltyMissPhrase(taker.name, missType)}`,
       penaltySuspense: true,
       penaltyResult: missType,
+      xg,
     });
   }
 }
@@ -2296,11 +2307,22 @@ export type MinuteShared = {
   isLastLeagueMinute: boolean;
 };
 
+/**
+ * Oportunidades por jogo de um lado (repartidas pela posse no apito inicial),
+ * ajustadas à inferioridade numérica atual dos dois lados. null = sem posse
+ * calculada (o lado não cria oportunidades).
+ */
+function sideChances(fixture: MatchFixture, shared: MinuteShared, side: MatchSide): number | null {
+  const base = side === "home" ? fixture._homeChances : fixture._awayChances;
+  if (base == null) return null;
+  const own = side === "home" ? shared.currentHome : shared.currentAway;
+  const opp = side === "home" ? shared.currentAway : shared.currentHome;
+  return base * shortHandedChanceMult(own?.missing ?? 0, opp?.missing ?? 0);
+}
+
 export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShared, attackingSide: MatchSide): void {
   const { fixture, minute, powers, rng } = tick;
     if (shared.goalScored) return;
-    // Golos em minutos seguidos são raríssimos no futebol real.
-    if (fixture._lastGoalMinute === minute - 1) return;
     const attacking = attackingSide === "home" ? shared.currentHome : shared.currentAway;
     const defending = attackingSide === "home" ? shared.currentAway : shared.currentHome;
     const isHome = attackingSide === "home";
@@ -2308,9 +2330,12 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
     // Hatrick-style: posse (médios, fixa no apito) → nº de chances → cada
     // chance é um evento concreto: vira golo ou vai para o log do jogo
     // (defesa do GR, poste, ao lado).
-    const nChances = isHome ? fixture._homeChances : fixture._awayChances;
+    const nChances = sideChances(fixture, shared, attackingSide);
     if (nChances == null) return;
-    const chanceRate = (nChances * getGoalTimeMultiplier(minute)) / 90;
+    // Logo a seguir a um golo há menos oportunidades (mas não zero).
+    const afterGoal =
+      fixture._lastGoalMinute === minute - 1 ? MATCH_TUNING.goalAfterGoalChanceMult : 1;
+    const chanceRate = (nChances * getGoalTimeMultiplier(minute) * afterGoal) / 90;
     if (rng() >= chanceRate) return;
 
     // Chance! O rematador (qualquer jogador de campo) é creditado — o mesmo
@@ -2347,6 +2372,8 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
     }
     probGoal *= getWeatherGoalMultiplier(fixture._weather);
     probGoal *= egoFactor;
+    // "Golo esperado" do lance — o cliente soma por equipa (estatísticas).
+    const xg = Math.round(probGoal * 100) / 100;
 
     if (rng() >= probGoal) {
       // Sem golo: o lance vai para o log com o seu desfecho.
@@ -2381,6 +2408,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
         playerId: scorer ? scorer.id : null,
         playerName: scorer ? scorer.name : "Jogador",
         text,
+        xg,
       });
       return;
     }
@@ -2414,6 +2442,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
         text: `[${minute}'] ⚽ ${ownGoalPhrase(
           culprit ? culprit.name : "Jogador",
         )}`,
+        xg,
       });
       return;
     }
@@ -2429,6 +2458,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
         playerName: scorer ? scorer.name : "Jogador",
         text: `[${minute}'] 🚩 ${varPhrase(scorer ? scorer.name : "Jogador")}`,
         wasGoal: true,
+        xg,
       });
       return;
     }
@@ -2476,6 +2506,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
       playerName: scorer ? scorer.name : "Jogador",
       text: `[${minute}'] ⚽ ${goalText}`,
       isDecisive,
+      xg,
     });
 
     if (scorer) {
@@ -2492,13 +2523,18 @@ export async function resolvePenaltyKick(tick: MinuteTickContext, shared: Minute
   const penaltyChance =
     minute < 90 || shared.isCupExtraTime ? MATCH_TUNING.penaltyPerMinute : 0;
   if (rng() < penaltyChance) {
-    const attackingSide = rng() < 0.5 ? "home" : "away";
+    // Quem mais ataca é quem mais vezes é derrubado na área.
+    const h = sideChances(fixture, shared, "home") ?? 1;
+    const a = sideChances(fixture, shared, "away") ?? 1;
+    const attackingSide = rng() < (h + a > 0 ? h / (h + a) : 0.5) ? "home" : "away";
     const attackingSquad = attackingSide === "home" ? powers.home.squad : powers.away.squad;
+    const defendingSquad = attackingSide === "home" ? powers.away.squad : powers.home.squad;
     const totalGoalsBefore = fixture.finalHomeGoals + fixture.finalAwayGoals;
     await applyPenaltyEvent({
       fixture,
       teamSide: attackingSide,
       squad: attackingSquad,
+      keeper: defendingSquad.find((p) => p.position === "GR") ?? null,
       currentMatchweek,
       io,
       game,
@@ -2718,7 +2754,12 @@ export async function resolveCards(tick: MinuteTickContext, shared: MinuteShared
     const squad = isHomeCard ? powers.home.squad : powers.away.squad;
     const side = isHomeCard ? "home" : "away";
     if (squad.length > 0) {
-      const offender = squad[Math.floor(rng() * squad.length)];
+      // O mais agressivo é o candidato natural ao cartão; o GR raramente.
+      const offender = weightedPick(
+        squad,
+        (p) => getAggressivenessValue(p) * (p.position === "GR" ? MATCH_TUNING.cardGrWeight : 1),
+        rng,
+      );
       const offenderId = offender.id;
 
       if (fixture._yellowCards[offenderId] >= 1) {
@@ -2801,7 +2842,13 @@ export async function resolveInjuries(tick: MinuteTickContext, shared: MinuteSha
     const isHome = side === "home";
     const squad = isHome ? powers.home.squad : powers.away.squad;
     if (squad.length === 0) return;
-    const injuredPlayer = squad[Math.floor(rng() * squad.length)];
+    // Pernas cansadas lesionam-se mais: peso pelo desgaste acumulado no jogo.
+    const fatigue = fixture._fatigueLoss?.[side] ?? {};
+    const injuredPlayer = weightedPick(
+      squad,
+      (p) => 1 + MATCH_TUNING.injuryFatigueWeightPerPoint * (fatigue[p.id] ?? 0),
+      rng,
+    );
     const resistanceSkip =
       ((injuredPlayer?.resistance ?? RES_NEUTRAL) - 1) *
       MATCH_TUNING.injuryResistSkipPerPoint;
@@ -2812,6 +2859,7 @@ export async function resolveInjuries(tick: MinuteTickContext, shared: MinuteSha
     const injuryResult = await applyInjuryEvent({
       fixture,
       teamSide: side,
+      injuredPlayer,
       squad,
       fullRoster: isHome ? homeFullRoster : awayFullRoster,
       lineupIds: isHome ? homeLineupIds : awayLineupIds,

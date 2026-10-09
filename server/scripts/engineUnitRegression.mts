@@ -38,6 +38,12 @@
  *   U18 — processMatchMinute determinístico (ordem RNG estável)
  *   U19 — médico (funcionário): corta a probabilidade de lesão, encurta as
  *        semanas e poupa skill nas lesões graves (rng constante: resistência 1)
+ *   U21 — formação de facto: conta-se no onze em campo, não na declarada
+ *   U22 — com 10: defesa mais curta e menos oportunidades
+ *   U23 — penálti: lado pelo domínio, GR nunca é o batedor automático, xG
+ *   U24 — cartões: o mais agressivo leva mais, o GR raramente
+ *   U25 — lesão: o cansado lesiona-se mais, e é o mesmo do teste de resistência
+ *   U26 — golo possível no minuto a seguir a um golo; lances com xG
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -72,7 +78,11 @@ const {
   computeOpenPlayGoalProbability,
   createSeededRng,
   isCupFinalRound,
+  effectiveFormation,
+  shortHandedChanceMult,
+  selectPenaltyTaker,
 } = require("../game/matchCalculations.ts");
+const { resolvePenaltyKick } = require("../game/engine.ts");
 
 // ── U1 ──────────────────────────────────────────────────────────────────────
 test("U1 — normalizeMatchChoice cobre as formas do contrato", () => {
@@ -759,4 +769,100 @@ test("U20 — clima adverso cansa mais e a resistência é o escudo", async () =
   const resBaixa = runMatch("neve", 1);
   const resAlta = runMatch("neve", 50);
   assert(resBaixa > resAlta, `res baixa (${resBaixa}) deve > res alta (${resAlta})`);
+});
+
+// ── U21–U26: Fase 1 do roadmap tático (irrealismos) ─────────────────────────
+test("U21 — a formação conta-se no onze em campo, não na declarada", () => {
+  const squad = makeSquad(30, "x"); // onze real 4-4-2
+  const t = (formation) => ({ formation, style: "EQUILIBRADO" });
+  const declared541 = computeSidePower(squad, t("5-4-1"), 50, 0);
+  const real442 = computeSidePower(squad, t("4-4-2"), 50, 0);
+  assert.equal(declared541.formation, "4-4-2");
+  assert.equal(declared541.defense, real442.defense, "declarar 5-4-1 não dá a defesa do 5-4-1");
+  // Familiaridade só conta para a formação que se joga.
+  assert.equal(computeSidePower(squad, t("5-4-1"), 50, 0.05).attack, real442.attack);
+  assert.ok(computeSidePower(squad, t("4-4-2"), 50, 0.05).attack > real442.attack);
+  // Fora da tabela: 2-3-5 → a mais próxima com nº de avançados parecido.
+  const shape = (d, m, a) => [
+    { position: "GR" },
+    ...Array(d).fill({ position: "DEF" }),
+    ...Array(m).fill({ position: "MED" }),
+    ...Array(a).fill({ position: "ATA" }),
+  ];
+  assert.equal(effectiveFormation(shape(2, 3, 5), "5-4-1"), "4-2-4");
+  // Com 10 (3-4-2): mantém a declarada se for uma das mais próximas.
+  assert.equal(effectiveFormation(shape(3, 4, 2), "4-4-2"), "4-4-2");
+  assert.equal(effectiveFormation(shape(3, 4, 2), "3-5-2"), "3-5-2");
+});
+
+test("U22 — com 10 defende pior e cria menos", () => {
+  const squad = makeSquad(30, "x");
+  const t = { formation: "4-4-2", style: "EQUILIBRADO" };
+  const p11 = computeSidePower(squad, t, 50, 0);
+  const p10 = computeSidePower(squad.filter((p) => p.position !== "MED" || p.id !== 1005), t, 50, 0);
+  assert.equal(p11.missing, 0);
+  assert.equal(p10.missing, 1);
+  assert.ok(p10.defense < p11.defense, "a média não muda, mas falta um jogador");
+  assert.ok(shortHandedChanceMult(1, 0) < 1, "menos oportunidades próprias");
+  assert.ok(shortHandedChanceMult(0, 1) > 1, "mais oportunidades contra 10");
+});
+
+test("U23 — penálti: quem domina sofre mais faltas; batedor nunca o GR; xG", async () => {
+  const { tick, shared, fixture } = minuteTick(1, { fixture: { _homeChances: 25, _awayChances: 5 } });
+  const seq = [0, 0.5]; // dispara o penálti; 0.5 → casa (5/6 do domínio), antes 50/50 → fora
+  tick.rng = () => (seq.length ? seq.shift() : 0.5);
+  await resolvePenaltyKick(tick, shared);
+  const pen = fixture.events.find((e) => e.type === "penalty_goal" || e.type === "penalty_miss");
+  assert.equal(pen?.team, "home");
+  assert.ok(pen.xg > 0.5 && pen.xg < 1, `xG do penálti (${pen.xg})`);
+  const squad = [
+    { id: 1, position: "GR", skill: 50 },
+    { id: 2, position: "ATA", skill: 20 },
+    { id: 3, position: "MED", skill: 25 },
+  ];
+  assert.equal(selectPenaltyTaker(squad).id, 3);
+});
+
+test("U24 — cartões: o mais agressivo leva mais, o GR raramente", async () => {
+  const counts = new Map();
+  for (let seed = 1; seed <= 40; seed++) {
+    const { tick, shared, fixture } = minuteTick(seed);
+    for (const p of tick.homeSquad) p.aggressiveness = p.id === 6 ? 50 : 10;
+    tick.powers.home = computeSidePower(tick.homeSquad, tick.homeTactic, 25, 0, 1);
+    for (let m = 1; m <= 89; m++) {
+      tick.minute = m;
+      await resolveCards(tick, shared);
+    }
+    for (const e of fixture.events) {
+      if (e.team === "home" && (e.type === "yellow" || e.type === "red"))
+        counts.set(e.playerId, (counts.get(e.playerId) ?? 0) + 1);
+    }
+  }
+  const total = [...counts.values()].reduce((s, n) => s + n, 0);
+  assert.ok(total > 20, `amostra (${total})`);
+  assert.ok((counts.get(6) ?? 0) / total > 0.2, `agressivo: ${counts.get(6)}/${total} (uniforme ≈ 9%)`);
+  assert.ok((counts.get(1) ?? 0) / total < 0.05, `GR: ${counts.get(1) ?? 0}/${total}`);
+});
+
+test("U25 — lesão: o cansado lesiona-se mais, e é quem falhou a resistência", async () => {
+  const { tick, shared, fixture } = minuteTick(1);
+  for (const p of tick.homeSquad) p.resistance = 1; // resistência nunca salva
+  fixture._minute = 10;
+  fixture._fatigueLoss = { home: { 6: 20 }, away: {} }; // id 6: peso 7, resto 1 (total 17)
+  // gate 0 → lesão na casa; 0.68 → id 6 (0.68×17 cai na fatia dele). Antes: o
+  // teste de resistência era para squad[7] e a lesão sorteava outro (0.95 → id 11).
+  const seq = [0, 0.68];
+  tick.rng = () => (seq.length ? seq.shift() : 0.95);
+  await resolveInjuries(tick, shared);
+  const inj = fixture.events.find((e) => e.type === "injury");
+  assert.equal(inj?.playerId, 6);
+});
+
+test("U26 — golo possível no minuto a seguir a um golo; lances com xG", () => {
+  const { tick, shared, fixture } = minuteTick(1, { minute: 10, fixture: { _lastGoalMinute: 9 } });
+  tick.rng = () => 0; // oportunidade e golo garantidos (antes: minuto bloqueado)
+  resolveOpenPlayGoal(tick, shared, "home");
+  const shot = fixture.events.find((e) => e.xg != null);
+  assert.ok(shot, "houve lance no minuto a seguir ao golo");
+  assert.ok(shot.xg > 0 && shot.xg < 1, `xG (${shot.xg})`);
 });
