@@ -475,7 +475,7 @@ export function FinancesTab({
                     key={isCup ? `cup-${t.round}` : `league-${t.matchweek}`}
                     label={
                       <>
-                        {isCup ? `Taça · ${t.roundName}` : `J${t.matchweek}`}
+                        {isCup ? (t.roundName === "Amigável" ? t.roundName : `Taça · ${t.roundName}`) : `J${t.matchweek}`}
                         <span className="text-on-surface-variant"> · vs </span>
                         <TeamLink teamId={t.away_team_id}>{t.away_team_name || "—"}</TeamLink>
                       </>

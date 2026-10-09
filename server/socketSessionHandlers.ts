@@ -1847,10 +1847,12 @@ export function registerSessionSocketHandlers(
 				// Bilheteira ao preço faturado à altura (ticket_revenue persistido na
 				// finalização = receita bruta). A casa fica com a bruta menos a
 				// parte do visitante (AWAY_TICKET_SHARE), exatamente como o crédito.
-				const awayShareOf = (gross: number) => Math.floor(gross * AWAY_TICKET_SHARE);
+				// Amigáveis (cup_matches com ronda <= 0) dividem a meias; o resto 85/15.
+				const awayShareOf = (gross: number, round?: number | null) =>
+					round != null && round <= 0 ? Math.floor(gross / 2) : Math.floor(gross * AWAY_TICKET_SHARE);
 				const billedOrEstimate = (m: any) => {
 					const gross = m.ticket_revenue ?? (m.attendance || 0) * 15;
-					return gross - awayShareOf(gross);
+					return gross - awayShareOf(gross, m.round);
 				};
 				let homeMatches: any[];
 				try {
@@ -1918,18 +1920,18 @@ export function registerSessionSocketHandlers(
 				// Parte do visitante (15%) dos jogos fora — liga e Taça.
 				const awayRows = await runAll(
 					game.db,
-					`SELECT 'league' AS comp, ticket_revenue FROM matches WHERE away_team_id = ? AND played = 1 AND season = ?
+					`SELECT 'league' AS comp, ticket_revenue, NULL AS round FROM matches WHERE away_team_id = ? AND played = 1 AND season = ?
 					 UNION ALL
-					 SELECT 'cup' AS comp, ticket_revenue FROM cup_matches WHERE away_team_id = ? AND played = 1 AND season = ?`,
+					 SELECT 'cup' AS comp, ticket_revenue, round FROM cup_matches WHERE away_team_id = ? AND played = 1 AND season = ?`,
 					[teamId, game.season, teamId, game.season],
 				).catch(() => []);
 				const awayLeagueRows = (awayRows || []).filter((r: any) => r.comp === "league");
 				const awayTicketRevenue = (awayRows || []).reduce(
-					(sum: number, r: any) => sum + awayShareOf(r.ticket_revenue || 0),
+					(sum: number, r: any) => sum + awayShareOf(r.ticket_revenue || 0, r.round),
 					0,
 				);
 				const awayLeagueTicketRevenue = awayLeagueRows.reduce(
-					(sum: number, r: any) => sum + awayShareOf(r.ticket_revenue || 0),
+					(sum: number, r: any) => sum + awayShareOf(r.ticket_revenue || 0, r.round),
 					0,
 				);
 				const leagueBreakdown = homeMatches.map((m) => ({
@@ -1945,7 +1947,7 @@ export function registerSessionSocketHandlers(
 					competition: "cup" as const,
 					matchweek: null as number | null,
 					round: m.round as number,
-					roundName: (CUP_ROUND_NAMES[m.round] || `Ronda ${m.round}`) as string,
+					roundName: (m.round <= 0 ? "Amigável" : CUP_ROUND_NAMES[m.round] || `Ronda ${m.round}`) as string,
 					attendance: m.attendance || 0,
 					revenue: billedOrEstimate(m),
 					away_team_name: m.away_team_name || "—",
