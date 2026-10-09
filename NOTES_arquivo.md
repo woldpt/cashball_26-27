@@ -2,6 +2,80 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Deploy v26.10.34 no rick (2026-10-08)
+- Push + tag `v26.10.34` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.34` (rodapé da landing).
+- Mudanças desta ronda: robustez de sessão/presença (lease, `presencePing`, gate de join, join passivo sem roubo de assento) e utilitário de posições táticas (`tacticPositions.js`).
+
+## Deploy v26.10.33 no rick (2026-10-07)
+- Push + tag `v26.10.33` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- O pull travou por `HEAD.lock` de um `git gc` em curso e por ficheiros staged duplicados (idênticos ao origin) — descartados com OK do utilizador.
+- Mudanças desta ronda: journal em coluna estreita à esquerda, contraste do header (`readableInk`), linha jogos/golos/ordenado dos leilões, subs sem truncate (2 linhas) e crest nos cards de transferência.
+
+## Deploy v26.10.32 no rick (2026-10-06)
+- Push + tag `v26.10.32` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.32` (rodapé da landing).
+- Mudanças desta ronda: nova `BriefingView` (rota + `GameRoutes`), CTA de jogo (`usePlayCta`, `PrepCtaCard`, `MatchBriefing`, `PrimaryCTA`), táticas (`TacticsView`/`TacticsContext`), jornal (`ArticleBody`, `NewsMedia`, `tones`) e `hooks/socket/match.js`.
+
+## Deploy v26.10.31 no rick (2026-10-06)
+- Push + tag `v26.10.31` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.31` (rodapé da landing).
+- Mudações desta ronda: botão «Jogar!» no cabeçalho (sai o «Jogar Jornada» da página), limpeza do `TacticsView`/`IntervencaoView`, `LiveClock` e `commentary.ts`/`engine.ts`.
+
+## Deploy v26.10.30 no rick (2026-10-06)
+- Push + tag `v26.10.30` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.30` (rodapé da landing).
+- Mudações desta ronda: página Admin nova (`AdminPage`), jornal com novas notícias/progresso (`progressNewsHelpers`), narração LLM (`commentary.ts` + scripts), meteo (raios do sol, nevoeiro), relvados alinhados com o pitch das Táticas.
+
+## Deploy v26.10.29 no rick (2026-10-06)
+- Push + tag `v26.10.29` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.29` (rodapé da landing).
+- Mudações desta ronda: redesign `RoomHub` (split em `RoomHubPanel`/`CoachRow`/`ChatMessages`/`ChatComposer`/`useRoomInvites`) e `WaitingCoachesModal`.
+
+## Deploy v26.10.28 no rick (2026-10-06)
+- Push + tag `v26.10.28` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.28` (rodapé da landing).
+- Mudações desta ronda: `GameHeader`, `CupBracketPage`, `LeagueStandings`, `CalendarioTab`, `FinancesTab`, `TrainingTab`, `TransferChrome`, `STYLE.md`.
+
+## Deploy v26.10.27 no rick (2026-10-06)
+- Push + tag `v26.10.27` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.27` (rodapé da landing).
+- Sem mudanças de código além do bump — deploy de rotina.
+
+## Deploy v26.10.26 no rick (2026-10-06)
+- Push + tag `v26.10.26` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
+- `APP_VERSION` bumpado para `v26.10.26` (rodapé da landing).
+- Teto do NOTES.md: 13 apontamentos antigos movidos para `NOTES_arquivo.md`.
+
+## Deploy v26.10.25 no rick (2026-10-06)
+- Shell do jogo (GameLayout) passa a CSS grid; barra da jornada com o próximo jogo e JOGAR com estado.
+- Corrigidos: tabela de equipas reenviada no resync; scroll próprio da lista e do artigo no Jornal (desktop); selo de posição colorido no táticas.
+- Plano do shell documentado no STYLE.md; `backend Healthy`.
+
+## Deploy v26.10.24 no rick (2026-10-06)
+- Jornal com nova UI/UX: lista com ícones de categoria agrupados por semana, faixa única de pendências, artigo com kicker e manchete maior, vista de detalhe no mobile.
+- Direto: comentário na cor aclarada da equipa com contorno legível à chuva; meteorologia em ecrã inteiro só com o jogo vivo.
+- Corrigidos: lesionados/expulsos filtrados por id do plantel; moral e agressividade nos cartões das substituições forçadas; `backend Healthy`.
+
+## Deploy v26.10.23 no rick (2026-10-06)
+- Redesenho da landing: estádio em festa no hero, montra com golo ao vivo, cartão de auth, montra em três blocos e «como funciona» com CTA final.
+- Estádio procedural: bancadas laterais em perspetiva, identidade por clube via seed, nuvens por clube e focos noturnos, meteo da jornada no céu; chuva em mosaico SVG (perf).
+- Briefing destaca equipas com treinador humano; aviso de meteo em resistência baixa; nome da sala nas notificações; `backend Healthy`.
+
+## Deploy v26.10.22 no rick (2026-10-05)
+- Estádio: cabeçalho em duas colunas com foto e nome longo a quebrar; campo em perspetiva com poças onduladas, neve acumulada e topo desvanecido.
+- Finanças: bilheteiras líquidas, saldo previsto semana a semana, Resultado da Época com rubricas reais e gráfico de 25 semanas.
+- Taça: amigáveis em todas as semanas restantes com adversário imediato; pulse no anel de destaque do tutorial; `backend Healthy`.
+
+## Deploy v26.10.21 no rick (2026-10-05)
+- Ligas de 10 equipas e 32 avos da Taça com Distritais em produção; sala sem criador deixa de tornar todos admin; compatibilidade antiga removida.
+- Transferências: +8 de moral ao mudar de clube; BadgeSkills no cromo (mercado/leilões), sem a agressividade antiga.
+- 112 saves de salas de teste desregistados do projeto; `backend Healthy`.
+
+## Deploy v26.10.20 no rick (2026-10-05)
+- Treino: jogadores muito abaixo da média sobem depressa até 70% da média; NPCs não renovam esses jogadores.
+- Campo em perspetiva fixo no fundo no lugar da navegação mobile; anúncio de prolongamento só no 91'; `backend Healthy`.
+
 ## Deploy v26.10.19 no rick (2026-10-05)
 - Campo em perspetiva no mobile com o tempo ao fundo; pausa pré-jogo de 7s com a análise de volta e anúncio de fase animado no placar.
 - Casaco do adjunto na cor do clube; staff contratado com nome, papel e nível à medida da tesouraria; mentalidade em 3 botões no mobile; `backend Healthy`.
