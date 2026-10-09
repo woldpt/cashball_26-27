@@ -12,7 +12,7 @@
 | Estilo | Tailwind CSS 4 | Ícones: Material Symbols Outlined · design system em `STYLE.md` |
 | Backend | Node.js + Express 5 | TypeScript (`strict: false`) |
 | Real-time | Socket.io 4 | Listeners centralizados em `client/src/hooks/useSocketListeners.js` |
-| BD | SQLite 3 | `server/db/base.db` (template) + `server/saves/<criador>/game_*.db` (salas, via `db/roomPaths.js`); sem tipos PostgreSQL |
+| BD | SQLite 3 | `server/db/base.db` (template) + `server/saves/<criador>/game_*.db` (salas, via `db/roomPaths.js`); sem tipos PostgreSQL (`SERIAL`/`JSONB`) |
 | Infra | Docker Compose | |
 
 ### JSDoc (frontend)
@@ -29,7 +29,7 @@
 - **Memória vs BD:** `activeGames` em `gameManager.ts` é o estado runtime primário; sincronização com a BD é **seletiva** — stats/finanças persistem; minuto de jogo/lineups são transitórios.
 - **Coordenação de fase:** `phaseToken` (UUID) + `phaseAcks` (Set de nomes de coaches confirmados).
 - **Assentos & presença:** `roomStateHelpers.ts` — `room_seats` (equipa/`ready`/tática/`seat_epoch`/`deviceId`) é a fonte durável; `playersByName` é a projeção. Presença = socket ligado **ou** lease dentro da grace (`PRESENCE_GRACE_MS`), por isso um flape não conta como ausência.
-- **Congelamento (regra central):** com um treinador da ronda ausente, `computeAbsentees` > 0 e `waitForPresence` bloqueia o minuto, as janelas de decisão (`waitForMatchAction`), o intervalo, o prolongamento e o fecho da jornada. Não há fallback automático para humanos. Só `leaveRoom`/kick/despedida/`adminReleaseRoom` libertam o assento.
+- **Congelamento (regra central):** com um treinador da ronda ausente, `computeAbsentees` > 0 e `waitForPresence` bloqueia o minuto, as janelas de decisão (`waitForMatchAction`), o intervalo, o prolongamento e o fecho da jornada. Não há fallback automático para humanos: o servidor nunca decide (`source:"auto"`) nem avança por um treinador. Só `leaveRoom`/kick/despedida/`adminReleaseRoom` libertam o assento.
 - **Durabilidade:** `room_events` (append-only, `seq` só em `calendar_advanced`/`week_started`) + volta ao `lobby` do slot depois do replay — a quebra a meio descarta o jogo (sem tática gravada) e a ronda rejoga-se do 0; só um slot já finalizado avança (`recoverFinalizedSlot`). Cliente: `seq` no `gameState` + `requestResync` quando deteta um salto.
 - **Segment guard:** `segmentRunning[roomCode]` impede dupla execução de segmento de jogo.
 
@@ -43,7 +43,7 @@
 
 ## 🏭 Padrões de backend
 
-- **Helpers:** funções simples por defeito (deps por chamada); factory `createXxxHelpers(deps)` com `deps = { io, db, game }` só quando o objeto viaja entre módulos (regra em `AGENTS.md`).
+- **Helpers:** funções simples por defeito (deps por chamada); factory `createXxxHelpers(deps)` com `deps = { io, db, game }` só quando o objeto viaja entre módulos.
 - **Socket handlers:** um ficheiro por domínio (`*Handlers.ts`), registados em `index.ts` via `registerXxxSocketHandlers(socket, deps)`; eventos espelhados em `socketEventRegistry.json` (regenerado pelo `audit:socketio`).
 - **Engine:** `game/engine.ts` (ESM) consome `matchCalculations.ts`, `playerUtils.ts` e `commentary.ts` (narração só aqui).
 
@@ -59,8 +59,8 @@
 
 **`/client/src`**
 
-- `App.jsx` — root (auth state, sessão, providers de topo)
-- `contexts/` — `GameContext.jsx` (estado do jogo), `TacticsContext.jsx` (UI de táticas)
+- `App.jsx` — root (auth state, sessão, providers de topo); a auth passa por props ao `GameLayout`
+- `contexts/` — `GameContext.jsx` (estado do jogo), `TacticsContext.jsx` (UI de táticas: drag-and-drop/seleção; consome `GameContext`)
 - `hooks/useSocketListeners.js` — eventos de socket
 - `GameLayout.jsx` — container principal (consome os contextos)
 - `views/` — tabs do jogo · `pages/` — `UserSettingsPage.jsx`

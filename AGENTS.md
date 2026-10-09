@@ -2,7 +2,7 @@
 
 > **pt-PT (europeu) SEMPRE** — UI, mensagens, narração, comentários. "Auto-golo" (nunca "golo de contra"/"contra" — pt-BR); "marcador"/"resultado" (nunca "placar").
 > **Falar com o utilizador como se fosse não-programador:** sem jargão técnico, frases curtas, explicar por miúdos o que se passa e o que preciso de ti.
-> **Leia antes de trabalhar:** arranque de sessão → `NOTES.md` · backend/arquitetura → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/MySquadTab.jsx`.
+> **Leia antes de trabalhar:** arranque de sessão → `NOTES.md` · backend/arquitetura (stack, estado, padrões — não repetidos aqui) → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/MySquadTab.jsx`.
 
 ## 🤝 Protocolo antes de editar (sempre)
 
@@ -37,21 +37,16 @@
 - **Histórico de jogador:** abrir via `PlayerRow` (prop `onOpenPlayerHistory`) → `socket.emit("requestPlayerHistory")`.
 - **PlayerAvatar.jsx:** proibido `clipPath` — apenas caminhos geométricos puros.
 - **ModalShell:** `visible={false}` **não** impede a avaliação dos `children` — guardar props nuláveis (ex. `data.teamName`) com early-return/short-circuit, senão `TypeError`.
-- **Progresso da época:** fonte da verdade `game.calendarIndex` — nunca `matchweek`.
-- **Contextos frontend:** `GameContext` = estado do jogo (players, finanças, fase); `TacticsContext` = UI de táticas (drag-and-drop/selection), consome `GameContext`; auth state vive em `App.jsx` e passa por props ao `GameLayout`.
-- **Sessão/presença:** o treinador é um **assento durável** (`room_seats`: equipa, `ready`, tática, `seat_epoch`, `deviceId`), não um `socketId`. Ausência de um treinador com equipa em jogo **congela a sala** — o servidor nunca decide (`source:"auto"`) nem avança por ele. Saídas explícitas: `leaveRoom`, kick, despedida, `adminReleaseRoom`.
 - **Não persistir `game.lockedCoaches` em BD.**
 
 ## 📏 Padrões obrigatórios
 
-- **Helpers:** funções simples por defeito (deps por chamada); factory só quando o objeto viaja entre módulos.
 - **Juniors (banco de suplentes), ordem fixa:** 1) `withJuniorGRs(squad, teamId, matchweek)` (1 GR no 11 inicial); 2) `ensureFullBench(squad, teamId, matchweek)` (2 GR + 16 campo; banco 7 = 1 GR + 6). IDs de juniores negativos.
-- **Frontend JavaScript só** (tipos via JSDoc) · **Backend TypeScript** (`strict: false`) · **SQLite** sem `SERIAL`/`JSONB` · **Narração** só em `server/game/commentary.ts`.
 - **Frontmatter YAML de skills** (`description`): scalar plain não pode conter `:` seguido de espaço (ex. "passes: portrait") — o parser `yaml` do pi falha com `BLOCK_AS_IMPLICIT_KEY`. Sempre entre aspas duplas quando há colones internos.
 
 ## ✅ Antes de "feito" / commit
 
-- Checks verdes aplicáveis: server `npm run typecheck` · client `npm run lint` + `npm run check:types` · layout/estilo → `npm run test:mobile`. **Nunca reportar sucesso sem saída verificada.** `server/index.ts` tem `// @ts-nocheck` — o `typecheck` não vê identificadores inexistentes lá dentro; mudanças nesse ficheiro exigem `test:connect-smoke` (arranca o servidor e liga-lhe um socket).
+- Checks verdes aplicáveis: server `npm run typecheck` · client `npm run lint` + `npm run check:types` · layout/estilo → `npm run test:mobile` · e os `test:*` de `server/package.json`/`client/package.json` cuja área foi mexida (ex. contratos → `test:contractrenewal`/`test:contractyear`). **Nunca reportar sucesso sem saída verificada.** `server/index.ts` tem `// @ts-nocheck` — o `typecheck` não vê identificadores inexistentes lá dentro; mudanças nesse ficheiro exigem `test:connect-smoke` (arranca o servidor e liga-lhe um socket).
 - Alterou lógica de jogo/comunicações → correr `audit:gamestate <ROOM>` (budgets vs salários, squad mínimo, jogadores duplicados, fases) e `audit:socketio` (orphaned/duplicate handlers).
 - Debug por evidência: reproduzir → isolar causa → só então fixar. Nunca corrigir por hipótese (ex.: `min-w-0` "porque costuma resolver").
 
@@ -63,7 +58,7 @@ Replay seguro pós-restart (`applied_weeks`, `recoverFinalizedSlot`), WAL e back
 
 - **Commit automático** após cada alteração verificada — skill `.pi/skills/auto-commit/SKILL.md`. Mensagem foca no **porquê** (ex. `fix: prevent duplicate NPC bids in auctions`). Nunca push sem pedido explícito.
 - **Memória:** ao fim de cada tarefa atualizar `NOTES.md` antes de commitar/terminar. Regra permanente → mover para os docs acima e remover de `NOTES.md`. **Teto: 30 apontamentos** — passou disso, os mais antigos mudam para `NOTES_arquivo.md` (nada se apaga). Apontamento novo: máx. 5 linhas (o quê, porquê, como foi testado); deploys: 1 linha.
-- **Mudança estrutural de layout** (nova view/tab/modal, `GameLayout.jsx`, `index.css`, componente partilhado, grid/flex/larguras) → skill `mobile-resp-check` com as **duas** passagens antes de terminar/commitar. Tweaks (padding, cores, texto, `className` pontual) não disparam.
+- **Mudança estrutural de layout** (nova view/tab/modal, `GameLayout.jsx`, `index.css`, componente partilhado, grid/flex/larguras) → skill `mobile-resp-check` (passagem em retrato `test:mobile` + ver pelo menos um screenshot) antes de terminar/commitar. Tweaks (padding, cores, texto, `className` pontual) não disparam.
 - **Design:** seguir `STYLE.md`; referência: `client/src/views/MySquadTab.jsx`.
 
 ## 👥 Equipa de agentes (Claude Code)
