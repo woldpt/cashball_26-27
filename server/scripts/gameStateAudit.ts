@@ -281,6 +281,53 @@ class GameStateAuditor {
     for (const d of dupSponsor) {
       this.addIssue("error", "finance", `Team ${d.team_id} chose a sponsor ${d.n}× in ${d.year} (upfront paid twice?)`, { teamId: d.team_id, year: d.year });
     }
+
+    // Dívida negativa: pagamento a mais do empréstimo.
+    const negLoan = await this.runQuery<any>("SELECT id, name, loan_amount FROM teams WHERE loan_amount < 0");
+    for (const t of negLoan) {
+      this.addIssue("error", "finance", `Team ${t.name} has a negative loan (${t.loan_amount})`, { teamId: t.id, loan: t.loan_amount });
+    }
+
+    // Jogador à venda/em leilão sem clube: ninguém lhe pode pagar nem cobrar.
+    const orphanListed = await this.runQuery<any>(
+      "SELECT id, name, transfer_status FROM players WHERE team_id IS NULL AND transfer_status != 'none'",
+    );
+    for (const p of orphanListed) {
+      this.addIssue("warning", "finance", `Player ${p.name} is '${p.transfer_status}' but has no club`, { playerId: p.id });
+    }
+
+    // Contratação registada 2× no Jornal (mesma equipa, jogador e semana): pagamento duplo.
+    const dupBuys = await this.runQuery<any>(
+      `SELECT team_id, player_id, year, slot, COUNT(*) AS n FROM club_news
+       WHERE type = 'transfer_in' AND player_id IS NOT NULL
+       GROUP BY team_id, player_id, year, slot HAVING n > 1`,
+    );
+    for (const d of dupBuys) {
+      this.addIssue("error", "finance", `Team ${d.team_id} bought player ${d.player_id} ${d.n}× in the same week (${d.year}/${d.slot})`, d);
+    }
+
+    // Renda semanal: cada semana já jogada desta época tem de ter o seu marcador.
+    // Salas antigas (antes do marcador) dão só aviso.
+    try {
+      const kv = await this.runQuery<any>("SELECT key, value FROM game_state WHERE key IN ('calendarIndex', 'season')");
+      const get = (k: string) => Number(kv.find((r) => r.key === k)?.value);
+      const calendarIndex = get("calendarIndex");
+      const season = get("season");
+      if (Number.isFinite(calendarIndex) && Number.isFinite(season) && calendarIndex > 0) {
+        const marks = await this.runQuery<any>(
+          "SELECT slot FROM applied_weeks WHERE season = ? AND kind = 'weekly_finance'",
+          [season],
+        );
+        const have = new Set(marks.map((m) => Number(m.slot)));
+        const missing: number[] = [];
+        for (let slot = 0; slot < calendarIndex; slot++) if (!have.has(slot)) missing.push(slot);
+        if (missing.length > 0) {
+          this.addIssue("warning", "finance", `Weekly finance marker missing for slots ${missing.join(", ")} of season ${season}`, { season, missing });
+        }
+      }
+    } catch {
+      /* sala sem applied_weeks: nada a validar */
+    }
   }
 
   private async auditDivisionCounts() {
