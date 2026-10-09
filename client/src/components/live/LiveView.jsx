@@ -310,17 +310,34 @@ export function LiveView() {
         </div>
       )}
 
-      {/* ── TAÇA: restantes jogos da ronda (a final tem palco próprio) ── */}
-      {isCupMatch && !isCupFinal && results.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {results
-            .filter((m) => !isMine(m))
-            // Após os 90': só mostra jogos ainda no prolongamento (empatados aos 90)
-            .filter((m) => liveMinute <= 90 || isDrawnAt90(m))
-            .sort(sortHumanFirst)
-            .map(renderRow)}
-        </div>
-      )}
+      {/* ── TAÇA: restantes jogos da ronda (a final tem palco próprio).
+          Eliminatórias e amigáveis dos eliminados partilham a grelha, em blocos. ── */}
+      {isCupMatch && !isCupFinal && results.length > 0 && (() => {
+        const others = results
+          .filter((m) => !isMine(m))
+          // Após os 90': só mostra jogos ainda no prolongamento (empatados aos 90)
+          .filter((m) => liveMinute <= 90 || isDrawnAt90(m))
+          .sort(sortHumanFirst);
+        const cupGames = others.filter((m) => !m.isFriendly);
+        const friendlies = others.filter((m) => m.isFriendly);
+        const block = (title, list) =>
+          list.length > 0 && (
+            <>
+              {cupGames.length > 0 && friendlies.length > 0 && (
+                <h4 className="col-span-full text-[9px] font-black uppercase tracking-widest text-on-surface-variant mt-1">
+                  {title} · {list.length}
+                </h4>
+              )}
+              {list.map(renderRow)}
+            </>
+          );
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {block(cupMatchRoundName || "Taça", cupGames)}
+            {block("Amigáveis", friendlies)}
+          </div>
+        );
+      })()}
       {myMatch && (
         <LivePitchStrip
           emoji={myMatch.events?.find((e) => e.type === "weather")?.emoji}
