@@ -3,7 +3,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, TEAMS_PER_DIVISION, FRIENDLY_ROUND, signingWage, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
-import { currentEpoch, currentSlot, getSeasonEndMatchweek, isContractLocked, runGet, runExec, serializeRoomTask, slimMatchResult } from "./coreHelpers";
+import { currentEpoch, currentSlot, getSeasonEndMatchweek, isContractLocked, runGet, runExec, serializeRoomTask, slimMatchResult, auctionHooks } from "./coreHelpers";
 import { dealDisplaySponsors } from "./game/sponsors";
 import { getOfflineCoaches, getRoomRoster } from "./presenceHelpers";
 import {
@@ -716,105 +716,12 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                         };
                         if (!game.auctionTimers) game.auctionTimers = {} as any;
                         // Agenda finalização delayed — usa lógica inline para não depender de auctionHelpers no load
+                        // Fecho pelo mesmo caminho de produção (venda garantida, notícias,
+                        // guardas de saldo/dono): a cópia inline que havia aqui divergia.
                         const tid = setTimeout(() => {
                           const auc = (game.auctions as any)?.[pid];
                           if (!auc || auc.status !== "open") return;
-                          const hasBids = auc.bids && Object.keys(auc.bids).length > 0;
-                          const pushRecent = (player: any, result: any) => {
-                            const list = (((game as any).recentAuctions as any[]) || []).filter(
-                              (r: any) => r && Number(r.playerId) !== Number(pid),
-                            );
-                            list.push({
-                              playerId: pid,
-                              name: player?.name ?? "?",
-                              position: player?.position ?? null,
-                              photo: player?.photo || null,
-                              skill: player?.skill,
-                              is_star: player?.is_star || 0,
-                              team_name: player?.team_name || null,
-                              sellerTeamId: auc.sellerTeamId ?? null,
-                              isExClub: !!auc.isExClub,
-                              result,
-                              closed: true,
-                              closedMatchweek: game.matchweek || 0,
-                            });
-                            (game as any).recentAuctions = list.slice(-100);
-                          };
-                          if (!hasBids) {
-                            db.get("SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid], (_e0: any, pl0: any) => {
-                              if (pl0) pushRecent(pl0, { playerId: pid, playerName: pl0.name, sold: false });
-                              db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
-                              delete (game.auctions as any)[pid];
-                              delete (game.auctionTimers as any)[pid];
-                            });
-                            return;
-                          }
-                          // Com lances: finaliza inline (merge de auctionHelpers.finalizeAuction,
-                          // com as mesmas garantias: revalida orçamento — o valor só era
-                          // verificado no lance —, respeita o lock do agente e movimenta
-                          // dinheiro/transferência numa transação).
-                          // Serializado por sala (mesma fila do finalizeAuction):
-                          // leilões restaurados com endsAt expirado disparam todos
-                          // no mesmo tick e o 2.º BEGIN falhava dentro da
-                          // transação do 1.º (SQLITE_ERROR).
-                          serializeRoomTask(roomCode, () =>
-                          (async () => {
-                            const closeUnsold = async () => {
-                              const pl = await runGet<any>(db, "SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid]);
-                              if (pl) pushRecent(pl, { playerId: pid, playerName: pl.name, sold: false });
-                              db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
-                              delete (game.auctions as any)[pid];
-                              delete (game.auctionTimers as any)[pid];
-                              saveGameState(game);
-                            };
-                            const bidsDesc = Object.entries(auc.bids || {})
-                              .map(([tid2, val]) => ({
-                                teamId: parseInt(tid2, 10),
-                                amount: Number((val as any)?.amount || 0),
-                              }))
-                              .sort((x, y) => y.amount - x.amount);
-                            // O orçamento só era validado no lance; entre o lance e o
-                            // fecho pode ter sido gasto noutro leilão — passa ao seguinte.
-                            let winner: { teamId: number; amount: number } | null = null;
-                            for (const cand of bidsDesc) {
-                              const buyer = await runGet<any>(db, "SELECT budget FROM teams WHERE id=?", [cand.teamId]);
-                              if (buyer && (buyer.budget || 0) >= cand.amount) { winner = cand; break; }
-                            }
-                            if (!winner) { await closeUnsold(); return; }
-                            const player = await runGet<any>(db, "SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid]);
-                            if (!player) { delete (game.auctions as any)[pid]; delete (game.auctionTimers as any)[pid]; return; }
-                            if (isContractLocked(player, game as any)) { await closeUnsold(); return; }
-                            const buyerTeamId = winner.teamId;
-                            const finalBid = winner.amount;
-                            await runExec(db, "BEGIN");
-                            try {
-                              // Jogador primeiro, só se ainda em leilão: um leilão já
-                              // pago antes do reinício não volta a mexer em saldos.
-                              const seasonEndMw = getSeasonEndMatchweek(game.matchweek || 1);
-                              const moved = await runExec(
-                                db,
-                                "UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, morale = MIN(50, morale + 8), transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=? AND transfer_status='auction'",
-                                [buyerTeamId, signingWage(player), seasonEndMw, currentEpoch(game as any), currentSlot(game as any), currentSlot(game as any), pid],
-                              );
-                              if (moved.changes === 0) throw new Error("auction_already_closed");
-                              await runExec(db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [finalBid, auc.sellerTeamId]);
-                              await runExec(db, "UPDATE teams SET budget = budget - ? WHERE id = ?", [finalBid, buyerTeamId]);
-                              await runExec(db, "COMMIT");
-                            } catch (txErr) {
-                              await runExec(db, "ROLLBACK").catch(() => {});
-                              console.error(`[${roomCode}] ❌ finalizeAuction (crash-recovery): transação falhou, leilão fechado sem venda`, txErr);
-                              await closeUnsold();
-                              return;
-                            }
-                            const buyerTeam = await runGet<any>(db, "SELECT name FROM teams WHERE id=?", [buyerTeamId]);
-                            pushRecent(player, { playerId: pid, playerName: player.name, sold: true, buyerTeamId, buyerTeamName: buyerTeam?.name ?? "?", finalBid });
-                            delete (game.auctions as any)[pid];
-                            delete (game.auctionTimers as any)[pid];
-                            saveGameState(game);
-                          })().catch((err) => {
-                            console.error(`[${roomCode}] ❌ finalizeAuction (crash-recovery):`, err);
-                          }),
-                          );
+                          auctionHooks.finalize?.(game as any, pid);
                         }, timerMs) as unknown as any;
                         // unref para não bloquear shutdown
                         if (tid && typeof (tid as any).unref === "function") (tid as any).unref();

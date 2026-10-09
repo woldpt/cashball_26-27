@@ -285,6 +285,9 @@ export function runExec(
 // (ex. finalizeAuction) não podem correr em concorrência na mesma ligação
 // sqlite — o 2.º BEGIN falha com "cannot start a transaction within a
 // transaction". Nunca rejeita: erros são registados e a fila continua.
+/** Ponte para o fecho de leilões: o gameManager (restauro após reinício) usa o mesmo fecho do auctionHelpers. */
+export const auctionHooks: { finalize?: (game: ActiveGame, playerId: number) => void } = {};
+
 const roomTaskChains = new Map<string, Promise<unknown>>();
 /**
  * Corre `task` na fila da sala e devolve o seu resultado/erro ao chamador.

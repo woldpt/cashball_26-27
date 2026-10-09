@@ -210,6 +210,41 @@ test("F9 — empréstimo pedido durante a transação de outro fluxo sobrevive a
   assert.equal(t.budget, 501000, "dinheiro creditado");
 });
 
+test("F10 — fecho de leilão: dono mudou não paga; venda garantida sem lances vai a um NPC", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000, 2: 1000, 3: 5000 });
+  await runExec(
+    db,
+    "INSERT INTO players (id, name, position, skill, value, wage, team_id, transfer_status, transfer_price) VALUES (10, 'Leiloado', 'MED', 50, 100, 10, 3, 'auction', 50)",
+  );
+  const game = makeGame(db);
+  const helpers = createAuctionHelpers({
+    io: ioStub,
+    isMatchInProgress: () => false,
+    getSeasonEndMatchweek: () => 30,
+    scheduleNpcAuctionBids: () => {},
+    scheduleNpcCounterBid: () => {},
+    saveGameState: () => {},
+  });
+  // O vendedor registado (1) já não é o dono (3): não há venda nem movimento de saldos.
+  game.auctions[10] = { playerId: 10, sellerTeamId: 1, startingPrice: 50, status: "open", bids: { 2: { amount: 300 } } };
+  helpers.finalizeAuction(game, 10);
+  await drain(game);
+  assert.equal(await budgetOf(db, 1), 1000);
+  assert.equal(await budgetOf(db, 2), 1000);
+  assert.equal((await runGet(db, "SELECT team_id FROM players WHERE id = 10")).team_id, 3);
+
+  // Venda garantida sem lances: o NPC mais rico (equipa 2, a 3 é a vendedora) paga o preço-base.
+  await runExec(db, "UPDATE players SET transfer_status = 'auction' WHERE id = 10");
+  game.auctions[10] = { playerId: 10, sellerTeamId: 3, startingPrice: 50, status: "open", bids: {}, guaranteed: true };
+  helpers.finalizeAuction(game, 10);
+  await drain(game);
+  const buyer = (await runGet(db, "SELECT team_id FROM players WHERE id = 10")).team_id;
+  assert.ok(buyer === 1 || buyer === 2, "um NPC comprou");
+  assert.equal(await budgetOf(db, buyer), 950, "comprador paga o preço-base");
+  assert.equal(await budgetOf(db, 3), 5050, "vendedor recebe o preço-base");
+});
+
 const transferDeps = {
   isMatchInProgress: () => false,
   getSeasonEndMatchweek: () => 30,

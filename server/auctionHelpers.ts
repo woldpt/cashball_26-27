@@ -12,6 +12,7 @@ import {
   runGet,
   runAll,
   serializeRoomTask,
+  auctionHooks,
 } from "./coreHelpers";
 import { unreadyTeam } from "./roomStateHelpers";
 import { notifyUnreadied } from "./presenceHelpers";
@@ -264,6 +265,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     });
   };
 
+  auctionHooks.finalize = finalizeAuction;
+
   const runFinalizeAuction = async (game: ActiveGame, playerId: number) => {
     if (!game.auctions || !game.auctions[playerId]) return;
     const auction = game.auctions[playerId] as any;
@@ -434,7 +437,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     try {
       const moved = await runExec(
         game.db,
-        `UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ? AND transfer_status = 'auction'`,
+        `UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, morale = MIN(50, morale + 8), transfer_status = 'none', transfer_price = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ? AND transfer_status = 'auction' AND team_id IS ?`,
         [
           buyerTeamId,
           signingWage(player),
@@ -443,6 +446,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           currentSlot(game),
           currentSlot(game),
           playerId,
+          auction.sellerTeamId ?? null,
         ],
       );
       if (moved.changes === 0) throw new Error("auction_already_closed");
@@ -451,11 +455,13 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         "UPDATE teams SET budget = budget + ? WHERE id = ?",
         [finalBid, auction.sellerTeamId],
       );
-      await runExec(
+      // Saldo revalidado no próprio débito: nunca deixa o comprador negativo.
+      const paid = await runExec(
         game.db,
-        "UPDATE teams SET budget = budget - ? WHERE id = ?",
-        [finalBid, buyerTeamId],
+        "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
+        [finalBid, buyerTeamId, finalBid],
       );
+      if (paid.changes === 0) throw new Error("buyer_cannot_pay");
       await runExec(game.db, "COMMIT");
     } catch (txErr) {
       await runExec(game.db, "ROLLBACK").catch(() => {});
