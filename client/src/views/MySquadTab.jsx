@@ -148,7 +148,7 @@ export function MySquadTab({
               </button>
             );
           })}
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ml-auto flex max-w-full flex-wrap items-center gap-1.5">
             <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
               Ordenar
             </span>
@@ -177,10 +177,10 @@ export function MySquadTab({
             return (
               <section key={pos} aria-label={POS_GROUP_LABEL[pos]}>
                 <div className="flex items-center gap-3 px-1 pb-2">
-                  <h3 className={`font-headline font-black uppercase tracking-tight text-sm ${POSITION_TEXT_CLASS[pos]}`}>
+                  <h3 className={`font-headline font-black uppercase tracking-tight text-sm whitespace-nowrap ${POSITION_TEXT_CLASS[pos]}`}>
                     {POS_GROUP_LABEL[pos]}
                   </h3>
-                  <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-wider tabular-nums">
+                  <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-wider tabular-nums whitespace-nowrap">
                     {stats.count} · {formatCurrency(stats.wage)}/sem
                   </span>
                   <div
