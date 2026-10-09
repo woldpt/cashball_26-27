@@ -788,8 +788,8 @@ export function FinancesTab({
                     onCancel: () => {},
                   });
                 }}
-                disabled={loanAmount >= LOAN_MAX}
-                title={loanAmount >= LOAN_MAX ? "Plafond esgotado" : undefined}
+                disabled={loanAmount + LOAN_STEP > LOAN_MAX}
+                title={loanAmount + LOAN_STEP > LOAN_MAX ? "Plafond esgotado" : undefined}
               >
                 Pedir {loanStepK}
               </Button>

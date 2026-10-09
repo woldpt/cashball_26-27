@@ -147,7 +147,7 @@ export function registerFinanceSocketHandlers(
 
     const result = await runExec(
       game.db,
-      "UPDATE teams SET budget = budget + 500000, loan_amount = loan_amount + 500000 WHERE id = ? AND loan_amount < 2500000",
+      "UPDATE teams SET budget = budget + 500000, loan_amount = loan_amount + 500000 WHERE id = ? AND loan_amount + 500000 <= 2500000",
       [playerState.teamId],
     );
     if (result.changes === 0) {
