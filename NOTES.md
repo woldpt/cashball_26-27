@@ -1,3 +1,7 @@
+## Deploy v26.10.37 no rick (2026-10-09)
+Push, tag e rebuild feitos; backend Healthy.
+Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
+
 ## Transição do PAUSA no marcador (2026-10-09)
 - `LiveMatchHero.jsx`: ao passar o rato, o resultado esbate/encolhe e o "PAUSA" sobe com brilho (300ms; só esbater com movimento reduzido), em vez de trocar de repente.
 - Testado: lint, check:types.
