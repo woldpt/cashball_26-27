@@ -356,7 +356,7 @@ async function main() {
   }
   console.log(
     `\n✅ barrier smoke: 2 fixtures × 45' concorrentes, ${ticks.length} ticks, ` +
-      `placares A ${(fixtureA.finalHomeGoals as number)}-${(fixtureA.finalAwayGoals as number)} / ` +
+      `marcadores A ${(fixtureA.finalHomeGoals as number)}-${(fixtureA.finalAwayGoals as number)} / ` +
       `B ${(fixtureB.finalHomeGoals as number)}-${(fixtureB.finalAwayGoals as number)}`,
   );
 }

@@ -855,7 +855,7 @@ export function TeamHistoryView({
               tabs={[
                 { key: "all", label: "Todos" },
                 { key: "market", label: "Mercado" },
-                { key: "managers", label: "Técnicos" },
+                { key: "managers", label: "Treinadores" },
                 { key: "prize", label: "Prémios" },
               ]}
               active={eventFilter}

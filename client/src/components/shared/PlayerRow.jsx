@@ -220,7 +220,7 @@ export function PlayerRow({
         </span>
         <span title="Golos: época / carreira" className="flex flex-col items-center min-w-12">
           <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
-            Gol
+            Golos
           </span>
           <span className="text-emerald-400 font-black">
             ⚽{getPlayerStat(player, ["goals"])}

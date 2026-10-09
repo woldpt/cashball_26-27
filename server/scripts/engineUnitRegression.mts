@@ -146,10 +146,10 @@ test("U3 — shootout alternado, decidido e determinístico", () => {
     assert.notEqual(homeGoals, awayGoals, `shootout sem vencedor (seed ${seed})`);
     // Alternância estrita casa/fora a partir da casa
     kicks.forEach((k: any, i: number) => {
-      assert.equal(k.team, i % 2 === 0 ? "home" : "away", `ordem quebrada (seed ${seed}, chute ${i})`);
+      assert.equal(k.team, i % 2 === 0 ? "home" : "away", `ordem quebrada (seed ${seed}, remate ${i})`);
     });
     const regulation = kicks.filter((k: any) => !k.suddenDeath);
-    assert.ok(regulation.length <= 10, `mais de 10 chutes regulamentares (seed ${seed})`);
+    assert.ok(regulation.length <= 10, `mais de 10 remates regulamentares (seed ${seed})`);
     if (kicks.some((k: any) => k.suddenDeath)) {
       sawSuddenDeath = true;
       // Na morte súbita, nº par de chutes com decisão no par

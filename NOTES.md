@@ -1,3 +1,8 @@
+## Equipa de agentes + varrimento pt-PT (2026-10-09)
+- Equipa no Claude Code: orquestrador/revisor (Opus), `coder` (Sonnet), `scout` e `ops` (Haiku) em `.claude/agents/`; `.claude/skills` → `.pi/skills`; `CLAUDE.md` importa `AGENTS.md`.
+- Varrimento pt-PT (scout → coder → revisão): «Técnicos»→«Treinadores», coluna «Gol»→«Golos», narração sem «marcar contra»/«sacou o cartão»; mensagens de testes sem «placares»/«chute».
+- Testado: server typecheck + test:engine-unit + test:own-goal; client check:types; lint só com o erro antigo do `landing-resp-test.jsx`.
+
 ## Contenção de "buracos negros" (2026-10-08)
 - Linhas de `matches` da liga passam a ser gravadas na transação do fecho (com classificação + marker 'finalized', `leagueMatchRowWrites`); `persistMatchResults` fica só com forma/notas/MOM/rescaldo.
 - `socket.on` envolvido por ligação (index.ts): erro/rejeição num handler é registado e não chega ao `fatalShutdown`.
