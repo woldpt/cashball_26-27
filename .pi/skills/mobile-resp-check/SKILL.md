@@ -32,8 +32,8 @@ cd client && npm run test:mobile
 ```
 
 > **Fast:** the runner runs all `*-test.html` harnesses × the 5 widths in
-> **parallel** (default `--concurrency 20`). Full 33-harness run takes
-> **~45 seconds** (exit 0, RESULT `165/165`). Use a modest bash timeout (e.g.
+> **parallel** (default `--concurrency 20`). Full 38-harness run takes
+> **~45 seconds** (exit 0, RESULT `190/190`). Use a modest bash timeout (e.g.
 > `timeout 180s`) — no need for `600s` anymore. Tune with `--concurrency <n>`
 > (lower on constrained machines; `1` reproduces the old sequential behaviour).
 
@@ -76,6 +76,7 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 
 | Harness file (client root) | Renders |
 | :------------------------- | :------ |
+| `assistant-resp-test.html` | `components/shared/AssistantCoachView.jsx` (balão do adjunto; colisão com a nav/fly-up — o ticker CM é coberto de propósito) |
 | `auctions-resp-test.html` | `pages/AuctionsPage.jsx` |
 | `briefing-resp-test.html` | `components/live/briefing/` (briefing pré-jogo) |
 | `calendario-resp-test.html` | `views/CalendarioTab.jsx` |
@@ -83,12 +84,14 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 | `cup-resp-test.html` | `views/CupTab.jsx` |
 | `cupfinal-resp-test.html` | `components/live/CupFinalStage.jsx` |
 | `finances-resp-test.html` | `views/FinancesTab.jsx` |
+| `gamebar-resp-test.html` | `components/layout/SystemOverlays.jsx` + `RoomPauseBanner.jsx` (avisos/toasts do topo) |
 | `intervencao-test.html` | `components/match/tabs/IntervencaoView.jsx` |
 | `journal-resp-test.html` | `views/JournalTab.jsx` |
 | `landing-resp-test.html` | `components/auth/LandingPage.jsx` |
 | `livehero-resp-test.html` | `components/live/LiveMatchHero.jsx` |
+| `liveview-resp-test.html` | `components/live/LiveView.jsx` |
 | `match-spectate-resp-test.html` | `components/match/tabs/MatchView.jsx` |
-| `mobile-resp-test.html` | `views/PlayersTab.jsx` |
+| `mobile-resp-test.html` | `views/MySquadTab.jsx` (Plantel) |
 | `playerhistory-resp-test.html` | `components/modals/PlayerHistoryModal.jsx` |
 | `roomhub-resp-test.html` | `components/chat/RoomHub.jsx` |
 | `roompause-resp-test.html` | `components/shared/RoomPauseBanner.jsx` |
@@ -96,16 +99,19 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 | `room-settings-resp-test.html` | `components/room/RoomSettings.jsx` |
 | `rotateoverlay-resp-test.html` | `components/shared/RotateOverlay.jsx` (só rende em landscape; em retrato passa com o placeholder) |
 | `scout-resp-test.html` | `views/PlayerSearchView.jsx` |
+| `seasonend-resp-test.html` | `components/modals/SeasonEndModal.jsx` |
 | `settings-resp-test.html` | `pages/UserSettingsPage.jsx` |
 | `stadium-resp-test.html` | `components/shared/StadiumIllustration.jsx` |
 | `stadiumtab-resp-test.html` | `views/StadiumTab.jsx` |
 | `standings-resp-test.html` | `components/ui/LeagueStandings.jsx` |
-| `tactics-resp-test.html` | `views/TacticsView.jsx` |
+| `tactics-resp-test.html` | `views/TacticsView.jsx` (⚠ renderiza em branco sem estado de jogo — o PASS não prova nada) |
 | `teamhistory-resp-test.html` | `views/TeamHistoryView.jsx` |
-| `topwidgets-resp-test.html` | widgets de topo (SummaryWidget e irmãos) sobre várias tabs |
+| `teamsquad-resp-test.html` | `views/OtherSquadsTab.jsx` |
+| `topwidgets-resp-test.html` | widgets de topo (SummaryWidget e irmãos) sobre várias tabs (precisa de `GameProvider` + `TacticsProvider`) |
 | `training-resp-test.html` | `components/ui/TrainingPage.jsx` |
 | `transfer-resp-test.html` | `components/ui/TransferHub.jsx` |
-| `useradmin-panel-resp-test.html` | `components/admin/AdminPanel.jsx` |
+| `tutorial-resp-test.html` | `components/tutorial/CoachTutorial.jsx` |
+| `useradmin-panel-resp-test.html` | `pages/AdminPage.jsx` |
 | `useradmin-resp-test.html` | componentes admin (`UserList`/`UserProfileSection`/`UserRoomsSection`/`UserTeamsSection`) |
 | `waiting-coaches-test.html` | `components/modals/WaitingCoachesModal.jsx` |
 | `welcome-resp-test.html` | `components/modals/WelcomeModal.jsx` |
@@ -138,6 +144,16 @@ The harness contract (do not break): render into `#root`, then after ~2500 ms
 write `REPORT:<json>` into `<pre id="report">` and set `data-status="done"`.
 The JSON must include `viewport`, `pageOverflowPx`, `clippedRows` (or
 `clippedPlayerRows`), `clippingElements`, and `verdict` (`"PASS"`/`"FAIL"`).
+
+## Armadilhas conhecidas
+
+- Os harnesses correm em paralelo num só `vite dev`: **um harness com import
+  partido faz aparecer o overlay de erro do Vite nos screenshots dos outros**
+  (que passam na mesma, às cegas). Se vires o overlay, corre o harness sozinho
+  (`npm run test:mobile -- <harness>`) e corrige o partido.
+- Sem fontes (404 nos `resErr`), ícones Material aparecem como texto e geram
+  cortes `+4px` em `<span w-4 h-4 overflow-hidden>` — artefacto, não bug.
+- Harness em branco + `pageErr` = falta provider/props (contrato mudou).
 
 ## Interpreting failures & typical fixes (see `STYLE.md`)
 
