@@ -97,6 +97,7 @@ class GameStateAuditor {
       await this.auditMatchPhases();
       await this.auditTransfersIntegrity();
       await this.auditFlowInvariants();
+      await this.auditFinanceGuards();
 
       return this.reportIssues();
     } catch (err) {
@@ -235,6 +236,50 @@ class GameStateAuditor {
         `Match ${match.id} is played but missing a score (${match.home_score}-${match.away_score})`,
         { matchId: match.id, homeScore: match.home_score, awayScore: match.away_score },
       );
+    }
+  }
+
+  /** Guardas financeiras (docs/plans/2026-10-09-guardas-financas.md). */
+  private async auditFinanceGuards() {
+    // Jogador em leilão sem leilão ativo gravado: leilão perdido ou fechado sem limpar.
+    const stateRow = await this.runQuery<any>(
+      "SELECT value FROM game_state WHERE key = 'activeAuctions'",
+    );
+    let activeIds = new Set<number>();
+    try {
+      activeIds = new Set(JSON.parse(stateRow[0]?.value || "[]").map((a: any) => Number(a.playerId)));
+    } catch {
+      /* estado ilegível: tratado como sem leilões */
+    }
+    const inAuction = await this.runQuery<any>(
+      "SELECT id, name FROM players WHERE transfer_status = 'auction'",
+    );
+    for (const p of inAuction.filter((r) => !activeIds.has(Number(r.id)))) {
+      this.addIssue("warning", "finance", `Player ${p.name} is 'auction' without an active auction`, { playerId: p.id });
+    }
+
+    const overLoan = await this.runQuery<any>(
+      "SELECT id, name, loan_amount FROM teams WHERE loan_amount > 2500000",
+    );
+    for (const t of overLoan) {
+      this.addIssue("error", "finance", `Team ${t.name} loan above cap (${t.loan_amount})`, { teamId: t.id, loan: t.loan_amount });
+    }
+
+    const orphanSponsor = await this.runQuery<any>(
+      `SELECT t.id, t.name FROM teams t LEFT JOIN managers m ON t.manager_id = m.id
+       WHERE t.sponsor_pending = 1 AND COALESCE(m.is_human, 0) = 0`,
+    );
+    for (const t of orphanSponsor) {
+      this.addIssue("warning", "finance", `Team ${t.name} has a pending sponsor choice but no human coach`, { teamId: t.id });
+    }
+
+    const dupSponsor = await this.runQuery<any>(
+      `SELECT team_id, year, COUNT(*) AS n FROM club_news
+       WHERE type = 'sponsor' AND title LIKE '%é o novo patrocinador'
+       GROUP BY team_id, year HAVING n > 1`,
+    );
+    for (const d of dupSponsor) {
+      this.addIssue("error", "finance", `Team ${d.team_id} chose a sponsor ${d.n}× in ${d.year} (upfront paid twice?)`, { teamId: d.team_id, year: d.year });
     }
   }
 
