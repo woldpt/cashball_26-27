@@ -1007,7 +1007,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 	}
 
-	async function seasonStepOnce<T>(game: ActiveGame, kind: string, fn: () => Promise<T>): Promise<T | undefined> {
+	async function seasonStepOnce<T>(
+		game: ActiveGame,
+		kind: string,
+		fn: () => Promise<T>,
+		opts?: { atomic?: boolean },
+	): Promise<T | undefined> {
 		const done = await runGet(
 			game.db,
 			"SELECT 1 AS d FROM applied_weeks WHERE season = ? AND slot = ? AND kind = ?",
@@ -1023,9 +1028,25 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			}
 			return undefined;
 		}
+		if (opts?.atomic) {
+			// Passo + marcador na mesma transação: uma quebra a meio não deixa
+			// metade dos prémios pagos para a retoma pagar outra vez.
+			return runRoomTask(game.roomCode, async () => {
+				await dbRunOn(game, "BEGIN");
+				try {
+					const result = await fn();
+					await recordSeasonStep(game, kind, result === undefined ? undefined : result);
+					await dbRunOn(game, "COMMIT");
+					return result;
+				} catch (txErr) {
+					await dbRunOn(game, "ROLLBACK").catch(() => {});
+					throw txErr;
+				}
+			});
+		}
 		const result = await fn();
-		// ponytail: marcador pós-passo, janela de crash entre o passo e o marcador
-		// (os passos com transação própria gravam-no dentro dela).
+		// Passos sem dinheiro (ou com transação própria, que grava o marcador
+		// lá dentro): marcador logo a seguir ao passo.
 		await recordSeasonStep(game, kind, result === undefined ? undefined : result);
 		return result;
 	}
@@ -1072,11 +1093,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				.join(" ")} END`,
 		);
 
-		const iLigaWinner = await seasonStepOnce(game, "champion_prizes", () => payChampionPrizes(game, byDiv, year));
+		const iLigaWinner = await seasonStepOnce(game, "champion_prizes", () => payChampionPrizes(game, byDiv, year), { atomic: true });
 
-		await seasonStepOnce(game, "sponsor_revenue", () => paySponsorRevenue(game, allTeams, year));
+		await seasonStepOnce(game, "sponsor_revenue", () => paySponsorRevenue(game, allTeams, year), { atomic: true });
 
-		const topScorers = await seasonStepOnce(game, "top_scorer_prize", () => payTopScorerPrize(game, year));
+		const topScorers = await seasonStepOnce(game, "top_scorer_prize", () => payTopScorerPrize(game, year), { atomic: true });
 
 		// Jornal do Clube persiste entre épocas — não apagar club_news.
 		// As notícias são agregadas por ano no frontend (ClubTab.jsx) para evitar lista infinita.
