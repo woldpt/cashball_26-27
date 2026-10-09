@@ -8,10 +8,26 @@ export type TacticStyle =
   | "DEFENSIVO"
   | "OFENSIVO";
 
+export type TacticPressure = "ALTA" | "MEDIA" | "BAIXA";
+export type HalftimeTalk = "ELOGIAR" | "EXIGIR" | "ACALMAR";
+
+/** Ordem do treinador: aos `minute`', se o resultado for `when` → estilo/pressão. */
+export interface TacticOrder {
+  minute: number;
+  when: "LOSING" | "DRAWING" | "WINNING";
+  style: TacticStyle;
+  pressure?: TacticPressure;
+}
+
 export interface Tactic {
   formation: string;
   style: TacticStyle;
   positions?: Record<number, "Titular" | "Suplente" | string>;
+  pressure?: TacticPressure;
+  /** Até 2 ordens condicionais, aplicadas pelo servidor (equipas humanas). */
+  orders?: TacticOrder[];
+  /** Conversa ao intervalo — escolhida no intervalo, vale para a 2.ª parte. */
+  talk?: HalftimeTalk;
 }
 
 export type PlayerPosition = "GR" | "DEF" | "MED" | "ATA";
@@ -135,6 +151,10 @@ export interface MatchFixture {
   _momentum?: { side: MatchSide; from: number };
   /** Estilo pré-jogo dos NPCs, para voltarem a ele quando o resultado o pede. */
   _npcBaseStyle?: Partial<Record<MatchSide, string>>;
+  /** Conversa ao intervalo já aplicada (uma vez por jogo). */
+  _talkApplied?: boolean;
+  /** Lados que ouviram "acalmar" ao intervalo (menos cartões na 2.ª parte). */
+  _talkCalm?: Partial<Record<MatchSide, boolean>>;
   _deltas?: {
     calendarIndex: number;
     appearances: Set<number>;
@@ -203,6 +223,8 @@ export interface RoomSeat {
     formation?: string;
     style?: string;
     positions?: Record<string, unknown>;
+    pressure?: TacticPressure;
+    orders?: TacticOrder[];
   };
   /** Só em memória: contador dos `setReady` (descarta respostas assíncronas obsoletas). */
   readySeq?: number;

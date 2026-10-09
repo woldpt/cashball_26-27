@@ -553,6 +553,7 @@ export function IntervencaoView({
               onArmResetAll={handleArmResetAll}
               teamColor={ownColor}
               summary={{ fixture, hInfo, aInfo, liveMinute }}
+              showTalk={isHalftime && !isPreExtraTime}
             />
           </motion.div>
         )}

@@ -649,6 +649,31 @@ export const MATCH_TUNING = {
   npcTacticMinutes: [46, 70] as number[],
   npcSubMinutes: [60, 75] as number[],
   npcSubsReserve: 1,
+  // Duelo de formações (linhas REAIS em campo): cada médio a mais que o
+  // adversário inclina a posse; na finalização conta a "sobra" de defesas
+  // (DEF − ATA adversários): 2 é o neutro (4-4-2 vs 4-4-2); cada um a menos
+  // facilita, cada um a mais complica.
+  duelPossePerMed: 0.025,
+  duelConvPerPlayer: 0.04,
+  duelSpareNeutral: 2,
+  duelConvMin: 0.88,
+  duelConvMax: 1.12,
+  // Pressão: posse (inclinação), ataque/defesa, cartões e cansaço
+  // (fatigueSkip multiplica a hipótese de escapar ao desgaste).
+  pressure: {
+    ALTA: { posse: 0.03, attack: 1.03, defense: 0.95, cards: 1.3, fatigueSkip: 0.4 },
+    MEDIA: { posse: 0, attack: 1, defense: 1, cards: 1, fatigueSkip: 1 },
+    BAIXA: { posse: -0.03, attack: 0.95, defense: 1.15, cards: 0.8, fatigueSkip: 1.5 },
+  } as Record<string, { posse: number; attack: number; defense: number; cards: number; fatigueSkip: number }>,
+  // Conversa ao intervalo: pontos de moral de equipa na 2.ª parte, pelo
+  // resultado ao intervalo (a ganhar / empate / a perder). Acalmar também
+  // corta os cartões da 2.ª parte.
+  talk: {
+    ELOGIAR: { win: 8, draw: 4, lose: -6 },
+    EXIGIR: { win: -6, draw: 4, lose: 8 },
+    ACALMAR: { win: 3, draw: 3, lose: 3 },
+  } as Record<string, { win: number; draw: number; lose: number }>,
+  talkCalmCardsMult: 0.7,
   // Inferioridade numérica (expulsão, lesão sem troca), POR jogador a menos:
   // menos oportunidades próprias, mais para o adversário, defesa mais curta.
   // Com 10: marca ~-18%, sofre ~+28%.

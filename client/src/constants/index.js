@@ -414,9 +414,26 @@ export const TACTIC_FORMATIONS = [
   { value: "5-4-1", label: "5-4-1", badge: "Autocarro", blurb: "Onze atrás da linha da bola.", edge: "defense" },
 ];
 
+/* Pressão (campo `pressure`): alta = mais bola e faltas, cansa; baixa = bloco
+ * compacto, poupa pernas. */
+export const PRESSURE_OPTIONS = [
+	{ value: "BAIXA", label: "Baixa", accent: "#3b82f6", icon: "form-down" },
+	{ value: "MEDIA", label: "Média", accent: "#6366f1", icon: "form-flat" },
+	{ value: "ALTA", label: "Alta", accent: "#f43f5e", icon: "form-up" },
+];
+
+/* Conversa ao intervalo (campo `talk`): vale para a 2.ª parte. */
+export const TALK_OPTIONS = [
+	{ value: "ACALMAR", label: "Acalmar", accent: "#22d3ee" },
+	{ value: "ELOGIAR", label: "Elogiar", accent: "#4ade80" },
+	{ value: "EXIGIR", label: "Exigir", accent: "#f59e0b" },
+];
+
 export const DEFAULT_TACTIC = {
 	formation: "4-4-2",
 	style: "Balanced",
+	pressure: "MEDIA",
+	orders: [],
 	positions: {},
 };
 

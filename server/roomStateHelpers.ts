@@ -79,6 +79,8 @@ function parseIntent(raw: any): RoomSeat["intent"] {
       formation: parsed.formation,
       style: parsed.style,
       positions: parsed.positions || {},
+      pressure: parsed.pressure,
+      orders: Array.isArray(parsed.orders) ? parsed.orders : [],
     };
   } catch {
     return { ready: false };
@@ -132,6 +134,8 @@ function projectSeatToPlayer(game: ActiveGame, seat: RoomSeat): PlayerSession {
     formation: (seat.intent.formation ?? base.tactic?.formation ?? "4-4-2") as any,
     style: (seat.intent.style ?? base.tactic?.style ?? "Balanced") as any,
     positions: (seat.intent.positions ?? base.tactic?.positions ?? {}) as any,
+    pressure: seat.intent.pressure ?? base.tactic?.pressure,
+    orders: seat.intent.orders ?? base.tactic?.orders ?? [],
   };
   game.playersByName[seat.name] = base;
   return base;

@@ -116,6 +116,12 @@ export function normaliseStyle(style: unknown) {
   return "EQUILIBRADO";
 }
 
+/** Pressão da tática: ALTA / MEDIA / BAIXA (omissa ou inválida → MEDIA). */
+export function normalisePressure(pressure: unknown): string {
+  const raw = String(pressure || "").trim().toUpperCase();
+  return raw === "ALTA" || raw === "BAIXA" ? raw : "MEDIA";
+}
+
 export function getAggressivenessValue(player: PlayerRow) {
   if (typeof player?.aggressiveness === "number") {
     const v = Math.round(player.aggressiveness);
@@ -356,6 +362,12 @@ export type SidePower = {
   formation: string;
   /** Jogadores a menos em campo (0 com 11). */
   missing: number;
+  /** Pressão (ALTA/MEDIA/BAIXA). */
+  pressure: string;
+  /** Jogadores por linha em campo (duelo de formações). */
+  lines: { DEF: number; MED: number; ATA: number };
+  /** Inclinação de posse própria: médios em campo + pressão. */
+  possessionTilt: number;
 };
 
 /**
@@ -421,7 +433,7 @@ export function shortHandedChanceMult(ownMissing = 0, oppMissing = 0): number {
 
 export function computeSidePower(
   squad: PlayerRow[],
-  tactic: { formation?: string; style?: string } | null,
+  tactic: { formation?: string; style?: string; pressure?: string } | null,
   morale = 50,
   familiarityBonus = 0,
   crowdFactor = 1,
@@ -431,6 +443,10 @@ export function computeSidePower(
   // A familiaridade é da formação treinada: só conta se for a que se joga.
   if (formation !== declared) familiarityBonus = 0;
   const style = normaliseStyle(tactic?.style);
+  const pressure = normalisePressure(tactic?.pressure);
+  const press = MATCH_TUNING.pressure[pressure];
+  const lines = { DEF: 0, MED: 0, ATA: 0 };
+  for (const p of squad) if (p.position in lines) lines[p.position]++;
   // Jogadores a menos (expulsão, lesão sem troca). Onze incompleto → 0.
   const missing = squad.length >= MIN_FIELD_FOR_SHAPE + 1 ? Math.max(0, 11 - squad.length) : 0;
 
@@ -486,7 +502,8 @@ export function computeSidePower(
       STYLE_ATTACK_FACTORS[style] *
       formFactor *
       familiarityAttackFactor *
-      crowdAttackFactor,
+      crowdAttackFactor *
+      press.attack,
     defense:
       defenseBase *
       formationDefense *
@@ -496,31 +513,51 @@ export function computeSidePower(
       formFactor *
       familiarityDefenseFactor *
       crowdDefenseFactor *
-      MATCH_TUNING.shortHandedDefenseMult ** missing,
+      MATCH_TUNING.shortHandedDefenseMult ** missing *
+      press.defense,
     style,
     squad,
     midStrength: avgMidfielderQuality,
     formation,
     missing,
+    pressure,
+    lines,
+    possessionTilt: lines.MED * MATCH_TUNING.duelPossePerMed + press.posse,
   };
 }
 
 /**
- * Posse da equipa A (0.30–0.70) a partir dos médios + estilo — hatrick-style,
- * calculada UMA vez no apito inicial e fixa o resto do jogo. Médios melhores →
- * mais posse; OFENSIVO tem a bola, DEFENSIVO cede-a.
+ * Posse da equipa A (0.30–0.70) a partir dos médios + estilo — hatrick-style.
+ * Médios melhores → mais posse; OFENSIVO tem a bola, DEFENSIVO cede-a.
+ * `extraA/extraB`: inclinações extra de cada lado (SidePower.possessionTilt:
+ * superioridade no meio-campo + pressão) — só a diferença conta.
  */
 export function computePossession(
   midA: number,
   midB: number,
   styleA: string,
   styleB: string,
+  extraA = 0,
+  extraB = 0,
 ): number {
   const tiltA = STYLE_POSSESSION_FACTORS[normaliseStyle(styleA)] ?? 0;
   const tiltB = STYLE_POSSESSION_FACTORS[normaliseStyle(styleB)] ?? 0;
   const raw =
-    0.5 + (midA - midB) * MATCH_TUNING.possePerPoint + (tiltA - tiltB) * MATCH_TUNING.posseStyleDefensiva;
+    0.5 +
+    (midA - midB) * MATCH_TUNING.possePerPoint +
+    (tiltA - tiltB) * MATCH_TUNING.posseStyleDefensiva +
+    (extraA - extraB);
   return Math.max(0.3, Math.min(0.7, raw));
+}
+
+/**
+ * Duelo na finalização: avançados de quem ataca contra os defesas de quem
+ * defende. Sobra de 2 defesas = neutro; menos sobra facilita, mais complica.
+ */
+export function duelConversionMult(attackers: number, defenders: number): number {
+  const spare = defenders - attackers;
+  const mult = 1 + MATCH_TUNING.duelConvPerPlayer * (MATCH_TUNING.duelSpareNeutral - spare);
+  return Math.max(MATCH_TUNING.duelConvMin, Math.min(MATCH_TUNING.duelConvMax, mult));
 }
 
 /**

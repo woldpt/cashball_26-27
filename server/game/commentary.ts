@@ -1597,14 +1597,46 @@ function styleDisplayLabel(style: string): string {
 }
 
 /** Mudança tática live a meio do jogo (determinística, sem pool). */
-function tacticChangePhrase(teamName: string, formation: string, style: string): string {
-  return `🔄 ${teamName} muda para ${formation} (${styleDisplayLabel(style)})`;
+const PRESSURE_LABELS: Record<string, string> = {
+  ALTA: "pressão alta",
+  MEDIA: "pressão média",
+  BAIXA: "bloco baixo",
+};
+
+function pressureDisplayLabel(pressure: string): string {
+  return PRESSURE_LABELS[pressure] ?? PRESSURE_LABELS.MEDIA;
+}
+
+const TALK_LABELS: Record<string, string> = {
+  ELOGIAR: "elogios",
+  EXIGIR: "exigência",
+  ACALMAR: "calma",
+};
+
+/** Conversa ao intervalo: como caiu no balneário (delta de moral). */
+function talkPhrase(teamName: string, talk: string, delta: number): string {
+  const mood =
+    talk === "ACALMAR"
+      ? "a equipa volta serena"
+      : delta > 0
+        ? "a equipa volta com outra garra"
+        : talk === "ELOGIAR"
+          ? "caiu mal — a equipa volta relaxada demais"
+          : "caiu mal — a equipa volta tensa";
+  return `🗣️ Balneário do ${teamName}: ${TALK_LABELS[talk] ?? talk} ao intervalo, ${mood}`;
+}
+
+function tacticChangePhrase(teamName: string, formation: string, style: string, pressure?: string): string {
+  const press = pressure && PRESSURE_LABELS[pressure] ? `, ${PRESSURE_LABELS[pressure]}` : "";
+  return `🔄 ${teamName} muda para ${formation} (${styleDisplayLabel(style)}${press})`;
 }
 
 export {
   pickPhrase,
   styleDisplayLabel,
   tacticChangePhrase,
+  pressureDisplayLabel,
+  talkPhrase,
   goalPhrase,
   ownGoalPhrase,
   penaltyGoalPhrase,

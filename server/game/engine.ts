@@ -1,4 +1,4 @@
-import type { ActiveGame, Tactic, TacticStyle, PlayerRow, MatchFixture, MatchSide } from "../types";
+import type { ActiveGame, Tactic, TacticStyle, TacticPressure, PlayerRow, MatchFixture, MatchSide } from "../types";
 import {
   generateJuniorGR,
   withJuniorGRs,
@@ -61,6 +61,8 @@ import {
   secondHalfTacticPhrase,
   styleDisplayLabel,
   tacticChangePhrase,
+  pressureDisplayLabel,
+  talkPhrase,
   computeMatchOdds,
   bettingPhrase,
 } from "./commentary";
@@ -80,6 +82,8 @@ import {
   getWeatherGoalMultiplier,
   quotaFromFormation,
   shortHandedChanceMult,
+  duelConversionMult,
+  normalisePressure,
 } from "./matchCalculations";
 import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
@@ -744,7 +748,7 @@ export function adoptLiveTactic(
   side: MatchSide,
   tactic: Tactic | null,
   lineupIds: Set<number>,
-): { formation: string; style: string } | null {
+): { formation: string; style: string; pressure: string } | null {
   const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
   const coachState: any = Object.values(game.playersByName || {}).find(
     (p: any) => p && (p as any).teamId === teamId,
@@ -773,6 +777,11 @@ export function adoptLiveTactic(
     }
     if (newStyle && normaliseStyle(ref.style) !== newStyle) {
       ref.style = live.style;
+      tacticalChange = true;
+    }
+    const newPressure = normalisePressure(live.pressure);
+    if (normalisePressure(ref.pressure) !== newPressure) {
+      ref.pressure = newPressure;
       tacticalChange = true;
     }
     if (live.positions && typeof live.positions === "object") {
@@ -812,7 +821,7 @@ export function adoptLiveTactic(
   }
   if (tacticalChange) bumpPowerVersion(fixture, side);
   return tacticalChange
-    ? { formation: newFormation ?? currentFormation, style: newStyle }
+    ? { formation: newFormation ?? currentFormation, style: newStyle, pressure: normalisePressure(live.pressure) }
     : null;
 }
 
@@ -1520,9 +1529,10 @@ function applyFatigueToPlayer(
 // Probabilidade de escape do rolo de cansaço: baseada na resistência
 // (por ponto) + bónus para GR (posição "GR", incl. improvisado) — os GR
 // cansam-se muito menos que os jogadores de campo.
-function fatigueSkipChance(p: PlayerRow): number {
+function fatigueSkipChance(p: PlayerRow, pressureMult = 1): number {
   const resistance = p.resistance ?? RES_NEUTRAL;
-  const skipChance = (resistance - 1) * MATCH_TUNING.fatigueSkipPerResPoint;
+  // Pressão alta desgasta mais (escapa-se menos); bloco baixo poupa.
+  const skipChance = (resistance - 1) * MATCH_TUNING.fatigueSkipPerResPoint * pressureMult;
   // Teto 1: sem isto o GR com resistência alta dava 1,09 — imune à fadiga.
   return Math.min(
     1,
@@ -1545,6 +1555,7 @@ function trackFatigue(
   squad: PlayerRow[],
   lineupIds: Set<number>,
   rng: Rng = Math.random,
+  pressureMult = 1,
 ) {
   ensureFatigueLedgers(fixture);
   const mps = fixture._minutesPlayed[side];
@@ -1555,7 +1566,7 @@ function trackFatigue(
     syncFatigueSnapshot(fixture, side, p.id, getEffectiveSkill(p));
     if (played % MATCH_TUNING.fatigueIntervalMinutes !== 0) continue;
 
-    if (rng() < fatigueSkipChance(p)) continue;
+    if (rng() < fatigueSkipChance(p, pressureMult)) continue;
 
     applyFatigueToPlayer(fixture, side, p, 1, rng);
   }
@@ -1807,6 +1818,41 @@ async function restoreSideSquad(
   return squad;
 }
 
+/**
+ * Conversa ao intervalo (tactic.talk): mexe na moral de equipa da 2.ª parte
+ * (fixture._homeMorale/_awayMorale, já carregadas) conforme o resultado ao
+ * intervalo; "acalmar" também corta os cartões. Uma vez por jogo.
+ */
+export function applyHalftimeTalk(
+  fixture: MatchFixture,
+  homeTactic: Tactic | null,
+  awayTactic: Tactic | null,
+): void {
+  if (fixture._talkApplied) return;
+  fixture._talkApplied = true;
+  for (const side of ["home", "away"] as const) {
+    const tactic = side === "home" ? homeTactic : awayTactic;
+    const effect = tactic?.talk ? MATCH_TUNING.talk[tactic.talk] : null;
+    if (!effect) continue;
+    const diff =
+      side === "home"
+        ? fixture.finalHomeGoals - fixture.finalAwayGoals
+        : fixture.finalAwayGoals - fixture.finalHomeGoals;
+    const delta = diff > 0 ? effect.win : diff < 0 ? effect.lose : effect.draw;
+    const field = side === "home" ? "_homeMorale" : "_awayMorale";
+    fixture[field] = Math.max(1, Math.min(50, (Number(fixture[field]) || 25) + delta));
+    if (tactic.talk === "ACALMAR") (fixture._talkCalm ??= {})[side] = true;
+    const team = side === "home" ? fixture.homeTeam : fixture.awayTeam;
+    fixture.events.push({
+      minute: 46,
+      type: "tactic_change",
+      team: side,
+      emoji: "🗣️",
+      text: `[46'] ${talkPhrase(team?.name || "?", tactic.talk, delta)}`,
+    });
+  }
+}
+
 export async function simulateMatchSegment(
   db: Db,
   fixture: MatchFixture,
@@ -1872,6 +1918,19 @@ export async function simulateMatchSegment(
     ]);
     fixture._homeMorale = homeMorale;
     fixture._awayMorale = awayMorale;
+  }
+
+  // Conversa ao intervalo: escolhida no intervalo, vale para a 2.ª parte
+  // conforme o resultado. Uma vez por jogo; ao apito inicial a escolha de um
+  // jogo anterior é esquecida (nunca transita sozinha para o jogo seguinte).
+  if (startMin === 1) {
+    if (homeTactic) delete homeTactic.talk;
+    if (awayTactic) delete awayTactic.talk;
+  }
+  if (startMin === 46) {
+    applyHalftimeTalk(fixture, homeTactic, awayTactic);
+    homeMorale = fixture._homeMorale;
+    awayMorale = fixture._awayMorale;
   }
 
   // Load full rosters for bench availability during injuries (cached on fixture)
@@ -2151,7 +2210,7 @@ function applyLiveTacticAdoption(tick: MinuteTickContext): void {
       type: "tactic_change",
       team: "home",
       emoji: "\ud83d\udd04",
-      text: `[${minute}'] ${tacticChangePhrase(homeName, homeTacticChange.formation, homeTacticChange.style)}`,
+      text: `[${minute}'] ${tacticChangePhrase(homeName, homeTacticChange.formation, homeTacticChange.style, homeTacticChange.pressure)}`,
     });
   }
   const awayTacticChange = adoptLiveTactic(
@@ -2170,7 +2229,7 @@ function applyLiveTacticAdoption(tick: MinuteTickContext): void {
       type: "tactic_change",
       team: "away",
       emoji: "\ud83d\udd04",
-      text: `[${minute}'] ${tacticChangePhrase(awayName, awayTacticChange.formation, awayTacticChange.style)}`,
+      text: `[${minute}'] ${tacticChangePhrase(awayName, awayTacticChange.formation, awayTacticChange.style, awayTacticChange.pressure)}`,
     });
   }
 }
@@ -2223,15 +2282,66 @@ export function resolveNpcManagement(tick: MinuteTickContext): void {
   }
 }
 
-/** A perder → ofensivo; a ganhar a partir dos 70' → defensivo; senão o estilo de origem. */
+/**
+ * Passo do minuto: ordens que o treinador humano deixou programadas
+ * (tactic.orders) — aos X', se o resultado bater, o servidor aplica o
+ * estilo/pressão escolhidos por ele. Equipas NPC gerem-se sozinhas.
+ * O evento leva `order/teamId/style/pressure` para o cliente alinhar a
+ * tática local (senão o próximo setTactic dele desfazia a ordem).
+ */
+export function resolveCoachOrders(tick: MinuteTickContext): void {
+  const { fixture, game, minute } = tick;
+  for (const side of ["home", "away"] as const) {
+    const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+    const coach: any = Object.values(game.playersByName || {}).find((p: any) => p?.teamId === teamId);
+    const live: Tactic | undefined = coach?.tactic;
+    if (!live || !Array.isArray(live.orders)) continue;
+    const diff =
+      side === "home"
+        ? fixture.finalHomeGoals - fixture.finalAwayGoals
+        : fixture.finalAwayGoals - fixture.finalHomeGoals;
+    const when = diff < 0 ? "LOSING" : diff > 0 ? "WINNING" : "DRAWING";
+    const order = live.orders.find((o) => o?.minute === minute && o?.when === when);
+    if (!order) continue;
+    const pressure = normalisePressure(order.pressure ?? live.pressure) as TacticPressure;
+    if (normaliseStyle(live.style) === normaliseStyle(order.style) && normalisePressure(live.pressure) === pressure) continue;
+    const refs = new Set<Tactic>(
+      [live, side === "home" ? tick.homeTactic : tick.awayTactic, side === "home" ? fixture._t1 : fixture._t2].filter(Boolean),
+    );
+    for (const ref of refs) {
+      ref.style = order.style;
+      ref.pressure = pressure;
+    }
+    bumpPowerVersion(fixture, side);
+    const team = side === "home" ? fixture.homeTeam : fixture.awayTeam;
+    fixture.events.push({
+      minute,
+      type: "tactic_change",
+      team: side,
+      emoji: "📋",
+      order: true,
+      teamId,
+      style: order.style,
+      pressure,
+      text: `[${minute}'] 📋 Ordem do treinador: ${team?.name || "?"} passa a ${styleDisplayLabel(normaliseStyle(order.style))}, ${pressureDisplayLabel(pressure)}`,
+    });
+  }
+}
+
+/**
+ * A perder → ofensivo e pressão alta; a ganhar a partir dos 70' → defensivo e
+ * bloco baixo; senão o estilo de origem com pressão média.
+ */
 function npcAdjustStyle(tick: MinuteTickContext, side: MatchSide, diff: number): void {
   const { fixture, minute, powers } = tick;
   const tactic = side === "home" ? tick.homeTactic : tick.awayTactic;
   if (!tactic) return;
   const base = ((fixture._npcBaseStyle ??= {})[side] ??= normaliseStyle(tactic.style)) as TacticStyle;
   const want: TacticStyle = diff < 0 ? "OFENSIVO" : diff > 0 && minute >= 70 ? "DEFENSIVO" : base;
-  if (normaliseStyle(tactic.style) === want) return;
+  const wantPressure: TacticPressure = want === base ? "MEDIA" : want === "OFENSIVO" ? "ALTA" : "BAIXA";
+  if (normaliseStyle(tactic.style) === want && normalisePressure(tactic.pressure) === wantPressure) return;
   tactic.style = want;
+  tactic.pressure = wantPressure;
   bumpPowerVersion(fixture, side);
   const team = side === "home" ? fixture.homeTeam : fixture.awayTeam;
   const formation = powers[side]?.formation || tactic.formation || "4-4-2";
@@ -2240,7 +2350,7 @@ function npcAdjustStyle(tick: MinuteTickContext, side: MatchSide, diff: number):
     type: "tactic_change",
     team: side,
     emoji: "🔄",
-    text: `[${minute}'] ${tacticChangePhrase(team?.name || String(side === "home" ? fixture.homeTeamId : fixture.awayTeamId), formation, want)}`,
+    text: `[${minute}'] ${tacticChangePhrase(team?.name || String(side === "home" ? fixture.homeTeamId : fixture.awayTeamId), formation, want, wantPressure)}`,
   });
 }
 
@@ -2304,11 +2414,15 @@ function npcSubstitute(tick: MinuteTickContext, side: MatchSide, diff: number): 
  */
 export function applyMinuteFatigue(tick: MinuteTickContext): void {
   const { fixture, homeSquad, awaySquad, homeLineupIds, awayLineupIds, rng } = tick;
+  const pressMult = (side: MatchSide) =>
+    MATCH_TUNING.pressure[normalisePressure(tick.powers?.[side]?.pressure)]?.fatigueSkip ?? 1;
+  const homePress = pressMult("home");
+  const awayPress = pressMult("away");
 
   // Cansaço progressivo: cada intervalo de fadiga jogado, -1 skill efetiva,
   // com escape por resistência. Quem entra depois (subs) começa do zero.
-  trackFatigue(fixture, "home", homeSquad, homeLineupIds, rng);
-  trackFatigue(fixture, "away", awaySquad, awayLineupIds, rng);
+  trackFatigue(fixture, "home", homeSquad, homeLineupIds, rng, homePress);
+  trackFatigue(fixture, "away", awaySquad, awayLineupIds, rng, awayPress);
 
   // Clima adverso: golpe de fadiga EXTRA por minuto, gradual por condição
   // (neve > frio > chuva forte > nevoeiro > vento > chuva; sol = 0), com
@@ -2318,13 +2432,13 @@ export function applyMinuteFatigue(tick: MinuteTickContext): void {
   if (wPerMin) {
     for (const p of homeSquad) {
       if (!homeLineupIds.has(p.id)) continue;
-      if (rng() < wPerMin && rng() >= fatigueSkipChance(p)) {
+      if (rng() < wPerMin && rng() >= fatigueSkipChance(p, homePress)) {
         applyFatigueToPlayer(fixture, "home", p, 1, rng);
       }
     }
     for (const p of awaySquad) {
       if (!awayLineupIds.has(p.id)) continue;
-      if (rng() < wPerMin && rng() >= fatigueSkipChance(p)) {
+      if (rng() < wPerMin && rng() >= fatigueSkipChance(p, awayPress)) {
         applyFatigueToPlayer(fixture, "away", p, 1, rng);
       }
     }
@@ -2355,6 +2469,7 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
   applyLiveTacticAdoption(tick);
   pushPhaseStartComments(tick);
   resolveNpcManagement(tick);
+  resolveCoachOrders(tick);
   applyMinuteFatigue(tick);
 
   const currentHome = refreshPower("home");
@@ -2445,7 +2560,14 @@ export function refreshPossession(
   away: SidePower,
   minute: number,
 ): void {
-  const possH = computePossession(home.midStrength || 0, away.midStrength || 0, home.style, away.style);
+  const possH = computePossession(
+    home.midStrength || 0,
+    away.midStrength || 0,
+    home.style,
+    away.style,
+    home.possessionTilt ?? 0,
+    away.possessionTilt ?? 0,
+  );
   fixture._homeChances = MATCH_TUNING.chancesTotal * possH;
   fixture._awayChances = MATCH_TUNING.chancesTotal * (1 - possH);
   const h = sideChances(fixture, "home", home, away, minute);
@@ -2506,6 +2628,10 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
     }
     probGoal *= getWeatherGoalMultiplier(fixture._weather);
     probGoal *= egoFactor;
+    // Duelo de formações: avançados de quem ataca vs defesas de quem defende.
+    if (attacking.lines && defending.lines) {
+      probGoal *= duelConversionMult(attacking.lines.ATA, defending.lines.DEF);
+    }
     // "Golo esperado" do lance — o cliente soma por equipa (estatísticas).
     const xg = Math.round(probGoal * 100) / 100;
 
@@ -2945,12 +3071,18 @@ export async function resolveCards(tick: MinuteTickContext, shared: MinuteShared
     }
   };
 
+  // Pressão alta faz mais faltas; "acalmar" ao intervalo corta-as.
+  const cardMult = (power: SidePower | undefined, side: MatchSide) =>
+    (MATCH_TUNING.pressure[normalisePressure(power?.pressure)]?.cards ?? 1) *
+    (fixture._talkCalm?.[side] ? MATCH_TUNING.talkCalmCardsMult : 1);
   const homeCardProb =
     MATCH_TUNING.cardBaseRate *
-    (1 + (homeAggAvg - 30) * MATCH_TUNING.cardAggPerPoint);
+    (1 + (homeAggAvg - 30) * MATCH_TUNING.cardAggPerPoint) *
+    cardMult(shared.currentHome, "home");
   const awayCardProb =
     MATCH_TUNING.cardBaseRate *
-    (1 + (awayAggAvg - 30) * MATCH_TUNING.cardAggPerPoint);
+    (1 + (awayAggAvg - 30) * MATCH_TUNING.cardAggPerPoint) *
+    cardMult(shared.currentAway, "away");
   // No último minuto regulamentar da liga não disparar cartões — um vermelho
   // ao GR abriria a janela obrigatória de substituição após o apito final
   if (!shared.isLastLeagueMinute && !shared.isFriendly && rng() < homeCardProb) await emitCard(true);

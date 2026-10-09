@@ -25,6 +25,7 @@ const nextMatchFixture = {
   opponent: {
     name: "As Voadores Do Sportinguismax Da Póvoa",
     color_primary: "#0f9d58",
+    probableFormation: "4-3-3",
   },
   referee: { name: "Fábio Veríssimo (AF Leiria)" },
 };
@@ -67,6 +68,12 @@ function SeedSquad() {
     setTactic((t) => ({
       ...t,
       formation: "4-4-2",
+      pressure: "ALTA",
+      // Duas ordens: a linha mais longa (selects) tem de caber a 320px.
+      orders: [
+        { minute: 70, when: "LOSING", style: "Offensive", pressure: "ALTA" },
+        { minute: 80, when: "WINNING", style: "Defensive", pressure: "BAIXA" },
+      ],
       positions: Object.fromEntries([
         ...TIT.map((id) => [id, "Titular"]),
         ...SUB.map((id) => [id, "Suplente"]),

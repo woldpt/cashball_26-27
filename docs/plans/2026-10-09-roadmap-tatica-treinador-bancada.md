@@ -74,7 +74,9 @@ P = pequeno · M = médio · G = grande.
 - **B6** — NPCs ajustam ao intervalo e aos 70'.
 - **B9** — ímpeto.
 
-### Fase 3 — Camada tática
+### Fase 3 — Camada tática — ✅ feita 2026-10-10
+> Feito: **duelo de formações** — linhas reais em campo: cada médio a mais que o adversário +2,5 pp de posse; na finalização, avançados vs "sobra" de defesas adversários (2 = neutro, ±4% por jogador, 0,88–1,12); a Tática mostra o duelo contra a formação provável do adversário. **Pressão** (`tactic.pressure` ALTA/MEDIA/BAIXA): alta +3 pp posse, ataque ×1,03, defesa ×0,95, cartões ×1,3, cansa mais; bloco baixo o inverso (defesa ×1,15); NPCs pressionam quando perdem e fecham-se quando ganham. **Conversa ao intervalo** (`tactic.talk`): moral da 2.ª parte pelo resultado (elogiar a ganhar / exigir a perder +8, ao contrário −6, acalmar +3 e cartões ×0,7). **Ordens para o jogo** (`tactic.orders`, até 2: aos 60/70/80', a perder/empatado/a ganhar → mentalidade + pressão), aplicadas pelo servidor só a equipas humanas; o cliente alinha a tática local pelo evento.
+> Medido (8000 jogos NPC): 2,52 golos/jogo, empates 25%.
 - **B5** — duelo de formações (resolve A4).
 - **B2** — pressão.
 - **B4** — conversa ao intervalo.

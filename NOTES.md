@@ -1,3 +1,7 @@
+## Motor: Fase 3 do roadmap tático (2026-10-10)
+- Duelo de formações (linhas reais: médios a mais → posse; avançados vs sobra de defesas → finalização), pressão alta/média/baixa, conversa ao intervalo e até 2 ordens programadas (aplicadas pelo servidor só a humanos; evento `order` alinha a tática do cliente). UI: Tática (duelo, pressão, "Ordens para o jogo") e Intervenção (pressão + conversa só no intervalo).
+- Testado: engine-unit 41/41 (U30–U33 falham no código da Fase 2), simulação 8000 jogos (2,52 golos/jogo), own-goal, penalty-ordering, emergency-gk, substitutions, segment-barrier, finalize, ratings, connect-smoke, session-freeze, crash-recovery (GRMTZM), audits 0 erros, typecheck; client lint + check:types + test:mobile 195/195 + screenshots 320/360/390/1440 vistos. Validação do setTactic sem teste automático.
+
 ## Motor: Fase 2 do roadmap tático (2026-10-10)
 - Posse recalculada a cada minuto (estilo, médios, cansaço, jogadores a menos, ímpeto de quem marcou — 8' a ×1,15); NPCs mudam de estilo pelo resultado (46'/70') e fazem trocas (60'/75', guardam 1 para lesões); humanos nunca tocados.
 - Testado: engine-unit 37/37 (U27–U29 falham no código da Fase 1), simulação 8000 jogos (2,50 golos/jogo), own-goal, penalty-ordering, emergency-gk, substitutions, segment-barrier, finalize, ratings, connect-smoke, audits 0 erros, typecheck.

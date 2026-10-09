@@ -71,6 +71,11 @@ export function registerGameplaySocketHandlers(
     "4-4-2", "4-3-3", "3-5-2", "5-3-2", "4-5-1", "3-4-3", "4-2-4", "5-4-1",
   ]);
   const VALID_STYLES = new Set(["Balanced", "Defensive", "Offensive"]);
+  const VALID_PRESSURES = new Set(["ALTA", "MEDIA", "BAIXA"]);
+  const VALID_TALKS = new Set(["ELOGIAR", "EXIGIR", "ACALMAR"]);
+  const ORDER_MINUTES = new Set([60, 70, 80]);
+  const ORDER_WHEN = new Set(["LOSING", "DRAWING", "WINNING"]);
+  const MAX_ORDERS = 2;
 
   socket.on("setTactic", (tactic) => {
     if (
@@ -82,6 +87,22 @@ export function registerGameplaySocketHandlers(
       !VALID_STYLES.has(tactic.style)
     )
       return;
+
+    // Campos opcionais (pressão, ordens, conversa ao intervalo): o que vier
+    // inválido cai — nunca rejeita a tática toda.
+    if (!VALID_PRESSURES.has(tactic.pressure)) delete tactic.pressure;
+    if (!VALID_TALKS.has(tactic.talk)) delete tactic.talk;
+    tactic.orders = (Array.isArray(tactic.orders) ? tactic.orders : [])
+      .filter(
+        (o: any) =>
+          o &&
+          ORDER_MINUTES.has(o.minute) &&
+          ORDER_WHEN.has(o.when) &&
+          VALID_STYLES.has(o.style) &&
+          (o.pressure == null || VALID_PRESSURES.has(o.pressure)),
+      )
+      .slice(0, MAX_ORDERS)
+      .map((o: any) => ({ minute: o.minute, when: o.when, style: o.style, pressure: o.pressure }));
 
     // Enforce the bench limit (MAX_BENCH_SIZE substitutes). Tactics that name more than
     // MAX_BENCH_SIZE "Suplente" players are sanitized by demoting the extra
@@ -106,6 +127,8 @@ export function registerGameplaySocketHandlers(
         formation: tactic.formation,
         style: tactic.style,
         positions: tactic.positions || {},
+        pressure: tactic.pressure,
+        orders: tactic.orders,
       });
     }
   });

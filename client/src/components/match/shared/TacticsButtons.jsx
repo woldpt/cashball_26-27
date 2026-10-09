@@ -20,15 +20,28 @@ const TACTIC_OPTIONS = [
   { value: "Offensive", label: "Ofensivo", accent: "#f59e0b", icon: "form-up" },
 ];
 
-export function TacticsButtons({ value, onChange, className }) {
+/**
+ * Grupo de 3 botões que escreve um campo da tática (mentalidade por omissão;
+ * também pressão e conversa ao intervalo).
+ * @param {Object} props
+ * @param {string} [props.value] - Valor ativo.
+ * @param {(patch: Object) => void} props.onChange - Recebe `{ [field]: valor }`.
+ * @param {string} [props.className]
+ * @param {Array<{value: string, label: string, accent: string, icon?: string}>} [props.options]
+ * @param {string} [props.field] - Campo da tática (style | pressure | talk).
+ * @returns {JSX.Element}
+ */
+export function TacticsButtons({ value, onChange, className, options = TACTIC_OPTIONS, field = "style" }) {
   return (
     <div className={`grid grid-cols-3 gap-2 ${className || ""}`}>
-      {TACTIC_OPTIONS.map(({ value: optValue, label, accent, icon }) => {
+      {options.map(({ value: optValue, label, accent, icon }) => {
         const isActive = value === optValue;
         return (
           <button
             key={optValue}
-            onClick={() => onChange({ style: optValue })}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => onChange({ [field]: optValue })}
             className={`flex flex-row items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-2 sm:px-3 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-normal sm:tracking-wide transition-all border ${
               isActive
                 ? "text-on-surface"
@@ -47,11 +60,13 @@ export function TacticsButtons({ value, onChange, className }) {
                 : {}
             }
           >
-            <MatchIcon
-              name={icon}
-              className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isActive ? "" : "opacity-70"}`}
-            />
-            <span>{label}</span>
+            {icon && (
+              <MatchIcon
+                name={icon}
+                className={`h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 ${isActive ? "" : "opacity-70"}`}
+              />
+            )}
+            <span className="truncate">{label}</span>
           </button>
         );
       })}

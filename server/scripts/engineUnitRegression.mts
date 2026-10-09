@@ -48,6 +48,12 @@
  *   U28 — NPC muda de estilo pelo resultado; equipa humana nunca é tocada
  *   U29 — NPC troca o cansado (avançado se perde), guarda troca p/ lesões,
  *        não troca para pior
+ *   U30 — duelo de formações: médios a mais dão posse; avançados contra a
+ *        sobra de defesas mexem na finalização
+ *   U31 — pressão alta: mais posse e cartões, defesa mais exposta, cansa mais
+ *   U32 — conversa ao intervalo: certa sobe a moral, errada desce; uma vez
+ *   U33 — ordens do treinador: aplicadas ao minuto e resultado certos, só
+ *        a equipas humanas, com evento para o cliente alinhar
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -85,8 +91,15 @@ const {
   effectiveFormation,
   shortHandedChanceMult,
   selectPenaltyTaker,
+  duelConversionMult,
 } = require("../game/matchCalculations.ts");
-const { resolvePenaltyKick, refreshPossession, resolveNpcManagement } = require("../game/engine.ts");
+const {
+  resolvePenaltyKick,
+  refreshPossession,
+  resolveNpcManagement,
+  resolveCoachOrders,
+  applyHalftimeTalk,
+} = require("../game/engine.ts");
 
 // ── U1 ──────────────────────────────────────────────────────────────────────
 test("U1 — normalizeMatchChoice cobre as formas do contrato", () => {
@@ -355,7 +368,7 @@ test("U11 — adoptLiveTactic adota formação+mentalidade e impõe verdade de j
   });
   const before = getPowerVersion(fixture, "home");
   const change = adoptLiveTactic(game, fixture, "home", v1, new Set([11, 12]));
-  assert.deepEqual(change, { formation: "3-5-2", style: "OFENSIVO" });
+  assert.deepEqual(change, { formation: "3-5-2", style: "OFENSIVO", pressure: "MEDIA" });
   assert.equal(v1.formation, "3-5-2");
   assert.equal(v1.style, "Ofensivo");
   assert.equal(getPowerVersion(fixture, "home"), before + 1);
@@ -372,7 +385,7 @@ test("U11b — só mentalidade também conta como mudança tática", () => {
   const game = mkTacticGame({ formation: "4-4-2", style: "Defensivo" });
   const before = getPowerVersion(fixture, "home");
   const change = adoptLiveTactic(game, fixture, "home", v1, new Set());
-  assert.deepEqual(change, { formation: "4-4-2", style: "DEFENSIVO" });
+  assert.deepEqual(change, { formation: "4-4-2", style: "DEFENSIVO", pressure: "MEDIA" });
   assert.equal(getPowerVersion(fixture, "home"), before + 1);
 });
 
@@ -398,7 +411,7 @@ test("U11d — estilo muda sem formação: anuncia a formação vigente, nunca n
   const fixture: any = { homeTeamId: 1, awayTeamId: 2, events: [], _t1: v1 };
   const game = mkTacticGame({ style: "Defensivo" });
   const change = adoptLiveTactic(game, fixture, "home", v1, new Set());
-  assert.deepEqual(change, { formation: "4-4-2", style: "DEFENSIVO" });
+  assert.deepEqual(change, { formation: "4-4-2", style: "DEFENSIVO", pressure: "MEDIA" });
 });
 
 test("U12 — queueMatchDeltaWrites: throw síncrono repõe a flag, deltas retidos", () => {
@@ -930,4 +943,99 @@ test("U29 — NPC troca o cansado, guarda uma troca para lesões e não troca pa
   const weak = withBench({ minute: 60 }, { id: 51, name: "Fraco", position: "DEF", skill: 5, form: 32, morale: 25 });
   resolveNpcManagement(weak.tick);
   assert.ok(weak.tick.homeLineupIds.has(3) && !weak.tick.homeLineupIds.has(51));
+});
+
+// ── U30–U33: Fase 3 do roadmap tático (camada tática) ───────────────────────
+const shapeSquad = (d, m, a, skill = 30) => {
+  let id = 500;
+  const mk = (position) => ({ id: id++, name: "S" + id, position, skill, form: 32, morale: 25 });
+  return [mk("GR"), ...Array.from({ length: d }, () => mk("DEF")), ...Array.from({ length: m }, () => mk("MED")), ...Array.from({ length: a }, () => mk("ATA"))];
+};
+
+test("U30 — duelo de formações: meio-campo e sobra de defesas contam", () => {
+  const t = (formation) => ({ formation, style: "EQUILIBRADO" });
+  const five = computeSidePower(shapeSquad(4, 5, 1), t("4-5-1"), 25, 0, 1);
+  const three = computeSidePower(shapeSquad(4, 3, 3), t("4-3-3"), 25, 0, 1);
+  assert.deepEqual(five.lines, { DEF: 4, MED: 5, ATA: 1 });
+  const fixture: any = { events: [] };
+  refreshPossession(fixture, five, three, 10);
+  assert.ok(fixture._homePossession > 50, `5 médios contra 3 têm mais bola (${fixture._homePossession})`);
+  assert.equal(duelConversionMult(2, 4), 1, "4-4-2 contra 4 defesas: neutro");
+  assert.ok(duelConversionMult(3, 3) > 1, "3 avançados contra 3 defesas: sem sobra atrás");
+  assert.ok(duelConversionMult(1, 5) < 1, "1 avançado contra 5 defesas: afogado");
+});
+
+test("U31 — pressão alta: mais bola e faltas, defesa exposta, cansa mais", async () => {
+  const squad = makeSquad(30, "x");
+  const t = (pressure) => ({ formation: "4-4-2", style: "EQUILIBRADO", pressure });
+  const alta = computeSidePower(squad, t("ALTA"), 25, 0, 1);
+  const media = computeSidePower(squad, t(undefined), 25, 0, 1);
+  const baixa = computeSidePower(squad, t("BAIXA"), 25, 0, 1);
+  assert.equal(media.pressure, "MEDIA");
+  assert.ok(alta.possessionTilt > media.possessionTilt && media.possessionTilt > baixa.possessionTilt);
+  assert.ok(alta.defense < media.defense && baixa.defense > media.defense);
+  // Cansaço: 90' com a mesma semente, pressão alta vs bloco baixo.
+  const fatigueOf = (pressure) => {
+    const { tick, fixture } = minuteTick(77);
+    tick.powers.home = computeSidePower(tick.homeSquad, t(pressure), 25, 0, 1);
+    for (let m = 1; m <= 90; m++) {
+      tick.minute = m;
+      applyMinuteFatigue(tick);
+    }
+    return Object.values(fixture._fatigueLoss?.home ?? {}).reduce((a: number, b: any) => a + b, 0);
+  };
+  assert.ok(fatigueOf("ALTA") > fatigueOf("BAIXA"), "pressão alta cansa mais");
+  // Cartões: mesma semente, pressão alta faz mais faltas.
+  const cardsOf = async (pressure) => {
+    let n = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const { tick, shared, fixture } = minuteTick(seed);
+      shared.currentHome = tick.powers.home = computeSidePower(tick.homeSquad, t(pressure), 25, 0, 1);
+      for (let m = 1; m <= 89; m++) {
+        tick.minute = m;
+        await resolveCards(tick, shared);
+      }
+      n += fixture.events.filter((e) => e.team === "home" && (e.type === "yellow" || e.type === "red")).length;
+    }
+    return n;
+  };
+  assert.ok((await cardsOf("ALTA")) > (await cardsOf("BAIXA")), "pressão alta vê mais cartões");
+});
+
+test("U32 — conversa ao intervalo: certa sobe a moral, errada desce, uma vez", () => {
+  const run = (talk, home, away) => {
+    const fixture: any = { finalHomeGoals: home, finalAwayGoals: away, events: [], _homeMorale: 25, _awayMorale: 25, homeTeam: { name: "Casa" } };
+    applyHalftimeTalk(fixture, { formation: "4-4-2", style: "Balanced", talk }, null);
+    return fixture;
+  };
+  assert.ok(run("EXIGIR", 0, 1)._homeMorale > 25, "exigir a perder puxa pela equipa");
+  assert.ok(run("ELOGIAR", 0, 1)._homeMorale < 25, "elogiar a perder relaxa");
+  assert.ok(run("ELOGIAR", 1, 0)._homeMorale > 25, "elogiar a ganhar motiva");
+  const calm = run("ACALMAR", 0, 0);
+  assert.equal(calm._talkCalm?.home, true);
+  assert.equal(calm.events.length, 1);
+  applyHalftimeTalk(calm, { formation: "4-4-2", style: "Balanced", talk: "ACALMAR" }, null);
+  assert.equal(calm.events.length, 1, "só uma vez por jogo");
+  assert.equal(run(undefined, 0, 1)._homeMorale, 25, "sem conversa, nada muda");
+});
+
+test("U33 — ordens do treinador: minuto e resultado certos, só humanos", () => {
+  const order = { minute: 70, when: "LOSING", style: "Offensive", pressure: "ALTA" };
+  const run = (homeGoals, awayGoals, minute = 70) => {
+    const { tick, fixture } = minuteTick(1, { minute, fixture: { finalHomeGoals: homeGoals, finalAwayGoals: awayGoals } });
+    const live = { formation: "4-4-2", style: "Balanced", positions: {}, orders: [order] };
+    tick.homeTactic = live;
+    tick.awayTactic = { formation: "4-4-2", style: "Balanced", positions: {}, orders: [{ ...order, when: "WINNING" }] };
+    tick.game.playersByName = { Ana: { teamId: 1, tactic: live } };
+    resolveCoachOrders(tick);
+    return { tick, fixture, live };
+  };
+  const hit = run(0, 1);
+  assert.equal(hit.live.style, "Offensive");
+  assert.equal(hit.live.pressure, "ALTA");
+  const ev = hit.fixture.events.find((e) => e.order);
+  assert.ok(ev && ev.teamId === 1 && ev.style === "Offensive" && ev.pressure === "ALTA", "evento para o cliente alinhar");
+  assert.equal(hit.tick.awayTactic.style, "Balanced", "equipa sem treinador humano não segue ordens");
+  assert.equal(run(1, 1).live.style, "Balanced", "empatado: a ordem era para quando perde");
+  assert.equal(run(0, 1, 69).live.style, "Balanced", "fora do minuto não mexe");
 });

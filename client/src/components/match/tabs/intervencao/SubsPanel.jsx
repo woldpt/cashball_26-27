@@ -11,6 +11,7 @@ import {
   MatchPitch,
   TacticsButtons,
 } from "../../shared/index.js";
+import { PRESSURE_OPTIONS, TALK_OPTIONS } from "../../../../constants/index.js";
 import {
   useCompactViewport,
   useIsMobile,
@@ -36,6 +37,52 @@ const STYLE_LABELS = {
   Balanced: "Equilibrado",
   Offensive: "Ofensivo",
 };
+
+/**
+ * Instruções de jogo: mentalidade + pressão e, ao intervalo, a conversa
+ * no balneário (vale para a 2.ª parte).
+ * @param {Object} props
+ * @param {{style?: string, pressure?: string, talk?: string}} props.tactic
+ * @param {(patch: Object) => void} props.onUpdateTactic
+ * @param {boolean} [props.showTalk] - Só no intervalo da 1.ª para a 2.ª parte.
+ * @returns {JSX.Element}
+ */
+function MatchInstructions({ tactic, onUpdateTactic, showTalk = false }) {
+  const row = (label, buttons) => (
+    <div className="flex items-center gap-2">
+      <span className="w-16 shrink-0 text-[9px] font-black uppercase tracking-wider text-on-surface-variant">
+        {label}
+      </span>
+      {buttons}
+    </div>
+  );
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <TacticsButtons className="w-full" value={tactic.style} onChange={onUpdateTactic} />
+      {row(
+        "Pressão",
+        <TacticsButtons
+          className="flex-1 min-w-0"
+          options={PRESSURE_OPTIONS}
+          field="pressure"
+          value={tactic.pressure ?? "MEDIA"}
+          onChange={onUpdateTactic}
+        />,
+      )}
+      {showTalk &&
+        row(
+          "Conversa",
+          <TacticsButtons
+            className="flex-1 min-w-0"
+            options={TALK_OPTIONS}
+            field="talk"
+            value={tactic.talk}
+            onChange={onUpdateTactic}
+          />,
+        )}
+    </div>
+  );
+}
 
 /* Largura da faixa lateral (peek) em que a zona das skills da página de trás
  * permanece minimamente destapada no mobile. */
@@ -131,6 +178,7 @@ export function SubsPanel({
   onArmResetAll,
   teamColor = "#6366f1",
   summary,
+  showTalk = false,
 }) {
   // Mobile: navegação explícita do utilizador na stack de páginas (swipe,
   // tap no peek ou chip 'Sai'). `null` = seguir a regra implícita:
@@ -379,11 +427,7 @@ export function SubsPanel({
                       {STYLE_LABELS[tactic.style] || tactic.style}
                     </span>
                   </div>
-                  <TacticsButtons
-                    className="w-full"
-                    value={tactic.style}
-                    onChange={onUpdateTactic}
-                  />
+                  <MatchInstructions tactic={tactic} onUpdateTactic={onUpdateTactic} showTalk={showTalk} />
                 </div>
               }
             />
@@ -470,14 +514,7 @@ export function SubsPanel({
           </div>
           {mentalidadeOpen && (
             <div className="shrink-0 border-b border-outline-variant/15 bg-surface-container-low/95 px-3 py-1.5">
-              <TacticsButtons
-                className="w-full"
-                value={tactic.style}
-                onChange={(next) => {
-                  onUpdateTactic(next);
-                  setMentalidadeOpen(false);
-                }}
-              />
+              <MatchInstructions tactic={tactic} onUpdateTactic={onUpdateTactic} showTalk={showTalk} />
             </div>
           )}
           <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -593,11 +630,7 @@ export function SubsPanel({
               {/* Mentalidade sempre visível — 3 botões na mesma altura (min-h-9)
                * que o antigo toggle recolhível. */}
               <div className="flex min-h-9 items-center px-4 pt-1 pb-0.5">
-                <TacticsButtons
-                  className="w-full"
-                  value={tactic.style}
-                  onChange={onUpdateTactic}
-                />
+                <MatchInstructions tactic={tactic} onUpdateTactic={onUpdateTactic} showTalk={showTalk} />
               </div>
             </>
           )}

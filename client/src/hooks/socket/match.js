@@ -157,6 +157,15 @@ export function registerMatchListeners(handlers, refs, ctx) {
 		}
 		// Check for penalty suspense events — only show for the player's own match
 		const myTeamId = refs.meRef.current?.teamId;
+		// Ordem programada aplicada pelo servidor: alinhar a tática local (sem
+		// reenviar), senão o próximo setTactic deste cliente desfazia-a.
+		for (const f of data.fixtures || []) {
+			for (const e of f.minuteEvents || []) {
+				if (e.order && isSameTeamId(e.teamId, myTeamId)) {
+					handlers.setTactic((prev) => ({ ...prev, style: e.style, pressure: e.pressure }));
+				}
+			}
+		}
 		let myFixtureWithSuspense = null;
 		for (const f of data.fixtures || []) {
 			const isMyFixture =
@@ -760,13 +769,14 @@ export function registerMatchListeners(handlers, refs, ctx) {
 			handlers.setIsPlayingMatch(true);
 		}
 
-		// Após jogo: todos os jogadores vão a "Não convocado" e a
-		// mentalidade volta a Neutro (reset intencional de jornada).
+		// Após jogo: todos os jogadores vão a "Não convocado", a mentalidade
+		// volta a Neutro e a pressão a média (reset intencional de jornada); a
+		// conversa ao intervalo esquece-se. As ordens programadas mantêm-se.
 		handlers.setTactic((prev) => {
 			const allExcluded = Object.fromEntries(
 				(refs.mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
 			);
-			const next = { ...prev, positions: allExcluded, style: "Balanced" };
+			const next = { ...prev, positions: allExcluded, style: "Balanced", pressure: "MEDIA", talk: undefined };
 			queueEmit("setTactic", next);
 			return next;
 		});
