@@ -10,6 +10,8 @@
 //     clippingElements, verdict ("PASS" | "FAIL")
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
+import { GameProvider } from "./src/contexts/GameContext.jsx";
+import { TacticsProvider } from "./src/contexts/TacticsContext.jsx";
 import { StadiumTab } from "./src/views/StadiumTab.jsx";
 
 // ── Fixture: edge cases ─────────────────────────────────────────────────────
@@ -37,17 +39,31 @@ const financeData = {
 const root = createRoot(document.getElementById("root"));
 root.render(
   // Mimics the GameLayout mobile container: <main> > div.p-4 > tab content
-  <div className="min-h-screen bg-surface">
-    <div className="p-4 lg:p-6">
-      <StadiumTab
-        teamInfo={teamInfo}
-        currentBudget={150000}
-        capacityRevPerGame={3450000}
-        financeData={financeData}
-        setGameDialog={() => {}}
-      />
-    </div>
-  </div>,
+  <GameProvider
+    me={{ name: "", teamId: 1, roomCode: "TEST01" }}
+    setMe={() => {}}
+    setRoomCode={() => {}}
+    setJoining={() => {}}
+    setJoinError={() => {}}
+    meRef={{ current: { name: "", teamId: 1, roomCode: "TEST01" } }}
+    roomCodeRef={{ current: "TEST01" }}
+    joinTimerRef={{ current: null }}
+    backendUrl="http://127.0.0.1:9"
+  >
+    <TacticsProvider>
+      <div className="min-h-screen bg-surface">
+        <div className="p-4 lg:p-6">
+          <StadiumTab
+            teamInfo={teamInfo}
+            currentBudget={150000}
+            capacityRevPerGame={3450000}
+            financeData={financeData}
+            setGameDialog={() => {}}
+          />
+        </div>
+      </div>
+    </TacticsProvider>
+  </GameProvider>,
 );
 
 function measure() {

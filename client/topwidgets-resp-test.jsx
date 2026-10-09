@@ -10,6 +10,8 @@
 //     data-status="done"
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
+import { GameProvider } from "./src/contexts/GameContext.jsx";
+import { TacticsProvider } from "./src/contexts/TacticsContext.jsx";
 import { TrainingTab } from "./src/views/TrainingTab.jsx";
 import { ClubTab } from "./src/views/ClubTab.jsx";
 import { FinancesTab } from "./src/views/FinancesTab.jsx";
@@ -151,119 +153,133 @@ function section(label, children) {
 const root = createRoot(document.getElementById("root"));
 root.render(
   // Mimica o container mobile do GameLayout: <main> > div.p-4 > conteúdo do tab
-  <div className="min-h-screen bg-surface">
-    <div className="p-4 lg:p-6 space-y-8">
-      {section("TrainingTab (topo)", <TrainingTab me={me} matchweek={5} />)}
-
-      {section(
-        "ClubTab (topo)",
-        <ClubTab
-          teamInfo={teamInfo}
-          seasonYear={seasonYear}
-          me={me}
-          currentBudget={-120000}
-          totalWeeklyWage={480000}
-          loanAmount={1500000}
-          palmaresTeamId={1}
-          palmares={{
-            trophies: [
-              { achievement: "Campeão Nacional", season: "2024/25", coach_name: null, is_human_coach: false },
-              { achievement: "Melhor Marcador", season: "2023/24" },
-            ],
-          }}
-          clubNews={clubNews}
-        />,
-      )}
-
-      {section(
-        "FinancesTab (topo)",
-        <FinancesTab
-          financeData={financeData}
-          totalWeeklyWage={480000}
-          completedJornada={3}
-          loanInterestPerWeek={22500}
-          loanAmount={1500000}
-          currentBudget={-120000}
-          seasonYear={seasonYear}
-          capacityRevPerGame={450000}
-          mySquad={mySquad}
-          showTransferSales={false}
-          setShowTransferSales={noop}
-          showTransferPurchases={false}
-          setShowTransferPurchases={noop}
-          showTicketBreakdown={false}
-          setShowTicketBreakdown={noop}
-          setGameDialog={noop}
-        />,
-      )}
-
-      {section(
-        "StadiumTab (topo)",
-        <StadiumTab
-          teamInfo={teamInfo}
-          currentBudget={-120000}
-          capacityRevPerGame={450000}
-          financeData={{ homeMatchesPlayed: 3, ticketBreakdown, totalStadiumExpenses: 900000 }}
-          setGameDialog={noop}
-        />,
-      )}
-
-      {section(
-        "CalendarioTab (topo)",
-        <CalendarioTab
-          calendarData={calendarData}
-          me={me}
-          teams={teams}
-          seasonYear={seasonYear}
-          calFilter="all"
-          setCalFilter={noop}
-          handleOpenTeamSquad={noop}
-        />,
-      )}
-
-      {section(
-        "OtherSquadsTab (topo, equipa própria)",
-        <OtherSquadsTab
-          selectedTeam={teams[0]}
-          selectedTeamSquad={squad}
-          selectedTeamLoading={false}
-          me={me}
-          avatarSeed="harness"
-          players={squad}
-          clubHistory={null}
-          clubHistoryTeamId={null}
-          setTransferProposalModal={noop}
-          myBudget={-120000}
-          currentMatchweek={5}
-          calendarData={calendarData}
-          teams={teams}
-          onBack={noop}
-          onOpenTeamSquad={noop}
-        />,
-      )}
-
-      {section(
-        "OtherSquadsTab (NPC — linhas com CTA de proposta)",
-        <OtherSquadsTab
-          selectedTeam={teams[1]}
-          selectedTeamSquad={squad}
-          selectedTeamLoading={false}
-          me={me}
-          avatarSeed="harness"
-          players={squad}
-          clubHistory={null}
-          clubHistoryTeamId={null}
-          setTransferProposalModal={noop}
-          myBudget={5000000}
-          currentMatchweek={5}
-          calendarData={calendarData}
-          teams={teams}
-          onBack={noop}
-          onOpenTeamSquad={noop}
-        />,
-      )}
-    </div>
-  </div>,
+  <GameProvider
+    me={{ name: "", teamId: 1, roomCode: "TEST01" }}
+    setMe={() => {}}
+    setRoomCode={() => {}}
+    setJoining={() => {}}
+    setJoinError={() => {}}
+    meRef={{ current: { name: "", teamId: 1, roomCode: "TEST01" } }}
+    roomCodeRef={{ current: "TEST01" }}
+    joinTimerRef={{ current: null }}
+    backendUrl="http://127.0.0.1:9"
+  >
+    <TacticsProvider>
+      <div className="min-h-screen bg-surface">
+        <div className="p-4 lg:p-6 space-y-8">
+          {section("TrainingTab (topo)", <TrainingTab me={me} matchweek={5} />)}
+    
+          {section(
+            "ClubTab (topo)",
+            <ClubTab
+              teamInfo={teamInfo}
+              seasonYear={seasonYear}
+              me={me}
+              currentBudget={-120000}
+              totalWeeklyWage={480000}
+              loanAmount={1500000}
+              palmaresTeamId={1}
+              palmares={{
+                trophies: [
+                  { achievement: "Campeão Nacional", season: "2024/25", coach_name: null, is_human_coach: false },
+                  { achievement: "Melhor Marcador", season: "2023/24" },
+                ],
+              }}
+              clubNews={clubNews}
+            />,
+          )}
+    
+          {section(
+            "FinancesTab (topo)",
+            <FinancesTab
+              financeData={financeData}
+              totalWeeklyWage={480000}
+              completedJornada={3}
+              loanInterestPerWeek={22500}
+              loanAmount={1500000}
+              currentBudget={-120000}
+              seasonYear={seasonYear}
+              capacityRevPerGame={450000}
+              mySquad={mySquad}
+              showTransferSales={false}
+              setShowTransferSales={noop}
+              showTransferPurchases={false}
+              setShowTransferPurchases={noop}
+              showTicketBreakdown={false}
+              setShowTicketBreakdown={noop}
+              setGameDialog={noop}
+            />,
+          )}
+    
+          {section(
+            "StadiumTab (topo)",
+            <StadiumTab
+              teamInfo={teamInfo}
+              currentBudget={-120000}
+              capacityRevPerGame={450000}
+              financeData={{ homeMatchesPlayed: 3, ticketBreakdown, totalStadiumExpenses: 900000 }}
+              setGameDialog={noop}
+            />,
+          )}
+    
+          {section(
+            "CalendarioTab (topo)",
+            <CalendarioTab
+              calendarData={calendarData}
+              me={me}
+              teams={teams}
+              seasonYear={seasonYear}
+              calFilter="all"
+              setCalFilter={noop}
+              handleOpenTeamSquad={noop}
+            />,
+          )}
+    
+          {section(
+            "OtherSquadsTab (topo, equipa própria)",
+            <OtherSquadsTab
+              selectedTeam={teams[0]}
+              selectedTeamSquad={squad}
+              selectedTeamLoading={false}
+              me={me}
+              avatarSeed="harness"
+              players={squad}
+              clubHistory={null}
+              clubHistoryTeamId={null}
+              setTransferProposalModal={noop}
+              myBudget={-120000}
+              currentMatchweek={5}
+              calendarData={calendarData}
+              teams={teams}
+              onBack={noop}
+              onOpenTeamSquad={noop}
+            />,
+          )}
+    
+          {section(
+            "OtherSquadsTab (NPC — linhas com CTA de proposta)",
+            <OtherSquadsTab
+              selectedTeam={teams[1]}
+              selectedTeamSquad={squad}
+              selectedTeamLoading={false}
+              me={me}
+              avatarSeed="harness"
+              players={squad}
+              clubHistory={null}
+              clubHistoryTeamId={null}
+              setTransferProposalModal={noop}
+              myBudget={5000000}
+              currentMatchweek={5}
+              calendarData={calendarData}
+              teams={teams}
+              onBack={noop}
+              onOpenTeamSquad={noop}
+            />,
+          )}
+        </div>
+      </div>
+    </TacticsProvider>
+  </GameProvider>,
 );
 
 function measure() {
