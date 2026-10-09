@@ -1723,12 +1723,15 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         "SELECT 1 AS done FROM applied_weeks WHERE season = ? AND slot = ? AND kind = 'weekly_finance'",
         [game.season, slot],
       ).catch((chkErr: any) => {
+        // Sem saber se a semana já foi cobrada não se cobra: a semana volta
+        // ao lobby e tenta de novo (antes cobrava sem proteção — risco de 2×).
         console.error(
-          `[${game.roomCode}] ⚠ applied_weeks('weekly_finance') read error — applying without marker protection:`,
+          `[${game.roomCode}] ⚠ applied_weeks('weekly_finance') read error — finance not applied:`,
           chkErr.message,
         );
-        return null;
+        return "error" as const;
       });
+      if (charged === "error") return false;
       if (charged) {
         // Already charged in a previous attempt for this slot.
         return true;
