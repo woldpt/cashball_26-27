@@ -18,6 +18,7 @@ import {
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
 import { deleteSeat, setSeatTeamId } from "./roomStateHelpers";
+import { currentHighBidOf } from "./auctionHelpers";
 
 /** Subconjunto da API sqlite3 usado neste helper (o projeto não tem @types/sqlite3). */
 interface Db {
@@ -242,6 +243,28 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
+  /**
+   * Os lances eram do treinador, não da direção: sem isto o clube (agora sem
+   * ele) podia ganhar o leilão e pagar o preço que o despedido ofereceu.
+   */
+  function withdrawTeamBids(game: ActiveGame, teamId: number) {
+    for (const [pid, auction] of Object.entries(game.auctions || {}) as [string, any][]) {
+      if (auction?.bids?.[teamId] == null) continue;
+      delete auction.bids[teamId];
+      const high = currentHighBidOf(auction);
+      io.to(game.roomCode).emit("auctionBidPlaced", {
+        playerId: Number(pid),
+        currentHighBid: high.amount,
+        currentHighBidTeamId: high.teamId,
+        bidHistory: Object.entries(auction.bids).map(([tid, val]: [string, any]) => ({
+          teamId: parseInt(tid, 10),
+          amount: Number(val?.amount || 0),
+          timestamp: val?.timestamp || 0,
+        })),
+      });
+    }
+  }
+
   async function dismissHumanCoach(
     game: ActiveGame,
     coachName: string,
@@ -281,6 +304,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     };
     delete game.pendingJobOffers[coachName];
     game.lockedCoaches.delete(coachName);
+    withdrawTeamBids(game, oldTeamId);
 
     // Free the old team in the DB
     await execQuiet(
