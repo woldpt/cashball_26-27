@@ -145,10 +145,14 @@ export function registerFinanceSocketHandlers(
     if (!playerState) return;
     if (guardMatchPaused(game, socket)) return;
 
-    const result = await runExec(
-      game.db,
-      "UPDATE teams SET budget = budget + 500000, loan_amount = loan_amount + 500000 WHERE id = ? AND loan_amount + 500000 <= 2500000",
-      [playerState.teamId],
+    // Na fila da sala: uma escrita solta cairia dentro da transação de outro
+    // fluxo (leilão, compra…) e um ROLLBACK dele desfazia o empréstimo.
+    const result = await runRoomTask(game.roomCode, () =>
+      runExec(
+        game.db,
+        "UPDATE teams SET budget = budget + 500000, loan_amount = loan_amount + 500000 WHERE id = ? AND loan_amount + 500000 <= 2500000",
+        [playerState.teamId],
+      ),
     );
     if (result.changes === 0) {
       socket.emit(
@@ -173,10 +177,12 @@ export function registerFinanceSocketHandlers(
     if (!playerState) return;
     if (guardMatchPaused(game, socket)) return;
 
-    const result = await runExec(
-      game.db,
-      "UPDATE teams SET budget = budget - 500000, loan_amount = loan_amount - 500000 WHERE id = ? AND loan_amount >= 500000 AND budget >= 500000",
-      [playerState.teamId],
+    const result = await runRoomTask(game.roomCode, () =>
+      runExec(
+        game.db,
+        "UPDATE teams SET budget = budget - 500000, loan_amount = loan_amount - 500000 WHERE id = ? AND loan_amount >= 500000 AND budget >= 500000",
+        [playerState.teamId],
+      ),
     );
     if (result.changes === 0) {
       socket.emit("systemMessage", "Não deves esse valor, ou não tens 500k disponíveis.");
@@ -198,28 +204,24 @@ export function registerFinanceSocketHandlers(
     if (!playerState) return;
     if (guardMatchPaused(game, socket)) return;
 
-    const team: any = await new Promise((resolve) => {
-      game.db.get(
-        "SELECT loan_amount, budget FROM teams WHERE id = ?",
+    // Leitura + débito na mesma tarefa: o valor liquidado é o que de facto saiu.
+    const amountPaid: number | null = await runRoomTask(game.roomCode, async () => {
+      const team: any = await new Promise((resolve) => {
+        game.db.get(
+          "SELECT loan_amount, budget FROM teams WHERE id = ?",
+          [playerState.teamId],
+          (_err: any, row: any) => resolve(row ?? null),
+        );
+      });
+      if (!team || !(team.loan_amount > 0) || team.budget < team.loan_amount) return null;
+      const result = await runExec(
+        game.db,
+        "UPDATE teams SET budget = budget - loan_amount, loan_amount = 0 WHERE id = ? AND loan_amount > 0 AND budget >= loan_amount",
         [playerState.teamId],
-        (_err: any, row: any) => resolve(row ?? null),
       );
+      return result.changes === 0 ? null : (team.loan_amount as number);
     });
-    if (!team || !(team.loan_amount > 0) || team.budget < team.loan_amount) {
-      socket.emit(
-        "systemMessage",
-        "Sem dívida para liquidar, ou não tens saldo suficiente para a dívida total.",
-      );
-      return;
-    }
-    const amountPaid = team.loan_amount;
-
-    const result = await runExec(
-      game.db,
-      "UPDATE teams SET budget = budget - loan_amount, loan_amount = 0 WHERE id = ? AND loan_amount > 0 AND budget >= loan_amount",
-      [playerState.teamId],
-    );
-    if (result.changes === 0) {
+    if (amountPaid == null) {
       socket.emit(
         "systemMessage",
         "Sem dívida para liquidar, ou não tens saldo suficiente para a dívida total.",

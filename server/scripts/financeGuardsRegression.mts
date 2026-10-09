@@ -27,6 +27,7 @@ const { fireStaff } = require("../staffHelpers");
 const { createNpcTransferHelpers } = require("../npcTransferHelpers");
 const { staffSeverance } = require("../gameConstants");
 const { createWeeklyFlowHelpers } = require("../weeklyFlowHelpers");
+const { registerFinanceSocketHandlers } = require("../socketFinanceHandlers");
 
 const SCHEMA = fs.readFileSync(
   path.join(path.dirname(new URL(import.meta.url).pathname), "../db/schema.sql"),
@@ -188,6 +189,25 @@ test("F8 — patrocínio por escolher sem treinador humano é escolhido na renda
   const human = await runGet(db, "SELECT sponsor_pending, sponsor_id FROM teams WHERE id = 2");
   assert.equal(human.sponsor_pending, 1, "clube com humano continua à espera da escolha");
   assert.equal(human.sponsor_id, null);
+});
+
+test("F9 — empréstimo pedido durante a transação de outro fluxo sobrevive ao ROLLBACK dela", async () => {
+  const db = await openDb();
+  await seedTeams(db, { 1: 1000 });
+  const game = makeGame(db);
+  const h = fakeSocket(registerFinanceSocketHandlers, game, 1, { isMatchInProgress: () => false });
+  // Outro fluxo (ex. fecho de leilão) com transação aberta que acaba em ROLLBACK.
+  const other = runRoomTask(game.roomCode, async () => {
+    await runExec(db, "BEGIN");
+    await new Promise((r) => setTimeout(r, 30));
+    await runExec(db, "ROLLBACK");
+  });
+  await new Promise((r) => setTimeout(r, 5));
+  await Promise.all([other, h.takeLoan()]);
+  await drain(game);
+  const t = await runGet(db, "SELECT budget, loan_amount FROM teams WHERE id = 1");
+  assert.equal(t.loan_amount, 500000, "dívida registada");
+  assert.equal(t.budget, 501000, "dinheiro creditado");
 });
 
 const transferDeps = {

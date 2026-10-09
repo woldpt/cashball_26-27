@@ -451,10 +451,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		const season = (game as any).season;
 		const taken = new Set<string>();
 		const coaches = Object.values((game as any).playersByName || {}) as any[];
+		// Cada escrita na fila da sala: o crédito do adiantamento NPC não pode
+		// cair dentro da transação de outro fluxo (um ROLLBACK desfazia-o).
 		const run = (sql: string, params: any[] = []) =>
-			new Promise<void>((resolve) => {
-				(game.db as any).run(sql, params, () => resolve());
-			});
+			runRoomTask(game.roomCode, () =>
+				new Promise<void>((resolve) => {
+					(game.db as any).run(sql, params, () => resolve());
+				}),
+			);
 		// Limpa a época anterior: tudo recomeça a zeros.
 		await run(
 			"UPDATE teams SET sponsor_pending = 0, sponsor_offers = NULL, sponsor_id = NULL, sponsor_profile = NULL, sponsor_season = 0, sponsor_upfront = 0, sponsor_weekly = 0, sponsor_second_half = 0, sponsor_paid_second = 0",
