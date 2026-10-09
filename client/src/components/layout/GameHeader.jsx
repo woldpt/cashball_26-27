@@ -400,7 +400,7 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                           role="dialog"
                           aria-label="Classificação da divisão"
                         >
-                          <ul className="max-h-80 overflow-y-auto py-1">
+                          <ul className="py-1">
                             {divisionTeams.map((t, i) => {
                               const mine = Number(t.id) === Number(me?.teamId);
                               const gd = (t.goals_for || 0) - (t.goals_against || 0);
@@ -417,7 +417,16 @@ export function GameHeader({ handleLogout, setAuthPhase, scrollToTop, replayTuto
                                 >
                                   <span className={`w-5 tabular-nums text-right ${isPromo ? "text-emerald-400" : isRelegate ? "text-red-400" : "opacity-70"}`}>{i + 1}</span>
                                   <TeamCrest team={t} size="w-5 h-5 text-[9px]" />
-                                  <span className="flex-1 truncate">{t.name}</span>
+                                  <span className="flex-1 min-w-0 flex items-center gap-1.5">
+                                    <span className="truncate">{t.name}</span>
+                                    {mine ? (
+                                      <span className="shrink-0 px-1 py-px bg-tertiary text-on-tertiary text-[9px] font-black rounded-sm leading-tight">TU</span>
+                                    ) : t.coach_is_human === 1 && t.coach_name ? (
+                                      <span title={t.coach_name} className="min-w-0 max-w-[5.5rem] truncate px-1 py-px bg-amber-400/15 text-amber-400 text-[9px] font-black rounded-sm border border-amber-400/30 leading-tight">
+                                        {t.coach_name}
+                                      </span>
+                                    ) : null}
+                                  </span>
                                   <span className={`tabular-nums ${gd > 0 ? "text-emerald-400" : gd < 0 ? "text-red-400" : "opacity-70"}`} title="Diferença de golos">
                                     {gd > 0 ? "+" : ""}
                                     {gd}

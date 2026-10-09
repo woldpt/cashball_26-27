@@ -1,3 +1,7 @@
+## Mini classificação do cabeçalho (2026-10-09)
+- Tirado o scroll da lista e adicionado crachá âmbar com o nome do treinador humano ("TU" na própria linha), como na `LiveStandings`. Plano em `docs/plans/2026-10-09-mini-classificacao.md`.
+- Testado: lint, check:types.
+
 ## Tática: aviso e Força do onze (2026-10-09)
 - Aviso "Faltam: 11 titulares…" passou para debaixo das Formações (e aparece também no telemóvel); Força do onze estica até à altura da linha de topo, por cima do campo.
 - Testado: lint, check:types, test:mobile (195/195).
