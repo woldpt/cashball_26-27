@@ -345,7 +345,7 @@ function NextMatchHero({ item, teamForms, onOpenTeamSquad, onGoToTactics }) {
         <TeamCircle team={opponent} />
         <div className="flex flex-col min-w-0">
           <span className="text-[9px] font-black uppercase tracking-widest text-primary">
-            Próximo Jogo · {type === "league" ? `Jornada ${entry.matchweek}` : entry.roundName}
+            Próximo Jogo · {type === "league" ? `Jornada ${entry.matchweek}` : entry.roundName || "Amigável"}
           </span>
           <button
             className="text-base short:text-sm font-black text-on-surface text-left truncate hover:text-primary"
@@ -498,7 +498,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
     const cupWeekFriendlyItem = (entry, status) => {
       if (entry.round === CUP_FINAL_ROUND) return null;
       const item = buildFriendlyItem(
-        { ...entry, type: "friendly", roundName: `Semana Taça: ${entry.roundName}` },
+        { ...entry, type: "friendly", roundName: "" },
         status,
         ctx,
         -entry.round,
@@ -734,9 +734,11 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                           ? "Amigável"
                           : "Taça"}
                     </span>
-                    <span className="text-[10px] font-black text-on-surface leading-tight">
-                      {weekLabel}
-                    </span>
+                    {weekLabel && (
+                      <span className="text-[10px] font-black text-on-surface leading-tight">
+                        {weekLabel}
+                      </span>
+                    )}
                     {!(type === "cup" && !opponent) && (
                       <span className="hidden sm:inline-block self-start">
                         <Badge variant={VENUE_BADGE[venueLabel] || "neutral"}>
