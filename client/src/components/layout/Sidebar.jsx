@@ -5,6 +5,7 @@ import { useGame } from "../../contexts/GameContext.jsx";
 import { useInbox } from "../../hooks/useInbox.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
 import { NAV_GROUPS } from "../../constants/navigation.js";
+import { APP_VERSION } from "../../constants/index.js";
 
 /**
  * Barra lateral desktop: tabs por grupo e botão de encolher (o JOGAR vive no
@@ -193,7 +194,11 @@ export function Sidebar({ scrollToTop }) {
             ))}
           </motion.div>
         </div>
-
+        {!sidebarCollapsed && (
+          <p className="shrink-0 px-3 pb-2 pt-1 text-[10px] text-outline-variant">
+            {APP_VERSION}
+          </p>
+        )}
       </nav>
     </div>
   );

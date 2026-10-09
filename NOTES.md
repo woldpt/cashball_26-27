@@ -1,3 +1,8 @@
+## Versão do build na barra lateral (2026-10-09)
+- `Sidebar.jsx`: `APP_VERSION` no fundo da barra (`text-outline-variant`, 10px); escondida com a barra encolhida (não cabe em 3.5rem).
+- Porquê: ver a versão em uso sem ir à página de entrada.
+- Testado: client `lint` e `check:types` (saída 0). Visual no ecrã de desktop por confirmar.
+
 ## Deploy v26.10.36 no rick (2026-10-09)
 - Contenção de crashes e sessão/convites, varrimento pt-PT e equipa de agentes (desde v26.10.35); `backend Healthy`.
 
