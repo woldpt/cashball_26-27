@@ -1,3 +1,6 @@
+## Deploy v26.10.36 no rick (2026-10-09)
+- Contenção de crashes e sessão/convites, varrimento pt-PT e equipa de agentes (desde v26.10.35); `backend Healthy`.
+
 ## Equipa de agentes + varrimento pt-PT (2026-10-09)
 - Equipa no Claude Code: orquestrador/revisor (Opus), `coder` (Sonnet), `scout` e `ops` (Haiku) em `.claude/agents/`; `.claude/skills` → `.pi/skills`; `CLAUDE.md` importa `AGENTS.md`.
 - Varrimento pt-PT (scout → coder → revisão): «Técnicos»→«Treinadores», coluna «Gol»→«Golos», narração sem «marcar contra»/«sacou o cartão»; mensagens de testes sem «placares»/«chute».
@@ -8,9 +11,6 @@
 - `socket.on` envolvido por ligação (index.ts): erro/rejeição num handler é registado e não chega ao `fatalShutdown`.
 - `cacheVersion.js` preserva todas as chaves com prefixo `cashball` (lista fixa esquecia chaves novas).
 - Testado: novo S6b em `test:crash-recovery` (falha sem a correção), typecheck, connect-smoke, session-freeze, segment-barrier, lint, check:types.
-
-## Deploy v26.10.35 no rick (2026-10-08)
-- Push + tag `v26.10.35` + rebuild; J1 da época 2 de PYG2GT reposta em `matches` a partir de `allMatchResults` (só resultados; backup `game_PYG2GT.db.bak-20261008-J1`).
 
 ## FARMACIA3: jornada perdida + logout no telemóvel (2026-10-08)
 - Crash: `setTactic` de um socket sem sala → `getPlayerBySocket(null)` → `fatalShutdown` fechou a BD a meio do `persistMatchResults` (época 2, J1 sem linhas em `matches`; classificação OK). Guarda de `null` na função partilhada.

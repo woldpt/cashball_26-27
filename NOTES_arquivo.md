@@ -2,6 +2,9 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Deploy v26.10.35 no rick (2026-10-08)
+- Push + tag `v26.10.35` + rebuild; J1 da época 2 de PYG2GT reposta em `matches` a partir de `allMatchResults` (só resultados; backup `game_PYG2GT.db.bak-20261008-J1`).
+
 ## Deploy v26.10.34 no rick (2026-10-08)
 - Push + tag `v26.10.34` + rebuild no rick (`docker compose up --build -d`); backend Healthy, frontend arrancado.
 - `APP_VERSION` bumpado para `v26.10.34` (rodapé da landing).
