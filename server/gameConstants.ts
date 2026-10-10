@@ -622,9 +622,9 @@ export const MATCH_TUNING = {
   homeGoalFactor: 1.08, // vantagem casa (fora da final da Taça)
   awayGoalFactor: 0.92,
   // Posse (hatrick-style): médios decidem a repartição das chances, fixada
-  // no apito inicial. 50% ± diferença de médios × possePorPonto + estilo.
+  // no apito inicial. 50% ± diferença RELATIVA de médios × posseRelative + estilo.
   chancesTotal: 30.7, // chances/jogo no total, divididas pela posse (compensa o minuto a meio gás após um golo — goalAfterGoalChanceMult)
-  possePerPoint: 0.014, // 10 pts de diferença de médios ≈ 14pp de posse (antes 7.5pp — o gap de qualidade não se via nas chances)
+  posseRelative: 0.42, // 10% de diferença entre médios ≈ 4,2pp de posse, em qualquer divisão (antes 0,014 por ponto: o mesmo desnível valia 1,4pp a 10 de skill e 6,2pp a 44)
   posseStyleDefensiva: 0.02, // estilo inclina: OFENSIVO + / DEFENSIVO −
   // Conversão de chance: p = base × ATA/(ATA + defWeight×(DEF+GR)).
   // Médias → o nº de jogadores não pesa; defWeight é a "parede".

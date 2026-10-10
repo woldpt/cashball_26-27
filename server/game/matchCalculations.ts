@@ -577,7 +577,8 @@ export function computeSidePower(
 
 /**
  * Posse da equipa A (0.30–0.70) a partir dos médios + estilo — hatrick-style.
- * Médios melhores → mais posse; OFENSIVO tem a bola, DEFENSIVO cede-a.
+ * Médios melhores → mais posse (diferença em % da média dos dois, para pesar
+ * o mesmo em todas as divisões); OFENSIVO tem a bola, DEFENSIVO cede-a.
  * `extraA/extraB`: inclinações extra de cada lado (SidePower.possessionTilt:
  * superioridade no meio-campo + pressão) — só a diferença conta.
  */
@@ -591,9 +592,10 @@ export function computePossession(
 ): number {
   const tiltA = STYLE_POSSESSION_FACTORS[normaliseStyle(styleA)] ?? 0;
   const tiltB = STYLE_POSSESSION_FACTORS[normaliseStyle(styleB)] ?? 0;
+  const midAvg = (midA + midB) / 2;
   const raw =
     0.5 +
-    (midA - midB) * MATCH_TUNING.possePerPoint +
+    (midAvg > 0 ? ((midA - midB) / midAvg) * MATCH_TUNING.posseRelative : 0) +
     (tiltA - tiltB) * MATCH_TUNING.posseStyleDefensiva +
     (extraA - extraB);
   return Math.max(0.3, Math.min(0.7, raw));

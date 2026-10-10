@@ -93,6 +93,7 @@ const {
   selectPenaltyTaker,
   duelConversionMult,
   counterAttackConvMult,
+  computePossession,
 } = require("../game/matchCalculations.ts");
 const {
   resolvePenaltyKick,
@@ -1153,4 +1154,14 @@ test("U41 — cansaço proporcional: pesa o mesmo no jogador de 10 e no de 45", 
   assert.ok(low > 0.05, `90' cansam (${low})`);
   assert.ok(Math.abs(low - high) < 1e-9, `mesma percentagem: ${low} vs ${high}`);
   assert.ok(lossShare(45, "ALTA") > high * 1.2, "pressão alta: cada golpe custa mais");
+});
+
+test("U42 — posse: a diferença entre médios conta em percentagem", () => {
+  const eq = "EQUILIBRADO";
+  const low = computePossession(10, 8, eq, eq);
+  assert.ok(low > 0.5, "médios melhores têm mais bola");
+  assert.ok(Math.abs(low - computePossession(40, 32, eq, eq)) < 1e-9, "10 vs 8 = 40 vs 32");
+  assert.equal(computePossession(30, 30, eq, eq), 0.5);
+  assert.equal(computePossession(0, 0, eq, eq), 0.5, "sem médios dos dois lados: não rebenta");
+  assert.equal(computePossession(30, 0, eq, eq), 0.7, "limite de 70%");
 });

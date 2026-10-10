@@ -1,3 +1,9 @@
+## Motor: posse em percentagem (2026-10-10)
+- `computePossession` conta a diferença entre médios em % da média dos dois (`posseRelative: 0.42`, substitui `possePerPoint`); o meio da escala (skill 30) fica igual.
+- Porquê: em pontos, o mesmo desnível valia 1,4pp de posse a 10 de skill e 6,2pp a 44, e a Pressão Alta saía mais barata nas divisões de baixo. Plano: `docs/plans/2026-10-10-posse-em-percentagem.md`.
+- Medido: Pressão Alta vs Média −0,03 pts/jogo em todas as divisões (antes +0,10 a −0,13); ligas iniciais iguais, só a 4.ª menos nivelada (campeão 41→43, último 20→17); golos/jogo 2,52.
+- Testado: typecheck, test:engine-unit (47/47, U42 novo), engineCalibration, audit:socketio (0 erros), audit:gamestate B8N0ZH (0 erros).
+
 ## Motor: contra-ataque e cansaço proporcional (2026-10-10)
 - Defensivo finaliza melhor contra Ofensivo (+25%) e contra Pressão Alta (+10%) — `counterAttackConvMult`; metade desses golos tem narração de contra-ataque. Cansaço: cada golpe tira 4% da skill base (antes −1 fixo), ×1,3 com Pressão Alta; por dentro tem decimais, arredonda-se só ao enviar ao cliente. Lesões e trocas NPC ao intervalo usam `fatiguePoints(p)`.
 - Porquê: Ofensivo + Pressão Alta ganhava a tudo e defender nunca compensava. Plano: `docs/plans/2026-10-10-contra-ataque-cansaco-proporcional.md`.
@@ -128,7 +134,3 @@ Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10
 - Posse recalculada a cada minuto (estilo, médios, cansaço, jogadores a menos, ímpeto de quem marcou — 8' a ×1,15); NPCs mudam de estilo pelo resultado (46'/70') e fazem trocas (60'/75', guardam 1 para lesões); humanos nunca tocados.
 - Testado: engine-unit 37/37 (U27–U29 falham no código da Fase 1), simulação 8000 jogos (2,50 golos/jogo), own-goal, penalty-ordering, emergency-gk, substitutions, segment-barrier, finalize, ratings, connect-smoke, audits 0 erros, typecheck.
 - ✅ Resolvido (2026-10-10): o `test:crash-recovery` S1 "finanças exatas" falhava com B8N0ZH/HP9S2L porque a conta esperada do teste não incluía os salários dos funcionários (534 000 €/semana nessas salas) nem a prestação do patrocínio; o jogo estava certo. Teste corrigido (e escolha sorteada de patrocinador neutralizada no setup); passa com B8N0ZH, HP9S2L, GRMTZM e uma cópia com patrocínio semanal.
-
-## Motor: Fase 1 do roadmap tático (2026-10-09)
-- Formação contada no onze real; jogar com 10 custa (oportunidades/defesa); penáltis pelo domínio + GR conta; cartões pela agressividade; lesões pelo cansaço (+ erro: resistência testada num jogador e lesão noutro); golo possível no minuto após golo; `xg` por lance → "Remates"/"Golos esperados" no jogo ao vivo. Plano: `docs/plans/2026-10-09-roadmap-tatica-treinador-bancada.md`.
-- Testado: engine-unit 34/34 (U21–U26 novos, falham no código antigo), simulação 8000 jogos (golos/jogo iguais 2,465), own-goal, penalty-ordering, emergency-gk, substitutions, crash-recovery, segment-barrier, finalize, ratings, connect-smoke, audit:socketio, audit:gamestate B8N0ZH (0 erros), typecheck; client lint + check:types + test:mobile (2 falhas intermitentes no cabeçalho/jornal, passam ao repetir). Visual das estatísticas por ver num jogo real.
