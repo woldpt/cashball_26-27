@@ -24,8 +24,8 @@ import {
  * subcomponentes. Só se apresentam dados reais do view-model — sem
  * countdowns, hot-zones ou conselhos inventados.
  *
- * Desktop (lg+): herói de duelo nas duas primeiras colunas com o cartão de
- * ação ao lado, seguidos de radar + campo + scout. Mobile/tablet: os mesmos
+ * Desktop (lg+): herói de duelo em largura total, faixa de ação fina, depois
+ * radar + campo + scout em 3 colunas da mesma altura. Mobile/tablet: os mesmos
  * blocos empilhados (herói → ação → radar → campo → scout). Sem adversário
  * não há duelo: mostra só a ação e os jogos da ronda.
  *
@@ -90,10 +90,12 @@ export function MatchBriefing() {
       <div className="briefing-stagger grid grid-cols-1 lg:grid-cols-3 gap-3 short:gap-1.5 items-stretch">
         {vm.hasOpponent ? (
           <>
-            <div className="min-w-0 lg:col-span-2">
+            <div className="min-w-0 lg:col-span-3">
               <DuelHero vm={vm} coachOf={coachOf} onOpenTeamSquad={handleOpenTeamSquad} />
             </div>
-            <PrepCtaCard />
+            <div className="min-w-0 lg:col-span-3">
+              <PrepCtaCard />
+            </div>
             <CompareRadar vm={vm} onOpenTeamSquad={handleOpenTeamSquad} />
             <div className="min-w-0 flex flex-col gap-3 short:gap-1.5">
               {vm.formation ? (
@@ -106,7 +108,7 @@ export function MatchBriefing() {
                 <VenueFallback venue={vm.venue} />
               )}
             </div>
-            <div className="min-w-0 flex flex-col gap-3 short:gap-1.5">
+            <div className="min-w-0 flex flex-col gap-3 short:gap-1.5 lg:h-full">
               {vm.stadium ? (
                 <StadiumCard stadium={vm.stadium} />
               ) : vm.formation ? (

@@ -29,13 +29,13 @@ const ThreatValue = memo(function ThreatValue({ threat }) {
 export const ThreatGrid = memo(function ThreatGrid({ threats }) {
   if (!threats || threats.length === 0) return null;
   return (
-    <div className="min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden lg:flex-none lg:flex lg:flex-col">
+    <div className="min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col">
       <div className="px-4 short:px-3 py-1.5 short:py-1 border-b border-outline-variant/15">
         <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
           <span aria-hidden>⚠️</span> Ameaças do adversário
         </span>
       </div>
-      <div className="px-3 short:px-2 py-2 short:py-1.5 flex flex-col gap-1.5 short:gap-1">
+      <div className="px-3 short:px-2 py-2 short:py-1.5 flex flex-col gap-1.5 short:gap-1 lg:flex-1 lg:justify-evenly">
         {threats.map((t, i) => {
           const meta = THREAT_ROLE_META[t.role] ?? { icon: "❗", label: t.role };
           return (

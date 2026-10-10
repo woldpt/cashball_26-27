@@ -113,12 +113,14 @@ const vm = buildBriefingViewModel(summaryFixture, teamInfoFixture);
 
 createRoot(document.getElementById("root")).render(
   <div className="min-h-screen bg-surface p-4">
-    {/* Mesma composição do MatchBriefing (herói span-2 + CTA + radar + campo + scout) */}
+    {/* Mesma composição do MatchBriefing (herói span-3 + faixa CTA + radar + campo + scout) */}
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
-      <div className="min-w-0 lg:col-span-2">
+      <div className="min-w-0 lg:col-span-3">
         <DuelHero vm={vm} onOpenTeamSquad={noop} />
       </div>
-      <PrepCtaCard onAdvance={noop} />
+      <div className="min-w-0 lg:col-span-3">
+        <PrepCtaCard onAdvance={noop} />
+      </div>
       <CompareRadar vm={vm} onOpenTeamSquad={noop} />
       <div className="min-w-0 flex flex-col gap-3">
         <OpponentFormation
@@ -126,7 +128,7 @@ createRoot(document.getElementById("root")).render(
           teamColor={vm.opponentColor}
         />
       </div>
-      <div className="min-w-0 flex flex-col gap-3">
+      <div className="min-w-0 flex flex-col gap-3 lg:h-full">
         <StadiumCard stadium={vm.stadium} />
         <ThreatGrid threats={vm.threats} />
         <MarketPanel odds={vm.odds} referee={vm.referee} />

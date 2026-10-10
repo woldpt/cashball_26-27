@@ -231,7 +231,7 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-1.5">
+        <div className="mt-auto flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-1.5">
           <Tile label="Último confronto" className="flex-1">
             {lc ? (
               <>
