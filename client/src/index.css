@@ -505,39 +505,34 @@ body {
   }
 }
 
-/* Ticker Notícias CM: a tira entra pela direita e sai pela esquerda
-   (1 iteração). Duração em --cm-dur (definida pelo componente).
-   Em hover/foco da barra a passagem pausa para dar tempo de leitura.
-   "still" é um temporizador no-op para reduced-motion. */
-@keyframes cmTickerPass {
-  0% {
-    left: 100%;
+/* Ticker Notícias CM: a tira (duas cópias iguais) desliza para a esquerda
+   e recomeça sem saltos (loop infinito). Duração em --cm-dur (definida pelo
+   componente). Em hover da barra o ciclo pausa para dar tempo de leitura. */
+@keyframes cmTickerLoop {
+  from {
     transform: translateX(0);
   }
-  100% {
-    left: 0;
-    transform: translateX(-100%);
+  to {
+    transform: translateX(-50%);
   }
 }
-@keyframes cmTickerStill {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-  }
+.cm-ticker-loop {
+  animation: cmTickerLoop var(--cm-dur) linear infinite;
 }
-.cm-ticker-pass {
-  animation: cmTickerPass var(--cm-dur) linear 1;
-}
-.cm-ticker-still {
-  animation: cmTickerStill var(--cm-dur) linear 1;
-}
-.cm-ticker-hit:hover .cm-ticker-pass,
-.cm-ticker-hit:focus-visible .cm-ticker-pass,
-.cm-ticker-hit:hover .cm-ticker-still,
-.cm-ticker-hit:focus-visible .cm-ticker-still {
+.cm-ticker-hit:hover .cm-ticker-loop {
   animation-play-state: paused;
+}
+
+/* Painéis do Jornal (lista e leitor): no desktop ocupam o ecrã menos o
+   cabeçalho e a margem; com a faixa CM visível descontam também a sua altura
+   (h-9 = 2.25rem), para não ficarem por trás dela. */
+@media (min-width: 1024px) {
+  .journal-panel {
+    height: calc(100dvh - 9rem);
+  }
+  .game-shell:has(.cm-ticker) .journal-panel {
+    height: calc(100dvh - 9rem - 2.25rem);
+  }
 }
 
 /* Heartbeat for JOGAR button */

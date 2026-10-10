@@ -152,8 +152,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           </main>
         )}
 
-        {/* Adjunto e notícias não falam ao mesmo tempo: a barra espera pela dica. */}
-        <CmTicker hidden={isMatchInProgress} paused={showAssistant} />
+        {/* Notícias CM só existem no Jornal. Adjunto e notícias não falam ao
+            mesmo tempo: a barra espera pela dica. */}
+        {activeTab === "jornal" && (
+          <CmTicker hidden={isMatchInProgress} paused={showAssistant} />
+        )}
 
         <MobileNav scrollToTop={scrollToTop} />
       </div>

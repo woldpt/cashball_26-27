@@ -171,7 +171,7 @@ export function JournalTab({
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
         {/* ── Inbox (coluna estreita à esquerda, ~1/3) ───────────────── */}
-        <div className={`${mobileDetail ? "max-lg:hidden " : ""}lg:sticky lg:top-2 lg:flex lg:h-[calc(100dvh-9rem)] lg:flex-col`}>
+        <div className={`${mobileDetail ? "max-lg:hidden " : ""}journal-panel lg:sticky lg:top-2 lg:flex lg:flex-col`}>
         <TopicList
           inbox={inbox}
           selected={selected}
@@ -183,7 +183,7 @@ export function JournalTab({
         </div>
 
         {/* ── Leitor (à direita, ~2/3) ───────────────────────────────── */}
-        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} min-w-0 space-y-2 lg:sticky lg:top-2 lg:flex lg:h-[calc(100dvh-9rem)] lg:flex-col lg:space-y-0`}>
+        <section aria-label="Corpo da notícia" className={`${mobileDetail ? "" : "max-lg:hidden"} journal-panel min-w-0 space-y-2 lg:sticky lg:top-2 lg:flex lg:flex-col lg:space-y-0`}>
           <Button
             variant="ghost"
             size="sm"

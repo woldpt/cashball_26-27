@@ -17,6 +17,7 @@ import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { GameContext } from "./src/contexts/GameContext.jsx";
 import { JournalTab } from "./src/views/JournalTab.jsx";
+import { CmTicker } from "./src/components/ui/CmTicker.jsx";
 import { useInbox } from "./src/hooks/useInbox.js";
 
 const noop = () => {};
@@ -208,6 +209,17 @@ const globalNews = {
   results: [],
 };
 
+// Notícias CM (faixa do rodapé): uma curta, uma longa e uma média, para o
+// ciclo e a largura da faixa.
+const cmNews = [
+  { id: 1, text: "Clube Desportivo do Litoral vence o clássico por três a zero." },
+  {
+    id: 2,
+    text: "Treinador Principal Joaquim Fernando Alves é elogiado pela direção depois de uma semana de resultados sem precedentes no campeonato nacional.",
+  },
+  { id: 3, text: "Rumores de transferência sobem de tom." },
+];
+
 const gameValue = {
   seasonYear: 2026,
   me,
@@ -223,6 +235,7 @@ const gameValue = {
   globalNews,
   mySquad,
   calendarIndex: 12,
+  cmNews,
 };
 
 /** Segundo consumidor de `useInbox` — faz de badge do Jornal no GameLayout. */
@@ -248,12 +261,19 @@ try {
 
 const root = createRoot(document.getElementById("root"));
 root.render(
-  // Mimics the GameLayout mobile container: <main> > div.p-4 > tab content
+  // Mimics the GameLayout shell: .game-shell (grelha com a faixa CM na área
+  // ticker) > main > área de scroll com p-4/lg:p-6 > tab content
   <GameContext.Provider value={gameValue}>
-    <div className="min-h-screen bg-surface">
-      <div className="p-4 lg:p-6">
-        <BadgeProbe />
-        <JournalTab />
+    <div className="h-dvh bg-surface">
+      <div className="game-shell">
+        <div aria-hidden className="hidden lg:block [grid-area:nav]" />
+        <div className="[grid-area:main] min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-6">
+            <BadgeProbe />
+            <JournalTab />
+          </div>
+        </div>
+        <CmTicker />
       </div>
     </div>
   </GameContext.Provider>,
@@ -391,6 +411,23 @@ async function checkSharedReads() {
   };
 }
 
+/**
+ * A faixa CM não pode tapar o leitor do Jornal (é ele que tem a barra de
+ * ações no fim). Só mede no desktop: no telemóvel a faixa está fora da área
+ * de scroll e o leitor não tem altura fixa.
+ * `excessPx` = quanto o leitor desce para lá da faixa (vazio = nada tapado).
+ */
+function checkBarClearance() {
+  if (window.innerWidth < 1024) return { ok: true, skipped: "telemóvel" };
+  const bar = document.querySelector(".cm-ticker");
+  if (!bar) return { ok: false, error: "faixa CM não está visível" };
+  const barTop = bar.getBoundingClientRect().top;
+  const excessPx = [...document.querySelectorAll('section[aria-label="Corpo da notícia"]')]
+    .map((el) => Math.round(el.getBoundingClientRect().bottom - barTop))
+    .filter((px) => px > 1);
+  return { ok: excessPx.length === 0, excessPx };
+}
+
 function measure() {
   const vw = window.innerWidth;
   const doc = document.documentElement;
@@ -453,11 +490,13 @@ setTimeout(async () => {
   report.inboxBadge = await safe(checkSharedReads);
   report.moodArticle = await safe(checkMoodArticle);
   report.drawDate = await safe(checkDrawDate);
+  report.barClearance = await safe(checkBarClearance);
   if (
     !report.quickSearch.ok ||
     !report.moodArticle.ok ||
     !report.drawDate.ok ||
-    !report.inboxBadge.ok
+    !report.inboxBadge.ok ||
+    !report.barClearance.ok
   )
     report.verdict = "FAIL";
   const el = document.getElementById("report");
