@@ -8,6 +8,9 @@
 - Testado: client lint + check:types, test:mobile 195/195 (concorrência 6), test:tacticpositions, test:briefing; screenshots 360/1280/1440 da Tática e do intervalo vistos.
 - Tática desktop: Moral passou para cima da Formação (coluna 1); coluna do meio só "Instruções" com os cartões a encher a altura; grelha de formações `flex-1 auto-rows-fr` — sem vazios entre colunas.
 
+## Deploy v26.10.42 no rick (2026-10-10)
+- Tática desktop equilibrada (Moral sobre a Formação, sem vazios). Backend Healthy.
+
 ## Deploy v26.10.41 no rick (2026-10-10)
 - Ímpeto visível no Live, remates/golos esperados no intervalo e "Leitura do jogo" no fim. Backend Healthy.
 
@@ -130,8 +133,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Fix: capacidade do estádio no perfil caía sempre em 10 000; harness `teamsquad` partia (`useGame` sem provider).
 - Fix global: o CSS da Google (sem layer) impunha 24px a todos os `material-symbols-outlined` e `text-[Npx]` era ignorado na app inteira; a fonte passou do `<link>` do `index.html` para `@import … layer(base)` no `index.css` (as utilities voltam a mandar). test:mobile 33/38 = mesmas 5 falhas antigas que no HEAD (assistant, journal, landing, stadiumtab, topwidgets) + mosaico de capturas revisto.
 - Testado: lint (só o erro antigo do landing-resp-test), check:types, test:mobile playerhistory/teamsquad PASS 320–430 + capturas 390/1280 com a fonte dos ícones.
-
-## Redesign Scout · Mercado · Leilões (2026-10-06)
-- Topo comum `TransferHeader` (saldo grande + chips) e cabeça de cromo partilhada (`components/transfers/TransferChrome.jsx`); Mercado com selo preço vs valor e barra de % do saldo.
-- Leilões ordenados pelo fim, fita a liderar/superado (`utils/auctionStanding.js` + teste), lance numa linha com Mín./+5%/+10%. Scout: consola de pesquisa, atalhos, ação com preço; `PlayerRow` com `actions` põe-nas na linha de baixo em mobile.
-- Testado: lint (só o erro antigo do landing-resp-test), check:types, `node src/utils/auctionStanding.test.mjs`, test:mobile scout/transfer/auctions/mobile 320–1440 + capturas lidas.
