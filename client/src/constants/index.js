@@ -414,6 +414,32 @@ export const TACTIC_FORMATIONS = [
   { value: "5-4-1", label: "5-4-1", badge: "Autocarro", blurb: "Onze atrás da linha da bola.", edge: "defense" },
 ];
 
+/* Mentalidade (campo `style`): ícone, cor de destaque (pinta todo o estado
+ * ativo — fundo, contorno, brilho) e o efeito numa linha. */
+export const STYLE_OPTIONS = [
+	{
+		value: "Defensive",
+		label: "Defensivo",
+		accent: "#3b82f6",
+		icon: "phase-start",
+		hint: "Bloco baixo, sair em contra-ataque",
+	},
+	{
+		value: "Balanced",
+		label: "Neutro",
+		accent: "#6366f1",
+		icon: "form-flat",
+		hint: "Equilíbrio, sem extremos",
+	},
+	{
+		value: "Offensive",
+		label: "Ofensivo",
+		accent: "#f59e0b",
+		icon: "form-up",
+		hint: "Mais gente na frente, mais riscos",
+	},
+];
+
 /* Pressão (campo `pressure`): alta = mais bola e faltas, cansa; baixa = bloco
  * compacto, poupa pernas. */
 export const PRESSURE_OPTIONS = [

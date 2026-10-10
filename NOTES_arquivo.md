@@ -2,6 +2,11 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Ligas de 10 equipas + 32 avos da Taça (2026-10-05)
+- 10 equipas/divisão, 18 jornadas, época de 25 semanas; final da Taça = ronda 6 (`CUP_FINAL_ROUND`). Salas antigas são para apagar (sem migração).
+- 32 avos com Distritais; isentas = D1 + top-4 da D2 (`last_season_rank`). Plano em `docs/plans/2026-10-05-ligas-10-equipas.md`.
+- Testado: typecheck, lint/check:types, engine-unit, fansmood, sponsor, contratos, skillhistory, connect-smoke + verificação da regra de isenção sobre a base.db.
+
 ## Briefing: relvado do adversário visível em mobile (2026-10-04)
 - Bug: no Briefing pré-jogo (<`lg`) o cartão «Confronto tático em campo» só mostrava o cabeçalho — o wrapper do `OpponentFormation` só tinha `min-h` e o `PitchFormation` é `h-full` com conteúdo `absolute` (colapsava a 0px; em `lg` o cartão é flex column e `flex-1` dava altura).
 - Fix (plano `docs/plans/briefing-pitch-mobile.md`): wrapper passa a `h-80 short:h-56` em mobile e `lg:h-auto lg:flex-1` em desktop — altura definida → `h-full` do filho resolve. `PitchFormation` e `MatchBriefing` intactos.

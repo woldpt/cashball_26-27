@@ -85,7 +85,7 @@ export function OrdersCard({ tactic, onUpdateTactic, className = "" }) {
           {orders.map((o, i) => (
             <div
               key={i}
-              className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 rounded-lg border border-outline-variant/20 bg-surface-container-low/60 px-2.5 py-2 text-[11px] font-semibold text-on-surface-variant"
+              className="relative flex flex-wrap items-center gap-x-1.5 gap-y-1.5 rounded-lg border border-outline-variant/20 bg-surface-container-low/60 py-2 pl-2.5 pr-10 text-[11px] font-semibold text-on-surface-variant"
             >
               <span>Aos</span>
               <CyclePill list={MINUTES} value={o.minute} name="Minuto" onChange={(v) => change(i, { minute: v })} />
@@ -103,7 +103,7 @@ export function OrdersCard({ tactic, onUpdateTactic, className = "" }) {
                 type="button"
                 aria-label="Apagar ordem"
                 onClick={() => setOrders(orders.filter((_, j) => j !== i))}
-                className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant/60 transition-colors hover:bg-rose-500/15 hover:text-rose-400"
+                className="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant/60 transition-colors hover:bg-rose-500/15 hover:text-rose-400"
               >
                 ✕
               </button>

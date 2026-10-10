@@ -1,3 +1,7 @@
+## Tática e intervalo com cara de quadro tático (2026-10-10)
+- Botões de mentalidade/pressão/conversa: barra segmentada acesa (telemóvel/Tática) ou cartões com ícone e efeito (intervalo desktop e Tática desktop); posse em destaque com emblemas e %; ordens como frase de pílulas que mudam ao toque (sem selects); duelo em 3 mini-cartões com selo (Ganhas/Em risco…). Tática mobile: Moral → Formação+duelo → Instruções → Ordens. `STYLE_OPTIONS` passou para `constants/index.js`.
+- Testado: client lint + check:types, test:mobile 195/195 (concorrência 6), test:tacticpositions, test:briefing; screenshots 360/1280/1440 da Tática e do intervalo vistos.
+
 ## Deploy v26.10.39 no rick (2026-10-10)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui o commit de táticas do intervalo de outra sessão (em curso nesta árvore); o bump de `APP_VERSION` ficou incluído nesse commit, sem commit próprio.
@@ -141,8 +145,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Eliminado pode marcar amigável em qualquer semana da Taça ainda por jogar (exceto a final); isenta dos 32 avos marca para a ronda 1.
 - Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.
 - Testado: typecheck, lint/check:types, connect-smoke + script sobre BD de sala (duplicados, final, par humano, NPC).
-
-## Ligas de 10 equipas + 32 avos da Taça (2026-10-05)
-- 10 equipas/divisão, 18 jornadas, época de 25 semanas; final da Taça = ronda 6 (`CUP_FINAL_ROUND`). Salas antigas são para apagar (sem migração).
-- 32 avos com Distritais; isentas = D1 + top-4 da D2 (`last_season_rank`). Plano em `docs/plans/2026-10-05-ligas-10-equipas.md`.
-- Testado: typecheck, lint/check:types, engine-unit, fansmood, sponsor, contratos, skillhistory, connect-smoke + verificação da regra de isenção sobre a base.db.

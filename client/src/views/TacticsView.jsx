@@ -8,7 +8,7 @@ import { OrdersCard } from "../components/shared/OrdersCard.jsx";
 import { PrepStepper } from "../components/live/briefing/index.js";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket, queueEmit } from "../socket.js";
-import { TACTIC_FORMATIONS, MAX_BENCH_SIZE, PRESSURE_OPTIONS } from "../constants/index.js";
+import { TACTIC_FORMATIONS, MAX_BENCH_SIZE, PRESSURE_OPTIONS, STYLE_OPTIONS } from "../constants/index.js";
 import { WEATHER_LABELS } from "../components/match/matchConstants.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
@@ -58,41 +58,6 @@ const FORMATION_EDGE_TEXT = {
   attack: "text-rose-400",
   defense: "text-blue-400",
   balanced: "text-gray-500",
-};
-
-/** Valores de mentalidade e metadados partilhados pelos cartões mobile/desktop. */
-const STYLE_ORDER = ["Defensive", "Balanced", "Offensive"];
-const STYLE_META = {
-  Defensive: {
-    short: "DEF",
-    icon: "phase-start",
-    label: "Defensivo",
-    blurb: "Bloco baixo, sair a contragolpe.",
-    chip: "bg-blue-500/15 border-blue-500/40 text-blue-400",
-    pillBg: "rgba(59,130,246,0.28)",
-    pillBorder: "rgba(59,130,246,0.6)",
-    text: "text-blue-400",
-  },
-  Balanced: {
-    short: "NEU",
-    icon: "form-flat",
-    label: "Neutro",
-    blurb: "Equilíbrio no meio, sem extremos.",
-    chip: "bg-[#4ade80]/15 border-[#4ade80]/35 text-[#4ade80]",
-    pillBg: "rgba(74,222,128,0.28)",
-    pillBorder: "rgba(74,222,128,0.55)",
-    text: "text-[#4ade80]",
-  },
-  Offensive: {
-    short: "ATC",
-    icon: "form-up",
-    label: "Ofensivo",
-    blurb: "Pressão alta, campo todo a favor.",
-    chip: "bg-rose-500/15 border-rose-500/40 text-rose-400",
-    pillBg: "rgba(244,63,94,0.28)",
-    pillBorder: "rgba(244,63,94,0.6)",
-    text: "text-rose-400",
-  },
 };
 
 /**
@@ -496,135 +461,144 @@ function MoraleCard({ glow = false }) {
 }
 
 /**
- * MentalityChips — seletor de mentalidade mobile (3 botões com ícone).
+ * InstructionGroup — um seletor (mentalidade ou pressão) com o efeito da
+ * opção escolhida por baixo.
+ * @param {Object} props
+ * @param {string} props.label
+ * @param {string} props.field - Campo da tática (style | pressure).
+ * @param {string} props.value
+ * @param {Array<{value: string, label: string, accent: string, icon?: string, hint?: string}>} props.options
+ * @param {(patch: Object) => void} props.onChange
+ * @param {"segmented"|"cards"} [props.variant] - Cartões já mostram o efeito de cada opção.
  * @returns {JSX.Element}
  */
-function MentalityChips() {
-  const { tactic, updateTactic } = useTactics();
+function InstructionGroup({ label, field, value, options, onChange, variant = "segmented" }) {
+  const active = options.find((o) => o.value === value);
   return (
-    <div className="flex flex-1 items-stretch gap-1 p-1.5">
-      {STYLE_ORDER.map((val) => {
-        const isActive = tactic.style === val;
-        const meta = STYLE_META[val];
-        return (
-          <button
-            key={val}
-            onClick={() => updateTactic({ style: val })}
-            className={`flex flex-1 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border px-0.5 py-1.5 transition-all active:scale-95 ${isActive ? meta.chip : "border-transparent bg-surface-container-low/60 text-gray-500 hover:text-gray-300"}`}
-          >
-            <MatchIcon
-              name={meta.icon}
-              className={`h-3.5 w-3.5 shrink-0 ${isActive ? "" : "opacity-70"}`}
-            />
-            <span className="text-[9px] font-black uppercase tracking-wide">
-              {meta.short}
-            </span>
-          </button>
-        );
-      })}
+    <section className="flex flex-col gap-1.5">
+      <h4 className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-gray-500 font-black">
+        <span
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ background: active?.accent ?? "#a78bfa", boxShadow: `0 0 6px ${active?.accent ?? "#a78bfa"}` }}
+        />
+        {label}
+      </h4>
+      <TacticsButtons
+        className="w-full"
+        options={options}
+        field={field}
+        value={value}
+        onChange={onChange}
+        ariaLabel={label}
+        variant={variant}
+      />
+      {variant === "segmented" && active?.hint && (
+        <p className="px-0.5 text-[10px] font-semibold leading-snug text-gray-400">{active.hint}</p>
+      )}
+    </section>
+  );
+}
+
+/**
+ * InstructionsCard — mentalidade + pressão, com o efeito de cada escolha.
+ * @param {Object} props
+ * @param {boolean} [props.bare=false] Sem cartão próprio e em cartões grandes
+ *   (desktop, dentro do cartão da Moral, onde há espaço)
+ * @returns {JSX.Element}
+ */
+function InstructionsCard({ bare = false }) {
+  const { tactic, updateTactic } = useTactics();
+  const variant = bare ? "cards" : "segmented";
+  const body = (
+    <div className="flex flex-col gap-3">
+      <InstructionGroup
+        label="Mentalidade"
+        field="style"
+        value={tactic.style ?? "Balanced"}
+        options={STYLE_OPTIONS}
+        onChange={updateTactic}
+        variant={variant}
+      />
+      <InstructionGroup
+        label="Pressão"
+        field="pressure"
+        value={tactic.pressure ?? "MEDIA"}
+        options={PRESSURE_OPTIONS}
+        onChange={updateTactic}
+        variant={variant}
+      />
+    </div>
+  );
+  if (bare) return <div className="flex flex-1 flex-col justify-center px-3 short:px-2 py-3 short:py-1.5">{body}</div>;
+  return (
+    <div className="bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+      <div className="px-3 py-2 border-b border-outline-variant/15">
+        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">Instruções</span>
+      </div>
+      <div className="p-3">{body}</div>
     </div>
   );
 }
 
-/**
- * MentalityPills — seletor de mentalidade desktop (pill deslizante + blurb).
- * @returns {JSX.Element}
- */
-function MentalityPills() {
-  const { tactic, updateTactic } = useTactics();
-  const activeStyle = tactic.style ?? "Balanced";
-  const idx = STYLE_ORDER.indexOf(activeStyle);
-  const safeIdx = idx < 0 ? 1 : idx;
-  return (
-    <>
-      <div className="relative flex bg-surface-container-low/60 rounded-full p-0.5">
-        {/* Pill deslizante */}
-        <div
-          className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
-          style={{
-            left: `calc(${safeIdx * 33.333}% + 2px)`,
-            width: "calc(33.333% - 4px)",
-            background: STYLE_META[activeStyle].pillBg,
-            border: `1px solid ${STYLE_META[activeStyle].pillBorder}`,
-          }}
-        />
-        {STYLE_ORDER.map((val) => (
-          <button
-            key={val}
-            onClick={() => updateTactic({ style: val })}
-            className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${
-              tactic.style === val
-                ? STYLE_META[val].text
-                : "text-gray-400 hover:text-gray-200"
-            }`}
-          >
-            {STYLE_META[val].label}
-          </button>
-        ))}
-      </div>
-      <p className="text-[9px] text-gray-500 font-semibold leading-snug">
-        {STYLE_META[activeStyle].blurb}
-      </p>
-    </>
-  );
-}
+const DUEL_TONE = {
+  good: { text: "text-[#4ade80]", chip: "bg-[#4ade80]/15 border-[#4ade80]/40" },
+  bad: { text: "text-rose-400", chip: "bg-rose-500/15 border-rose-500/40" },
+  even: { text: "text-gray-300", chip: "bg-white/5 border-white/15" },
+};
 
 /**
- * DuelHint — o teu onze (linhas reais) contra a formação provável do
- * adversário: quem ganha o meio-campo e a sobra de defesas de cada lado.
+ * DuelStrip — o teu onze (linhas reais) contra a formação provável do
+ * adversário: meio-campo, o teu ataque contra a defesa deles e a tua defesa
+ * contra o ataque deles. A "sobra" de defesas segue o motor (2 = normal).
  * @returns {JSX.Element|null}
  */
-function DuelHint() {
+function DuelStrip() {
   const { titulares, nextMatchSummary } = useTactics();
   const opp = nextMatchSummary?.opponent?.probableFormation;
   const [oDef, oMed, oAta] = String(opp || "").split("-").map(Number);
   if (!opp || titulares.length === 0 || ![oDef, oMed, oAta].every(Number.isFinite)) return null;
   const count = (pos) => titulares.filter((p) => p.position === pos).length;
   const [def, med, ata] = [count("DEF"), count("MED"), count("ATA")];
-  // Sobra de defesas: 2 é o normal; 0–1 = perigo, 3+ = sobra (ver motor).
-  const spareTxt = (spare) => (spare <= 1 ? "perigo" : spare >= 3 ? "folga" : "normal");
-  const midCls = med > oMed ? "text-[#4ade80]" : med < oMed ? "text-rose-400" : "text-gray-300";
+  const atkSpare = oDef - ata; // sobra deles atrás
+  const defSpare = def - oAta; // a tua sobra atrás
+  const tiles = [
+    {
+      label: "Meio-campo",
+      value: `${med}×${oMed}`,
+      ...(med > oMed ? { tone: "good", tag: "Ganhas" } : med < oMed ? { tone: "bad", tag: "Perdes" } : { tone: "even", tag: "Igual" }),
+    },
+    {
+      label: "Ataque",
+      value: `${ata}×${oDef}`,
+      ...(atkSpare <= 1 ? { tone: "good", tag: "Com espaço" } : atkSpare >= 3 ? { tone: "bad", tag: "Afogado" } : { tone: "even", tag: "Normal" }),
+    },
+    {
+      label: "Defesa",
+      value: `${def}×${oAta}`,
+      ...(defSpare <= 1 ? { tone: "bad", tag: "Em risco" } : defSpare >= 3 ? { tone: "good", tag: "Folgada" } : { tone: "even", tag: "Segura" }),
+    },
+  ];
   return (
-    <p className="px-4 short:px-3 pt-2 text-[9px] text-gray-500 font-semibold leading-snug">
-      <span className="uppercase tracking-widest font-black text-gray-400">Duelo vs {opp}</span>{" "}—{" "}
-      meio-campo <span className={`font-black ${midCls}`}>{med}×{oMed}</span>
-      {" · "}ataque {ata} contra {oDef} defesas ({spareTxt(oDef - ata)})
-      {" · "}defesa {def} contra {oAta} avançados ({spareTxt(def - oAta)})
-    </p>
-  );
-}
-
-/**
- * PressureCard — pressão (alta: mais bola e faltas, cansa; bloco baixo:
- * compacto, poupa pernas). Escreve `tactic.pressure`.
- * @param {Object} props
- * @param {boolean} [props.bare=false] Linha com etiqueta, sem cartão (dentro de outro cartão)
- * @returns {JSX.Element}
- */
-function PressureCard({ bare = false }) {
-  const { tactic, updateTactic } = useTactics();
-  const body = (
-    <TacticsButtons
-      className="w-full"
-      options={PRESSURE_OPTIONS}
-      field="pressure"
-      value={tactic.pressure ?? "MEDIA"}
-      onChange={updateTactic}
-    />
-  );
-  if (bare)
-    return (
-      <div className="flex items-center gap-2">
-        <span className="shrink-0 text-[9px] uppercase tracking-widest text-gray-500 font-black">Pressão</span>
-        <div className="flex-1 min-w-0">{body}</div>
+    <div className="px-2 short:px-1.5 pt-2">
+      <p className="px-1 mb-1.5 text-[9px] uppercase tracking-widest font-black text-gray-500">
+        Duelo com o <span className="text-gray-300">{opp}</span> provável
+      </p>
+      <div className="grid grid-cols-3 gap-1.5">
+        {tiles.map((t) => (
+          <div
+            key={t.label}
+            className="flex min-w-0 flex-col items-center gap-0.5 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 px-1 py-1.5 text-center"
+          >
+            <span className="text-[9px] font-black uppercase tracking-wider text-gray-500">{t.label}</span>
+            <span className={`font-headline text-lg font-black leading-none tabular-nums ${DUEL_TONE[t.tone].text}`}>{t.value}</span>
+            <span
+              className={`max-w-full truncate rounded-full border px-1.5 py-px text-[8px] font-black uppercase tracking-wide ${DUEL_TONE[t.tone].chip} ${DUEL_TONE[t.tone].text}`}
+            >
+              {t.tag}
+            </span>
+          </div>
+        ))}
       </div>
-    );
-  return (
-    <div className="bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-      <div className="px-3 py-2 border-b border-outline-variant/15">
-        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">Pressão</span>
-      </div>
-      <div className="p-1.5">{body}</div>
     </div>
   );
 }
@@ -675,7 +649,7 @@ function FormationCard({ className = "", desktop = false, dataTour = false, hear
           </span>{" "}— {activeProfile.blurb}
         </p>
       )}
-      <DuelHint />
+      <DuelStrip />
       <div className="p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
         {TACTIC_FORMATIONS.map(({ value, label, badge, edge }) => {
           const isAvailable =
@@ -946,7 +920,7 @@ function Pitch() {
 
 /**
  * Página de Táticas — totalmente auto-contida via useTactics().
- * Sub-componentes locais (MoraleCard, FormationCard, MentalityChips/Pills,
+ * Sub-componentes locais (MoraleCard, FormationCard, InstructionsCard, DuelStrip,
  * Pitch, StatusPicker) consomem o contexto diretamente; o TacticsView mantém
  * só a derivação de estado e a composição do layout.
  * @returns {JSX.Element}
@@ -1101,27 +1075,15 @@ export function TacticsView() {
           <div className="flex flex-col gap-3 short:gap-1.5">
             {/* COL 1 — só mobile; em desktop os controlos vivem na faixa de topo em linha */}
             <div className="xl:hidden flex flex-col gap-2 short:gap-1.5">
-              {/* Próximo jogo — mobile: moral + mentality side by side */}
-              <div className="flex gap-2 xl:hidden">
-                {nextMatchSummary && (
-                  <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-                    <MoraleCard />
-                  </div>
-                )}
-                <div className="flex-1 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden flex flex-col">
-                  <div className="shrink-0 px-3 py-2 border-b border-outline-variant/15">
-                    <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                      Mentalidade
-                    </span>
-                  </div>
-                  <MentalityChips />
+              {/* Mobile: Moral → Formação (+ duelo) → Instruções → Ordens */}
+              {nextMatchSummary && (
+                <div className="flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+                  <MoraleCard />
                 </div>
-              </div>
-
-              {/* Formação mobile — chips horizontais */}
+              )}
               <FormationCard className="xl:hidden" dataTour heartbeat={heartbeat} />
               {missingWarning}
-              <PressureCard />
+              <InstructionsCard />
               <OrdersCard tactic={t.tactic} onUpdateTactic={t.updateTactic} />
             </div>
 
@@ -1133,18 +1095,10 @@ export function TacticsView() {
                 {missingWarning}
               </div>
 
-              {/* TOPO 2 — Moral + Mentalidade (sobre Suplentes) */}
+              {/* TOPO 2 — Moral + Instruções (sobre Suplentes) */}
               <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
                 {nextMatchSummary && <MoraleCard glow />}
-                <div className="px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
-                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                    Mentalidade
-                  </span>
-                </div>
-                <div className="flex flex-1 flex-col justify-center gap-2 px-3 short:px-2 py-3 short:py-1.5">
-                  <MentalityPills />
-                  <PressureCard bare />
-                </div>
+                <InstructionsCard bare />
               </div>
 
               {/* TOPO 3 — Jogar (sobre Pitch) */}

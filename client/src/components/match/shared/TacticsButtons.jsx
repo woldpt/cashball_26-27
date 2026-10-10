@@ -1,32 +1,6 @@
 /* ── Mentality / Tactics buttons (halftime) ───────────────────────────── */
 import { MatchIcon } from "./MatchIcon.jsx";
-
-/* Each option carries an icon + accent hex. The accent drives ALL selected
- * styling (background, border, glow) so the old hardcoded indigo glow bug —
- * where picking "Ofensivo" still produced an indigo halo — is fixed. */
-const TACTIC_OPTIONS = [
-  {
-    value: "Defensive",
-    label: "Defensivo",
-    accent: "#3b82f6",
-    icon: "phase-start",
-    hint: "Bloco baixo, sair em contra-ataque",
-  },
-  {
-    value: "Balanced",
-    label: "Neutro",
-    accent: "#6366f1",
-    icon: "form-flat",
-    hint: "Equilíbrio, sem extremos",
-  },
-  {
-    value: "Offensive",
-    label: "Ofensivo",
-    accent: "#f59e0b",
-    icon: "form-up",
-    hint: "Mais gente na frente, mais riscos",
-  },
-];
+import { STYLE_OPTIONS } from "../../../constants/index.js";
 
 /**
  * Ícone da opção: emoji (conversa ao intervalo) ou ícone do jogo.
@@ -62,7 +36,7 @@ export function TacticsButtons({
   value,
   onChange,
   className,
-  options = TACTIC_OPTIONS,
+  options = STYLE_OPTIONS,
   field = "style",
   variant = "segmented",
   ariaLabel,
