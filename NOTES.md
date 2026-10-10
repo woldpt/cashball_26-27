@@ -3,14 +3,14 @@
 - Porquê: auditoria deu 4/10 — um humano vendia a NPC a 5× o valor (8 NPC compravam um jogador de 156 mil a 780 mil), 30 € rendia +58% sem custo, e todos os clubes lucravam sempre.
 - Medido: acima de 1,4× zero NPC compram; a 30 € vão 55% dos adeptos (receita +10%); teto da 1.ª 152 → ~215 mil/semana. Efeito em várias épocas só projetado (sem simulador nem sala de produção).
 - Testado: typecheck, todos os `test:*` do servidor (npc-squad-planning 15, attendance, topscorer, finance-guards com F6 ajustado ao custo com ordenados), audit:socketio e audit:gamestate B8N0ZH (0 erros).
-- Por fechar: nos leilões o NPC ainda licita até 2,5× o valor; `test:segment-barrier` B5 já falhava antes.
+- Fechado depois: teto de 1,4× também nos lances de leilão (`npcAuctionMaxBid`; antes 2,5× na entrada e sem teto no contra-lance); `test:segment-barrier` B5 contava a troca de capitão como mudança de tática (teste ajustado, jogo certo); `test:crash-recovery` (B8N0ZH) passa.
+- Por fechar: medir a economia em várias épocas (não há simulador; o relógio mais rápido dá ~40 min reais por época).
 
 ## NPC a gerir como diretor desportivo (2026-10-10)
 - Compras pela posição em falta e com o ordenado na conta; vendas só de quem sobra (titulares protegidos, sobrepreço a quem tem mercado, venda de oportunidade 5%/semana); renovação segura quem faz falta; onze por qualidade × forma e formação pelos melhores 11. `npcSquadPlanning.ts` (puro) + `pickAiLineup` em `matchCalculations.ts`. Plano: `docs/plans/2026-10-10-npc-gestao-desportiva.md`.
 - Porquê: auditoria deu 3/10 a compras e vendas e 5/10 ao onze (16 de 50 equipas em 4-2-4).
 - Medido (onze novo vs antigo, 180 mil jogos simplificados): 1,386 vs 1,362 pts/jogo; 4-2-4 desce de 16 para 11 equipas; NPC contra NPC sobe ~6% em golos. Mercado sem medição de épocas (não há simulador).
 - Testado: typecheck, test:npc-squad-planning (12 novos), npc-bid-window, engine-unit (47/47), contractrenewal, contractyear, substitutions, connect-smoke, engineCalibration (2,52), audit:socketio e audit:gamestate B8N0ZH (0 erros).
-- Já falhava antes, não tocado: `test:segment-barrier` B5 (2 eventos tactic_change, esperado 1).
 
 ## 4.ª divisão com estádios iguais (2026-10-10)
 - Lotação de O Elvas, Oliv. Hospital, Malveira, Sintrense e Alcochetense → 5000 (`all_teams.json`); a massa adepta acompanha. Só salas novas. Plano: `docs/plans/2026-10-10-quarta-divisao-estadios-iguais.md`.
