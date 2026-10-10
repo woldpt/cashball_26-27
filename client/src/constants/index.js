@@ -417,16 +417,16 @@ export const TACTIC_FORMATIONS = [
 /* Pressão (campo `pressure`): alta = mais bola e faltas, cansa; baixa = bloco
  * compacto, poupa pernas. */
 export const PRESSURE_OPTIONS = [
-	{ value: "BAIXA", label: "Baixa", accent: "#3b82f6", icon: "form-down" },
-	{ value: "MEDIA", label: "Média", accent: "#6366f1", icon: "form-flat" },
-	{ value: "ALTA", label: "Alta", accent: "#f43f5e", icon: "form-up" },
+	{ value: "BAIXA", label: "Baixa", accent: "#3b82f6", icon: "form-down", hint: "Bloco compacto, poupa pernas" },
+	{ value: "MEDIA", label: "Média", accent: "#6366f1", icon: "form-flat", hint: "Pressiona sem se expor" },
+	{ value: "ALTA", label: "Alta", accent: "#f43f5e", icon: "form-up", hint: "Mais bola e faltas, cansa" },
 ];
 
 /* Conversa ao intervalo (campo `talk`): vale para a 2.ª parte. */
 export const TALK_OPTIONS = [
-	{ value: "ACALMAR", label: "Acalmar", accent: "#22d3ee" },
-	{ value: "ELOGIAR", label: "Elogiar", accent: "#4ade80" },
-	{ value: "EXIGIR", label: "Exigir", accent: "#f59e0b" },
+	{ value: "ACALMAR", label: "Acalmar", accent: "#22d3ee", emoji: "🧘", hint: "Cabeça fria, menos cartões" },
+	{ value: "ELOGIAR", label: "Elogiar", accent: "#4ade80", emoji: "👏", hint: "Reforça quem está a ir bem" },
+	{ value: "EXIGIR", label: "Exigir", accent: "#f59e0b", emoji: "📣", hint: "Acorda quem está a falhar" },
 ];
 
 export const DEFAULT_TACTIC = {
@@ -487,7 +487,7 @@ export const STADIUM_EXPANSION_COST = 300000;
 /** Rótulo da época em curso (marca, header, footer e ecrã de carregamento). */
 export const SEASON_LABEL = "26/27";
 /** Versão do build (CalVer `vAA.MM.N`, rolling release — ver NOTES.md). */
-export const APP_VERSION = "v26.10.38";
+export const APP_VERSION = "v26.10.39";
 /** Total de jornadas de liga por época. */
 export const SEASON_JORNADAS = 18;
 /** A final da Taça (última ronda) — espelha CUP_FINAL_ROUND do servidor. */

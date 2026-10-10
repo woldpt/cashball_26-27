@@ -63,47 +63,69 @@ export function CronologiaPanel({
 }
 
 /**
- * Marcador + posse + minuto. Preenche o espaço morto da coluna Mentalidade
- * com contexto relevante para a decisão.
- *
- * @param {object} fixture - Dados do jogo (marcador, posse).
- * @param {object} hInfo - Equipa da casa (nome, color_primary).
- * @param {object} aInfo - Equipa de fora (nome, color_primary).
- * @param {number} liveMinute - Minuto atual do jogo.
- * @param {string} className - Classes extra (ex. "mt-auto").
+ * Posse de bola em destaque: emblemas, percentagens grandes e a barra nas
+ * cores dos clubes (3.ª coluna do intervalo, desktop).
+ * @param {Object} props
+ * @param {Object} props.fixture - Com homePossession/awayPossession.
+ * @param {Object} props.hInfo - Equipa da casa (nome, cores, emblema).
+ * @param {Object} props.aInfo - Equipa de fora.
+ * @param {number} [props.liveMinute]
+ * @param {string} [props.className]
+ * @returns {JSX.Element|null}
  */
 export function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }) {
   if (!fixture || !hInfo?.name || !aInfo?.name) return null;
+  const home = fixture.homePossession;
+  const away = fixture.awayPossession ?? (home != null ? 100 - home : null);
+  const side = (team, pct, align) => (
+    <div className={`flex min-w-0 flex-1 items-center gap-2.5 ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
+      <TeamCrest team={team} size="sm" />
+      <div className="min-w-0">
+        <p className="font-headline text-3xl font-black leading-none tabular-nums text-on-surface">
+          {pct ?? "—"}
+          <span className="text-base font-bold text-on-surface-variant">%</span>
+        </p>
+        <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+          {team.name}
+        </p>
+      </div>
+    </div>
+  );
   return (
     <div
-      className={`rounded-md border border-outline-variant/25 bg-surface-container/60 p-3 space-y-2.5 ${className}`}
+      className={`relative overflow-hidden rounded-xl border border-outline-variant/25 bg-surface-container/60 p-3 ${className}`}
+      style={{
+        // Brilho subtil das duas cores, uma de cada lado.
+        backgroundImage: `radial-gradient(circle at 0% 0%, ${hInfo.color_primary || "#6366f1"}26, transparent 55%), radial-gradient(circle at 100% 0%, ${aInfo.color_primary || "#f43f5e"}26, transparent 55%)`,
+      }}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-          Posse de Bola
+          Posse de bola
         </span>
         {liveMinute != null && (
-          <span className="text-[10px] font-bold tabular-nums text-on-surface-variant">
+          <span className="rounded-full bg-surface-container-high/80 px-2 py-0.5 text-[10px] font-bold tabular-nums text-on-surface-variant">
             {liveMinute}'
           </span>
         )}
       </div>
-      {fixture.homePossession != null && (
-        <div className="h-1.5 rounded-full overflow-hidden bg-surface-container-high/80 flex">
+      <div className="flex items-center gap-3">
+        {side(hInfo, home, "left")}
+        {side(aInfo, away, "right")}
+      </div>
+      {home != null && (
+        <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-surface-container-high/80">
           <div
-            className="h-full"
+            className="h-full transition-all duration-700 ease-out"
             style={{
-              width: `${fixture.homePossession}%`,
+              width: `${home}%`,
               background: hInfo.color_primary || "#6366f1",
               // Separador fino: quando as duas equipas têm a mesma cor,
               // a divisão da posse continuava visível.
               borderRight: "2px solid rgba(255,255,255,0.7)",
             }}
           />
-          <div
-            className="h-full flex-1"
-            style={{ background: aInfo.color_primary || "#f43f5e" }}
-          />
+          <div className="h-full flex-1" style={{ background: aInfo.color_primary || "#f43f5e" }} />
         </div>
       )}
     </div>

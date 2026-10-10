@@ -38,45 +38,62 @@ const STYLE_LABELS = {
 /**
  * Instruções de jogo: mentalidade + pressão e, ao intervalo, a conversa
  * no balneário (vale para a 2.ª parte).
+ * - `compact` (telemóvel): barras segmentadas, a 1.ª sem etiqueta.
+ * - `cards` (3.ª coluna do desktop): secções com cartões e o efeito de cada opção.
  * @param {Object} props
  * @param {{style?: string, pressure?: string, talk?: string}} props.tactic
  * @param {(patch: Object) => void} props.onUpdateTactic
  * @param {boolean} [props.showTalk] - Só no intervalo da 1.ª para a 2.ª parte.
+ * @param {"compact"|"cards"} [props.variant]
  * @returns {JSX.Element}
  */
-function MatchInstructions({ tactic, onUpdateTactic, showTalk = false }) {
-  const row = (label, buttons) => (
-    <div className="flex items-center gap-2">
-      <span className="w-16 shrink-0 text-[9px] font-black uppercase tracking-wider text-on-surface-variant">
-        {label}
-      </span>
-      {buttons}
-    </div>
+function MatchInstructions({ tactic, onUpdateTactic, showTalk = false, variant = "compact" }) {
+  const cards = variant === "cards";
+  const groups = [
+    { key: "style", label: "Mentalidade", value: tactic.style, options: undefined },
+    { key: "pressure", label: "Pressão", value: tactic.pressure ?? "MEDIA", options: PRESSURE_OPTIONS },
+    showTalk && { key: "talk", label: cards ? "Conversa ao intervalo" : "Conversa", value: tactic.talk, options: TALK_OPTIONS },
+  ].filter(Boolean);
+  const buttons = (g, className) => (
+    <TacticsButtons
+      className={className}
+      options={g.options}
+      field={g.key}
+      value={g.value}
+      onChange={onUpdateTactic}
+      variant={cards ? "cards" : "segmented"}
+      ariaLabel={g.label}
+    />
   );
+  if (cards) {
+    return (
+      <div className="flex w-full flex-col gap-3">
+        {groups.map((g) => (
+          <section key={g.key} className="flex flex-col gap-1.5">
+            <h4 className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.6)]" />
+              {g.label}
+            </h4>
+            {buttons(g, "w-full")}
+          </section>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="flex w-full flex-col gap-1.5">
-      <TacticsButtons className="w-full" value={tactic.style} onChange={onUpdateTactic} />
-      {row(
-        "Pressão",
-        <TacticsButtons
-          className="flex-1 min-w-0"
-          options={PRESSURE_OPTIONS}
-          field="pressure"
-          value={tactic.pressure ?? "MEDIA"}
-          onChange={onUpdateTactic}
-        />,
+      {groups.map((g, i) =>
+        i === 0 ? (
+          <div key={g.key}>{buttons(g, "w-full")}</div>
+        ) : (
+          <div key={g.key} className="flex items-center gap-2">
+            <span className="w-16 shrink-0 text-[9px] font-black uppercase tracking-wider text-on-surface-variant">
+              {g.label}
+            </span>
+            {buttons(g, "flex-1 min-w-0")}
+          </div>
+        ),
       )}
-      {showTalk &&
-        row(
-          "Conversa",
-          <TacticsButtons
-            className="flex-1 min-w-0"
-            options={TALK_OPTIONS}
-            field="talk"
-            value={tactic.talk}
-            onChange={onUpdateTactic}
-          />,
-        )}
     </div>
   );
 }
@@ -950,18 +967,10 @@ function TacticColumn({
           </button>
         )}
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-3">
         {summary && <MatchSummaryBlock {...summary} />}
-        <div className="rounded-md border border-outline-variant/25 bg-surface-container/60 p-3 space-y-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-              Mentalidade
-            </span>
-            <span className="ml-auto truncate text-[11px] font-bold text-on-surface">
-              {STYLE_LABELS[tactic.style] || tactic.style}
-            </span>
-          </div>
-          <MatchInstructions tactic={tactic} onUpdateTactic={onUpdateTactic} showTalk={showTalk} />
+        <div className="rounded-xl border border-outline-variant/25 bg-surface-container/60 p-3">
+          <MatchInstructions tactic={tactic} onUpdateTactic={onUpdateTactic} showTalk={showTalk} variant="cards" />
         </div>
         <OrdersCard tactic={tactic} onUpdateTactic={onUpdateTactic} />
       </div>
