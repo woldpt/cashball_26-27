@@ -568,80 +568,6 @@ function InstructionsCard({ bare = false }) {
   );
 }
 
-const DUEL_TONE = {
-  good: { text: "text-[#4ade80]", chip: "bg-[#4ade80]/15 border-[#4ade80]/40" },
-  bad: { text: "text-rose-400", chip: "bg-rose-500/15 border-rose-500/40" },
-  even: { text: "text-gray-300", chip: "bg-white/5 border-white/15" },
-};
-
-/**
- * DuelStrip — o teu onze (linhas reais) contra a formação provável do
- * adversário: meio-campo, o teu ataque contra a defesa deles e a tua defesa
- * contra o ataque deles. A "sobra" de defesas segue o motor (2 = normal).
- * @returns {JSX.Element|null}
- */
-function DuelStrip() {
-  const { titulares, nextMatchSummary } = useTactics();
-  const { captain } = useCaptain();
-  const probable = nextMatchSummary?.opponent?.probableFormation;
-  const opp = probable?.formation;
-  const oppLead = probable?.captain?.lead;
-  const [oDef, oMed, oAta] = String(opp || "").split("-").map(Number);
-  if (!opp || titulares.length === 0 || ![oDef, oMed, oAta].every(Number.isFinite)) return null;
-  const count = (pos) => titulares.filter((p) => p.position === pos).length;
-  const [def, med, ata] = [count("DEF"), count("MED"), count("ATA")];
-  const atkSpare = oDef - ata; // sobra deles atrás
-  const defSpare = def - oAta; // a tua sobra atrás
-  const tiles = [
-    {
-      label: "Meio",
-      value: `${med}×${oMed}`,
-      ...(med > oMed ? { tone: "good", tag: "Ganhas" } : med < oMed ? { tone: "bad", tag: "Perdes" } : { tone: "even", tag: "Igual" }),
-    },
-    {
-      label: "Ataque",
-      value: `${ata}×${oDef}`,
-      ...(atkSpare <= 1 ? { tone: "good", tag: "Com espaço" } : atkSpare >= 3 ? { tone: "bad", tag: "Afogado" } : { tone: "even", tag: "Normal" }),
-    },
-    {
-      label: "Defesa",
-      value: `${def}×${oAta}`,
-      ...(defSpare <= 1 ? { tone: "bad", tag: "Em risco" } : defSpare >= 3 ? { tone: "good", tag: "Folgada" } : { tone: "even", tag: "Segura" }),
-    },
-  ];
-  // Capitão contra capitão: só a diferença conta (quem sofre golo e tem o
-  // melhor líder recompõe-se mais depressa).
-  if (captain && oppLead)
-    tiles.push({
-      label: "Capitão",
-      value: `${captain.lead}×${oppLead}`,
-      ...(captain.lead > oppLead ? { tone: "good", tag: "Ganhas" } : captain.lead < oppLead ? { tone: "bad", tag: "Perdes" } : { tone: "even", tag: "Igual" }),
-    });
-  return (
-    <div className="px-2 short:px-1.5 pt-2">
-      <p className="px-1 mb-1.5 text-[9px] uppercase tracking-widest font-black text-gray-500">
-        Duelo com o <span className="text-gray-300">{opp}</span> provável
-      </p>
-      <div className={`grid gap-1.5 ${tiles.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
-        {tiles.map((t) => (
-          <div
-            key={t.label}
-            className="flex min-w-0 flex-col items-center gap-0.5 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 px-1 py-1.5 text-center"
-          >
-            <span className="max-w-full truncate text-[9px] font-black uppercase tracking-wider text-gray-500">{t.label}</span>
-            <span className={`font-headline text-lg font-black leading-none tabular-nums ${DUEL_TONE[t.tone].text}`}>{t.value}</span>
-            <span
-              className={`max-w-full truncate rounded-full border px-1.5 py-px text-[8px] font-black uppercase tracking-wide ${DUEL_TONE[t.tone].chip} ${DUEL_TONE[t.tone].text}`}
-            >
-              {t.tag}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /**
  * CaptainPicker — quem leva a braçadeira. Sem escolha (ou com o escolhido
  * fora do onze) o capitão é o maior líder em campo.
@@ -721,7 +647,6 @@ function FormationCard({ className = "", desktop = false, dataTour = false, hear
           </span>{" "}— {activeProfile.blurb}
         </p>
       )}
-      <DuelStrip />
       <div className={`p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1 ${desktop ? "flex-1 auto-rows-fr" : ""}`}>
         {TACTIC_FORMATIONS.map(({ value, label, badge, edge }) => {
           const isAvailable =
@@ -994,7 +919,7 @@ function Pitch() {
 
 /**
  * Página de Táticas — totalmente auto-contida via useTactics().
- * Sub-componentes locais (MoraleCard, FormationCard, InstructionsCard, DuelStrip,
+ * Sub-componentes locais (MoraleCard, FormationCard, InstructionsCard,
  * Pitch, StatusPicker) consomem o contexto diretamente; o TacticsView mantém
  * só a derivação de estado e a composição do layout.
  * @returns {JSX.Element}
@@ -1150,7 +1075,7 @@ export function TacticsView() {
           <div className="flex flex-col gap-3 short:gap-1.5">
             {/* COL 1 — só mobile; em desktop os controlos vivem na faixa de topo em linha */}
             <div className="xl:hidden flex flex-col gap-2 short:gap-1.5">
-              {/* Mobile: Moral → Formação (+ duelo) → Instruções → Ordens */}
+              {/* Mobile: Moral → Formação → Instruções → Ordens */}
               {nextMatchSummary && (
                 <div className="flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
                   <MoraleCard />
