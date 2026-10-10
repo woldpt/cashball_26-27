@@ -1,3 +1,8 @@
+## Botão Continuar cortado na barra mobile (2026-10-10)
+- "CONTINUAR" (9px + `tracking-wider`) era mais largo que o círculo de 56px do `PlayButton` e o `overflow-hidden` cortava o R.
+- Fix: etiqueta a 8px `tracking-normal` (`MobileNav.jsx`).
+- Testado: lint + check:types.
+
 ## Deploy v26.10.45 no rick (2026-10-10)
 - Commits `2640763a`, `60c5c5ce`, `07033e63` + bump `6b81e737`, tag `v26.10.45`: seletor de capitão com dropdown próprio, leilões de venda forçada com clube e estatísticas completas, rescaldo do jornal na semana a seguir ao jogo.
 - Push `119f9c04..6b81e737`; tag publicada.
@@ -124,9 +129,4 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Re-auditoria → `docs/plans/2026-10-09-guardas-financas-2.md`: patrocínio perfil B já não conta a época inteira como receita; clube sem treinador humano escolhe patrocinador sozinho na renda semanal; empréstimos/investimento NPC/crédito NPC de patrocínio passam pela fila da sala; erros de escrita dos prémios da Taça fazem ROLLBACK; leilão restaurado fecha pelo caminho único (`auctionHooks`) com guarda de dono e saldo; renda relê o marcador na fila; Finanças mostram amigáveis 50/50.
 - Por decidir (não mexido): lances ao sair da sala, cláusula sobre jogador sem clube, marca de patrocinador duplicada em cliques simultâneos (cosmético).
 - Testado: `test:finance-guards` (F7–F11 novos, cada um falha sem a correção), typecheck, crash-recovery, topscorer, staff, sponsor, room-tx, connect-smoke, npc-bid-window, finalize, `audit:gamestate` (4 verificações novas, sala local 0 erros), client lint + check:types.
-
-## Guardas financeiras contra pagamentos duplos (2026-10-09)
-- Auditoria (`docs/plans/2026-10-09-auditoria-financas-economia.md`) → plano `2026-10-09-guardas-financas.md`, aplicado todo: leilão já pago não volta a pagar após reinício (guarda `transfer_status='auction'` + `saveGameState` no fecho), `chooseSponsor`/`fireStaff` sem duplo crédito, `buyPlayer` só listagem fixa e com `budget >= ?`, compras NPC numa transação na fila da sala, prémios de fim de época atómicos com o marcador.
-- Pontas: renda semanal não cobra se o marcador não se lê; teto de empréstimo 2,5M real (+ botão); lances do treinador despedido retirados; `audit:gamestate` com 4 verificações novas.
-- Testado: novo `test:finance-guards` (F1–F6, cada um falha no código antigo), typecheck, crash-recovery, topscorer, sponsor, staff, connect-smoke, npc-bid-window, room-tx, testes de despedimento, finalize E2E; client lint + check:types.
 
