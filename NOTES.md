@@ -1,3 +1,8 @@
+## Táctica: sem o duelo no cartão da Formação (2026-10-10)
+- Tirados o «Duelo com o … provável» e os quadradinhos Meio/Ataque/Defesa/Capitão do cartão Formação (`TacticsView.jsx`, `DuelStrip`). O `probableFormation` do servidor fica como está.
+- Porquê: pedido do utilizador — informação repetida que não queria no cartão.
+- Testado: lint e check:types; test:mobile `tactics-resp-test` 5/5 (320–430 px); captura 390 vista.
+
 ## Deploy v26.10.43 no rick (2026-10-10)
 - Commit `10dde42c` com a tag `v26.10.43`: barra CM só no Jornal em ciclo, painéis do Jornal livres da barra, adjunto com 10 s pós-jogo. Backend Healthy.
 
@@ -122,9 +127,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Equipa no Claude Code: orquestrador/revisor (Opus), `coder` (Sonnet), `scout` e `ops` (Haiku) em `.claude/agents/`; `.claude/skills` → `.pi/skills`; `CLAUDE.md` importa `AGENTS.md`.
 - Varrimento pt-PT (scout → coder → revisão): «Técnicos»→«Treinadores», coluna «Gol»→«Golos», narração sem «marcar contra»/«sacou o cartão»; mensagens de testes sem «placares»/«chute».
 - Testado: server typecheck + test:engine-unit + test:own-goal; client check:types; lint só com o erro antigo do `landing-resp-test.jsx`.
-
-## Contenção de "buracos negros" (2026-10-08)
-- Linhas de `matches` da liga passam a ser gravadas na transação do fecho (com classificação + marker 'finalized', `leagueMatchRowWrites`); `persistMatchResults` fica só com forma/notas/MOM/rescaldo.
-- `socket.on` envolvido por ligação (index.ts): erro/rejeição num handler é registado e não chega ao `fatalShutdown`.
-- `cacheVersion.js` preserva todas as chaves com prefixo `cashball` (lista fixa esquecia chaves novas).
-- Testado: novo S6b em `test:crash-recovery` (falha sem a correção), typecheck, connect-smoke, session-freeze, segment-barrier, lint, check:types.
