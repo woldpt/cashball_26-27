@@ -627,7 +627,7 @@ function FormationCard({ className = "", desktop = false, dataTour = false, hear
   return (
     <div
       data-tour={dataTour ? "tactic-lineup" : undefined}
-      className={`bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden ${className} ${heartbeat ? "animate-heartbeat-border" : ""}`}
+      className={`flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden ${className} ${heartbeat ? "animate-heartbeat-border" : ""}`}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant/15">
         <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
@@ -650,7 +650,7 @@ function FormationCard({ className = "", desktop = false, dataTour = false, hear
         </p>
       )}
       <DuelStrip />
-      <div className="p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
+      <div className={`p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1 ${desktop ? "flex-1 auto-rows-fr" : ""}`}>
         {TACTIC_FORMATIONS.map(({ value, label, badge, edge }) => {
           const isAvailable =
             formationAvailabilityByValue[value] === true;
@@ -662,7 +662,7 @@ function FormationCard({ className = "", desktop = false, dataTour = false, hear
               key={value}
               disabled={!isAvailable}
               onClick={() => isAvailable && handleAutoPick(value)}
-              className={`w-full px-1 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
+              className={`w-full px-1 py-1.5 text-[11px] xl:text-sm font-black rounded-xl transition-all active:scale-95 ${
                 !isAvailable
                   ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed"
                   : isActive
