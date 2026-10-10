@@ -1,3 +1,8 @@
+## Deploy v26.10.45 no rick (2026-10-10)
+- Commits `2640763a`, `60c5c5ce`, `07033e63` + bump `6b81e737`, tag `v26.10.45`: seletor de capitão com dropdown próprio, leilões de venda forçada com clube e estatísticas completas, rescaldo do jornal na semana a seguir ao jogo.
+- Push `119f9c04..6b81e737`; tag publicada.
+- Rick: `git pull` + rebuild; backend Healthy.
+
 ## Tática: seletor de capitão sem menu nativo (2026-10-10)
 - Capitão deixou de ser o `<select>` nativo (lista desenhada pelo sistema, seta do navegador, nomes cortados): pílula + cartão próprio no estilo do `StatusPicker`, fecha com clique fora/Esc. Fundo `bg-bg` por baixo (`surface-container` tem 10% de transparência e deixava ver as linhas do plantel).
 - Coluna «Titulares» de `overflow-hidden` para `overflow-visible`: com menos de 11 titulares a lista era cortada e as últimas opções não se clicavam (medido com 7 titulares). Deve deixar de cortar também os pop-ups de estado das últimas linhas (não testado).
