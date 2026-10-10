@@ -1,3 +1,8 @@
+## Deploy v26.10.51 no rick (2026-10-10)
+- Push `d6aafb21..837f975c` (amigável da Taça com estádio à sorte) + bump `APP_VERSION` para v26.10.51. Tag `v26.10.51` publicada.
+- Rick: `git pull` + `docker compose up --build -d` → `backend Healthy`. Sem erros no rebuild.
+- Regra: rick ficou exatamente na tag; este apontamento fica só local (sem push).
+
 ## Amigável da Taça com estádio à sorte (2026-10-10)
 - Ao formar o par (inscrição com NPC/humano e sorteio de fecho) há 50% de trocar casa/fora; antes era sempre em casa de quem marcava primeiro. Fica gravado na BD.
 - Testado: typecheck e connect-smoke (sem teste próprio: a moeda ao ar não se testa de forma útil).
