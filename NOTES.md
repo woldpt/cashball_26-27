@@ -2,6 +2,10 @@
 - Botões de mentalidade/pressão/conversa: barra segmentada acesa (telemóvel/Tática) ou cartões com ícone e efeito (intervalo desktop e Tática desktop); posse em destaque com emblemas e %; ordens como frase de pílulas que mudam ao toque (sem selects); duelo em 3 mini-cartões com selo (Ganhas/Em risco…). Tática mobile: Moral → Formação+duelo → Instruções → Ordens. `STYLE_OPTIONS` passou para `constants/index.js`.
 - Testado: client lint + check:types, test:mobile 195/195 (concorrência 6), test:tacticpositions, test:briefing; screenshots 360/1280/1440 da Tática e do intervalo vistos.
 
+## Deploy v26.10.40 no rick (2026-10-10)
+Push, tag e rebuild feitos; backend Healthy.
+Inclui o commit de táticas do intervalo (3.ª coluna) e o registo do deploy anterior.
+
 ## Deploy v26.10.39 no rick (2026-10-10)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui o commit de táticas do intervalo de outra sessão (em curso nesta árvore); o bump de `APP_VERSION` ficou incluído nesse commit, sem commit próprio.
