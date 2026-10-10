@@ -82,6 +82,9 @@ P = pequeno · M = médio · G = grande.
 - **B4** — conversa ao intervalo.
 - **B3** — ordens condicionais.
 
+### Pontas soltas — ✅ feitas 2026-10-10
+> Ímpeto visível no Live ("<equipa> por cima · mais N'"); remates e golos esperados também no intervalo; "Leitura do jogo" no fim (expulsão, golos esperados vs resultado, golo no embalo). Falta: ordens com substituição ("entra X").
+
 ### Fase 4 — Profundidade leve
 - **B7** — capitão (plano existente) + batedores.
 - **B8** — polivalência.

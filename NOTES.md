@@ -1,3 +1,8 @@
+## Ímpeto visível, remates ao intervalo e leitura do jogo (2026-10-10)
+- Live: chip "🔥 <equipa> por cima · mais N'" durante os 8' a seguir a um golo (espelha `momentumMinutes`; `liveMomentum` em `liveHelpers.js`, sem mexer no servidor). Pós-jogo: cartão "Leitura do jogo" (`matchVerdict`: expulsão cedo, golos esperados vs resultado, golo no embalo).
+- Intervalo: linha "Remates · Golos esp." (`ShotLine`) no bloco da posse (desktop) e sob "Intervalo" (telemóvel); coluna da Tática com `[&>*]:shrink-0` para o bloco não ser cortado.
+- Testado: test:livehelpers (casos novos), lint, check:types, test:mobile 195/195; screenshots livehero 360 e intervalo 1280.
+
 ## Tática e intervalo com cara de quadro tático (2026-10-10)
 - Botões de mentalidade/pressão/conversa: barra segmentada acesa (telemóvel/Tática) ou cartões com ícone e efeito (intervalo desktop e Tática desktop); posse em destaque com emblemas e %; ordens como frase de pílulas que mudam ao toque (sem selects); duelo em 3 mini-cartões com selo (Ganhas/Em risco…). Tática mobile: Moral → Formação+duelo → Instruções → Ordens. `STYLE_OPTIONS` passou para `constants/index.js`.
 - Testado: client lint + check:types, test:mobile 195/195 (concorrência 6), test:tacticpositions, test:briefing; screenshots 360/1280/1440 da Tática e do intervalo vistos.
@@ -132,20 +137,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Fix: diálogo «Liquidar» mostrava `{interestPct}` literal; `ClubTab` recebe `homeWeather` por prop (o `useTactics` partia o harness do Clube, que volta a passar).
 - Testado: lint, check:types, test:mobile club/finances/training PASS 320–430 + capturas 320/390/1440 com a fonte dos ícones; falhas restantes da suite já existiam (assistant, journal, landing, stadiumtab, teamsquad, topwidgets ← `useTactics` do StadiumTab) ou são da outra sessão (zz-ph).
 - Plano em `docs/plans/2026-10-06-clube-financas-treino-redesign.md`.
-
-## Redesign da vista ao vivo (2026-10-06)
-- `LiveView.jsx` (sai do GameRoutes): botão Substituições, posse/remates/cansaço, feed de lances, Multiplex de golos, outras divisões recolhidas, marcador fixo ao descer; sem marcas de água/vinheta no hero.
-- Fix: `MatchView` passava props erradas ao `PossessionBar` (a posse nunca aparecia).
-- Testado: lint, check:types, test:livehelpers, harness novo `liveview-resp-test` + livehero PASS, capturas 390/1440; falhas de test:mobile noutros harnesses já existiam no HEAD (transfer: obra da outra sessão).
-- Plano em `docs/plans/2026-10-06-live-view-redesign.md`.
-
-## Redesign do shell do jogo (2026-10-06)
-- Shell em CSS grid (`.game-shell`), header passa a barra da jornada (clube, próximo jogo, orçamento, posição, JOGAR com estado via `usePlayCta`); JOGAR sai da sidebar.
-- Fix: `requestResync` reenvia `teamsData` (o jogo ficava sem equipas se o provider montasse depois do join); setinhas da classificação só re-snapshot quando a tabela muda.
-- Testado: lint, check:types, typecheck, capturas reais desktop/mobile (playwright, sala local); test:mobile 150/185 — as 35 falhas (assistant, club, journal, landing, stadiumtab, teamsquad, topwidgets) já existiam antes (confirmado com stash).
-- Plano e passos adiados em `docs/plans/2026-10-06-gamelayout-redesign.md`.
-
-## Amigáveis em todas as semanas da Taça (2026-10-05)
-- Eliminado pode marcar amigável em qualquer semana da Taça ainda por jogar (exceto a final); isenta dos 32 avos marca para a ronda 1.
-- Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.
-- Testado: typecheck, lint/check:types, connect-smoke + script sobre BD de sala (duplicados, final, par humano, NPC).

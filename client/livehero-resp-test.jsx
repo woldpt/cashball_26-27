@@ -52,7 +52,9 @@ const myMatch = {
   events: [
     { minute: 0, type: "weather", team: null, text: "[0'] ☀️ Sol", emoji: "☀️" },
     { minute: 0, type: "betting", team: null, text: "[0'] 4.64 / 3.41 / 1.85" },
-    { minute: 11, type: "goal", team: "home", playerId: 2001, playerName: "Baboucarr Gaye", text: "[11'] GOLO Baboucarr Gaye" },
+    { minute: 28, type: "goal", team: "home", playerId: 2001, playerName: "Baboucarr Gaye", text: "[28'] GOLO Baboucarr Gaye", xg: 0.3 },
+    { minute: 15, type: "chance", team: "away", text: "[15'] Defesa", xg: 0.9 },
+    { minute: 52, type: "red", team: "home", playerId: 2002, playerName: "Hélder Silva", text: "[52'] Expulso" },
     { minute: 22, type: "yellow", team: "away", playerId: 2003, playerName: "Vasco Guimarães", text: "[22'] Amarelo Vasco Guimarães" },
     { minute: 30, type: "substitution", team: "home", playerId: 2002, playerName: "Hélder Silva", outPlayerName: "Hélder Silva", text: "[30'] Substituição" },
   ],
@@ -79,6 +81,27 @@ root.render(
         matchResults={{ matchweek: 4 }}
         onScoreClick={() => {}}
       />
+      {/* Pós-jogo: leitura do jogo (expulsão + golos esperados) */}
+      <div className="mt-6">
+        <LiveMatchHero
+          myMatch={myMatch}
+          teams={teams}
+          players={players}
+          me={{ teamId: 7 }}
+          liveMinute={90}
+          isPlayingMatch={false}
+          isMatchActionPending={false}
+          isCupMatch={false}
+          cupMatchRoundName={undefined}
+          substitutionPause={null}
+          goalFlashRef={{}}
+          isCupExtraTime={false}
+          matchResults={{ matchweek: 4 }}
+          mom={{ home: { playerName: "Baboucarr Gaye" }, away: { playerName: "Vasco Guimarães" } }}
+          onScoreClick={() => {}}
+          readOnly
+        />
+      </div>
     </div>
   </div>,
 );

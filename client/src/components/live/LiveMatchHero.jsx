@@ -9,7 +9,7 @@ import { TeamCrest } from "./TeamCrest.jsx";
 import { TeamKit } from "../shared/TeamKit.jsx";
 import { useKitClash } from "../../hooks/useKitClash.js";
 import { Button } from "../shared/Button.jsx";
-import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, liveFeed, liveScore, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
+import { FLASH_COLOR, isFriendlyMatch, isFlashing, isGoalType, isDrawnAt90, liveFeed, liveMomentum, liveScore, matchEventIcon, matchVerdict, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
 
 /* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
 const PAUSE_TEXT = {
@@ -380,6 +380,20 @@ export function LiveMatchHero({
           </div>
         )}
 
+        {/* ── Leitura do jogo (pós-jogo): o resultado contra o que cada um criou ── */}
+        {mom && !isPlayingMatch && (() => {
+          const verdict = matchVerdict(matchEvents, { home: hInfo?.name || "Casa", away: aInfo?.name || "Fora" });
+          if (verdict.length === 0) return null;
+          return (
+            <div className="w-full max-w-2xl mt-3 rounded-md border border-primary/25 bg-primary/[0.07] px-3 py-2 text-left">
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">🧠 Leitura do jogo</p>
+              {verdict.map((line) => (
+                <p key={line} className="text-xs font-medium leading-snug text-on-surface">{line}</p>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* ── Barra de cronómetro (sob o marcador) ── */}
         <div className="w-full max-w-2xl mt-3 px-1">
           <div className="relative h-2 rounded-full bg-black/40 border border-outline-variant/25 shadow-inner shadow-black/50 overflow-hidden">
@@ -424,6 +438,24 @@ export function LiveMatchHero({
               })}
           </div>
         </div>
+
+        {/* ── Ímpeto: quem marcou fica por cima uns minutos (o motor dá-lhe mais oportunidades) ── */}
+        {isPlayingMatch && (() => {
+          const m = liveMomentum(matchEvents, liveMinute);
+          if (!m) return null;
+          const team = m.team === "home" ? hInfo : aInfo;
+          const col = m.team === "home" ? hCol : aCol;
+          return (
+            <p
+              className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wide text-on-surface"
+              style={{ borderColor: `${col}80`, background: `${col}1f` }}
+            >
+              <span aria-hidden="true">🔥</span>
+              <span className="truncate">{team?.name} por cima</span>
+              <span className="shrink-0 font-bold text-on-surface-variant tabular-nums">· mais {m.minutesLeft}'</span>
+            </p>
+          );
+        })()}
 
         {/* ── Ação principal ── (desktop: a Pausa vive no header, onde está o JOGAR) */}
         {!readOnly && (() => {

@@ -6,6 +6,7 @@ import {
   RefWeatherBar,
 } from "../../shared/index.js";
 import { TeamCrest } from "../../../live/TeamCrest.jsx";
+import { ShotLine } from "../../shared/ShotLine.jsx";
 import { BadgeSkills } from "../../../shared/BadgeSkills.jsx";
 
 function EventList({ events, hInfo, aInfo }) {
@@ -128,6 +129,7 @@ export function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className
           <div className="h-full flex-1" style={{ background: aInfo.color_primary || "#f43f5e" }} />
         </div>
       )}
+      <ShotLine events={fixture.events} liveMinute={liveMinute} className="mt-2" />
     </div>
   );
 }

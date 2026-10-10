@@ -967,7 +967,7 @@ function TacticColumn({
           </button>
         )}
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-3">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-3 [&>*]:shrink-0">
         {summary && <MatchSummaryBlock {...summary} />}
         <div className="rounded-xl border border-outline-variant/25 bg-surface-container/60 p-3">
           <MatchInstructions tactic={tactic} onUpdateTactic={onUpdateTactic} showTalk={showTalk} variant="cards" />

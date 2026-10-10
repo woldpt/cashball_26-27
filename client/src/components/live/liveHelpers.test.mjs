@@ -1,6 +1,6 @@
 // Regressão das funções puras da vista live (feed, resultado).
 import assert from "node:assert/strict";
-import { liveFeed, liveScore } from "./liveHelpers.js";
+import { liveFeed, liveMomentum, liveScore, matchVerdict } from "./liveHelpers.js";
 
 const events = [
   { minute: 1, type: "weather", team: null, emoji: "☀️", text: "[1'] ☀️ Sol radioso." },
@@ -28,5 +28,30 @@ assert.equal(feed[3].phrase, "Golo de Silva!");
 // Sem emoji: a 1.ª palavra não é comida.
 assert.equal(feed.find((r) => r.event.type === "tactic_change").phrase, "Mudança para 4-4-2.");
 assert.equal(feed.at(-1).icon, "☀️");
+
+// Ímpeto: quem marcou fica por cima 8' (o auto-golo conta para a equipa beneficiada).
+assert.deepEqual(liveMomentum(events, 22), { team: "home", minutesLeft: 6 });
+assert.equal(liveMomentum(events, 28), null);
+assert.deepEqual(liveMomentum(events, 30), { team: "away", minutesLeft: 8 });
+assert.equal(liveMomentum([{ minute: 10, type: "var_disallowed", team: "home" }], 12), null);
+
+// Leitura do jogo: quem criou mais e não ganhou → falta de pontaria.
+const names = { home: "Benfica", away: "Porto" };
+const shots = (team, n, xg) => Array.from({ length: n }, (_, i) => ({ minute: 5 + i, type: "chance", team, xg }));
+assert.deepEqual(matchVerdict([...shots("home", 10, 0.2), { minute: 60, type: "goal", team: "away", xg: 0.3 }], names), [
+  "Benfica criou mais (2,0 contra 0,3 golos esperados), mas faltou pontaria.",
+]);
+// Expulsão cedo vem primeiro; jogo equilibrado mostra as duas equipas.
+assert.deepEqual(
+  matchVerdict([{ minute: 30, type: "red", team: "away" }, { minute: 50, type: "goal", team: "home", xg: 0.4 }, ...shots("away", 1, 0.3)], names),
+  ["Porto jogou com 10 desde os 30' e pagou caro.", "Jogo equilibrado (Benfica 0,4 · Porto 0,3 em golos esperados), decidido nos detalhes."],
+);
+// Golo no embalo de outro.
+assert.equal(
+  matchVerdict([{ minute: 10, type: "goal", team: "home", xg: 0.4 }, { minute: 15, type: "goal", team: "home", xg: 0.4 }], names)[1],
+  "Benfica aproveitou o embalo: voltou a marcar poucos minutos depois de um golo.",
+);
+// Sem xg (jogos antigos): nada.
+assert.deepEqual(matchVerdict([{ minute: 10, type: "goal", team: "home" }], names), []);
 
 console.log("liveHelpers: OK");

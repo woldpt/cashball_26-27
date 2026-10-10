@@ -2,6 +2,23 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Redesign da vista ao vivo (2026-10-06)
+- `LiveView.jsx` (sai do GameRoutes): botão Substituições, posse/remates/cansaço, feed de lances, Multiplex de golos, outras divisões recolhidas, marcador fixo ao descer; sem marcas de água/vinheta no hero.
+- Fix: `MatchView` passava props erradas ao `PossessionBar` (a posse nunca aparecia).
+- Testado: lint, check:types, test:livehelpers, harness novo `liveview-resp-test` + livehero PASS, capturas 390/1440; falhas de test:mobile noutros harnesses já existiam no HEAD (transfer: obra da outra sessão).
+- Plano em `docs/plans/2026-10-06-live-view-redesign.md`.
+
+## Redesign do shell do jogo (2026-10-06)
+- Shell em CSS grid (`.game-shell`), header passa a barra da jornada (clube, próximo jogo, orçamento, posição, JOGAR com estado via `usePlayCta`); JOGAR sai da sidebar.
+- Fix: `requestResync` reenvia `teamsData` (o jogo ficava sem equipas se o provider montasse depois do join); setinhas da classificação só re-snapshot quando a tabela muda.
+- Testado: lint, check:types, typecheck, capturas reais desktop/mobile (playwright, sala local); test:mobile 150/185 — as 35 falhas (assistant, club, journal, landing, stadiumtab, teamsquad, topwidgets) já existiam antes (confirmado com stash).
+- Plano e passos adiados em `docs/plans/2026-10-06-gamelayout-redesign.md`.
+
+## Amigáveis em todas as semanas da Taça (2026-10-05)
+- Eliminado pode marcar amigável em qualquer semana da Taça ainda por jogar (exceto a final); isenta dos 32 avos marca para a ronda 1.
+- Adversário logo na inscrição: junta-se a uma inscrição humana sem par ou sorteia um NPC que folga (eliminado/isento); sem candidatos, emparelha no fecho como antes.
+- Testado: typecheck, lint/check:types, connect-smoke + script sobre BD de sala (duplicados, final, par humano, NPC).
+
 ## Ligas de 10 equipas + 32 avos da Taça (2026-10-05)
 - 10 equipas/divisão, 18 jornadas, época de 25 semanas; final da Taça = ronda 6 (`CUP_FINAL_ROUND`). Salas antigas são para apagar (sem migração).
 - 32 avos com Distritais; isentas = D1 + top-4 da D2 (`last_season_rank`). Plano em `docs/plans/2026-10-05-ligas-10-equipas.md`.

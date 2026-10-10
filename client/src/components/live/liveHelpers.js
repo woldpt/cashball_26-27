@@ -359,3 +359,85 @@ export function liveFeed(events, liveMinute) {
     .filter((row) => row.phrase);
 }
 
+
+/* Ímpeto: espelha MATCH_TUNING.momentumMinutes do servidor — quem marca tem
+ * mais oportunidades nos minutos seguintes. */
+export const MOMENTUM_MINUTES = 8;
+const REAL_GOALS = new Set(["goal", "penalty_goal", "own_goal"]);
+
+/**
+ * Quem está "por cima" no minuto: a equipa que marcou o último golo, durante
+ * os MOMENTUM_MINUTES seguintes (o golo anulado pelo VAR não conta).
+ *
+ * @param {Array<{minute:number,type:string,team:string}>|null|undefined} events
+ * @param {number} liveMinute
+ * @returns {{team: string, minutesLeft: number} | null}
+ */
+export function liveMomentum(events, liveMinute) {
+  let last = null;
+  for (const e of events || []) {
+    if (REAL_GOALS.has(e.type) && e.minute <= liveMinute && (!last || e.minute >= last.minute)) last = e;
+  }
+  if (!last || liveMinute - last.minute >= MOMENTUM_MINUTES) return null;
+  return { team: last.team, minutesLeft: last.minute + MOMENTUM_MINUTES - liveMinute };
+}
+
+const fmtXg = (n) => n.toFixed(1).replace(".", ",");
+
+/**
+ * Leitura tática do jogo terminado, em 1–2 frases: se o resultado bate certo
+ * com o que cada equipa criou (golos esperados), o peso de uma expulsão e os
+ * golos feitos no embalo de outro golo.
+ *
+ * @param {Array<{minute:number,type:string,team:string,xg?:number}>|null|undefined} events
+ * @param {{home: string, away: string}} names
+ * @returns {string[]}
+ */
+export function matchVerdict(events, names) {
+  const evts = events || [];
+  const xg = { home: 0, away: 0 };
+  const goals = { home: 0, away: 0 };
+  const red = {};
+  const surge = { home: 0, away: 0 };
+  let lastGoal = null;
+  for (const e of [...evts].sort((a, b) => a.minute - b.minute)) {
+    if (e.xg != null && e.team in xg) xg[e.team] += e.xg;
+    if (e.type === "red" && e.team && red[e.team] == null) red[e.team] = e.minute;
+    if (REAL_GOALS.has(e.type) && e.team in goals) {
+      goals[e.team]++;
+      if (lastGoal?.team === e.team && e.minute - lastGoal.minute <= MOMENTUM_MINUTES) surge[e.team]++;
+      lastGoal = e;
+    }
+  }
+  // Jogos antigos (sem `xg` nos lances): sem leitura.
+  if (xg.home + xg.away === 0) return [];
+  const lines = [];
+  const other = (s) => (s === "home" ? "away" : "home");
+  const winner = goals.home > goals.away ? "home" : goals.away > goals.home ? "away" : null;
+  const better = xg.home >= xg.away ? "home" : "away";
+  const xgText = `${fmtXg(xg[better])} contra ${fmtXg(xg[other(better)])} golos esperados`;
+
+  // Expulsão cedo: o resultado conta essa história primeiro.
+  const sent = ["home", "away"].find((s) => red[s] != null && red[s] <= 75 && red[other(s)] == null);
+  if (sent) {
+    lines.push(
+      winner === sent
+        ? `${names[sent]} ganhou mesmo com 10 desde os ${red[sent]}'.`
+        : `${names[sent]} jogou com 10 desde os ${red[sent]}' e pagou caro.`,
+    );
+  }
+
+  if (xg[better] - xg[other(better)] >= 0.7) {
+    if (winner === better) lines.push(`Vitória merecida de ${names[better]}: ${xgText}.`);
+    else lines.push(`${names[better]} criou mais (${xgText}), mas faltou pontaria.`);
+  } else {
+    const both = `${names.home} ${fmtXg(xg.home)} · ${names.away} ${fmtXg(xg.away)} em golos esperados`;
+    lines.push(winner ? `Jogo equilibrado (${both}), decidido nos detalhes.` : `Empate justo: ${both}.`);
+  }
+
+  const surger = ["home", "away"].find((s) => surge[s] >= 1);
+  if (lines.length < 2 && surger) {
+    lines.push(`${names[surger]} aproveitou o embalo: voltou a marcar poucos minutos depois de um golo.`);
+  }
+  return lines.slice(0, 2);
+}

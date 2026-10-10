@@ -8,6 +8,7 @@ import {
   buildPlayerMatchStats,
 } from "../matchConstants.js";
 import { TeamCrest } from "../../live/TeamCrest.jsx";
+import { ShotLine } from "../shared/ShotLine.jsx";
 import {
   useCompactViewport,
   useLandscapePhone,
@@ -424,6 +425,7 @@ export function IntervencaoView({
               {isPreExtraTime ? "Prolongamento" : "Intervalo"}
             </span>
           </div>
+          <ShotLine events={fixture?.events} liveMinute={liveMinute} className="-mt-1.5 pb-1.5" />
           {/* Posse de bola em linha de 2px (substitui o bloco no mobile). */}
           {fixture?.homePossession != null && (
             <div className="flex h-0.5 w-full" aria-hidden="true">
