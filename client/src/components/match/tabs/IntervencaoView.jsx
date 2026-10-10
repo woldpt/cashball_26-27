@@ -169,6 +169,7 @@ export function IntervencaoView({
           skill: livePlayer.skill ?? player.skill,
           matchMinutes: livePlayer.matchMinutes ?? 0,
           fatigueLoss: livePlayer.fatigueLoss ?? 0,
+          is_captain: !!livePlayer.is_captain,
         };
       });
     }

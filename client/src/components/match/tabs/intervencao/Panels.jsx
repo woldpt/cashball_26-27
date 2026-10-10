@@ -8,6 +8,7 @@ import {
 import { TeamCrest } from "../../../live/TeamCrest.jsx";
 import { ShotLine } from "../../shared/ShotLine.jsx";
 import { BadgeSkills } from "../../../shared/BadgeSkills.jsx";
+import { CaptainBadge } from "../../../shared/CaptainBadge.jsx";
 
 function EventList({ events, hInfo, aInfo }) {
   if (events.length === 0) {
@@ -282,6 +283,7 @@ function BenchChip({ player, posStyle }) {
         {!!player.is_star && (player.position === "MED" || player.position === "ATA") && (
           <span className="ml-0.5 text-amber-400" aria-label="Craque">★</span>
         )}
+        {!!player.is_captain && <CaptainBadge className="ml-1 align-middle" />}
       </span>
       <BadgeSkills skill={player.skill} hideStats size="sm" />
     </div>

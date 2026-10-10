@@ -644,6 +644,18 @@ export const MATCH_TUNING = {
   // ×mult e do adversário ÷mult (soma ~zero: o total de golos não se move).
   momentumMinutes: 8,
   momentumChanceMult: 1.15,
+  // Capitães: cada braçadeira de liderança a mais de quem SOFREU o golo (face
+  // ao capitão de quem marcou) tira estes minutos ao ímpeto; a menos, soma-os.
+  // Capitães iguais → momentumMinutes. Limites para não anular nem eternizar.
+  captainMomentumMinutesPerStar: 2,
+  captainMomentumMin: 3,
+  captainMomentumMax: 13,
+  // Liderança (1–5): jogos de carreira que dão a experiência toda; margem de
+  // qualidade face à média do onze; moral que tira/dá voz ao capitão.
+  captainFullExperienceGames: 60,
+  captainStatusMargin: 4,
+  captainLowMorale: 15,
+  captainHighMorale: 35,
   // NPCs a gerir o jogo (só equipas sem treinador humano): estilo pelo
   // resultado e trocas dos mais cansados, guardando trocas para lesões.
   npcTacticMinutes: [46, 70] as number[],

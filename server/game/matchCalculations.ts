@@ -2,6 +2,7 @@
 
 import { pickBestPlayer, withJuniorGRs, ensureFullBench, isPlayerAvailable, getEffectiveSkill } from "./playerUtils";
 import { MAX_BENCH_SIZE, FORM_NEUTRAL, MORALE_NEUTRAL, MATCH_TUNING, CUP_FINAL_ROUND } from "../gameConstants";
+import type { Captain } from "../types";
 
 type PlayerRow = any;
 
@@ -429,6 +430,54 @@ export function shortHandedChanceMult(ownMissing = 0, oppMissing = 0): number {
     MATCH_TUNING.shortHandedOwnChanceMult ** ownMissing *
     MATCH_TUNING.shortHandedOppChanceMult ** oppMissing
   );
+}
+
+/**
+ * Liderança de um jogador, 1–5 braçadeiras: idade (pico 29–33), experiência
+ * (jogos de carreira), estatuto (qualidade face à média do onze) e a moral do
+ * próprio — um capitão descontente perde voz. Sem coluna na BD: calcula-se.
+ */
+export function leadershipOf(p: PlayerRow, xiAvgSkill: number): number {
+  const age = p.age ?? 0;
+  const ageScore = age <= 20 ? 0 : age <= 23 ? 0.5 : age <= 26 ? 1 : age <= 28 ? 1.5 : age <= 33 ? 2 : 1.5;
+  const experience = 1.5 * Math.min((p.career_games ?? 0) / MATCH_TUNING.captainFullExperienceGames, 1);
+  const skill = p.skill ?? 0;
+  const margin = MATCH_TUNING.captainStatusMargin;
+  const status = skill >= xiAvgSkill + margin ? 1 : skill >= xiAvgSkill ? 0.5 : 0;
+  const morale = p.morale ?? MORALE_NEUTRAL;
+  const mood =
+    morale < MATCH_TUNING.captainLowMorale ? -1 : morale > MATCH_TUNING.captainHighMorale ? 0.5 : 0;
+  return Math.max(1, Math.min(5, Math.round(ageScore + experience + status + mood)));
+}
+
+/**
+ * Capitão em campo: o escolhido se estiver no onze; senão o de maior
+ * liderança (empate → mais jogos de carreira → menor id). Sem sorteio.
+ */
+export function pickCaptain(squad: PlayerRow[], chosenId?: number | null): Captain | null {
+  if (!squad.length) return null;
+  const avg = average(squad.map((p) => p.skill ?? 0));
+  const ranked = squad
+    .map((p) => ({ p, lead: leadershipOf(p, avg) }))
+    .sort(
+      (a, b) =>
+        b.lead - a.lead ||
+        (b.p.career_games ?? 0) - (a.p.career_games ?? 0) ||
+        a.p.id - b.p.id,
+    );
+  const pick = ranked.find((r) => r.p.id === chosenId) ?? ranked[0];
+  return { id: pick.p.id, name: pick.p.name, lead: pick.lead };
+}
+
+/**
+ * Minutos de ímpeto depois de um golo: o melhor líder de quem sofreu
+ * encurta-os, o pior alonga-os; capitães iguais → o valor base.
+ */
+export function captainMomentumMinutes(concededLead = 0, scorerLead = 0): number {
+  const minutes =
+    MATCH_TUNING.momentumMinutes -
+    MATCH_TUNING.captainMomentumMinutesPerStar * (concededLead - scorerLead);
+  return Math.max(MATCH_TUNING.captainMomentumMin, Math.min(MATCH_TUNING.captainMomentumMax, minutes));
 }
 
 export function computeSidePower(

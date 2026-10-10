@@ -6,7 +6,7 @@ import { computeMoms } from "./game/mom";
 import { computeMatchRatings, persistLastRatings } from "./game/ratings";
 import { computeMatchOdds } from "./game/commentary";
 import { loadSquadRatings } from "./game/oddsSquad";
-import { getWeatherForFixture } from "./game/matchCalculations";
+import { getWeatherForFixture, pickCaptain } from "./game/matchCalculations";
 import { explainAttendance, logMatchMedicalNews, logPostMatchRecap, withSponsorBrand } from "./coreHelpers";
 import {
   isPlayerAvailable,
@@ -238,6 +238,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     }>(
       game.db,
       `SELECT id, name, position, skill, photo, nationality,
+              age, career_games, morale,
               suspension_until_matchweek, injury_until_matchweek,
               transfer_cooldown_until_matchweek
        FROM players
@@ -262,6 +263,8 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
 
     return {
       formation: `${Math.min(def, 5)}-${Math.min(med, 5)}-${Math.min(ata, 5)}`,
+      // Capitão provável (automático: o maior líder do onze) — para o duelo.
+      captain: pickCaptain(xi),
       players: xi.map((p) => ({
         id: p.id,
         name: p.name,

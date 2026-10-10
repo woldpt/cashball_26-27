@@ -2,6 +2,7 @@ import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, getPosStyle } from "../matchConstants.js";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
 import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
+import { CaptainBadge } from "../../shared/CaptainBadge.jsx";
 
 /**
  * Match player card — always expanded (skill + fatigue).
@@ -113,6 +114,7 @@ export function MatchPlayerCard({
           {hasStar && !disabled && (
             <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
           )}
+          {!!player.is_captain && <CaptainBadge className="ml-1 align-middle" />}
         </span>
         {showMatchStats && (goals > 0 || yellowCards > 0) && (
           <span

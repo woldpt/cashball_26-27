@@ -25,7 +25,8 @@ const nextMatchFixture = {
   opponent: {
     name: "As Voadores Do Sportinguismax Da Póvoa",
     color_primary: "#0f9d58",
-    probableFormation: "4-3-3",
+    // Forma real do servidor (objeto) — em string o duelo nunca aparecia em produção.
+    probableFormation: { formation: "4-3-3", captain: { id: 900, name: "Capitão Deles", lead: 2 }, players: [] },
   },
   referee: { name: "Fábio Veríssimo (AF Leiria)" },
 };
@@ -50,7 +51,7 @@ const NAMES = [
 ];
 const POS = ["GR", "GR", "DEF", "DEF", "DEF", "DEF", "MED", "MED", "MED", "MED", "ATA", "ATA", "ATA", "DEF", "MED", "GR", "ATA", "MED", "DEF", "ATA"];
 const SQUAD = NAMES.map((name, i) => ({
-  id: i + 1, name, position: POS[i], nationality: "🇵🇹", skill: 30 + i, age: 24,
+  id: i + 1, name, position: POS[i], nationality: "🇵🇹", skill: 30 + i, age: 20 + i, career_games: i * 6,
   form: 100, resistance: 3, morale: 25, aggressiveness: 50, value: 200000, wage: 8000,
   goals: 2, games_played: 12, is_star: i === 2, isJunior: i === 1, isUnavailable: false,
   transfer_status: "none", contract_start_epoch: 0, suspension_until_matchweek: 0,

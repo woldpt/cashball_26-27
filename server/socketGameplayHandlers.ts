@@ -92,6 +92,8 @@ export function registerGameplaySocketHandlers(
     // inválido cai — nunca rejeita a tática toda.
     if (!VALID_PRESSURES.has(tactic.pressure)) delete tactic.pressure;
     if (!VALID_TALKS.has(tactic.talk)) delete tactic.talk;
+    // Capitão: só um id inteiro; se não estiver no onze o motor escolhe sozinho.
+    if (!Number.isInteger(tactic.captainId)) delete tactic.captainId;
     tactic.orders = (Array.isArray(tactic.orders) ? tactic.orders : [])
       .filter(
         (o: any) =>
@@ -129,6 +131,7 @@ export function registerGameplaySocketHandlers(
         positions: tactic.positions || {},
         pressure: tactic.pressure,
         orders: tactic.orders,
+        captainId: tactic.captainId,
       });
     }
   });

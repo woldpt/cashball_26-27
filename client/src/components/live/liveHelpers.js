@@ -367,9 +367,9 @@ const REAL_GOALS = new Set(["goal", "penalty_goal", "own_goal"]);
 
 /**
  * Quem está "por cima" no minuto: a equipa que marcou o último golo, durante
- * os MOMENTUM_MINUTES seguintes (o golo anulado pelo VAR não conta).
+ * os minutos seguintes (`momentumMinutes` do golo; o anulado pelo VAR não conta).
  *
- * @param {Array<{minute:number,type:string,team:string}>|null|undefined} events
+ * @param {Array<{minute:number,type:string,team:string,momentumMinutes?:number}>|null|undefined} events
  * @param {number} liveMinute
  * @returns {{team: string, minutesLeft: number} | null}
  */
@@ -378,8 +378,10 @@ export function liveMomentum(events, liveMinute) {
   for (const e of events || []) {
     if (REAL_GOALS.has(e.type) && e.minute <= liveMinute && (!last || e.minute >= last.minute)) last = e;
   }
-  if (!last || liveMinute - last.minute >= MOMENTUM_MINUTES) return null;
-  return { team: last.team, minutesLeft: last.minute + MOMENTUM_MINUTES - liveMinute };
+  // A duração vem no golo (os capitães encurtam-na ou alongam-na).
+  const minutes = last?.momentumMinutes ?? MOMENTUM_MINUTES;
+  if (!last || liveMinute - last.minute >= minutes) return null;
+  return { team: last.team, minutesLeft: last.minute + minutes - liveMinute };
 }
 
 const fmtXg = (n) => n.toFixed(1).replace(".", ",");

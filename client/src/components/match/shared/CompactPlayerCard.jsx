@@ -2,6 +2,7 @@ import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, getPosStyle } from "../matchConstants.js";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
 import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
+import { CaptainBadge } from "../../shared/CaptainBadge.jsx";
 
 /**
  * Compact player card — versão de uma linha do `MatchPlayerCard`, pensada para
@@ -125,6 +126,7 @@ export function CompactPlayerCard({
           {hasStar && !disabled && (
             <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
           )}
+          {!!player.is_captain && <CaptainBadge className="ml-1 align-middle" />}
         </span>
         {goals > 0 && (
           <span className="inline-flex items-center gap-px text-[10px] leading-none text-on-surface-variant/80" title="Golos">

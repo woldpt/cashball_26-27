@@ -1039,3 +1039,71 @@ test("U33 — ordens do treinador: minuto e resultado certos, só humanos", () =
   assert.equal(run(1, 1).live.style, "Balanced", "empatado: a ordem era para quando perde");
   assert.equal(run(0, 1, 69).live.style, "Balanced", "fora do minuto não mexe");
 });
+
+// ── U34–U36: capitães (liderança relativa, nos maus momentos) ───────────────
+const { leadershipOf, pickCaptain, captainMomentumMinutes } = require("../game/matchCalculations.ts");
+const { startMomentum, assignCaptain, passArmband } = require("../game/engine.ts");
+
+test("U34 — liderança: idade, experiência, estatuto e moral; escolha sem sorteio", () => {
+  const vet = { id: 1, name: "Vet", age: 30, career_games: 60, skill: 40, morale: 25 };
+  const kid = { id: 2, name: "Miúdo", age: 18, career_games: 0, skill: 40, morale: 25 };
+  assert.equal(leadershipOf(vet, 30), 5, "veterano experiente e dos melhores");
+  assert.equal(leadershipOf(kid, 30), 1, "miúdo sem jogos");
+  assert.ok(leadershipOf({ ...vet, morale: 5 }, 30) < leadershipOf(vet, 30), "capitão descontente perde voz");
+  assert.ok(leadershipOf({ ...vet, career_games: 0 }, 30) < leadershipOf(vet, 30), "sem jogos, menos liderança");
+  assert.ok(leadershipOf({ ...vet, skill: 20 }, 30) < leadershipOf(vet, 30), "suplente crónico lidera menos");
+  assert.equal(pickCaptain([kid, vet]).id, 1, "automático: o maior líder");
+  assert.equal(pickCaptain([kid, vet], 2).id, 2, "a escolha do treinador manda");
+  assert.equal(pickCaptain([kid, vet], 99).id, 1, "escolhido fora do onze → automático");
+  assert.equal(pickCaptain([{ ...vet, id: 9 }, { ...vet, id: 4 }]).id, 4, "empate total → menor id");
+  assert.equal(pickCaptain([]), null);
+});
+
+test("U35 — capitães iguais não mexem no ímpeto; o melhor líder de quem sofre encurta-o", () => {
+  assert.equal(captainMomentumMinutes(3, 3), 8, "iguais: base");
+  assert.equal(captainMomentumMinutes(), 8, "sem capitães: base");
+  assert.equal(captainMomentumMinutes(5, 3), 4, "quem sofreu lidera melhor: encurta");
+  assert.equal(captainMomentumMinutes(2, 4), 12, "quem sofreu lidera pior: alonga");
+  assert.equal(captainMomentumMinutes(5, 1), 3, "limite mínimo");
+  assert.equal(captainMomentumMinutes(1, 5), 13, "limite máximo");
+});
+
+test("U36 — braçadeira: escolha no arranque, passa quando o capitão sai, ímpeto usa-a", () => {
+  const p = (id, age, extra = {}) => ({ id, name: `J${id}`, age, career_games: 30, skill: 30, morale: 25, position: "MED", ...extra });
+  const home = [p(1, 30), p(2, 26), p(3, 19)];
+  const away = [p(11, 19, { career_games: 0 }), p(12, 18, { career_games: 0 })];
+  const fixture: any = {
+    events: [],
+    _minute: 60,
+    homeTeam: { name: "Casa" },
+    awayTeam: { name: "Fora" },
+    homeLineup: home.map((x) => ({ id: x.id, is_starter: true })),
+    awayLineup: away.map((x) => ({ id: x.id, is_starter: true })),
+  };
+  assignCaptain(fixture, "home", home, { formation: "4-4-2", style: "Balanced", captainId: 3 }, 1);
+  assignCaptain(fixture, "away", away, null, 1);
+  assert.equal(fixture._captain.home.id, 3, "escolha do treinador");
+  assert.equal(fixture.homeLineup.find((x) => x.id === 3).is_captain, true, "o cliente vê o C");
+  assert.equal(fixture.events.length, 0, "primeiro capitão não é notícia");
+
+  // Dois miúdos de braçadeira: capitães iguais → o ímpeto de sempre.
+  assert.deepEqual([fixture._captain.home.lead, fixture._captain.away.lead], [1, 1]);
+  assert.equal(startMomentum(fixture, "away", 10), 8);
+
+  home.splice(2, 1); // o capitão sai de campo
+  passArmband(fixture, "home", home, 3);
+  assert.equal(fixture._captain.home.id, 1, "passa ao maior líder em campo");
+  assert.equal(fixture.events.at(-1).minute, 60);
+  assert.match(fixture.events.at(-1).text, /J1 é o novo capitão do Casa/);
+  passArmband(fixture, "home", home, 2);
+  assert.equal(fixture.events.length, 1, "sai outro jogador: nada muda");
+
+  // Agora a casa tem um líder a sério: sofre golo e o ímpeto do adversário encurta.
+  assert.ok(startMomentum(fixture, "away", 70) < 8, "bom capitão segura a equipa");
+  assert.ok(startMomentum(fixture, "home", 80) > 8, "quem tem pior líder sofre mais tempo");
+  assert.equal(fixture._momentum.minutes, startMomentum(fixture, "home", 80));
+
+  // Intervalo: sem escolha válida, mantém quem tem a braçadeira.
+  assignCaptain(fixture, "home", home, { formation: "4-4-2", style: "Balanced", captainId: 3 }, 46);
+  assert.equal(fixture._captain.home.id, 1);
+});

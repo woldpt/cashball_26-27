@@ -32,7 +32,8 @@
     "test:breakpoints": "node scripts/breakpointParityRegression.mjs",
     "test:mobile": "node scripts/mobileRespCheck.mjs",
     "test:livehelpers": "node src/components/live/liveHelpers.test.mjs",
-    "test:tacticpositions": "node src/utils/tacticPositions.test.mjs"
+    "test:tacticpositions": "node src/utils/tacticPositions.test.mjs",
+    "test:leadership": "node src/utils/leadership.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",

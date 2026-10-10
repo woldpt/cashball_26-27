@@ -2,6 +2,11 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## RoomHub + WaitingCoachesModal — redesign (2026-10-06)
+- RoomHub: bugs (mensagem perdida no gap, convites presos, kick sem confirmação), mensagens agrupadas + sistema intercalado + scroll inteligente, split (`RoomHub` casca + `RoomHubPanel` só aberto, `CoachRow`, `ChatMessages`, `ChatComposer`, `useRoomInvites`), layout novo (cabeçalho único, folha inferior no mobile). `chatMessagesRef` saiu do GameContext.
+- WaitingCoachesModal: hero "À espera de X" + barra segmentada, banner de pausa com coaches offline, reutiliza `ChatMessages`/`ChatComposer`. Planos em `docs/plans/2026-10-06-*`.
+- Testado: lint, check:types, build; harnesses `roomhub-resp-test` e `waiting-coaches-test` PASS em 375×667, 667×375, 768×1024, 1280×800 + capturas revistas (lista de coaches do modal subiu a 40 % da altura no mobile). Fluxo real com 2 sessões por testar.
+
 ## Redesign Ficha do jogador · Perfil de clube (2026-10-06)
 - Ficha: cabeçalho tipo carta (cores do clube, skills no topo), faixa Valor/Ordenado/Contrato/Nota, desempenho em mosaicos, prémios em medalhas, transferências em linha do tempo. Gráfico da skill novo (área, crosshair + tooltip, setas no teclado, tabela para leitores de ecrã). Perfil de clube: chips no cabeçalho, próximo jogo em "duelo", resultado em pastilha colorida, top 3 com medalhas, Clube em mosaicos com logótipo do patrocinador, Jogos separados em Resultados/Por jogar.
 - Fix: capacidade do estádio no perfil caía sempre em 10 000; harness `teamsquad` partia (`useGame` sem provider).

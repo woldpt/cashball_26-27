@@ -28,6 +28,15 @@ export interface Tactic {
   orders?: TacticOrder[];
   /** Conversa ao intervalo — escolhida no intervalo, vale para a 2.ª parte. */
   talk?: HalftimeTalk;
+  /** Capitão escolhido pelo treinador; ausente/fora do onze → automático. */
+  captainId?: number;
+}
+
+/** Capitão em campo: liderança 1–5 (ver leadershipOf). */
+export interface Captain {
+  id: number;
+  name: string;
+  lead: number;
 }
 
 export type PlayerPosition = "GR" | "DEF" | "MED" | "ATA";
@@ -62,6 +71,7 @@ export interface PlayerRow {
   transfer_status?: string;
   transfer_cooldown_until_matchweek?: number;
   joined_matchweek?: number;
+  career_games?: number;
   signed_season?: number | null;
   // ── Contadores época / carreira ──
   games_played?: number;
@@ -148,7 +158,9 @@ export interface MatchFixture {
   _minutesPlayed?: { home: Record<number, number>; away: Record<number, number> };
   _fatigueLoss?: { home: Record<number, number>; away: Record<number, number> };
   /** Ímpeto: lado que marcou e o minuto do golo (ver MATCH_TUNING.momentum*). */
-  _momentum?: { side: MatchSide; from: number };
+  _momentum?: { side: MatchSide; from: number; minutes?: number };
+  /** Capitão em campo de cada lado (liderança 1–5); muda quando ele sai. */
+  _captain?: Partial<Record<MatchSide, Captain | null>>;
   /** Estilo pré-jogo dos NPCs, para voltarem a ele quando o resultado o pede. */
   _npcBaseStyle?: Partial<Record<MatchSide, string>>;
   /** Conversa ao intervalo já aplicada (uma vez por jogo). */
@@ -225,6 +237,7 @@ export interface RoomSeat {
     positions?: Record<string, unknown>;
     pressure?: TacticPressure;
     orders?: TacticOrder[];
+    captainId?: number;
   };
   /** Só em memória: contador dos `setReady` (descarta respostas assíncronas obsoletas). */
   readySeq?: number;

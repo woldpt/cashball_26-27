@@ -34,6 +34,9 @@ assert.deepEqual(liveMomentum(events, 22), { team: "home", minutesLeft: 6 });
 assert.equal(liveMomentum(events, 28), null);
 assert.deepEqual(liveMomentum(events, 30), { team: "away", minutesLeft: 8 });
 assert.equal(liveMomentum([{ minute: 10, type: "var_disallowed", team: "home" }], 12), null);
+// Capitães: a duração vem no golo (3' com bom capitão de quem sofreu, 13' com mau).
+assert.equal(liveMomentum([{ minute: 10, type: "goal", team: "home", momentumMinutes: 3 }], 13), null);
+assert.deepEqual(liveMomentum([{ minute: 10, type: "goal", team: "home", momentumMinutes: 13 }], 20), { team: "home", minutesLeft: 3 });
 
 // Leitura do jogo: quem criou mais e não ganhou → falta de pontaria.
 const names = { home: "Benfica", away: "Porto" };

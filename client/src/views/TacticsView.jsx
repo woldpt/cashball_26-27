@@ -16,6 +16,8 @@ import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvat
 import { TransferHeader } from "../components/transfers/TransferChrome.jsx";
 import { TURF_BACKGROUND, TURF_OVERLAY_CLASS } from "../components/match/shared/PitchFormation.jsx";
 import { BadgeSkills } from "../components/shared/BadgeSkills.jsx";
+import { rankCaptains } from "../utils/leadership.js";
+import { CaptainBadge } from "../components/shared/CaptainBadge.jsx";
 
 /** Cores por posição */
 const POS_COLORS = {
@@ -75,6 +77,19 @@ function getBestForFormation(allTacticFamiliarity, formation) {
   }
   return best;
 }
+
+/**
+ * Capitão em campo e o onze por liderança (escolha do treinador se for
+ * titular; senão o maior líder — como o servidor decide).
+ * @returns {ReturnType<typeof rankCaptains>}
+ */
+function useCaptain() {
+  const { titulares, tactic } = useTactics();
+  return rankCaptains(titulares, tactic.captainId);
+}
+
+/** Liderança em pontos (1–5), para texto: "●●●○○". */
+const leadDots = (lead) => "●".repeat(lead) + "○".repeat(5 - lead);
 
 /**
  * Estado de indisponibilidade de um jogador — fonte única usada por
@@ -254,6 +269,7 @@ function PlayerRow({
   onDragEnd,
   isOver,
   isDragging,
+  isCaptain = false,
   children,
 }) {
   const pos = POS_COLORS[player.position] || { soft: "rgba(107,114,128,0.08)" };
@@ -283,7 +299,10 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
       >
         {player.position[0]}
       </span>
-      <PlayerAvatar player={player} />
+      <span className="relative shrink-0">
+        <PlayerAvatar player={player} />
+        {isCaptain && <CaptainBadge className="absolute -bottom-1 -right-1" />}
+      </span>
       <span className="flex-1 min-w-0 text-xs font-semibold text-[#e8e8e8] truncate leading-none">
         {onClick ? (
           <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
@@ -563,7 +582,10 @@ const DUEL_TONE = {
  */
 function DuelStrip() {
   const { titulares, nextMatchSummary } = useTactics();
-  const opp = nextMatchSummary?.opponent?.probableFormation;
+  const { captain } = useCaptain();
+  const probable = nextMatchSummary?.opponent?.probableFormation;
+  const opp = probable?.formation;
+  const oppLead = probable?.captain?.lead;
   const [oDef, oMed, oAta] = String(opp || "").split("-").map(Number);
   if (!opp || titulares.length === 0 || ![oDef, oMed, oAta].every(Number.isFinite)) return null;
   const count = (pos) => titulares.filter((p) => p.position === pos).length;
@@ -572,7 +594,7 @@ function DuelStrip() {
   const defSpare = def - oAta; // a tua sobra atrás
   const tiles = [
     {
-      label: "Meio-campo",
+      label: "Meio",
       value: `${med}×${oMed}`,
       ...(med > oMed ? { tone: "good", tag: "Ganhas" } : med < oMed ? { tone: "bad", tag: "Perdes" } : { tone: "even", tag: "Igual" }),
     },
@@ -587,18 +609,26 @@ function DuelStrip() {
       ...(defSpare <= 1 ? { tone: "bad", tag: "Em risco" } : defSpare >= 3 ? { tone: "good", tag: "Folgada" } : { tone: "even", tag: "Segura" }),
     },
   ];
+  // Capitão contra capitão: só a diferença conta (quem sofre golo e tem o
+  // melhor líder recompõe-se mais depressa).
+  if (captain && oppLead)
+    tiles.push({
+      label: "Capitão",
+      value: `${captain.lead}×${oppLead}`,
+      ...(captain.lead > oppLead ? { tone: "good", tag: "Ganhas" } : captain.lead < oppLead ? { tone: "bad", tag: "Perdes" } : { tone: "even", tag: "Igual" }),
+    });
   return (
     <div className="px-2 short:px-1.5 pt-2">
       <p className="px-1 mb-1.5 text-[9px] uppercase tracking-widest font-black text-gray-500">
         Duelo com o <span className="text-gray-300">{opp}</span> provável
       </p>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className={`grid gap-1.5 ${tiles.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
         {tiles.map((t) => (
           <div
             key={t.label}
             className="flex min-w-0 flex-col items-center gap-0.5 rounded-xl border border-outline-variant/20 bg-surface-container-low/60 px-1 py-1.5 text-center"
           >
-            <span className="text-[9px] font-black uppercase tracking-wider text-gray-500">{t.label}</span>
+            <span className="max-w-full truncate text-[9px] font-black uppercase tracking-wider text-gray-500">{t.label}</span>
             <span className={`font-headline text-lg font-black leading-none tabular-nums ${DUEL_TONE[t.tone].text}`}>{t.value}</span>
             <span
               className={`max-w-full truncate rounded-full border px-1.5 py-px text-[8px] font-black uppercase tracking-wide ${DUEL_TONE[t.tone].chip} ${DUEL_TONE[t.tone].text}`}
@@ -609,6 +639,39 @@ function DuelStrip() {
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * CaptainPicker — quem leva a braçadeira. Sem escolha (ou com o escolhido
+ * fora do onze) o capitão é o maior líder em campo.
+ * @returns {JSX.Element|null}
+ */
+function CaptainPicker() {
+  const { updateTactic } = useTactics();
+  const { captain, ranked } = useCaptain();
+  if (!captain) return null;
+  return (
+    <label className="flex items-center gap-2 border-b border-outline-variant/15 px-3 short:px-2 py-1.5">
+      <CaptainBadge />
+      <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-gray-500">Capitão</span>
+      <select
+        value={captain.auto ? "" : captain.id}
+        onChange={(e) => updateTactic({ captainId: e.target.value ? Number(e.target.value) : undefined })}
+        title="O capitão segura a equipa depois de um golo sofrido. Conta a diferença para o capitão adversário."
+        className="min-h-8 min-w-0 flex-1 cursor-pointer truncate rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 text-[11px] font-bold text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+      >
+        <option value="">{`Automático — ${captain.auto ? captain.name : ranked[0].name}`}</option>
+        {ranked.map((r) => (
+          <option key={r.id} value={r.id}>
+            {`${leadDots(r.lead)} ${r.name}`}
+          </option>
+        ))}
+      </select>
+      <span className="shrink-0 text-[11px] tracking-tight text-amber-300" title={`Liderança ${captain.lead}/5`}>
+        {leadDots(captain.lead)}
+      </span>
+    </label>
   );
 }
 
@@ -760,6 +823,7 @@ function Pitch() {
     matchweekCount,
   } = t;
   const tits = annotatedSquad.filter((p) => p.status === "Titular");
+  const captainId = useCaptain().captain?.id;
   const rows = [
     tits.filter((p) => p.position === "ATA"),
     tits.filter((p) => p.position === "MED"),
@@ -857,6 +921,7 @@ function Pitch() {
                       className={`relative cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-50" : ""}`}
                     >
                       <PlayerAvatar player={player} size="w-10 h-10" />
+                      {player.id === captainId && <CaptainBadge className="absolute -bottom-0.5 -left-1" />}
                       {player.isUnavailable && (
                         <span className="absolute -top-1 -right-1 text-[9px] bg-black/60 rounded-full px-0.5 leading-none">
                           {
@@ -1016,6 +1081,7 @@ export function TacticsView() {
             ? "Avançar para Taça"
             : "Jogar Jornada";
   const heartbeat = !isLineupComplete && !myReady;
+  const captainId = useCaptain().captain?.id;
 
   const titCount = annotatedSquad.filter((p) => p.status === "Titular").length;
   const subCount = annotatedSquad.filter(
@@ -1169,6 +1235,7 @@ export function TacticsView() {
                     <span className="text-gray-700">/11</span>
                   </span>
                 </div>
+                <CaptainPicker />
                 <div className="px-2 short:px-1.5 py-1 short:py-0.5 space-y-0.5">
                   {annotatedSquad
                     .filter((p) => p.status === "Titular")
@@ -1178,6 +1245,7 @@ export function TacticsView() {
                         player={player}
                         matchweekCount={matchweekCount}
                         calendarIndex={calendarIndex}
+                        isCaptain={player.id === captainId}
                         onClick
                         {...rowDragProps(t, player)}
                       >

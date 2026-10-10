@@ -63,6 +63,9 @@ import {
   tacticChangePhrase,
   pressureDisplayLabel,
   talkPhrase,
+  armbandPhrase,
+  captainRalliesPhrase,
+  captainSilentPhrase,
   computeMatchOdds,
   bettingPhrase,
 } from "./commentary";
@@ -84,6 +87,8 @@ import {
   shortHandedChanceMult,
   duelConversionMult,
   normalisePressure,
+  pickCaptain,
+  captainMomentumMinutes,
 } from "./matchCalculations";
 import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
@@ -898,6 +903,7 @@ function removeFromPitch({
 
   const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
   syncTacticPositions(game, fixture, side, teamId, [outId], []);
+  passArmband(fixture, side, squad, outId);
   bumpPowerVersion(fixture, side);
 }
 
@@ -962,6 +968,7 @@ function swapOnPitch({
   }
 
   syncTacticPositions(game, fixture, side, teamId, [outId], [incoming.id]);
+  passArmband(fixture, side, squad, outId);
   bumpPowerVersion(fixture, side);
 }
 
@@ -1393,7 +1400,7 @@ async function applyPenaltyEvent({
   if (scored) {
     if (teamSide === "home") fixture.finalHomeGoals++;
     else fixture.finalAwayGoals++;
-    startMomentum(fixture, teamSide, Number(fixture._minute) || 0);
+    const momentumMinutes = startMomentum(fixture, teamSide, Number(fixture._minute) || 0);
     // Acumulado em memória — flush transacional no apito final.
     recordMatchGoal(fixture, taker.id, teamId);
     fixture.events.push({
@@ -1407,7 +1414,9 @@ async function applyPenaltyEvent({
       penaltySuspense: true,
       penaltyResult: "GOLO!!!",
       xg,
+      momentumMinutes,
     });
+    pushCaptainReaction(fixture, teamSide, Number(fixture._minute) || 0);
   } else {
     // Miss type proportions: 60% save · 10% post · 10% wide · 20% panenka
     const missRoll = rng();
@@ -2026,6 +2035,9 @@ export async function simulateMatchSegment(
   const homeLineupIds = new Set<number>(homeSquad.map((p: PlayerRow) => p.id));
   const awayLineupIds = new Set<number>(awaySquad.map((p: PlayerRow) => p.id));
 
+  assignCaptain(fixture, "home", homeSquad, homeTactic, startMin);
+  assignCaptain(fixture, "away", awaySquad, awayTactic, startMin);
+
 
   // Familiaridade (memória táctica) — síncrono, em memória no game object.
   // Holder mutável (em vez de `let`): o corpo do minuto corre em
@@ -2534,18 +2546,107 @@ function sideChances(
   if (base == null) return null;
   const [own, opp] = side === "home" ? [home, away] : [away, home];
   const m = fixture._momentum;
+  const minutes = m?.minutes ?? MATCH_TUNING.momentumMinutes;
+  // Os capitães mexem na duração E na força: ímpeto curto é também mais fraco.
+  const mult = 1 + (MATCH_TUNING.momentumChanceMult - 1) * (minutes / MATCH_TUNING.momentumMinutes);
   const momentum =
-    m && minute > m.from && minute <= m.from + MATCH_TUNING.momentumMinutes
-      ? m.side === side
-        ? MATCH_TUNING.momentumChanceMult
-        : 1 / MATCH_TUNING.momentumChanceMult
-      : 1;
+    m && minute > m.from && minute <= m.from + minutes ? (m.side === side ? mult : 1 / mult) : 1;
   return base * shortHandedChanceMult(own?.missing ?? 0, opp?.missing ?? 0) * momentum;
 }
 
-/** Quem marca fica por cima nos minutos seguintes (ver sideChances). */
-function startMomentum(fixture: MatchFixture, side: MatchSide, minute: number): void {
-  fixture._momentum = { side, from: minute };
+/**
+ * Quem marca fica por cima nos minutos seguintes (ver sideChances). Quantos
+ * minutos depende dos capitães: o melhor líder de quem sofreu encurta-os.
+ * Devolve a duração, que segue no evento do golo (o cliente mostra-a).
+ */
+export function startMomentum(fixture: MatchFixture, side: MatchSide, minute: number): number {
+  const conceded: MatchSide = side === "home" ? "away" : "home";
+  const minutes = captainMomentumMinutes(
+    fixture._captain?.[conceded]?.lead,
+    fixture._captain?.[side]?.lead,
+  );
+  fixture._momentum = { side, from: minute, minutes };
+  return minutes;
+}
+
+/**
+ * Narra o peso dos capitães num golo, só quando a diferença é clara (2+
+ * braçadeiras): o capitão de quem sofreu reúne a equipa, ou falta-lhe voz.
+ * Chamar DEPOIS de empurrar o evento do golo (ordem da narração).
+ */
+function pushCaptainReaction(fixture: MatchFixture, scorerSide: MatchSide, minute: number): void {
+  const conceded: MatchSide = scorerSide === "home" ? "away" : "home";
+  const own = fixture._captain?.[conceded];
+  const diff = (own?.lead ?? 0) - (fixture._captain?.[scorerSide]?.lead ?? 0);
+  if (!own || Math.abs(diff) < 2) return;
+  const team = conceded === "home" ? fixture.homeTeam : fixture.awayTeam;
+  fixture.events.push({
+    minute,
+    type: "tactic_change",
+    team: conceded,
+    emoji: diff > 0 ? "💪" : "😶",
+    captain: true,
+    text: `[${minute}'] ${diff > 0 ? captainRalliesPhrase(own.name, team?.name || "?") : captainSilentPhrase(team?.name || "?")}`,
+  });
+}
+
+/** Marca o capitão no snapshot do onze (o cliente mostra o "C"). */
+function markCaptain(fixture: MatchFixture, side: MatchSide): void {
+  const id = fixture._captain?.[side]?.id;
+  const lineup = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+  for (const p of lineup || []) {
+    if (id != null && p.id === id && p.is_starter !== false) p.is_captain = true;
+    else delete p.is_captain;
+  }
+}
+
+/**
+ * Define o capitão em campo: `preferId` se estiver no onze, senão o maior
+ * líder (sem sorteio — o replay pós-crash dá o mesmo). Anuncia a mudança.
+ */
+function setCaptain(
+  fixture: MatchFixture,
+  side: MatchSide,
+  squad: PlayerRow[],
+  preferId: number | null | undefined,
+  minute: number,
+): void {
+  const prev = fixture._captain?.[side];
+  const next = pickCaptain(squad, preferId);
+  (fixture._captain ??= {})[side] = next;
+  markCaptain(fixture, side);
+  if (!prev || !next || next.id === prev.id) return;
+  const team = side === "home" ? fixture.homeTeam : fixture.awayTeam;
+  fixture.events.push({
+    minute,
+    type: "tactic_change",
+    team: side,
+    emoji: "🅒",
+    captain: true,
+    text: `[${minute}'] ${armbandPhrase(next.name, team?.name || "?")}`,
+  });
+}
+
+/**
+ * Capitão no arranque do segmento: a escolha do treinador manda se estiver em
+ * campo; senão fica quem já tem a braçadeira; senão o maior líder.
+ */
+export function assignCaptain(
+  fixture: MatchFixture,
+  side: MatchSide,
+  squad: PlayerRow[],
+  tactic: Tactic | null,
+  minute: number,
+): void {
+  const chosen = tactic?.captainId;
+  const prefer = squad.some((p) => p.id === chosen) ? chosen : fixture._captain?.[side]?.id;
+  setCaptain(fixture, side, squad, prefer, minute);
+}
+
+/** O capitão saiu de campo: a braçadeira passa ao maior líder que lá está. */
+export function passArmband(fixture: MatchFixture, side: MatchSide, squad: PlayerRow[], outId: number): void {
+  if (fixture._captain?.[side]?.id !== outId) return;
+  setCaptain(fixture, side, squad, null, Number(fixture._minute) || 0);
 }
 
 /**
@@ -2691,7 +2792,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
       if (isHome) fixture.finalHomeGoals++;
       else fixture.finalAwayGoals++;
       shared.goalScored = true;
-      startMomentum(fixture, attackingSide, minute);
+      const momentumMinutes = startMomentum(fixture, attackingSide, minute);
 
       fixture.events.push({
         minute,
@@ -2704,7 +2805,9 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
           culprit ? culprit.name : "Jogador",
         )}`,
         xg,
+        momentumMinutes,
       });
+      pushCaptainReaction(fixture, attackingSide, minute);
       return;
     }
 
@@ -2729,7 +2832,7 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
     if (isHome) fixture.finalHomeGoals++;
     else fixture.finalAwayGoals++;
     shared.goalScored = true;
-    startMomentum(fixture, attackingSide, minute);
+    const momentumMinutes = startMomentum(fixture, attackingSide, minute);
 
     const scoredSideGoals = isHome
       ? fixture.finalHomeGoals
@@ -2769,7 +2872,9 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
       text: `[${minute}'] ⚽ ${goalText}`,
       isDecisive,
       xg,
+      momentumMinutes,
     });
+    pushCaptainReaction(fixture, attackingSide, minute);
 
     if (scorer) {
       // Acumulado em memória — flush transacional no apito final.

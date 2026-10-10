@@ -1626,6 +1626,21 @@ function talkPhrase(teamName: string, talk: string, delta: number): string {
   return `🗣️ Balneário do ${teamName}: ${TALK_LABELS[talk] ?? talk} ao intervalo, ${mood}`;
 }
 
+/** A braçadeira muda de braço (o capitão saiu ou o treinador trocou). */
+function armbandPhrase(playerName: string, teamName: string): string {
+  return `🅒 ${playerName} é o novo capitão do ${teamName}`;
+}
+
+/** Depois de sofrer golo, um capitão forte segura a equipa. */
+function captainRalliesPhrase(playerName: string, teamName: string): string {
+  return `💪 O capitão ${playerName} reúne o ${teamName}: cabeça levantada, o golo não abala a equipa`;
+}
+
+/** Depois de sofrer golo, falta liderança para travar o adversário. */
+function captainSilentPhrase(teamName: string): string {
+  return `😶 Falta uma voz de comando ao ${teamName} — o adversário continua por cima`;
+}
+
 function tacticChangePhrase(teamName: string, formation: string, style: string, pressure?: string): string {
   const press = pressure && PRESSURE_LABELS[pressure] ? `, ${PRESSURE_LABELS[pressure]}` : "";
   return `🔄 ${teamName} muda para ${formation} (${styleDisplayLabel(style)}${press})`;
@@ -1637,6 +1652,9 @@ export {
   tacticChangePhrase,
   pressureDisplayLabel,
   talkPhrase,
+  armbandPhrase,
+  captainRalliesPhrase,
+  captainSilentPhrase,
   goalPhrase,
   ownGoalPhrase,
   penaltyGoalPhrase,

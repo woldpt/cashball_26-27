@@ -75,6 +75,7 @@ const fixture = {
   homeLineup: homeSquad.map((p, i) => ({
     ...p,
     is_starter: starterFlag(i),
+    is_captain: i === 3,
     matchMinutes: starterFlag(i) ? 58 : 0,
     fatigue: starterFlag(i) ? 61 : 42,
   })),

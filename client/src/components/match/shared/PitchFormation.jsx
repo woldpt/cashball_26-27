@@ -4,6 +4,7 @@ import { POSITION_FULL_LABELS, filterMatchEvents } from "../matchConstants.js";
 import { PlayerAvatar } from "../../shared/PlayerAvatar.jsx";
 import { Stars } from "../../shared/Stars.jsx";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
+import { CaptainBadge } from "../../shared/CaptainBadge.jsx";
 
 /* ── Relvado ─────────────────────────────────────────────────────────────
  * Estilo partilhado com o pitch das Táticas (TacticsView): verde escuro em
@@ -156,6 +157,7 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
         {!!player.is_star && (player.position === "MED" || player.position === "ATA") && (
           <span className={`ml-0.5 ${starColor}`} title="Craque">★</span>
         )}
+        {!!player.is_captain && <CaptainBadge className="ml-0.5 align-middle" />}
       </div>
       <span className={`font-black tabular-nums text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${skillCls}`}>
         {player.rating != null ? (

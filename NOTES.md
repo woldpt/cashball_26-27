@@ -1,3 +1,8 @@
+## Capitães: liderança relativa, nos maus momentos (2026-10-10)
+- Liderança 1–5 calculada (idade, jogos, estatuto, moral — `leadershipOf`); capitão = escolha do treinador (`tactic.captainId`, gravado no assento) ou o maior líder; a braçadeira passa sozinha quando ele sai. Só a DIFERENÇA entre capitães conta: quem sofre golo com melhor líder encurta e enfraquece o ímpeto do adversário (3–13', base 8'). Cliente: seletor na Tática, "C" no campo/intervalo, 4.º cartão no duelo; `utils/leadership.js` ESPELHA o servidor.
+- Corrigido de passagem: o duelo da Tática nunca aparecia em produção (`probableFormation` é objeto, o harness usava string).
+- Testado: engine-unit 44 (U34–U36), simulação 8000 jogos (5★ vs 1★ = ±1,4 pp; golos 2,48), typecheck, regressões do motor, connect-smoke, session-freeze, crash-recovery, audits; client lint/check:types, test:leadership, test:livehelpers, test:mobile 195/195.
+
 ## Familiaridade táctica: estrelas ao abrir Táticas (2026-10-10)
 - Estrelas vazias: o cliente só pedia `requestAllTacticFamiliarity` no botão JOGAR; abrir Táticas pelo menu, sidebar ou reload nunca pedia. Agora `GameContext.jsx` pede ao abrir o separador (com `teamInfo` carregado). Pós-jogo sem gatilho próprio: o `matchResults` já muda para "Ao Vivo".
 - Testado: client lint + check:types (0 erros). Não visto no ecrã — falta ver as estrelas num jogo real.
@@ -126,8 +131,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Lease começa na queda do socket; janelas de decisão nunca decidem `auto` por quem só tem lease; join passivo (separador oculto) não rouba o assento; `presencePing` + gate de join no cliente; contra-proposta/convite sobrevivem à queda. Plano: `docs/plans/2026-10-07-sessao-presenca-mobile.md`.
 - Porquê: bloqueios de ecrã do telemóvel congelavam/descongelavam a sala e a lista `players` tratava a equipa como NPC.
 - Testado: `test:session-freeze` (novos F13–F15), `test:segment-barrier`, `test:connect-smoke`, `test:crash-recovery`, typecheck, lint, check:types. Telemóvel real com bloqueio de ecrã por testar.
-
-## RoomHub + WaitingCoachesModal — redesign (2026-10-06)
-- RoomHub: bugs (mensagem perdida no gap, convites presos, kick sem confirmação), mensagens agrupadas + sistema intercalado + scroll inteligente, split (`RoomHub` casca + `RoomHubPanel` só aberto, `CoachRow`, `ChatMessages`, `ChatComposer`, `useRoomInvites`), layout novo (cabeçalho único, folha inferior no mobile). `chatMessagesRef` saiu do GameContext.
-- WaitingCoachesModal: hero "À espera de X" + barra segmentada, banner de pausa com coaches offline, reutiliza `ChatMessages`/`ChatComposer`. Planos em `docs/plans/2026-10-06-*`.
-- Testado: lint, check:types, build; harnesses `roomhub-resp-test` e `waiting-coaches-test` PASS em 375×667, 667×375, 768×1024, 1280×800 + capturas revistas (lista de coaches do modal subiu a 40 % da altura no mobile). Fluxo real com 2 sessões por testar.

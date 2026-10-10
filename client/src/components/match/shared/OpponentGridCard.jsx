@@ -1,6 +1,7 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS } from "../matchConstants.js";
 import { BadgeSkills } from "../../shared/BadgeSkills.jsx";
+import { CaptainBadge } from "../../shared/CaptainBadge.jsx";
 
 /**
  * Single opponent player row — passivo (sem hover, sem button).
@@ -34,6 +35,7 @@ export function OpponentGridCard({ player, posStyle, hideStats = false }) {
           {!!player.is_star && (player.position === "MED" || player.position === "ATA") && (
             <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
           )}
+          {!!player.is_captain && <CaptainBadge className="ml-1 align-middle" />}
         </span>
       </div>
 

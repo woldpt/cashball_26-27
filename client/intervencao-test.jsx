@@ -98,12 +98,14 @@ const fixture = {
   homeLineup: squad.map((p) => ({
     ...p,
     is_starter: starterIds.includes(p.id),
+    is_captain: p.id === starterIds[5],
     matchMinutes: starterIds.includes(p.id) ? 45 : 0,
     fatigueLoss: starterIds.includes(p.id) ? 2 : 0,
   })),
   awayLineup: oppSquad.map((p, i) => ({
     ...p,
     is_starter: i < 11,
+    is_captain: i === 4,
     matchMinutes: i < 11 ? 45 : 0,
   })),
   events: [

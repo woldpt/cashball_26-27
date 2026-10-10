@@ -86,6 +86,7 @@ P = pequeno · M = médio · G = grande.
 > Ímpeto visível no Live ("<equipa> por cima · mais N'"); remates e golos esperados também no intervalo; "Leitura do jogo" no fim (expulsão, golos esperados vs resultado, golo no embalo). Falta: ordens com substituição ("entra X").
 
 ### Fase 4 — Profundidade leve
+> Capitão ✅ feito 2026-10-10 (ver `2026-10-09-capitaes-equipa.md`): liderança 1–5, efeito relativo no ímpeto depois de sofrer golo. Falta o batedor de penáltis.
 - **B7** — capitão (plano existente) + batedores.
 - **B8** — polivalência.
 

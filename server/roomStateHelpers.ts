@@ -81,6 +81,7 @@ function parseIntent(raw: any): RoomSeat["intent"] {
       positions: parsed.positions || {},
       pressure: parsed.pressure,
       orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+      captainId: Number.isInteger(parsed.captainId) ? parsed.captainId : undefined,
     };
   } catch {
     return { ready: false };
@@ -136,6 +137,7 @@ function projectSeatToPlayer(game: ActiveGame, seat: RoomSeat): PlayerSession {
     positions: (seat.intent.positions ?? base.tactic?.positions ?? {}) as any,
     pressure: seat.intent.pressure ?? base.tactic?.pressure,
     orders: seat.intent.orders ?? base.tactic?.orders ?? [],
+    captainId: seat.intent.captainId ?? base.tactic?.captainId,
   };
   game.playersByName[seat.name] = base;
   return base;
