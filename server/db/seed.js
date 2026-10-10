@@ -15,6 +15,7 @@ const {
   BUDGET_BY_DIVISION,
   FANBASE_BY_DIVISION,
   SKILL_RANGE_BY_DIVISION,
+  BALANCED_DRAW_DIVISIONS,
   WAGE_SEED_SPREAD,
   recalcPlayerValue,
   fairWeeklyWage,
@@ -88,21 +89,48 @@ const exec = (sql) =>
     db.exec(sql, (err) => (err ? reject(err) : resolve()));
   });
 
+const normalisePosition = (p) => {
+  const pos = POSITION_MAP[p.position] || p.position || "MED";
+  return VALID_POSITIONS.has(pos) ? pos : null;
+};
+
+// Baralho igual: em cada posição, os jogadores sem skill fixa recebem valores
+// espalhados por igual no intervalo, baralhados. Duas equipas com o mesmo nº
+// de jogadores numa posição ficam com exatamente os mesmos valores.
+function dealBalancedSkills(providedPlayers, [lo, hi]) {
+  const byPos = {};
+  for (const p of providedPlayers || []) {
+    if (!p || !p.name || p.skill) continue;
+    (byPos[normalisePosition(p) || "MED"] ??= []).push(p);
+  }
+  const dealt = new Map();
+  for (const group of Object.values(byPos)) {
+    const values = group.map((_, k) => Math.round(lo + ((k + 0.5) / group.length) * (hi - lo)));
+    for (let k = values.length - 1; k > 0; k--) {
+      const j = Math.floor(rng() * (k + 1));
+      [values[k], values[j]] = [values[j], values[k]];
+    }
+    group.forEach((p, k) => dealt.set(p, values[k]));
+  }
+  return dealt;
+}
+
 // Valida e normaliza os jogadores do fixture; se inválido, corrige com
 // fallback e conta avisos em vez de abortar a seed inteira.
-function buildPlayers(providedPlayers, teamSkillRange, teamName, warnings) {
+function buildPlayers(providedPlayers, teamSkillRange, teamName, warnings, balanced = false) {
   const rows = [];
+  const dealt = balanced ? dealBalancedSkills(providedPlayers, teamSkillRange) : null;
   for (const p of providedPlayers || []) {
     if (!p || !p.name) {
       warnings.nameless++;
       continue;
     }
-    let pos = POSITION_MAP[p.position] || p.position || "MED";
-    if (!VALID_POSITIONS.has(pos)) {
+    let pos = normalisePosition(p);
+    if (!pos) {
       warnings.position++;
       pos = "MED";
     }
-    let skill = p.skill || randInt(teamSkillRange[0], teamSkillRange[1]);
+    let skill = p.skill || dealt?.get(p) || randInt(teamSkillRange[0], teamSkillRange[1]);
     if (skill < 1 || skill > SKILL_MAX) {
       warnings.skill++;
       skill = Math.min(SKILL_MAX, Math.max(1, Math.round(skill)));
@@ -270,7 +298,13 @@ DROP TABLE IF EXISTS game_state;
           ? teamData.skillRange
           : SKILL_RANGE_BY_DIVISION[division] || [5, 20];
 
-      const players = buildPlayers(teamData.players, teamSkillRange, teamData.name, warnings);
+      const players = buildPlayers(
+        teamData.players,
+        teamSkillRange,
+        teamData.name,
+        warnings,
+        BALANCED_DRAW_DIVISIONS.includes(division),
+      );
       for (const pl of players) {
         await run(
           "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, morale, nationality, value, wage, goals, is_star, potential, photo, zerozero_id, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",

@@ -92,6 +92,7 @@ class GameStateAuditor {
       await this.auditSquadComposition();
       await this.auditDivisionCounts();
       await this.auditPoolSampling();
+      await this.auditBalancedDraw();
       await this.auditDuplicatePlayers();
       await this.auditContractExpiry();
       await this.auditMatchPhases();
@@ -373,6 +374,40 @@ class GameStateAuditor {
         `Total de equipas ${total} != esperado ${expectedTotal}`,
         { total, expected: expectedTotal },
       );
+    }
+  }
+
+  // Baralho igual (seed): nas divisões onde os humanos começam, o melhor onze
+  // (4-4-2) de cada equipa tem de valer praticamente o mesmo. Só no template —
+  // numa sala os plantéis já evoluíram. A folga cobre os arredondamentos
+  // (medido: 135–136 com baralho igual; 112–150 com sorteio livre).
+  private async auditBalancedDraw() {
+    if (this.roomCode !== "base") return;
+    const { BALANCED_DRAW_DIVISIONS } = require("../db/seedEcon");
+    const TOLERANCE = 2;
+    const quota: Record<string, number> = { GR: 1, DEF: 4, MED: 4, ATA: 2 };
+    for (const division of BALANCED_DRAW_DIVISIONS) {
+      const rows = await this.runQuery<any>(
+        "SELECT t.name, p.position, p.skill FROM teams t JOIN players p ON p.team_id = t.id WHERE t.division = ? ORDER BY p.skill DESC",
+        [division],
+      );
+      const left: Record<string, Record<string, number>> = {};
+      const sums: Record<string, number> = {};
+      for (const r of rows) {
+        const need = (left[r.name] ??= { ...quota });
+        if (!(need[r.position] > 0)) continue;
+        need[r.position]--;
+        sums[r.name] = (sums[r.name] ?? 0) + r.skill;
+      }
+      const values = Object.values(sums);
+      if (values.length && Math.max(...values) - Math.min(...values) > TOLERANCE) {
+        this.addIssue(
+          "error",
+          "balanced_draw",
+          `D${division}: melhor onze desigual entre equipas (${Math.min(...values)}–${Math.max(...values)}, folga ${TOLERANCE})`,
+          { division, sums },
+        );
+      }
     }
   }
 

@@ -1,3 +1,9 @@
+## 4.ª divisão com baralho igual (2026-10-10)
+- Seed: na 4.ª (`BALANCED_DRAW_DIVISIONS`), cada equipa recebe os mesmos valores de skill por posição, espalhados no intervalo; o sorteio só decide que jogador fica com qual (`dealBalancedSkills`). 5.ª igual a antes. Só salas novas. Plano: `docs/plans/2026-10-10-quarta-divisao-sorteio-justo.md`.
+- Porquê: os humanos começam na 4.ª com equipa sorteada e o sorteio livre 5–15 dava onzes até 24% mais fortes.
+- Medido: soma do melhor onze 135–136 em todas (5.ª, sorteio livre: 112–150); pontos médios por equipa 28–31 (antes 15–39). Efeito lateral: os valores vão de 6 a 14 (já não sai 5 nem 15).
+- Testado: seed, audit:gamestate base (verificação nova `balanced_draw`, 0 erros), typecheck, connect-smoke, own-goal, penalty-ordering, segment-barrier.
+
 ## Plantéis iniciais por escalões (2026-10-10)
 - `skillRange` próprio nas 36 equipas das 1.ª–3.ª divisões (`all_teams.json`), 4 escalões de 3 pela ordem do ficheiro; 4.ª e 5.ª iguais (os humanos começam na 4.ª com equipa sorteada). Só salas novas. Plano: `docs/plans/2026-10-10-ligas-menos-niveladas.md`.
 - Porquê: todas as equipas de uma divisão sorteavam do mesmo intervalo e o título calhava a qualquer um.
@@ -134,7 +140,3 @@ Inclui o commit de táticas do intervalo de outra sessão (em curso nesta árvor
 ## Intervalo (desktop): 3.ª coluna passa a Tática (2026-10-10)
 - Saiu o relvado da 3.ª coluna: agora tem posse de bola, Mentalidade/Pressão/Conversa e "Ordens para o jogo" (editáveis). A 2.ª coluna ficou só com a lista de suplentes. `OrdersCard` passou a componente partilhado (`components/shared/OrdersCard.jsx`) usado pela Tática e pelo intervalo. Botão "Equilibrado" passou a "Neutro" (igual à Tática; cortava a 1280px).
 - Testado: client lint + check:types, test:mobile 195/195 (concorrência 6 — com 20 a máquina carregada dava timeouts), screenshots 1280/1440 vistos, test:substitutions, test:emergency-gk.
-
-## Deploy v26.10.38 no rick (2026-10-10)
-Push, tag e rebuild feitos; backend Healthy.
-Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10, xG, posse viva, ímpeto, NPCs que gerem o jogo, duelo, pressão, conversa ao intervalo, ordens).

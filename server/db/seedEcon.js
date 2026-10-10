@@ -42,6 +42,12 @@ const SKILL_RANGE_BY_DIVISION = {
   5: [5, 15],
 };
 
+// Divisões com "baralho igual": todas as equipas recebem os mesmos valores de
+// skill em cada posição (o sorteio só decide que jogador fica com qual). É
+// onde os treinadores humanos começam, com equipa sorteada — ninguém parte
+// com mais do que os outros.
+const BALANCED_DRAW_DIVISIONS = [4];
+
 // Variação salarial da seed em torno do salário justo (±15%). O gameManager
 // usa `1 + WAGE_SEED_SPREAD` como teto do rebalance one-shot — nunca mexer
 // num lado sem o outro.
@@ -118,6 +124,7 @@ module.exports = {
   BUDGET_BY_DIVISION,
   FANBASE_BY_DIVISION,
   SKILL_RANGE_BY_DIVISION,
+  BALANCED_DRAW_DIVISIONS,
   WAGE_SEED_SPREAD,
   recalcPlayerValue,
   fairWeeklyWage,
