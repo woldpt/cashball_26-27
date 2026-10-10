@@ -1210,8 +1210,8 @@
       "name": "Estoril",
       "division": 1,
       "skillRange": [
-        38,
-        45
+        36,
+        43
       ],
       "colors": {
         "primary": "#FFEE00",
@@ -1411,8 +1411,8 @@
       "name": "Moreirense",
       "division": 1,
       "skillRange": [
-        38,
-        45
+        36,
+        43
       ],
       "colors": {
         "primary": "#00A650",
@@ -7770,8 +7770,8 @@
       "name": "Arouca",
       "division": 1,
       "skillRange": [
-        38,
-        45
+        36,
+        43
       ],
       "colors": {
         "primary": "#FDD945",
@@ -7971,8 +7971,8 @@
       "name": "Vitória SC",
       "division": 1,
       "skillRange": [
-        35,
-        42
+        32,
+        39
       ],
       "colors": {
         "primary": "#FFFFFF",
@@ -8172,8 +8172,8 @@
       "name": "Alverca",
       "division": 1,
       "skillRange": [
-        35,
-        42
+        32,
+        39
       ],
       "colors": {
         "primary": "#990012",
@@ -8373,8 +8373,8 @@
       "name": "Rio Ave",
       "division": 1,
       "skillRange": [
-        35,
-        42
+        32,
+        39
       ],
       "colors": {
         "primary": "#347C17",

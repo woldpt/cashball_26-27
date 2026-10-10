@@ -25,8 +25,11 @@ Só dados: dar `skillRange` às 36 equipas das **1.ª, 2.ª e 3.ª divisões**, 
 |---|---|---|---|
 | 1 (candidatos) | 44–50 | 31–37 | 20–26 |
 | 2 | 41–48 | 29–34 | 19–24 |
-| 3 | 38–45 | 27–32 | 17–22 |
-| 4 (aflitos) | 35–42 | 24–30 | 15–21 |
+| 3 | 36–43 | 27–32 | 17–22 |
+| 4 (aflitos) | 32–39 | 24–30 | 15–21 |
+
+(1.ª divisão, escalões 3 e 4: eram 38–45 e 35–42; baixados depois de medir,
+porque o escalão 1 bate no teto de 50 e a liga ficava em 42/18.)
 
 | Escalão | 1.ª divisão | 2.ª divisão | 3.ª divisão |
 |---|---|---|---|

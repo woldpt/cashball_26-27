@@ -1,8 +1,8 @@
 ## Plantéis iniciais por escalões (2026-10-10)
 - `skillRange` próprio nas 36 equipas das 1.ª–3.ª divisões (`all_teams.json`), 4 escalões de 3 pela ordem do ficheiro; 4.ª e 5.ª iguais (os humanos começam na 4.ª com equipa sorteada). Só salas novas. Plano: `docs/plans/2026-10-10-ligas-menos-niveladas.md`.
 - Porquê: todas as equipas de uma divisão sorteavam do mesmo intervalo e o título calhava a qualquer um.
-- Medido (30 épocas, 22 jogos, campeão/último): 1.ª 41/20 → 42/18, 2.ª 41/19 → 43/16, 3.ª 40/20 → 45/17. A 1.ª mexe menos: o escalão 1 bate no teto de 50 (onze 49 vs 40 = 22%; nas outras 26–28%).
-- Por vigiar: folha salarial do escalão 1 da 1.ª cabe 15 vezes no orçamento (escalão 4: 20) — não testado ao longo de uma época.
+- Medido (30 épocas, 22 jogos, campeão/último): 1.ª 41/20 → 44/16, 2.ª 41/19 → 43/16, 3.ª 40/20 → 45/17. Na 1.ª o escalão 1 bate no teto de 50, por isso os escalões 3 e 4 desceram (36–43 e 32–39; com 38–45 e 35–42 dava só 42/18).
+- Por vigiar: folha salarial do escalão 1 da 1.ª cabe 15 vezes no orçamento (escalão 4: 23) — não testado ao longo de uma época. O escalão 4 da 1.ª (32–39) sobrepõe-se ao escalão 1 da 2.ª (31–37).
 - Testado: seed, audit:gamestate base (0 erros), typecheck, connect-smoke, own-goal, penalty-ordering, segment-barrier.
 
 ## Motor: equilíbrio das formações (2026-10-10)
