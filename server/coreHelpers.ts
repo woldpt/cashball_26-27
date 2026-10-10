@@ -707,7 +707,7 @@ async function computeAttendance(
     }
   }
   const ticketMult = Math.max(
-    0.7,
+    T.ticketDemandMinMult,
     Math.min(1.25, 1 - (ticketPrice - T.ticketBasePrice) * T.ticketDemandPerEuro),
   );
   mult *= ticketMult;

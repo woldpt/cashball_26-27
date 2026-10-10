@@ -881,7 +881,11 @@ export const MATCH_TUNING = {
   attendanceDesertMoodMax: 13,
   // Preço do bilhete: procura reage ao desvio face aos 15€ base.
   ticketBasePrice: 15,
-  ticketDemandPerEuro: 0.014, // mult = 1 − (preço−15) × 0.014
+  // mult = 1 − (preço−15) × 0.03, entre o piso e 1.25. Com 0.014 e piso 0.7
+  // os 30€ rendiam +58% e eram sempre a melhor escolha; agora o pico é aos
+  // 25€ (+17%) e paga-se com o estádio mais vazio.
+  ticketDemandPerEuro: 0.03,
+  ticketDemandMinMult: 0.5,
   // Fator adversário/posição: bónus que se somam (teto global em baixo).
   attendanceDerbyBonus: 0.12, // mesma divisão = rivalidade local
   attendanceLeaderVisitBonus: 0.08, // visita do 1º/2º classificado

@@ -177,6 +177,20 @@ async function main() {
       aCheap > aPricey,
       `bilhete a 10€ (${aCheap}) enche mais que a 30€ (${aPricey})`,
     );
+    // O bilhete caro tem de custar: a 30€ a receita já não pode disparar
+    // face aos 15€ (com 1,4%/€ rendia +58% e era sempre a melhor escolha).
+    const base = await setupDb({ ...ctx, ticket: 15 });
+    const aBase = await calculateMatchAttendance(base, 1, 2);
+    const ratio = aPricey / aBase;
+    assert(
+      Math.abs(ratio - 0.55) < 0.02,
+      `a 30€ vão 55% dos adeptos dos 15€ (obtido ${(ratio * 100).toFixed(0)}%)`,
+    );
+    assert(
+      aPricey * 30 < aBase * 15 * 1.2,
+      `receita a 30€ (${aPricey * 30}) fica abaixo de +20% da de 15€ (${aBase * 15})`,
+    );
+    base.close();
     cheap.close();
     pricey.close();
   }
