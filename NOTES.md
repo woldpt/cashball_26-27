@@ -1,3 +1,10 @@
+## Simulador de épocas (2026-10-10)
+- `cd server && npm run sim:seasons -- --seasons 3 --runs 3` corre o jogo real só com NPC, ~15 s por época: servidor no mesmo processo (`simBridge` no `index.ts`) + relógio virtual (`scripts/lib/virtualClock.ts`) que dispara os temporizadores quando a BD está parada. Relatório por divisão, salas presas, erros do servidor e `audit:gamestate`; `--json` para comparar antes/depois.
+- No jogo: `simLobbyHoldMs` em `checkAllReady` (nunca definido em produção) — sem humanos a sala salta de jornada em jornada e os leilões nunca saíam da pausa.
+- Limites: sem humanos (bilhete, empréstimos, táticas humanas por exercitar); a semente fixa o ponto de partida mas o desenrolar varia ~5% (comparar médias de 3+ salas).
+- 1.ª leitura (3 salas × 3 épocas, jogo de manhã vs agora): clubes no vermelho 3,3 → 0; clubes com posição em falta 9 → 0; lotação média da 1.ª na época 3 49 700 → 32 300; equipas em 4-2-4 19 → 11. Por ver: golos por jogo 3,0 → 3,4 na 1.ª (calibração do motor aponta 2,5); o dinheiro em jogo duplica em 3 épocas (75 → 160 M) com ou sem as correções; homónimos no mesmo plantel via mercado.
+- Testado: typecheck, todos os `test:*` do servidor, crash-recovery (B8N0ZH), finalize E2E no servidor real.
+
 ## Correções à economia (2026-10-10)
 - NPC não compram acima de 1,4× o valor; bilhete: 3% de adeptos por euro acima dos 15 € (piso 50%); melhor marcador por divisão (500/250/125/60 mil); NPC só constrói com massa adepta > lotação; teto da folha NPC soma metade da bilheteira semanal (`npcFolhaCeiling`). Plano: `docs/plans/2026-10-10-economia-correcoes.md`.
 - Porquê: auditoria deu 4/10 — um humano vendia a NPC a 5× o valor (8 NPC compravam um jogador de 156 mil a 780 mil), 30 € rendia +58% sem custo, e todos os clubes lucravam sempre.
@@ -146,8 +153,3 @@ Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-
 - Live: chip "🔥 <equipa> por cima · mais N'" durante os 8' a seguir a um golo (espelha `momentumMinutes`; `liveMomentum` em `liveHelpers.js`, sem mexer no servidor). Pós-jogo: cartão "Leitura do jogo" (`matchVerdict`: expulsão cedo, golos esperados vs resultado, golo no embalo).
 - Intervalo: linha "Remates · Golos esp." (`ShotLine`) no bloco da posse (desktop) e sob "Intervalo" (telemóvel); coluna da Tática com `[&>*]:shrink-0` para o bloco não ser cortado.
 - Testado: test:livehelpers (casos novos), lint, check:types, test:mobile 195/195; screenshots livehero 360 e intervalo 1280.
-
-## Tática e intervalo com cara de quadro tático (2026-10-10)
-- Botões de mentalidade/pressão/conversa: barra segmentada acesa (telemóvel/Tática) ou cartões com ícone e efeito (intervalo desktop e Tática desktop); posse em destaque com emblemas e %; ordens como frase de pílulas que mudam ao toque (sem selects); duelo em 3 mini-cartões com selo (Ganhas/Em risco…). Tática mobile: Moral → Formação+duelo → Instruções → Ordens. `STYLE_OPTIONS` passou para `constants/index.js`.
-- Testado: client lint + check:types, test:mobile 195/195 (concorrência 6), test:tacticpositions, test:briefing; screenshots 360/1280/1440 da Tática e do intervalo vistos.
-- Tática desktop: Moral passou para cima da Formação (coluna 1); coluna do meio só "Instruções" com os cartões a encher a altura; grelha de formações `flex-1 auto-rows-fr` — sem vazios entre colunas.
