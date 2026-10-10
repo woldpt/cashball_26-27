@@ -1376,7 +1376,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		const run = (sql: string, params: any[]) =>
 			new Promise<void>((resolve) => game.db.run(sql, params, () => resolve()));
 		for (let i = 0; i + 1 < open.length; i += 2) {
-			await run("UPDATE cup_matches SET away_team_id = ? WHERE id = ?", [open[i + 1].home_team_id, open[i].id]);
+			// Estádio à sorte entre os dois treinadores.
+			const swap = Math.random() < 0.5;
+			const [h, a] = swap ? [open[i + 1].home_team_id, open[i].home_team_id] : [open[i].home_team_id, open[i + 1].home_team_id];
+			await run("UPDATE cup_matches SET home_team_id = ?, away_team_id = ? WHERE id = ?", [h, a, open[i].id]);
 			await run("DELETE FROM cup_matches WHERE id = ?", [open[i + 1].id]);
 		}
 		if (open.length % 2 === 1) {
@@ -1399,7 +1402,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			).filter((t: any) => !busy.has(t.id));
 			if (candidates.length > 0) {
 				const ai = candidates[Math.floor(Math.random() * candidates.length)].id;
-				await run("UPDATE cup_matches SET away_team_id = ? WHERE id = ?", [ai, last.id]);
+				const [h, a] = Math.random() < 0.5 ? [ai, last.home_team_id] : [last.home_team_id, ai];
+				await run("UPDATE cup_matches SET home_team_id = ?, away_team_id = ? WHERE id = ?", [h, a, last.id]);
 			} else {
 				await run("DELETE FROM cup_matches WHERE id = ?", [last.id]);
 			}

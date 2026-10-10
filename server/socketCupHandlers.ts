@@ -73,13 +73,15 @@ export async function getCupWeekFriendlyStatus(
  */
 async function bookCupWeekFriendly(game: ActiveGame, teamId: number, round: number, runAll: RunAll) {
   const dbRound = cupWeekFriendlyRound(round);
-  const open = await runAll<{ id: number }>(
+  const open = await runAll<{ id: number; home_team_id: number }>(
     game.db,
-    "SELECT id FROM cup_matches WHERE season = ? AND round = ? AND played = 0 AND away_team_id IS NULL AND home_team_id <> ? ORDER BY id LIMIT 1",
+    "SELECT id, home_team_id FROM cup_matches WHERE season = ? AND round = ? AND played = 0 AND away_team_id IS NULL AND home_team_id <> ? ORDER BY id LIMIT 1",
     [game.season, dbRound, teamId],
   );
   if (open.length) {
-    await runAll(game.db, "UPDATE cup_matches SET away_team_id = ? WHERE id = ?", [teamId, open[0].id]);
+    // Estádio à sorte: quem já estava inscrito pode passar a jogar fora.
+    const [home, away] = Math.random() < 0.5 ? [open[0].home_team_id, teamId] : [teamId, open[0].home_team_id];
+    await runAll(game.db, "UPDATE cup_matches SET home_team_id = ?, away_team_id = ? WHERE id = ?", [home, away, open[0].id]);
     return;
   }
   const humans = new Set<number>();
@@ -101,10 +103,12 @@ async function bookCupWeekFriendly(game: ActiveGame, teamId: number, round: numb
   );
   const pool = candidates.filter((c) => !humans.has(Number(c.id)));
   const ai = pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
+  // Com NPC o estádio é à sorte; sem par fica em casa (emparelha no fecho).
+  const [home, away] = ai != null && Math.random() < 0.5 ? [ai, teamId] : [teamId, ai];
   await runAll(
     game.db,
     "INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES (?, ?, ?, ?)",
-    [game.season, dbRound, teamId, ai],
+    [game.season, dbRound, home, away],
   );
 }
 
