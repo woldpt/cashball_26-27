@@ -1,3 +1,10 @@
+## Dinheiro parado nos NPC ricos (2026-10-10)
+- NPC acima dos 10M€ com o plantel cheio (26) e o estádio à medida dos adeptos passa a pôr 500 mil/semana em infraestruturas (sai do jogo). Antes ficava bloqueado: nem obra, nem academia, nem compras (plantel ≥ 24 não compra).
+- Diagnóstico corrigido: o dinheiro não duplica sempre — sobe 19%, 12%, 7%, 4% e estabiliza perto dos 205M; o salto da época 2 é o patrocínio da 1.ª época pago no fim. O que crescia sem parar eram os grandes da 1.ª (até 19M).
+- Medido (`sim:seasons`, 2 salas × 6 épocas): máximo da 1.ª 18,9 → 10,8M; média da 1.ª 12,0 → 9,2M; dinheiro em jogo estabiliza em ~170M (antes 203M e a subir); 2.ª–4.ª iguais.
+- Rejeitado por medição: agentes a farejar riqueza nos NPC e teto da folha com 85% da bilheteira (ordenados sobem, nível de dinheiro igual); limiar de investimento por divisão (1.ª a 5M) — afunda a 2.ª–5.ª (14 clubes no vermelho na época 6): o excedente da 1.ª é o que financia as de baixo pelas compras. Não baixar esse limiar sem medir.
+- Testado: typecheck, finance-guards (F7 novo), connect-smoke, contractrenewal, npc-squad-planning, staff.
+
 ## Motor: golos por jogo de volta aos 2,5 (2026-10-10)
 - `chancesTotal` 30,7 → 22,6 (oportunidades por jogo; a conversão não mexe).
 - Porquê: o simulador de épocas mostrou 3,3 golos por jogo nas ligas a sério (3,0 antes da nova escolha de onze dos NPC). A calibração sintética dava 2,5 porque só joga 4-4-2 iguais em equilibrado; formações de ataque, mudanças de estilo, auto-golos (0,26/jogo) e penáltis (0,12) somam por cima.
@@ -150,7 +157,3 @@ Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-
 - Liderança 1–5 calculada (idade, jogos, estatuto, moral — `leadershipOf`); capitão = escolha do treinador (`tactic.captainId`, gravado no assento) ou o maior líder; a braçadeira passa sozinha quando ele sai. Só a DIFERENÇA entre capitães conta: quem sofre golo com melhor líder encurta e enfraquece o ímpeto do adversário (3–13', base 8'). Cliente: seletor na Tática, "C" no campo/intervalo, 4.º cartão no duelo; `utils/leadership.js` ESPELHA o servidor.
 - Corrigido de passagem: o duelo da Tática nunca aparecia em produção (`probableFormation` é objeto, o harness usava string).
 - Testado: engine-unit 44 (U34–U36), simulação 8000 jogos (5★ vs 1★ = ±1,4 pp; golos 2,48), typecheck, regressões do motor, connect-smoke, session-freeze, crash-recovery, audits; client lint/check:types, test:leadership, test:livehelpers, test:mobile 195/195.
-
-## Familiaridade táctica: estrelas ao abrir Táticas (2026-10-10)
-- Estrelas vazias: o cliente só pedia `requestAllTacticFamiliarity` no botão JOGAR; abrir Táticas pelo menu, sidebar ou reload nunca pedia. Agora `GameContext.jsx` pede ao abrir o separador (com `teamInfo` carregado). Pós-jogo sem gatilho próprio: o `matchResults` já muda para "Ao Vivo".
-- Testado: client lint + check:types (0 erros). Não visto no ecrã — falta ver as estrelas num jogo real.

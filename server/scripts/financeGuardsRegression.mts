@@ -7,6 +7,8 @@
  *   F4 — 2 buyPlayer em paralelo acima do saldo: o saldo nunca fica < 0
  *   F5 — fireStaff 2× em paralelo paga uma só indemnização
  *   F6 — compra NPC: movimento certo; jogador já vendido não mexe em saldos
+ *   F7 — NPC acima do limiar com o plantel cheio investe em infraestruturas;
+ *        abaixo do limiar não gasta
  *
  * BD em memória com o schema real (db/schema.sql).
  * Run: cd server && npm run test:finance-guards
@@ -25,6 +27,8 @@ const { registerSessionSocketHandlers } = require("../socketSessionHandlers");
 const { registerTransferSocketHandlers } = require("../socketTransferHandlers");
 const { fireStaff } = require("../staffHelpers");
 const { createNpcTransferHelpers } = require("../npcTransferHelpers");
+const { createContractHelpers } = require("../contractHelpers");
+const { NPC_INVEST_BUDGET_THRESHOLD, NPC_ACADEMY_COST } = require("../gameConstants");
 const { staffSeverance } = require("../gameConstants");
 const { createWeeklyFlowHelpers } = require("../weeklyFlowHelpers");
 const { registerFinanceSocketHandlers } = require("../socketFinanceHandlers");
@@ -358,4 +362,41 @@ test("F6 — compra NPC: movimento certo; jogador já vendido não mexe em saldo
   assert.equal(await budgetOf(db, 2), 1_000_000 - 100, "NPC paga uma vez");
   assert.equal(await budgetOf(db, 1), 1100, "vendedor recebe uma vez");
   assert.equal(await budgetOf(db, 3), 1000, "equipa 3 intacta");
+});
+
+test("F7 — NPC rico com o plantel cheio investe o excedente; abaixo do limiar não gasta", async () => {
+  const db = await openDb();
+  const rich = NPC_INVEST_BUDGET_THRESHOLD + 2 * NPC_ACADEMY_COST;
+  const modest = NPC_INVEST_BUDGET_THRESHOLD - 1;
+  await seedTeams(db, { 1: rich, 2: modest });
+  // Estádio à medida dos adeptos (sem obra) e plantel cheio (sem academia).
+  await runExec(db, "UPDATE teams SET stadium_capacity = 50000, fanbase = 40000");
+  for (const teamId of [1, 2]) {
+    for (let i = 0; i < 26; i++) {
+      await runExec(
+        db,
+        "INSERT INTO players (name, position, skill, value, wage, team_id) VALUES (?, 'MED', 30, 100, 10, ?)",
+        [`J${teamId}-${i}`, teamId],
+      );
+    }
+  }
+  const realAll = (_db: any, sql: string, p: any[] = []) =>
+    new Promise<any[]>((res, rej) => db.all(sql, p, (e: any, r: any) => (e ? rej(e) : res(r))));
+  const game = makeGame(db);
+  const contracts = createContractHelpers({
+    io: ioStub,
+    runAll: realAll,
+    runGet,
+    startAuction: () => {},
+    getSeasonEndMatchweek: () => 30,
+  });
+  await contracts.processNpcInvestment(game);
+  await drain(game);
+  assert.equal(await budgetOf(db, 1), rich - NPC_ACADEMY_COST, "rico: um investimento por semana");
+  assert.equal(await budgetOf(db, 2), modest, "abaixo do limiar: intacto");
+  assert.equal(
+    (await runGet(db, "SELECT COUNT(*) AS n FROM players WHERE team_id = 1")).n,
+    26,
+    "plantel cheio: sem prospeto novo",
+  );
 });

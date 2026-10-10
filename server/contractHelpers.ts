@@ -560,7 +560,9 @@ export function createContractHelpers(deps: ContractDeps) {
   /**
    * Direção investe excedente. NPC com banco acima do limiar gasta 1 ação
    * por semana até regressar ao limiar: obra (300k, se houver margem até
-   * 120k e adeptos para encher) ou academia (500k → prospeto real para o plantel, com ordenado).
+   * 120k e adeptos para encher), academia (500k → prospeto real para o
+   * plantel, com ordenado) ou, com o plantel cheio, infraestruturas (500k
+   * que saem do jogo).
    * Esvazia as pilhas multimilionárias (Porto 60M€) sem árbitro central.
    */
   const NPC_STADIUM_BUILD_COST = 300000;
@@ -610,7 +612,20 @@ export function createContractHelpers(deps: ContractDeps) {
         "SELECT position FROM players WHERE team_id = ? AND id > 0",
         [team.id],
       );
-      if (squad.length >= 26) continue;
+      if (squad.length >= 26) {
+        // Plantel cheio e estádio à medida dos adeptos: o excedente vai para
+        // as infraestruturas do clube (sai do jogo). Sem isto estes clubes
+        // passavam o limiar sem ter onde gastar e amontoavam 15–20M€ parados
+        // (com o plantel cheio também já não compram).
+        await runRoomTask(game.roomCode, () =>
+          runExec(game.db, "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?", [
+            NPC_ACADEMY_COST,
+            team.id,
+            NPC_ACADEMY_COST,
+          ]),
+        );
+        continue;
+      }
       const counts: Record<string, number> = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
       for (const p of squad) if (counts[p.position] !== undefined) counts[p.position]++;
       let needPos = "MED";
