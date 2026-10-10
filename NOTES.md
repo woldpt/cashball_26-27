@@ -1,3 +1,8 @@
+## Deploy v26.10.46 no rick (2026-10-10)
+- Commit `b68d9659` + bump `c27c6180`, tag `v26.10.46`: botão Continuar da barra mobile sem corte (etiqueta 8px, sem tracking extra).
+- Push `6b81e737..c27c6180`; tag publicada.
+- Rick: `git pull` + rebuild; backend Healthy.
+
 ## Botão Continuar cortado na barra mobile (2026-10-10)
 - "CONTINUAR" (9px + `tracking-wider`) era mais largo que o círculo de 56px do `PlayButton` e o `overflow-hidden` cortava o R.
 - Fix: etiqueta a 8px `tracking-normal` (`MobileNav.jsx`).
