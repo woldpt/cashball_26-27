@@ -219,6 +219,50 @@ export function quotaFromFormation(
   return { GR: 1, DEF: parts[0], MED: parts[1], ATA: parts[2] };
 }
 
+/** Valor de jogo de um jogador: qualidade × forma, na escala do motor (0,75–1,35). */
+export function matchValue(p: PlayerRow): number {
+  const form = Math.max(0.75, Math.min(1.35, (p?.form ?? FORM_NEUTRAL) / FORM_NEUTRAL));
+  return (p?.skill || 0) * form;
+}
+
+/**
+ * Onze e banco de um NPC: para cada formação escolhem-se os melhores
+ * disponíveis por posição (pelo valor de jogo) e ganha a formação cujo onze
+ * soma mais. Suplentes não contam para a escolha da formação.
+ */
+export function pickAiLineup(
+  rows: PlayerRow[],
+  matchweek: number = 1,
+): { formation: string; starters: PlayerRow[]; bench: PlayerRow[] } {
+  const available = rows
+    .filter((p) => isPlayerAvailable(p, matchweek))
+    .sort((a, b) => matchValue(b) - matchValue(a));
+  const byPos = (pos: string) => available.filter((p) => p.position === pos);
+  const pool = { GR: byPos("GR"), DEF: byPos("DEF"), MED: byPos("MED"), ATA: byPos("ATA") };
+
+  let best = { score: -Infinity, formation: "4-4-2", starters: [] as PlayerRow[] };
+  for (const formation of FORMATIONS) {
+    const w = FORMATION_WEIGHTS[formation];
+    const starters = [
+      ...pool.GR.slice(0, w.GR),
+      ...pool.DEF.slice(0, w.DEF),
+      ...pool.MED.slice(0, w.MED),
+      ...pool.ATA.slice(0, w.ATA),
+    ];
+    const score = starters.reduce((sum, p) => sum + matchValue(p), 0);
+    if (score > best.score) best = { score, formation, starters };
+  }
+
+  // Banco: máx MAX_BENCH_SIZE (1 GR suplente + restantes de campo)
+  const starterIds = new Set(best.starters.map((p) => p.id));
+  const rest = available.filter((p) => !starterIds.has(p.id));
+  const grBench = rest.filter((p) => p.position === "GR").slice(0, 1);
+  const fieldBench = rest
+    .filter((p) => p.position !== "GR")
+    .slice(0, MAX_BENCH_SIZE - grBench.length);
+  return { formation: best.formation, starters: best.starters, bench: [...grBench, ...fieldBench] };
+}
+
 export async function generateAITactic(
   db: any,
   teamId: number,
@@ -243,63 +287,21 @@ export async function generateAITactic(
           teamId,
           matchweek,
         );
-        const oppRows = rows.filter((p) => p.team_id === opponentId);
+        const self = pickAiLineup(selfRows, matchweek);
+        const opp = pickAiLineup(rows.filter((p) => p.team_id === opponentId), matchweek);
 
-        const avgSelf = average(selfRows.map((p) => p.skill || 0));
-        const avgOpp = average(oppRows.map((p) => p.skill || 0));
-
-        const bestFormation = FORMATIONS.reduce((best, form) => {
-          const w = FORMATION_WEIGHTS[form];
-          const score =
-            (average(selfRows.filter((p) => p.position === "GR").map((p) => p.skill || 0)) * w.GR +
-            average(selfRows.filter((p) => p.position === "DEF").map((p) => p.skill || 0)) * w.DEF +
-            average(selfRows.filter((p) => p.position === "MED").map((p) => p.skill || 0)) * w.MED +
-            average(selfRows.filter((p) => p.position === "ATA").map((p) => p.skill || 0)) * w.ATA) /
-            (w.GR + w.DEF + w.MED + w.ATA);
-          return score > best.score ? { score, form } : best;
-        }, { score: -Infinity, form: "4-4-2" }).form;
-
+        // Estilo: onze contra onze (não plantel contra plantel).
+        const avgSelf = average(self.starters.map(matchValue));
+        const avgOpp = average(opp.starters.map(matchValue));
         const ratio = avgOpp > 0 ? avgSelf / avgOpp : 1;
         const style = ratio >= 1.10 ? "OFENSIVO" : ratio <= 0.90 ? "DEFENSIVO" : "EQUILIBRADO";
 
-        // Seleccionar os 11 melhores jogadores por formação e marcar como Titular
-        const w = FORMATION_WEIGHTS[bestFormation];
-        const pickBest = (pool: PlayerRow[], n: number): PlayerRow[] =>
-          [...pool]
-            .filter((p) => isPlayerAvailable(p, matchweek))
-            .sort((a, b) => (b.skill || 0) - (a.skill || 0))
-            .slice(0, n);
-
-        const grs = pickBest(selfRows.filter((p) => p.position === "GR"), w.GR);
-        const defs = pickBest(selfRows.filter((p) => p.position === "DEF"), w.DEF);
-        const meds = pickBest(selfRows.filter((p) => p.position === "MED"), w.MED);
-        const atas = pickBest(selfRows.filter((p) => p.position === "ATA"), w.ATA);
-        const starters = [...grs, ...defs, ...meds, ...atas];
-        const starterIds = new Set(starters.map((p) => p.id));
-
         const positions: Record<number, string> = {};
-        for (const p of starters) {
-          positions[p.id] = "Titular";
-        }
-
-        // Banco: máx MAX_BENCH_SIZE (1 GR suplente + restantes de campo)
-        const nonStarters = selfRows.filter(
-          (p) => !starterIds.has(p.id) && isPlayerAvailable(p, matchweek),
-        );
-        const grBench = nonStarters
-          .filter((p) => p.position === "GR")
-          .sort((a, b) => (b.skill || 0) - (a.skill || 0))
-          .slice(0, 1);
-        const fieldBench = nonStarters
-          .filter((p) => p.position !== "GR")
-          .sort((a, b) => (b.skill || 0) - (a.skill || 0))
-          .slice(0, MAX_BENCH_SIZE - grBench.length);
-        for (const p of [...grBench, ...fieldBench]) {
-          positions[p.id] = "Suplente";
-        }
+        for (const p of self.starters) positions[p.id] = "Titular";
+        for (const p of self.bench) positions[p.id] = "Suplente";
         // Restantes jogadores não aparecem no mapa (tratados como excluídos)
 
-        resolve({ formation: bestFormation, style, positions });
+        resolve({ formation: self.formation, style, positions });
       },
     );
   });

@@ -1,3 +1,10 @@
+## NPC a gerir como diretor desportivo (2026-10-10)
+- Compras pela posição em falta e com o ordenado na conta; vendas só de quem sobra (titulares protegidos, sobrepreço a quem tem mercado, venda de oportunidade 5%/semana); renovação segura quem faz falta; onze por qualidade × forma e formação pelos melhores 11. `npcSquadPlanning.ts` (puro) + `pickAiLineup` em `matchCalculations.ts`. Plano: `docs/plans/2026-10-10-npc-gestao-desportiva.md`.
+- Porquê: auditoria deu 3/10 a compras e vendas e 5/10 ao onze (16 de 50 equipas em 4-2-4).
+- Medido (onze novo vs antigo, 180 mil jogos simplificados): 1,386 vs 1,362 pts/jogo; 4-2-4 desce de 16 para 11 equipas; NPC contra NPC sobe ~6% em golos. Mercado sem medição de épocas (não há simulador).
+- Testado: typecheck, test:npc-squad-planning (12 novos), npc-bid-window, engine-unit (47/47), contractrenewal, contractyear, substitutions, connect-smoke, engineCalibration (2,52), audit:socketio e audit:gamestate B8N0ZH (0 erros).
+- Já falhava antes, não tocado: `test:segment-barrier` B5 (2 eventos tactic_change, esperado 1).
+
 ## 4.ª divisão com estádios iguais (2026-10-10)
 - Lotação de O Elvas, Oliv. Hospital, Malveira, Sintrense e Alcochetense → 5000 (`all_teams.json`); a massa adepta acompanha. Só salas novas. Plano: `docs/plans/2026-10-10-quarta-divisao-estadios-iguais.md`.
 - Porquê: a bilheteira é proporcional à lotação útil e essas equipas (2500–3500) recebiam 50–70% das outras, com o mesmo plantel — sorte no sorteio de equipa dos humanos.

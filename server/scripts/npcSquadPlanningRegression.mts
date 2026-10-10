@@ -17,6 +17,13 @@
  *   S3 — venda de oportunidade: o melhor dos que sobram, nunca um titular
  *   S4 — plantel curto ou sem ninguém a sobrar: não lista
  *   R1 — fraco renova se a posição ficar abaixo do mínimo sem ele
+ *
+ * Antes: o onze saía pela qualidade base (a forma, que conta no jogo, era
+ * ignorada) e a formação pela média de cada sector, suplentes incluídos.
+ *
+ *   L1 — o melhor em baixo de forma perde o lugar para um colega em forma
+ *   L2 — plantel forte em médios joga com 5 médios, mesmo com suplentes fracos
+ *   L3 — lesionado não joga; banco com 1 GR e no máximo MAX_BENCH_SIZE
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -25,7 +32,9 @@ import {
   signingWage,
   NPC_LIST_MARKET_PREMIUM,
   NPC_OPPORTUNITY_SALE_PREMIUM,
+  MAX_BENCH_SIZE,
 } from "../gameConstants";
+import { pickAiLineup } from "../game/matchCalculations";
 
 let nextId = 1;
 const player = (position: string, skill: number, extra: Record<string, any> = {}) => ({
@@ -129,4 +138,35 @@ test("R1: fraco renova se a posição ficar abaixo do mínimo sem ele", () => {
   assert.equal(npcShouldRenew({ ...weak, position: "GR", positionCount: 2 }), true);
   assert.equal(npcShouldRenew({ ...weak, position: "GR", positionCount: 3 }), false);
   assert.equal(npcShouldRenew({ skill: 28, squadAvgSkill: 30, position: "GR", positionCount: 3 }), true);
+});
+
+test("L1: o melhor em baixo de forma perde o lugar", () => {
+  const squad = squadOf({ GR: 2, DEF: 6, MED: 6, ATA: 2 }, 30);
+  const star = player("ATA", 34, { form: 16 });
+  const inForm = player("ATA", 30, { form: 40 });
+  const { starters } = pickAiLineup([...squad, star, inForm]);
+  const ids = starters.map((p) => p.id);
+  assert.ok(ids.includes(inForm.id));
+  assert.ok(!ids.includes(star.id));
+});
+
+test("L2: forte em médios joga com 5 médios, apesar dos suplentes fracos", () => {
+  const squad = [
+    ...squadOf({ GR: 2, DEF: 5, ATA: 2 }, 25),
+    ...squadOf({ MED: 5 }, 40),
+    ...squadOf({ MED: 3 }, 5), // puxavam a média dos médios para baixo
+    ...squadOf({ ATA: 2 }, 30),
+  ];
+  const { formation, starters } = pickAiLineup(squad);
+  assert.equal(starters.length, 11);
+  assert.equal(formation.split("-")[1], "5");
+});
+
+test("L3: lesionado fica de fora; banco com 1 GR e tamanho máximo", () => {
+  const squad = squadOf({ GR: 3, DEF: 8, MED: 8, ATA: 6 }, 30);
+  const injured = player("ATA", 50, { injury_until_matchweek: 5 });
+  const { starters, bench } = pickAiLineup([...squad, injured], 3);
+  assert.ok(![...starters, ...bench].some((p) => p.id === injured.id));
+  assert.equal(bench.filter((p) => p.position === "GR").length, 1);
+  assert.equal(bench.length, MAX_BENCH_SIZE);
 });
