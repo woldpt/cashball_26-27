@@ -2,6 +2,12 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Deploy v26.10.42 no rick (2026-10-10)
+- Tática desktop equilibrada (Moral sobre a Formação, sem vazios). Backend Healthy.
+
+## Deploy v26.10.41 no rick (2026-10-10)
+- Ímpeto visível no Live, remates/golos esperados no intervalo e "Leitura do jogo" no fim. Backend Healthy.
+
 ## Deploy v26.10.40 no rick (2026-10-10)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui o commit de táticas do intervalo (3.ª coluna) e o registo do deploy anterior.

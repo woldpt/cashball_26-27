@@ -1,3 +1,10 @@
+## Correções à economia (2026-10-10)
+- NPC não compram acima de 1,4× o valor; bilhete: 3% de adeptos por euro acima dos 15 € (piso 50%); melhor marcador por divisão (500/250/125/60 mil); NPC só constrói com massa adepta > lotação; teto da folha NPC soma metade da bilheteira semanal (`npcFolhaCeiling`). Plano: `docs/plans/2026-10-10-economia-correcoes.md`.
+- Porquê: auditoria deu 4/10 — um humano vendia a NPC a 5× o valor (8 NPC compravam um jogador de 156 mil a 780 mil), 30 € rendia +58% sem custo, e todos os clubes lucravam sempre.
+- Medido: acima de 1,4× zero NPC compram; a 30 € vão 55% dos adeptos (receita +10%); teto da 1.ª 152 → ~215 mil/semana. Efeito em várias épocas só projetado (sem simulador nem sala de produção).
+- Testado: typecheck, todos os `test:*` do servidor (npc-squad-planning 15, attendance, topscorer, finance-guards com F6 ajustado ao custo com ordenados), audit:socketio e audit:gamestate B8N0ZH (0 erros).
+- Por fechar: nos leilões o NPC ainda licita até 2,5× o valor; `test:segment-barrier` B5 já falhava antes.
+
 ## NPC a gerir como diretor desportivo (2026-10-10)
 - Compras pela posição em falta e com o ordenado na conta; vendas só de quem sobra (titulares protegidos, sobrepreço a quem tem mercado, venda de oportunidade 5%/semana); renovação segura quem faz falta; onze por qualidade × forma e formação pelos melhores 11. `npcSquadPlanning.ts` (puro) + `pickAiLineup` em `matchCalculations.ts`. Plano: `docs/plans/2026-10-10-npc-gestao-desportiva.md`.
 - Porquê: auditoria deu 3/10 a compras e vendas e 5/10 ao onze (16 de 50 equipas em 4-2-4).
@@ -144,9 +151,3 @@ Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-
 - Botões de mentalidade/pressão/conversa: barra segmentada acesa (telemóvel/Tática) ou cartões com ícone e efeito (intervalo desktop e Tática desktop); posse em destaque com emblemas e %; ordens como frase de pílulas que mudam ao toque (sem selects); duelo em 3 mini-cartões com selo (Ganhas/Em risco…). Tática mobile: Moral → Formação+duelo → Instruções → Ordens. `STYLE_OPTIONS` passou para `constants/index.js`.
 - Testado: client lint + check:types, test:mobile 195/195 (concorrência 6), test:tacticpositions, test:briefing; screenshots 360/1280/1440 da Tática e do intervalo vistos.
 - Tática desktop: Moral passou para cima da Formação (coluna 1); coluna do meio só "Instruções" com os cartões a encher a altura; grelha de formações `flex-1 auto-rows-fr` — sem vazios entre colunas.
-
-## Deploy v26.10.42 no rick (2026-10-10)
-- Tática desktop equilibrada (Moral sobre a Formação, sem vazios). Backend Healthy.
-
-## Deploy v26.10.41 no rick (2026-10-10)
-- Ímpeto visível no Live, remates/golos esperados no intervalo e "Leitura do jogo" no fim. Backend Healthy.
