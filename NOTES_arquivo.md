@@ -2,6 +2,11 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Capitães: liderança relativa, nos maus momentos (2026-10-10)
+- Liderança 1–5 calculada (idade, jogos, estatuto, moral — `leadershipOf`); capitão = escolha do treinador (`tactic.captainId`, gravado no assento) ou o maior líder; a braçadeira passa sozinha quando ele sai. Só a DIFERENÇA entre capitães conta: quem sofre golo com melhor líder encurta e enfraquece o ímpeto do adversário (3–13', base 8'). Cliente: seletor na Tática, "C" no campo/intervalo, 4.º cartão no duelo; `utils/leadership.js` ESPELHA o servidor.
+- Corrigido de passagem: o duelo da Tática nunca aparecia em produção (`probableFormation` é objeto, o harness usava string).
+- Testado: engine-unit 44 (U34–U36), simulação 8000 jogos (5★ vs 1★ = ±1,4 pp; golos 2,48), typecheck, regressões do motor, connect-smoke, session-freeze, crash-recovery, audits; client lint/check:types, test:leadership, test:livehelpers, test:mobile 195/195.
+
 ## Familiaridade táctica: estrelas ao abrir Táticas (2026-10-10)
 - Estrelas vazias: o cliente só pedia `requestAllTacticFamiliarity` no botão JOGAR; abrir Táticas pelo menu, sidebar ou reload nunca pedia. Agora `GameContext.jsx` pede ao abrir o separador (com `teamInfo` carregado). Pós-jogo sem gatilho próprio: o `matchResults` já muda para "Ao Vivo".
 - Testado: client lint + check:types (0 erros). Não visto no ecrã — falta ver as estrelas num jogo real.

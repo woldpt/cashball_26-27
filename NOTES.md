@@ -1,3 +1,10 @@
+## Academia dos NPC removida: base de jogadores fixa (2026-10-10)
+- `processNpcInvestment` já não cria jogadores: acima dos 10M€ o excedente vai para obra (se houver adeptos) ou infraestruturas (500 mil/semana, `NPC_INFRA_COST`). Os prospetos já criados nas salas existentes ficam.
+- Porquê: regra do jogo — base de dados de jogadores fixa e eterna, ninguém entra e ninguém sai. A academia entrou a 2026-09-11 (`1c8f9770`) como forma de gastar dinheiro e era o único sítio que criava jogadores (75 em 6 épocas, a acelerar).
+- Medido (`sim:seasons`, 2 salas × 6 épocas): jogadores 1097 em todas as épocas (antes 1189); nenhuma posição em falta; 1.ª divisão com teto ~10,5M. Dinheiro em jogo 213M (antes 169M): as divisões de baixo ficam mais ricas porque deixam de pagar à 1.ª pelos jovens.
+- Por ver: a 5.ª divisão continua a inchar (26 de média, máx. 33) e a perder qualidade (12 → 7) mesmo sem academia — as de cima vendem excedentes para baixo e nos leilões os NPC licitam sem limite de plantel.
+- Testado: typecheck, finance-guards (F7: nenhum jogador novo), connect-smoke, contractrenewal, npc-squad-planning.
+
 ## Dinheiro parado nos NPC ricos (2026-10-10)
 - NPC acima dos 10M€ com o plantel cheio (26) e o estádio à medida dos adeptos passa a pôr 500 mil/semana em infraestruturas (sai do jogo). Antes ficava bloqueado: nem obra, nem academia, nem compras (plantel ≥ 24 não compra).
 - Diagnóstico corrigido: o dinheiro não duplica sempre — sobe 19%, 12%, 7%, 4% e estabiliza perto dos 205M; o salto da época 2 é o patrocínio da 1.ª época pago no fim. O que crescia sem parar eram os grandes da 1.ª (até 19M).
@@ -152,8 +159,3 @@ Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-
 ## Briefing sem espaços vazios (2026-10-10)
 - Duelo em largura total, "Prepara a estratégia" virou faixa fina (`PrepCtaCard`), 3 colunas à mesma altura (ameaças esticam, "último confronto/ambiente" colados à base do radar). `briefing-resp-test.jsx` tem cópia da grelha — mantê-la em sincronia.
 - Testado: lint, check:types, test:mobile 195/195; screenshot 1360 visto.
-
-## Capitães: liderança relativa, nos maus momentos (2026-10-10)
-- Liderança 1–5 calculada (idade, jogos, estatuto, moral — `leadershipOf`); capitão = escolha do treinador (`tactic.captainId`, gravado no assento) ou o maior líder; a braçadeira passa sozinha quando ele sai. Só a DIFERENÇA entre capitães conta: quem sofre golo com melhor líder encurta e enfraquece o ímpeto do adversário (3–13', base 8'). Cliente: seletor na Tática, "C" no campo/intervalo, 4.º cartão no duelo; `utils/leadership.js` ESPELHA o servidor.
-- Corrigido de passagem: o duelo da Tática nunca aparecia em produção (`probableFormation` é objeto, o harness usava string).
-- Testado: engine-unit 44 (U34–U36), simulação 8000 jogos (5★ vs 1★ = ±1,4 pp; golos 2,48), typecheck, regressões do motor, connect-smoke, session-freeze, crash-recovery, audits; client lint/check:types, test:leadership, test:livehelpers, test:mobile 195/195.

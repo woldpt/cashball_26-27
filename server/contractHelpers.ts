@@ -4,15 +4,13 @@ import {
   CONTRACT_LENGTH_WEEKS,
   getAgentName,
   fairWeeklyWage,
-  recalcPlayerValue,
   wealthAgentMultiplier,
   npcFolhaCeiling,
   NPC_INVEST_BUDGET_THRESHOLD,
-  NPC_ACADEMY_COST,
+  NPC_INFRA_COST,
   NPC_WAGE_CUT_PER_EVENT,
   FORM_NEUTRAL,
   RES_NEUTRAL,
-  MORALE_NEUTRAL,
   RES_MIN,
   RES_MAX,
   ECON_FORM_REF,
@@ -35,7 +33,6 @@ import {
   logClubNews,
   logClubNewsOnce,
 } from "./coreHelpers";
-import { JUNIOR_FIRST_NAMES, JUNIOR_LAST_NAMES } from "./game/playerUtils";
 
 type AnyRow = Record<string, any>;
 
@@ -560,9 +557,7 @@ export function createContractHelpers(deps: ContractDeps) {
   /**
    * Direção investe excedente. NPC com banco acima do limiar gasta 1 ação
    * por semana até regressar ao limiar: obra (300k, se houver margem até
-   * 120k e adeptos para encher), academia (500k → prospeto real para o
-   * plantel, com ordenado) ou, com o plantel cheio, infraestruturas (500k
-   * que saem do jogo).
+   * 120k e adeptos para encher) ou infraestruturas (500k que saem do jogo).
    * Esvazia as pilhas multimilionárias (Porto 60M€) sem árbitro central.
    */
   const NPC_STADIUM_BUILD_COST = 300000;
@@ -606,75 +601,19 @@ export function createContractHelpers(deps: ContractDeps) {
         }
         continue;
       }
-      if (team.budget - NPC_ACADEMY_COST < NPC_INVEST_BUDGET_THRESHOLD) continue;
-      const squad = await runAll<AnyRow>(
-        game.db,
-        "SELECT position FROM players WHERE team_id = ? AND id > 0",
-        [team.id],
+      if (team.budget - NPC_INFRA_COST < NPC_INVEST_BUDGET_THRESHOLD) continue;
+      // Sem obra para fazer: o excedente vai para as infraestruturas do clube
+      // (sai do jogo). Nunca cria jogadores — a base de dados de jogadores é
+      // fixa: ninguém entra e ninguém sai. (A "academia" que aqui esteve
+      // criava um prospeto por 500k e empurrava os mais fracos em cascata até
+      // à 5.ª divisão.)
+      await runRoomTask(game.roomCode, () =>
+        runExec(game.db, "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?", [
+          NPC_INFRA_COST,
+          team.id,
+          NPC_INFRA_COST,
+        ]),
       );
-      if (squad.length >= 26) {
-        // Plantel cheio e estádio à medida dos adeptos: o excedente vai para
-        // as infraestruturas do clube (sai do jogo). Sem isto estes clubes
-        // passavam o limiar sem ter onde gastar e amontoavam 15–20M€ parados
-        // (com o plantel cheio também já não compram).
-        await runRoomTask(game.roomCode, () =>
-          runExec(game.db, "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?", [
-            NPC_ACADEMY_COST,
-            team.id,
-            NPC_ACADEMY_COST,
-          ]),
-        );
-        continue;
-      }
-      const counts: Record<string, number> = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
-      for (const p of squad) if (counts[p.position] !== undefined) counts[p.position]++;
-      let needPos = "MED";
-      for (const pos of ["GR", "DEF", "MED", "ATA"]) {
-        if ((counts[pos] ?? 0) < (counts[needPos] ?? 0)) needPos = pos;
-      }
-      const skill = 12 + Math.floor(Math.random() * 11);
-      const potential = 30 + Math.floor(Math.random() * 16);
-      const name = `${JUNIOR_FIRST_NAMES[Math.floor(Math.random() * JUNIOR_FIRST_NAMES.length)]} ${JUNIOR_LAST_NAMES[Math.floor(Math.random() * JUNIOR_LAST_NAMES.length)]}`;
-      const wage = fairWeeklyWage(skill);
-      // Débito + prospeto na mesma transação: um crash a meio não deixa o
-      // clube sem os 500k e sem o jogador.
-      const prospectId = await runRoomTask(game.roomCode, async () => {
-        await runExec(game.db, "BEGIN");
-        try {
-          const paid = await runExec(
-            game.db,
-            "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
-            [NPC_ACADEMY_COST, team.id, NPC_ACADEMY_COST],
-          );
-          if (paid.changes === 0) {
-            await runExec(game.db, "ROLLBACK").catch(() => {});
-            return 0;
-          }
-          const id = await new Promise<number>((resolve, reject) => {
-            game.db.run(
-              "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, morale, nationality, value, wage, potential, contract_until_matchweek, contract_start_epoch, joined_matchweek, transfer_cooldown_until_matchweek, transfer_status, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', ?)",
-              [name, needPos, skill, 17 + Math.floor(Math.random() * 3), FORM_NEUTRAL, RES_NEUTRAL, 3, MORALE_NEUTRAL, "🇵🇹", recalcPlayerValue(skill), wage, potential, getSeasonEndMatchweek(game.matchweek), currentEpoch(game), currentSlot(game), currentSlot(game), team.id],
-              function (this: any, err: Error | null) {
-                if (err) reject(err);
-                else resolve(this?.lastID ?? 0);
-              },
-            );
-          });
-          await runExec(game.db, "COMMIT");
-          return id;
-        } catch (err) {
-          await runExec(game.db, "ROLLBACK").catch(() => {});
-          console.error(`[${game.roomCode}] ❌ academia NPC falhou:`, err);
-          return 0;
-        }
-      });
-      if (!prospectId) continue;
-      logClubNews(game, "academy", "Prospeto da Academia", team.id, {
-        amount: NPC_ACADEMY_COST,
-        player_id: prospectId || undefined,
-        player_name: name,
-        description: `${name} (${needPos}) sobe da academia — investimento da direção.`,
-      });
     }
   };
 

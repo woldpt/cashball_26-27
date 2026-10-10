@@ -106,9 +106,9 @@ export function wealthAgentMultiplier(budget: number): number {
   );
 }
 
-/** Direção NPC investe excedente: limiar de riqueza e custo da academia. */
+/** Direção NPC investe excedente: limiar de riqueza e custo de cada investimento em infraestruturas. */
 export const NPC_INVEST_BUDGET_THRESHOLD = 10000000;
-export const NPC_ACADEMY_COST = 500000;
+export const NPC_INFRA_COST = 500000;
 
 /** Piso de skill nas compras NPC: rejeita abaixo de (nível da equipa − margem). */
 export const NPC_BUY_FLOOR_MARGIN = 10;

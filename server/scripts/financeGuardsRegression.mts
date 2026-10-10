@@ -7,8 +7,8 @@
  *   F4 — 2 buyPlayer em paralelo acima do saldo: o saldo nunca fica < 0
  *   F5 — fireStaff 2× em paralelo paga uma só indemnização
  *   F6 — compra NPC: movimento certo; jogador já vendido não mexe em saldos
- *   F7 — NPC acima do limiar com o plantel cheio investe em infraestruturas;
- *        abaixo do limiar não gasta
+ *   F7 — NPC acima do limiar investe em infraestruturas e nunca cria
+ *        jogadores (base de dados fixa); abaixo do limiar não gasta
  *
  * BD em memória com o schema real (db/schema.sql).
  * Run: cd server && npm run test:finance-guards
@@ -28,7 +28,7 @@ const { registerTransferSocketHandlers } = require("../socketTransferHandlers");
 const { fireStaff } = require("../staffHelpers");
 const { createNpcTransferHelpers } = require("../npcTransferHelpers");
 const { createContractHelpers } = require("../contractHelpers");
-const { NPC_INVEST_BUDGET_THRESHOLD, NPC_ACADEMY_COST } = require("../gameConstants");
+const { NPC_INVEST_BUDGET_THRESHOLD, NPC_INFRA_COST } = require("../gameConstants");
 const { staffSeverance } = require("../gameConstants");
 const { createWeeklyFlowHelpers } = require("../weeklyFlowHelpers");
 const { registerFinanceSocketHandlers } = require("../socketFinanceHandlers");
@@ -364,15 +364,16 @@ test("F6 — compra NPC: movimento certo; jogador já vendido não mexe em saldo
   assert.equal(await budgetOf(db, 3), 1000, "equipa 3 intacta");
 });
 
-test("F7 — NPC rico com o plantel cheio investe o excedente; abaixo do limiar não gasta", async () => {
+test("F7 — NPC rico investe o excedente sem criar jogadores; abaixo do limiar não gasta", async () => {
   const db = await openDb();
-  const rich = NPC_INVEST_BUDGET_THRESHOLD + 2 * NPC_ACADEMY_COST;
+  const rich = NPC_INVEST_BUDGET_THRESHOLD + 2 * NPC_INFRA_COST;
   const modest = NPC_INVEST_BUDGET_THRESHOLD - 1;
   await seedTeams(db, { 1: rich, 2: modest });
-  // Estádio à medida dos adeptos (sem obra) e plantel cheio (sem academia).
+  // Estádio à medida dos adeptos (sem obra). Plantel curto de propósito:
+  // era aqui que a antiga academia criava um jogador novo.
   await runExec(db, "UPDATE teams SET stadium_capacity = 50000, fanbase = 40000");
   for (const teamId of [1, 2]) {
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 18; i++) {
       await runExec(
         db,
         "INSERT INTO players (name, position, skill, value, wage, team_id) VALUES (?, 'MED', 30, 100, 10, ?)",
@@ -392,11 +393,11 @@ test("F7 — NPC rico com o plantel cheio investe o excedente; abaixo do limiar 
   });
   await contracts.processNpcInvestment(game);
   await drain(game);
-  assert.equal(await budgetOf(db, 1), rich - NPC_ACADEMY_COST, "rico: um investimento por semana");
+  assert.equal(await budgetOf(db, 1), rich - NPC_INFRA_COST, "rico: um investimento por semana");
   assert.equal(await budgetOf(db, 2), modest, "abaixo do limiar: intacto");
   assert.equal(
-    (await runGet(db, "SELECT COUNT(*) AS n FROM players WHERE team_id = 1")).n,
-    26,
-    "plantel cheio: sem prospeto novo",
+    (await runGet(db, "SELECT COUNT(*) AS n FROM players")).n,
+    36,
+    "ninguém entra na base de dados de jogadores",
   );
 });
