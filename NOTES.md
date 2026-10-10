@@ -1,3 +1,7 @@
+## Familiaridade táctica: estrelas ao abrir Táticas (2026-10-10)
+- Estrelas vazias: o cliente só pedia `requestAllTacticFamiliarity` no botão JOGAR; abrir Táticas pelo menu, sidebar ou reload nunca pedia. Agora `GameContext.jsx` pede ao abrir o separador (com `teamInfo` carregado). Pós-jogo sem gatilho próprio: o `matchResults` já muda para "Ao Vivo".
+- Testado: client lint + check:types (0 erros). Não visto no ecrã — falta ver as estrelas num jogo real.
+
 ## Ímpeto visível, remates ao intervalo e leitura do jogo (2026-10-10)
 - Live: chip "🔥 <equipa> por cima · mais N'" durante os 8' a seguir a um golo (espelha `momentumMinutes`; `liveMomentum` em `liveHelpers.js`, sem mexer no servidor). Pós-jogo: cartão "Leitura do jogo" (`matchVerdict`: expulsão cedo, golos esperados vs resultado, golo no embalo).
 - Intervalo: linha "Remates · Golos esp." (`ShotLine`) no bloco da posse (desktop) e sob "Intervalo" (telemóvel); coluna da Tática com `[&>*]:shrink-0` para o bloco não ser cortado.
@@ -127,9 +131,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - RoomHub: bugs (mensagem perdida no gap, convites presos, kick sem confirmação), mensagens agrupadas + sistema intercalado + scroll inteligente, split (`RoomHub` casca + `RoomHubPanel` só aberto, `CoachRow`, `ChatMessages`, `ChatComposer`, `useRoomInvites`), layout novo (cabeçalho único, folha inferior no mobile). `chatMessagesRef` saiu do GameContext.
 - WaitingCoachesModal: hero "À espera de X" + barra segmentada, banner de pausa com coaches offline, reutiliza `ChatMessages`/`ChatComposer`. Planos em `docs/plans/2026-10-06-*`.
 - Testado: lint, check:types, build; harnesses `roomhub-resp-test` e `waiting-coaches-test` PASS em 375×667, 667×375, 768×1024, 1280×800 + capturas revistas (lista de coaches do modal subiu a 40 % da altura no mobile). Fluxo real com 2 sessões por testar.
-
-## Redesign Ficha do jogador · Perfil de clube (2026-10-06)
-- Ficha: cabeçalho tipo carta (cores do clube, skills no topo), faixa Valor/Ordenado/Contrato/Nota, desempenho em mosaicos, prémios em medalhas, transferências em linha do tempo. Gráfico da skill novo (área, crosshair + tooltip, setas no teclado, tabela para leitores de ecrã). Perfil de clube: chips no cabeçalho, próximo jogo em "duelo", resultado em pastilha colorida, top 3 com medalhas, Clube em mosaicos com logótipo do patrocinador, Jogos separados em Resultados/Por jogar.
-- Fix: capacidade do estádio no perfil caía sempre em 10 000; harness `teamsquad` partia (`useGame` sem provider).
-- Fix global: o CSS da Google (sem layer) impunha 24px a todos os `material-symbols-outlined` e `text-[Npx]` era ignorado na app inteira; a fonte passou do `<link>` do `index.html` para `@import … layer(base)` no `index.css` (as utilities voltam a mandar). test:mobile 33/38 = mesmas 5 falhas antigas que no HEAD (assistant, journal, landing, stadiumtab, topwidgets) + mosaico de capturas revisto.
-- Testado: lint (só o erro antigo do landing-resp-test), check:types, test:mobile playerhistory/teamsquad PASS 320–430 + capturas 390/1280 com a fonte dos ícones.

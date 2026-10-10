@@ -1544,6 +1544,15 @@ year: seasonYear,
 		[teams, me?.teamId],
 	);
 
+	// Familiaridade táctica: o ecrã Táticas só a recebe por pedido. Pede-se ao
+	// abrir o separador (sidebar, menu, reload ou JOGAR); antes só o JOGAR
+	// pedia e as estrelas ficavam vazias. `teamInfo` garante que a sala já
+	// carregou (senão o servidor não encontra o jogador).
+	useEffect(() => {
+		if (activeTab !== "tactic" || !teamInfo?.id) return;
+		socket.emit("requestAllTacticFamiliarity");
+	}, [activeTab, teamInfo?.id]);
+
 	const myMatch = useMemo(
 		() =>
 			matchResults?.results?.find(
