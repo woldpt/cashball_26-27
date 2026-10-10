@@ -8,6 +8,8 @@
  *   B2 — posição cheia não recebe mais ninguém
  *   B3 — o preço cabe mas preço + ordenados não: não compra
  *   B4 — abaixo do piso de qualidade ou da própria equipa: fora
+ *   B5 — pedido acima de NPC_BUY_MAX_VALUE_RATIO × valor: fora (um humano
+ *        vendia a NPC por 5× o valor)
  *
  * Antes: com o plantel cheio ia à lista o mais fraco, de qualquer posição, ao
  * valor de tabela; e a renovação só olhava à qualidade.
@@ -30,6 +32,7 @@ import assert from "node:assert/strict";
 import { rankNpcBuyTargets, pickNpcListing, npcShouldRenew } from "../npcSquadPlanning";
 import {
   signingWage,
+  NPC_BUY_MAX_VALUE_RATIO,
   NPC_LIST_MARKET_PREMIUM,
   NPC_OPPORTUNITY_SALE_PREMIUM,
   MAX_BENCH_SIZE,
@@ -84,6 +87,14 @@ test("B4: abaixo do piso ou da própria equipa fica de fora", () => {
   const own = listed("MED", 40, 10_000);
   own.team_id = 1;
   assert.equal(buy(squad, [listed("MED", 19, 10_000), own]).length, 0);
+});
+
+test("B5: pedido acima do máximo sobre o valor fica de fora", () => {
+  const squad = squadOf({ GR: 2, DEF: 6, MED: 6, ATA: 5 });
+  const value = 30 * 1000;
+  const fair = listed("MED", 30, Math.floor(value * NPC_BUY_MAX_VALUE_RATIO));
+  const greedy = listed("MED", 30, value * 5);
+  assert.deepEqual(buy(squad, [greedy, fair]).map((t) => t.player.id), [fair.id]);
 });
 
 const list = (squad: any[], rolls: number[], divisionLevel = 100) => {

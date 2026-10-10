@@ -8,6 +8,7 @@ import {
   NPC_POS_MAX,
   NPC_BUY_BUDGET_SHARE,
   NPC_BUY_BUDGET_SHARE_URGENT,
+  NPC_BUY_MAX_VALUE_RATIO,
   NPC_POS_KEEP,
   NPC_LIST_MARKET_PREMIUM,
   NPC_LIST_SQUAD_THRESHOLDS,
@@ -30,8 +31,9 @@ export function countByPosition(squad: AnyRow[]): Record<string, number> {
 /**
  * Alvos de compra na lista de transferências, por ordem de preferência:
  * primeiro a posição em falta, depois a mais curta, e dentro dela o melhor.
- * Fica de fora quem não chega ao piso, quem joga numa posição cheia e quem
- * não cabe no orçamento com os ordenados até ao fim da época.
+ * Fica de fora quem não chega ao piso, quem joga numa posição cheia, quem é
+ * pedido muito acima do valor e quem não cabe no orçamento com os ordenados
+ * até ao fim da época.
  */
 export function rankNpcBuyTargets(args: {
   teamId: number;
@@ -56,6 +58,7 @@ export function rankNpcBuyTargets(args: {
     const listed =
       player.transfer_price > 0 ? player.transfer_price : Math.round((player.value || 0) * 1.2);
     if (listed <= 0) continue;
+    if (listed > (player.value || 0) * NPC_BUY_MAX_VALUE_RATIO) continue;
     // Contra-oferta: preço que aperta o orçamento (> 35%) negoceia-se a 85%.
     const price = listed > budget * 0.35 ? Math.round(listed * 0.85) : listed;
     if (price <= 0) continue;
