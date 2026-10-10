@@ -12,6 +12,7 @@
     "seed": "node db/seed.js",
     "seed:real": "node db/seed.js --real",
     "audit:gamestate": "tsx scripts/gameStateAudit.ts",
+    "sim:seasons": "tsx scripts/seasonSim.mts",
     "audit:session": "tsx scripts/sessionAudit.ts",
     "audit:socketio": "tsx scripts/socketioContractValidator.ts",
     "fetch:zerozero": "tsx scripts/fetchZerozeroSquads.ts",

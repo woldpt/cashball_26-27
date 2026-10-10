@@ -1539,3 +1539,7 @@ function fatalShutdown() {
 }
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+// Ponte para o simulador de épocas (scripts/seasonSim.mts): corre o ciclo real
+// do jogo no mesmo processo, sem sockets. Não é usada em produção.
+export const simBridge = { checkAllReady, getGame, saveGameState };

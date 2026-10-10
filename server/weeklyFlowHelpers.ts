@@ -2336,6 +2336,22 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         );
         return;
       }
+      // Simulador de épocas (scripts/seasonSim.mts): tempo de lobby para os
+      // leilões fecharem antes da semana seguinte — sem humanos a sala salta
+      // de jornada em jornada e os leilões ficam sempre em pausa. Nunca
+      // definido em produção.
+      const simHold = Number((game as any).simLobbyHoldMs) || 0;
+      const simSlot = `${game.season}:${game.calendarIndex}`;
+      if (simHold > 0 && (game as any)._simLobbyHeldFor !== simSlot) {
+        if (!(game as any)._simLobbyTimer) {
+          (game as any)._simLobbyTimer = setTimeout(() => {
+            (game as any)._simLobbyTimer = null;
+            (game as any)._simLobbyHeldFor = simSlot;
+            checkAllReady(game).catch(() => {});
+          }, simHold);
+        }
+        return;
+      }
       segmentRunning[game.roomCode] = true;
       // Gate único do 11+7 no setReady (socketGameplayHandlers): quem chega
       // aqui já validou o 11 + banco ao clicar "Ir a jogo". Sem revalidação —

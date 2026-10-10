@@ -23,6 +23,7 @@
 | Congelamento/presença (assentos) | `cd server && npm run test:session-freeze` |
 | Regressão do push (web-push/auth mockados) | `cd server && npm run test:push` |
 | Smoke de ligação (handlers registados) | `cd server && npm run test:connect-smoke` |
+| Simular épocas só com NPC (jogo real, relógio virtual; ~15 s/época) | `cd server && npm run sim:seasons -- --seasons 3 [--runs N] [--json f.json] [--keep]` |
 | Repair job offer | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
 | Crash-restart E2E (clona p/ `game_CRASHT.db`, limpa ao fim) | `cd server && npm run test:crash-recovery` (origem: `CRASHTEST_ROOM=XXXX`) |
 | Stack completa | `docker compose up --build` |
