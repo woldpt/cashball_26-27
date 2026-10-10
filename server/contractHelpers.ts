@@ -368,11 +368,9 @@ export function createContractHelpers(deps: ContractDeps) {
           "SELECT position, COUNT(*) as cnt, SUM(skill) as skillSum FROM players WHERE team_id = ? AND id > 0 GROUP BY position",
           [player.team_id],
         );
-        const posMap: Record<string, number> = {};
         let squadSize = 0;
         let skillSum = 0;
         for (const row of posCounts) {
-          posMap[row.position] = row.cnt;
           squadSize += row.cnt;
           skillSum += row.skillSum || 0;
         }
@@ -381,12 +379,9 @@ export function createContractHelpers(deps: ContractDeps) {
         const isGoodEnough =
           squadSize === 0 ||
           (player.skill || 0) >= (skillSum / squadSize) * NPC_RENEW_MIN_SKILL_RATIO;
-        const posCount = posMap[player.position] ?? 0;
-        const posMin = POS_MIN[player.position] ?? 3;
-        const isNeeded = posCount < posMin;
         const isAffordable = (team as any).budget > NPC_RENEW_MIN_BUDGET;
 
-        if (isNeeded && isAffordable && isGoodEnough) {
+        if (isAffordable && isGoodEnough) {
           const fairWage = fairWageOf(player);
           const seasonEnd = getSeasonEndMatchweek(game.matchweek);
           await new Promise<void>((resolve) => {

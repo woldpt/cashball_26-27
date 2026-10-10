@@ -1,3 +1,8 @@
+## NPC: piso de compra pela divisão e menos leilões (2026-10-10)
+- Compras NPC (leilão e lista): piso = máx(nível próprio, nível da divisão) − 10 (`getDivisionLevels`, `npcTransferHelpers.ts`). Contratos NPC que acabam: renova quem for bom e couber no orçamento, sem exigir posição curta (`contractHelpers.ts`) — antes quase todos iam a leilão em massa.
+- Porquê: sala PYG2GT — Vit. Setúbal comprou 16 jogadores de média 20 (divisão 32); 58 leilões numa jornada.
+- Testado: typecheck, test:contractrenewal, test:contractyear, test:npc-bid-window; SQL do nível validado numa cópia da sala (div. 2 = 34,8). Não visto numa época completa — falta confirmar.
+
 ## Ecrã de terceiros fecha no intervalo e no fim (2026-10-10)
 - O ecrã de um jogo que não é o nosso (`showMatchDetail`) ficava aberto no fim do jogo e reaparecia na 2.ª parte. Agora fecha em `halfTimeResults`, `matchResults`, `cupHalfTimeResults`, `cupETHalfTime` e `cupRoundResults`; `LiveView` não abre jogos durante o intervalo.
 - Porquê: pedido do utilizador — o relógio pode continuar, mas o ecrã não deve ficar ativo depois de o jogo parar. Os dois setters faltavam em `useSocketListeners` (`GameContext.jsx`).

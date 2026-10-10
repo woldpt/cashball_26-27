@@ -113,6 +113,20 @@ interface NpcTransferDeps {
 export function createNpcTransferHelpers(deps: NpcTransferDeps) {
   const { runAll, getSeasonEndMatchweek, io } = deps;
 
+  /** Nível médio por divisão: média, por equipa, dos 14 melhores (id > 0), e depois entre equipas. */
+  const getDivisionLevels = async (game: ActiveGame): Promise<Record<number, number>> => {
+    const rows = await runAll<{ division: number; level: number }>(
+      game.db,
+      `SELECT t.division AS division, AVG(x.s) AS level FROM (
+         SELECT team_id, AVG(skill) AS s FROM (
+           SELECT team_id, skill, ROW_NUMBER() OVER (PARTITION BY team_id ORDER BY skill DESC) AS rn
+           FROM players WHERE team_id IS NOT NULL AND id > 0
+         ) WHERE rn <= 14 GROUP BY team_id
+       ) x JOIN teams t ON t.id = x.team_id GROUP BY t.division`,
+    );
+    return Object.fromEntries(rows.map((r) => [r.division, r.level || 0]));
+  };
+
   const processNpcTransferActivity = async (
     game: ActiveGame,
     listPlayerOnMarket: (
@@ -142,6 +156,8 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
       [CONTRACT_LENGTH_WEEKS, currentEpoch(game)],
     );
 
+    const divLevels = await getDivisionLevels(game);
+
     for (const npcTeam of npcTeams) {
       const squadRows = await runAll(
         game.db,
@@ -159,8 +175,12 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         "SELECT skill FROM players WHERE team_id = ? AND id > 0 ORDER BY skill DESC LIMIT 14",
         [npcTeam.id],
       );
-      const teamLevel = levelRows.length > 0
+      const ownLevel = levelRows.length > 0
         ? levelRows.reduce((s, p) => s + (p.skill || 0), 0) / levelRows.length
+        : 0;
+      // Piso nunca abaixo do nível da divisão: plantel fraco não se afunda sozinho.
+      const teamLevel = ownLevel > 0
+        ? Math.max(ownLevel, divLevels[npcTeam.division ?? 3] ?? 0)
         : 0;
 
       for (const player of marketPlayers) {
@@ -364,6 +384,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
             const playerValue = playerInfo.value || 0;
             const playerPosition: string = playerInfo.position || "MED";
             const playerSkill: number = playerInfo.skill || 50;
+            const divLevelsP = getDivisionLevels(game);
 
             game.db.all(
               "SELECT * FROM teams WHERE budget > ?",
@@ -385,7 +406,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                   game.db.all(
                     "SELECT id, position, skill FROM players WHERE team_id = ?",
                     [npcTeam.id],
-                    (errS: any, squadRows: any[]) => {
+                    async (errS: any, squadRows: any[]) => {
                       processed++;
                       if (errS || !squadRows) {
                         if (processed === npcTeams.length) return;
@@ -419,7 +440,10 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                       const avgSkill = levelRows.length > 0
                         ? levelRows.reduce((s, p) => s + ((p as any).skill || 0), 0) / levelRows.length
                         : playerSkill;
-                      if (playerSkill < avgSkill - NPC_BUY_FLOOR_MARGIN) return;
+                      // Piso nunca abaixo do nível da divisão: plantel fraco não se afunda sozinho.
+                      const divLevels = await divLevelsP;
+                      const floorLevel = Math.max(avgSkill, divLevels[npcTeam.division ?? 3] ?? 0);
+                      if (playerSkill < floorLevel - NPC_BUY_FLOOR_MARGIN) return;
 
                       // Probabilidade de participação
                       let interestProb = 0.0;
