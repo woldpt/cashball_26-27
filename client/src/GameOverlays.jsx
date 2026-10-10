@@ -28,6 +28,35 @@ import { RoomSettings } from "./components/room/RoomSettings.jsx";
  * GameLayout para o chrome não agregar a orquestração dos modais nem a
  * sequenciação pós-jogo (postMatchFlow).
  */
+/**
+ * Faixa discreta enquanto o servidor fecha a jornada; só surge após 1 s.
+ *
+ * @param {Object} props
+ * @param {boolean} props.active - o servidor está a fechar a jornada.
+ * @returns {JSX.Element|null}
+ */
+function FinalizingBanner({ active }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    if (!active) return undefined;
+    const t = setTimeout(() => setShow(true), 1000);
+    return () => {
+      clearTimeout(t);
+      setShow(false);
+    };
+  }, [active]);
+  if (!show) return null;
+  return (
+    <div
+      role="status"
+      className="fixed top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-surface-container-high px-3 py-1 text-xs text-on-surface shadow-lg pointer-events-none"
+    >
+      <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>
+      A fechar a jornada…
+    </div>
+  );
+}
+
 export function GameOverlays() {
   const {
     activeTab,
@@ -39,6 +68,7 @@ export function GameOverlays() {
     cupDraw,
     cupDrawRevealIdx,
     finalWhistle,
+    finalizing,
     cupMatchRoundName,
     currentCupRound,
     cupPenaltyKickIdx,
@@ -358,6 +388,8 @@ export function GameOverlays() {
           />
         )}
       </AnimatePresence>
+
+      <FinalizingBanner active={finalizing} />
 
       {/* Modal de espera multiplayer no intervalo */}
       {/* Espectadores da Taça (sem fixture nesta ronda → !myMatch) não têm

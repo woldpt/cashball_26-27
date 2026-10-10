@@ -182,6 +182,8 @@ export function GameProvider({
 	const [postMatchMood, setPostMatchMood] = useState(null);
 	// Selo transitório do apito final (som + carimbo no hero do meu jogo).
 	const [finalWhistle, setFinalWhistle] = useState(null);
+	// Servidor a fechar a jornada (resultados, finanças, treinos, moral…).
+	const [finalizing, setFinalizing] = useState(false);
 	const [playerSearchData, setPlayerSearchData] = useState({
 		results: [],
 		total: 0,
@@ -1075,6 +1077,7 @@ year: seasonYear,
 			setCupRoundResults,
 			setPendingCupRoundResults,
 			setMatchResults,
+			setFinalizing,
 			setAllMatchResults,
 			setLiveMinute,
 			setSubsMade,
@@ -1944,6 +1947,7 @@ year: seasonYear,
 		postMatchMood,
 		setPostMatchMood,
 		finalWhistle,
+		finalizing,
 		playerSearchData,
 		setPlayerSearchData,
 		playerSearchLoading,
@@ -2085,7 +2089,7 @@ pendingRoomInvite, setPendingRoomInvite, onAcceptRoomInvite, cupDraw, setCupDraw
 		setPlayerHistoryModal, financeData, sponsorState, setSponsorState, showTransferSales, setShowTransferSales,
 		showTransferPurchases, setShowTransferPurchases, showTicketBreakdown, setShowTicketBreakdown, selectedTeam, selectedTeamSquad,
 		selectedTeamLoading,
-transferProposalModal, setTransferProposalModal, signingCelebration, setSigningCelebration, postMatchMood, setPostMatchMood, finalWhistle,
+transferProposalModal, setTransferProposalModal, signingCelebration, setSigningCelebration, postMatchMood, setPostMatchMood, finalWhistle, finalizing,
 		playerSearchData, setPlayerSearchData, playerSearchLoading, setPlayerSearchLoading, nextPlayerSearchId, cupBracketData,
 		calendarData, calFilter, setCalFilter, tactic, setTactic, tacticFamiliarity,
 		setTacticFamiliarity, allTacticFamiliarity, setAllTacticFamiliarity, liveMinute, isPlayingMatch, waitingForResults,

@@ -383,6 +383,11 @@ export function registerMatchListeners(handlers, refs, ctx) {
 		});
 	});
 
+	socket.on("roundFinalizing", ({ active }) => handlers.setFinalizing(!!active));
+	// Ligação nova: um "active:false" perdido não pode deixar a faixa presa.
+	const clearFinalizing = () => handlers.setFinalizing(false);
+	socket.on("connect", clearFinalizing);
+
 	socket.on("halfTimeResults", (data) => {
 		if (!ctx.inRoom()) return;
 		console.warn("[HALFTIME] halfTimeResults received", data);
@@ -800,6 +805,8 @@ export function registerMatchListeners(handlers, refs, ctx) {
 		socket.off("matchMinuteUpdate");
 		socket.off("matchResults");
 		socket.off("standingsUpdated");
+		socket.off("roundFinalizing");
+		socket.off("connect", clearFinalizing);
 		socket.off("halfTimeResults");
 		socket.off("matchActionRequired");
 		socket.off("matchActionResolved");

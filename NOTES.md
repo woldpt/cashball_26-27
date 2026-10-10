@@ -1,3 +1,8 @@
+## Faixa "A fechar a jornada…" (2026-10-10)
+- O servidor avisa (`roundFinalizing`) quando começa e acaba o fecho da jornada; o cliente mostra uma faixa discreta no topo só se passar 1 s. Limpa-se também ao religar.
+- Porquê: depois do apito final treinos, moral e finanças ainda estavam a ser calculados sem qualquer aviso.
+- Testado: typecheck, lint, check:types, audit:socketio, connect-smoke, test:mobile (200/200). Não vi a faixa num jogo real.
+
 ## Deploy v26.10.51 no rick (2026-10-10)
 - Push `d6aafb21..837f975c` (amigável da Taça com estádio à sorte) + bump `APP_VERSION` para v26.10.51. Tag `v26.10.51` publicada.
 - Rick: `git pull` + `docker compose up --build -d` → `backend Healthy`. Sem erros no rebuild.

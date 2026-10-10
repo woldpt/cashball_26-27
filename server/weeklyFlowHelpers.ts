@@ -1114,6 +1114,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // Apito final: a semana jogada fica fixada até ao próximo jogo (ver `newsSlotFor`).
     game._whistleSlot = currentSlot(game);
     saveGameState(game);
+    io.to(game.roomCode).emit("roundFinalizing", { active: true });
 
     const finalizeWatchdog = setTimeout(() => {
       if (game.gamePhase !== "match_finalizing") return;
@@ -1138,6 +1139,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       }
     } finally {
       clearTimeout(finalizeWatchdog);
+      io.to(game.roomCode).emit("roundFinalizing", { active: false });
     }
   }
 
