@@ -8,6 +8,12 @@ import {
   NPC_POS_MAX,
   NPC_BUY_BUDGET_SHARE,
   NPC_BUY_BUDGET_SHARE_URGENT,
+  NPC_POS_KEEP,
+  NPC_LIST_MARKET_PREMIUM,
+  NPC_LIST_SQUAD_THRESHOLDS,
+  NPC_OPPORTUNITY_SALE_CHANCE,
+  NPC_OPPORTUNITY_SALE_PREMIUM,
+  NPC_RENEW_MIN_SKILL_RATIO,
 } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
@@ -64,4 +70,63 @@ export function rankNpcBuyTargets(args: {
       (b.player.skill || 0) - (a.player.skill || 0) ||
       a.price - b.price,
   );
+}
+
+/**
+ * Quem vai à lista de transferências esta semana (ou ninguém). Só sai quem
+ * sobra: fora dos NPC_POS_KEEP melhores da posição, que são os titulares em
+ * qualquer formação. Plantel cheio → sai o mais fraco, ao valor de tabela
+ * (com sobrepreço se estiver ao nível da divisão). De vez em quando sai o
+ * melhor dos que sobram, mais caro.
+ * `squad` é o plantel inteiro; `eligibleIds` os que o contrato deixa listar.
+ */
+export function pickNpcListing(args: {
+  squad: AnyRow[];
+  eligibleIds: Set<number>;
+  divisionLevel: number;
+  rng?: () => number;
+}): { player: AnyRow; price: number } | null {
+  const { squad, eligibleIds, divisionLevel, rng = Math.random } = args;
+  // Quem já está à venda conta como saído.
+  const staying = squad.filter((p) => p.id > 0 && (p.transfer_status || "none") === "none");
+  const surplus: AnyRow[] = [];
+  for (const pos of Object.keys(NPC_POS_KEEP)) {
+    const line = staying
+      .filter((p) => p.position === pos)
+      .sort((a, b) => (b.skill || 0) - (a.skill || 0));
+    surplus.push(...line.slice(NPC_POS_KEEP[pos]).filter((p) => eligibleIds.has(p.id)));
+  }
+  if (surplus.length === 0) return null;
+  surplus.sort((a, b) => (a.skill || 0) - (b.skill || 0));
+  const priced = (player: AnyRow, mult: number) => {
+    const price = Math.round((player.value || 0) * mult);
+    return price > 0 ? { player, price } : null;
+  };
+
+  if (rng() < NPC_OPPORTUNITY_SALE_CHANCE) {
+    return priced(surplus[surplus.length - 1], NPC_OPPORTUNITY_SALE_PREMIUM);
+  }
+  const listChance =
+    NPC_LIST_SQUAD_THRESHOLDS.find((t) => eligibleIds.size > t.size)?.chance ?? 0;
+  if (listChance === 0 || rng() > listChance) return null;
+  const weakest = surplus[0];
+  return priced(
+    weakest,
+    (weakest.skill || 0) >= divisionLevel && divisionLevel > 0 ? NPC_LIST_MARKET_PREMIUM : 1,
+  );
+}
+
+/**
+ * Renovação NPC: fica quem está perto da média do plantel, ou quem faz falta
+ * — sem ele a posição desce abaixo do mínimo.
+ */
+export function npcShouldRenew(args: {
+  skill: number;
+  squadAvgSkill: number;
+  positionCount: number;
+  position: string;
+}): boolean {
+  const { skill, squadAvgSkill, positionCount, position } = args;
+  if (skill >= squadAvgSkill * NPC_RENEW_MIN_SKILL_RATIO) return true;
+  return positionCount - 1 < (NPC_POS_MIN[position] ?? 3);
 }

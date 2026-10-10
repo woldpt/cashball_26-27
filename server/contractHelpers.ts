@@ -1,4 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
+import { npcShouldRenew } from "./npcSquadPlanning";
 import {
   CONTRACT_LENGTH_WEEKS,
   getAgentName,
@@ -18,7 +19,7 @@ import {
   CONTRACT_REQUEST_RESET_SQL,
   AGENT_RENEGOTIATION_WAGE_FLOOR,
   NPC_RENEW_MIN_BUDGET,
-  NPC_RENEW_MIN_SKILL_RATIO,
+  NPC_POS_MIN,
   AUCTION_PRICE_FLOOR_RATE,
   AUCTION_PRICE_FLOOR_MIN_SKILL,
   AUCTION_PRICE_FLOOR_WEEKS,
@@ -298,7 +299,7 @@ export function createContractHelpers(deps: ContractDeps) {
     }
   };
 
-  const POS_MIN: Record<string, number> = { GR: 2, DEF: 4, MED: 4, ATA: 3 };
+  const POS_MIN = NPC_POS_MIN;
 
   const processContractExpiries = async (
     game: ActiveGame,
@@ -375,10 +376,16 @@ export function createContractHelpers(deps: ContractDeps) {
           skillSum += row.skillSum || 0;
         }
         // Não renova quem está muito abaixo da média do plantel: vai a leilão
-        // e o mercado NPC repõe a posição (evita plantéis bloqueados de fracos).
+        // e o mercado NPC repõe a posição (evita plantéis bloqueados de fracos)
+        // — salvo se a posição ficar abaixo do mínimo sem ele.
         const isGoodEnough =
           squadSize === 0 ||
-          (player.skill || 0) >= (skillSum / squadSize) * NPC_RENEW_MIN_SKILL_RATIO;
+          npcShouldRenew({
+            skill: player.skill || 0,
+            squadAvgSkill: skillSum / squadSize,
+            positionCount: posCounts.find((r) => r.position === player.position)?.cnt ?? 0,
+            position: player.position,
+          });
         const isAffordable = (team as any).budget > NPC_RENEW_MIN_BUDGET;
 
         if (isAffordable && isGoodEnough) {

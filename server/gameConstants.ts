@@ -124,6 +124,17 @@ export const NPC_POS_MAX: Record<string, number> = { GR: 3, DEF: 8, MED: 8, ATA:
 export const NPC_BUY_BUDGET_SHARE = 0.5;
 export const NPC_BUY_BUDGET_SHARE_URGENT = 0.7;
 
+/** Venda NPC: depois de vender, a posição fica com pelo menos estes jogadores. */
+export const NPC_POS_KEEP: Record<string, number> = { GR: 2, DEF: 5, MED: 5, ATA: 4 };
+/** Sobrepreço na lista para quem está ao nível da divisão (tem mercado). */
+export const NPC_LIST_MARKET_PREMIUM = 1.25;
+/**
+ * Venda de oportunidade: hipótese semanal de pôr à venda o melhor suplente
+ * de uma posição a sobrar, com este sobrepreço. Nunca um titular.
+ */
+export const NPC_OPPORTUNITY_SALE_CHANCE = 0.05;
+export const NPC_OPPORTUNITY_SALE_PREMIUM = 1.4;
+
 /**
  * Re-exportadas de db/seedEcon.js (fonte única partilhada com a seed).
  * O valor é recalculado sempre que o skill muda (treino, evolução, decaimento).

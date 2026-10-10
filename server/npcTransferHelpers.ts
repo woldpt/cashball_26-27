@@ -1,7 +1,7 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot, runRoomTask, runExec } from "./coreHelpers";
-import { rankNpcBuyTargets } from "./npcSquadPlanning";
-import { signingWage, SEASON_WEEKS, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
+import { rankNpcBuyTargets, pickNpcListing } from "./npcSquadPlanning";
+import { signingWage, SEASON_WEEKS, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, NPC_POS_MIN, CONTRACT_REQUEST_RESET_SQL, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -308,23 +308,24 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
       price: number;
     }> = [];
     for (const npcTeam of allNpcTeams) {
-      const squad = await runAll(
-        game.db,
-        "SELECT * FROM players WHERE team_id = ? AND transfer_status = 'none' AND contract_request_pending = 0 AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?) ORDER BY skill ASC",
-        [npcTeam.id, CONTRACT_LENGTH_WEEKS, currentEpoch(game)],
+      const squad = await runAll(game.db, "SELECT * FROM players WHERE team_id = ?", [npcTeam.id]);
+      const now = currentEpoch(game);
+      const eligibleIds = new Set<number>(
+        squad
+          .filter(
+            (p) =>
+              p.transfer_status === "none" &&
+              !p.contract_request_pending &&
+              (!p.contract_start_epoch || p.contract_start_epoch + CONTRACT_LENGTH_WEEKS <= now),
+          )
+          .map((p) => p.id),
       );
-
-      const listChance =
-        NPC_LIST_SQUAD_THRESHOLDS.find((t) => squad.length > t.size)?.chance ?? 0;
-      if (listChance === 0 || Math.random() > listChance) continue;
-
-      const candidate = squad[0];
-      if (!candidate) continue;
-
-      const price = Math.round((candidate.value || 0) * 1.0);
-      if (price <= 0) continue;
-
-      npcListings.push({ candidate, price });
+      const listing = pickNpcListing({
+        squad,
+        eligibleIds,
+        divisionLevel: divLevels[npcTeam.division ?? 3] ?? 0,
+      });
+      if (listing) npcListings.push({ candidate: listing.player, price: listing.price });
     }
 
     if (npcListings.length === 0) return;
@@ -417,8 +418,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                       }
 
                       // Mínimos recomendados por posição para um plantel funcional
-                      const POS_MIN: Record<string, number> = { GR: 2, DEF: 4, MED: 4, ATA: 3 };
-                      const posMin = POS_MIN[playerPosition] ?? 3;
+                      const posMin = NPC_POS_MIN[playerPosition] ?? 3;
                       const posCount = posCounts[playerPosition] ?? 0;
                       const hasUrgentNeed = posCount < posMin;
                       const hasModerateNeed = posCount >= posMin && seniorRows.length < 20;
