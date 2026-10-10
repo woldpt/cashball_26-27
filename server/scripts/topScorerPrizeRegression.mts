@@ -150,9 +150,9 @@ async function makeRoom() {
 	await defer();
 	checkEq(paid.length, 4, "T1 4 vencedores");
 	checkEq(paid.map((w: any) => w.divId).join(","), "1,2,3,4", "T1 divisões 1–4 em ordem");
-	check(paid.every((w: any) => w.prize === 500000), "T1 500K€ a cada vencedor");
+	checkEq(paid.map((w: any) => w.prize).join(","), "500000,250000,125000,60000", "T1 prémio por divisão (um quarto do de campeão)");
 	const budgets = await Promise.all([10, 20, 30, 40].map((t) => budgetOf(t)));
-	checkEq(budgets.join(","), "1500000,1500000,1500000,1500000", "T1 cada clube recebe 500K€");
+	checkEq(budgets.join(","), "1500000,1250000,1125000,1060000", "T1 cada clube recebe o prémio da sua divisão");
 	const palmares = await all(db, "SELECT team_id, achievement, player_id FROM palmares ORDER BY team_id");
 	checkEq(palmares.length, 4, "T1 4 linhas de palmarés");
 	check(
@@ -196,7 +196,7 @@ async function makeRoom() {
 	checkEq(div2?.team_id, 20, "T2 prémio creditado ao clube que sofreu os golos (20)");
 	checkEq(div2?.goals, 22, "T2 golos contados pelo clube, não pelo total da época");
 	checkEq(div1?.id, 102, "T2 o prémio da Primeira Liga vai ao melhor marcador da divisão");
-	checkEq(await budgetOf(20), 1500000, "T2 o vendedor leva os 500K€");
+	checkEq(await budgetOf(20), 1250000, "T2 o vendedor leva os 250K€ da Segunda Liga");
 	checkEq(await budgetOf(10), 1000000, "T2 o comprador não herda o prémio");
 	const palmares = await all(db, "SELECT team_id, achievement FROM palmares WHERE player_id = 101");
 	checkEq(palmares.length, 1, "T2 uma linha de palmarés para o jogador");

@@ -50,7 +50,16 @@ import {
  * Prémio de Melhor Marcador: 500K€ por divisão (1–4), a cada vencedor —
  * empates levam o prémio cheio. Divisões 5 (pool interno) fora.
  */
-const TOP_SCORER_PRIZE = 500000;
+/**
+ * Prémio de melhor marcador por divisão: um quarto do prémio de campeão.
+ * Era 500K€ em todas — na 4.ª valia o dobro do título.
+ */
+export const TOP_SCORER_PRIZE: Record<number, number> = {
+	1: 500000,
+	2: 250000,
+	3: 125000,
+	4: 60000,
+};
 
 /** Linha de candidato ao Melhor Marcador, já com o clube atribuído. */
 export interface TopScorerRow {
@@ -516,12 +525,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			const divName = DIVISION_NAMES[divId] || `Divisão ${divId}`;
 			// O dinheiro vai ao clube que sofreu os golos, que pode não ser o clube
 			// onde o jogador fecha a época (venda a meio da época).
+			const prize = TOP_SCORER_PRIZE[divId] ?? 0;
 			await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [
-				TOP_SCORER_PRIZE,
+				prize,
 				winner.team_id,
 			]);
 			logClubNews(game, "prize", `Prémio de Melhor Marcador — ${divName}`, winner.team_id, {
-				amount: TOP_SCORER_PRIZE,
+				amount: prize,
 				description: `${winner.name} — ${winner.goals} golos (época ${year})`,
 				player_id: winner.id,
 				player_name: winner.name,
@@ -543,7 +553,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					winner.id,
 				],
 			);
-			const entry = { ...winner, divId, divName, prize: TOP_SCORER_PRIZE };
+			const entry = { ...winner, divId, divName, prize };
 			paid.push(entry);
 			const list = byDivision.get(divId) || [];
 			list.push(entry);
@@ -551,8 +561,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 		// Um anúncio por divisão, com todos os empatados (podem ser de clubes
 		// diferentes) — como os prémios de campeão, um CM por divisão.
-		const prizeFormatted = new Intl.NumberFormat("pt-PT").format(TOP_SCORER_PRIZE);
 		for (const list of byDivision.values()) {
+			const prizeFormatted = new Intl.NumberFormat("pt-PT").format(list[0].prize);
 			const divName = list[0].divName;
 			const names = list.map((w: any) => `${w.name} (${w.team_name})`).join(", ");
 			io.to(game.roomCode).emit("systemMessage", {
