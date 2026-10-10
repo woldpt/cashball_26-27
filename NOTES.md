@@ -1,3 +1,9 @@
+## 5.ª divisão passa a treinar (2026-10-10)
+- `ensureNpcTrainingFocus` deixa de excluir a 5.ª divisão: treina como as outras (linha mais fraca, ou recuperação física/forma). Equipa técnica e investimento continuam só para a 1.ª–4.ª.
+- Porquê: sem treino só perdia qualidade e quem subia chegava à 4.ª três vezes mais fraco.
+- Medido (`sim:seasons`, 2 salas × 6 épocas): qualidade da 5.ª na época 6 de 5,5 para 8,8, a estabilizar perto de 9 (4.ª: 15). O fosso que sobra (6 pontos) é o da pirâmide — a 4.ª compra os melhores da 5.ª — e é menor do que entre as outras divisões (9–10). Dinheiro, posições em falta e clubes no vermelho iguais.
+- Testado: typecheck, testes de treino/skill/staff/moral, connect-smoke.
+
 ## Limite de plantel nos leilões dos NPC (2026-10-10)
 - NPC com 24 ou mais jogadores deixa de licitar em leilões (`NPC_MAX_SQUAD`, o mesmo limite que já havia na lista de transferências).
 - Porquê: os excedentes das divisões de cima acabavam nos leilões das de baixo, sem limite — plantéis de 33 na 5.ª e 30 na 4.ª.
@@ -157,8 +163,3 @@ Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-
 
 ## Deploy v26.10.43 no rick (2026-10-10)
 - Commit `10dde42c` com a tag `v26.10.43`: barra CM só no Jornal em ciclo, painéis do Jornal livres da barra, adjunto com 10 s pós-jogo. Backend Healthy.
-
-## Notícias CM só no Jornal, em ciclo; adjunto com 10 s pós-jogo (2026-10-10)
-- Faixa CM só é renderizada no separador Jornal (`GameLayout`), só aparece com notícias, repete todas em ciclo contínuo e deixou de navegar ao clicar. Movimento reduzido: uma notícia de cada vez. Painéis do Jornal descontam a altura da faixa (`.journal-panel` + `.game-shell:has(.cm-ticker)` em `index.css`). Silêncio do adjunto pós-jogo 45 s → 10 s (`POST_MATCH_QUIET_MS`).
-- Porquê: a faixa só faz sentido no Jornal; antes o leitor do Jornal descia por trás dela (reproduzido no harness a 1280 px).
-- Testado: lint, check:types, test:mobile 195/195 (concorrência 6; com 20 em paralelo os checks de tempo do `journal-resp-test` falham por carga), `journal-resp-test` com a faixa e o check `barClearance` (1024/1280/1440 PASS; FAIL antes do fix). Capturas 390 e 1280 vistas.

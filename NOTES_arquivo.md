@@ -2,6 +2,11 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Notícias CM só no Jornal, em ciclo; adjunto com 10 s pós-jogo (2026-10-10)
+- Faixa CM só é renderizada no separador Jornal (`GameLayout`), só aparece com notícias, repete todas em ciclo contínuo e deixou de navegar ao clicar. Movimento reduzido: uma notícia de cada vez. Painéis do Jornal descontam a altura da faixa (`.journal-panel` + `.game-shell:has(.cm-ticker)` em `index.css`). Silêncio do adjunto pós-jogo 45 s → 10 s (`POST_MATCH_QUIET_MS`).
+- Porquê: a faixa só faz sentido no Jornal; antes o leitor do Jornal descia por trás dela (reproduzido no harness a 1280 px).
+- Testado: lint, check:types, test:mobile 195/195 (concorrência 6; com 20 em paralelo os checks de tempo do `journal-resp-test` falham por carga), `journal-resp-test` com a faixa e o check `barClearance` (1024/1280/1440 PASS; FAIL antes do fix). Capturas 390 e 1280 vistas.
+
 ## Briefing sem espaços vazios (2026-10-10)
 - Duelo em largura total, "Prepara a estratégia" virou faixa fina (`PrepCtaCard`), 3 colunas à mesma altura (ameaças esticam, "último confronto/ambiente" colados à base do radar). `briefing-resp-test.jsx` tem cópia da grelha — mantê-la em sincronia.
 - Testado: lint, check:types, test:mobile 195/195; screenshot 1360 visto.

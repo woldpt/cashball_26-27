@@ -576,7 +576,9 @@ export async function ensureNpcTrainingFocus(
       game.db.all(id, (err: any, rows: any[]) => resolve(err ? [] : rows || []));
     });
   const teamIds = (await all("SELECT id, division FROM teams"))
-    .filter((t) => !humanTeamIds.has(t.id) && Number(t.division ?? 4) !== 5)
+    // A 5.ª divisão também treina: sem isto só perdia qualidade (12 → 5,5 em
+    // seis épocas) e quem subia chegava à 4.ª três vezes mais fraco.
+    .filter((t) => !humanTeamIds.has(t.id))
     .map((t) => t.id);
   if (teamIds.length === 0) return;
   const placeholders = teamIds.map(() => "?").join(",");
