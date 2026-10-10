@@ -18,7 +18,7 @@ const TRAINING_BASE_KEY = "cashball_training_focus";
 const LINEUP_IDLE_MS = 90_000;
 
 /** Silêncio do adjunto depois de um jogo acabar. */
-const POST_MATCH_QUIET_MS = 45_000;
+const POST_MATCH_QUIET_MS = 10_000;
 
 /**
  * Dicas já vistas na sala/semana corrente (chaves em localStorage). Lido uma
