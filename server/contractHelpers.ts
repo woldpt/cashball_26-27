@@ -502,7 +502,7 @@ export function createContractHelpers(deps: ContractDeps) {
     const teamId = team.id;
     const squad = await runAll<AnyRow>(
       game.db,
-      "SELECT id, name, skill, position, wage, form, resistance, is_star FROM players WHERE team_id = ? AND id > 0 AND transfer_status = 'none'",
+      "SELECT p.*, t.name AS team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.team_id = ? AND p.id > 0 AND p.transfer_status = 'none'",
       [teamId],
     );
     if (squad.length === 0) return 0;

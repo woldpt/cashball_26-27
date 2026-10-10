@@ -622,3 +622,21 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Equipa no Claude Code: orquestrador/revisor (Opus), `coder` (Sonnet), `scout` e `ops` (Haiku) em `.claude/agents/`; `.claude/skills` → `.pi/skills`; `CLAUDE.md` importa `AGENTS.md`.
 - Varrimento pt-PT (scout → coder → revisão): «Técnicos»→«Treinadores», coluna «Gol»→«Golos», narração sem «marcar contra»/«sacou o cartão»; mensagens de testes sem «placares»/«chute».
 - Testado: server typecheck + test:engine-unit + test:own-goal; client check:types; lint só com o erro antigo do `landing-resp-test.jsx`.
+
+## Deploy v26.10.36 no rick (2026-10-09)
+- Contenção de crashes e sessão/convites, varrimento pt-PT e equipa de agentes (desde v26.10.35); `backend Healthy`.
+
+## Versão do build na barra lateral (2026-10-09)
+- `Sidebar.jsx`: `APP_VERSION` no fundo da barra (`text-outline-variant`, 10px); escondida com a barra encolhida (não cabe em 3.5rem).
+- Porquê: ver a versão em uso sem ir à página de entrada.
+- Testado: client `lint` e `check:types` (saída 0). Visual no ecrã de desktop por confirmar.
+
+## Vento mais realista (2026-10-09)
+- Rajadas (`WeatherOverlay.jsx` + `wx-blow`): comprimento, inclinação e intensidade próprios, trajetória com ondulação; faixas de luz a deslizar pelo relvado (`.wx-vento`, só com movimento). Estádio (`StadiumIllustration.jsx`): bandeiras a bater com vento em qualquer mood; nuvens a deslizar (cópia para o ciclo não saltar).
+- Porquê: as rajadas eram riscos retos e iguais, e nada no estádio reagia ao vento.
+- Testado: client `lint`, `check:types`, `test:stadium`, `test:weather` e `test:mobile stadium-resp-test` (PASS nos 5 widths; aviso de consola `resErr` variável também no HEAD). Captura antes/depois do Chromium; movimento das nuvens e bandeiras só verificado pelo CSS, não numa captura em vídeo.
+
+## Lances dos NPCs só na janela final do leilão (2026-10-09)
+- Antes: NPCs licitavam 2–18 s após cada lance (rajadas no início), com valor fixo que muitas vezes já não passava o mínimo (rejeição silenciosa). Agora: entram numa fila por leilão, só nos últimos 30 s, com 6–10 s entre lances de NPCs; o lance é recalculado (preço atual + 10 000 €) quando sai, e desiste se não couber no limite.
+- Constantes em `gameConstants.ts` (`AUCTION_NPC_*`); `npcTransferHelpers.ts` (`pumpNpcQueue`/`releaseNpcBid`); plano `docs/plans/2026-10-09-lances-npc-janela-final.md`.
+- Testado: typecheck, `test:npc-bid-window` (5/5), connect-smoke, audit:socketio (registo inalterado), audit:gamestate numa sala local (0 erros). Simulação com dados reais de PYG2GT: preço mediano 1,04 (real 1,09; antes 1,58).
