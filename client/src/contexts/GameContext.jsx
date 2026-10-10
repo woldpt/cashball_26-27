@@ -1151,6 +1151,8 @@ year: seasonYear,
 			setTacticFamiliarity,
 			setAllTacticFamiliarity,
 			setStandingsStale,
+			setShowMatchDetail,
+			setMatchDetailFixture,
 		},
 		{
 			playerSearchIdRef,

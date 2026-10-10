@@ -425,6 +425,9 @@ export function registerMatchListeners(handlers, refs, ctx) {
 		handlers.setShowHalftimePanel(true);
 		handlers.setIsPlayingMatch(true);
 		handlers.setLiveMinute(45); // ensure replay effect enters halftime path (not end-of-match) on reconnect
+		// Intervalo: o ecrã de um jogo de terceiros não pode reaparecer na 2.ª parte.
+		handlers.setShowMatchDetail(false);
+		handlers.setMatchDetailFixture(null);
 		handlers.setActiveTab("live");
 	});
 
@@ -746,6 +749,9 @@ export function registerMatchListeners(handlers, refs, ctx) {
 		// "standingsUpdated". Marca para o indicador "A atualizar…".
 		handlers.setStandingsStale(true);
 		handlers.setShowHalftimePanel(false);
+		// Fim do jogo: fecha o ecrã de um jogo de terceiros que ficou aberto.
+		handlers.setShowMatchDetail(false);
+		handlers.setMatchDetailFixture(null);
 		handlers.setIsCupMatch(false);
 		handlers.setCupExtraTimeBadge(false);
 		handlers.setActiveTab("live");

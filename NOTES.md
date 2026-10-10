@@ -1,3 +1,8 @@
+## Ecrã de terceiros fecha no intervalo e no fim (2026-10-10)
+- O ecrã de um jogo que não é o nosso (`showMatchDetail`) ficava aberto no fim do jogo e reaparecia na 2.ª parte. Agora fecha em `halfTimeResults`, `matchResults`, `cupHalfTimeResults`, `cupETHalfTime` e `cupRoundResults`; `LiveView` não abre jogos durante o intervalo.
+- Porquê: pedido do utilizador — o relógio pode continuar, mas o ecrã não deve ficar ativo depois de o jogo parar. Os dois setters faltavam em `useSocketListeners` (`GameContext.jsx`).
+- Testado: client lint e check:types (saída 0). Não visto numa partida real — falta confirmar.
+
 ## Táctica: sem o duelo no cartão da Formação (2026-10-10)
 - Tirados o «Duelo com o … provável» e os quadradinhos Meio/Ataque/Defesa/Capitão do cartão Formação (`TacticsView.jsx`, `DuelStrip`). O `probableFormation` do servidor fica como está.
 - Porquê: pedido do utilizador — informação repetida que não queria no cartão.
@@ -121,9 +126,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 
 ## Deploy v26.10.36 no rick (2026-10-09)
 - Contenção de crashes e sessão/convites, varrimento pt-PT e equipa de agentes (desde v26.10.35); `backend Healthy`.
-
-## Equipa de agentes + varrimento pt-PT (2026-10-09)
-- Equipa removida no mesmo dia (gastava créditos demais); fica só o atalho `.claude/skills`.
-- Equipa no Claude Code: orquestrador/revisor (Opus), `coder` (Sonnet), `scout` e `ops` (Haiku) em `.claude/agents/`; `.claude/skills` → `.pi/skills`; `CLAUDE.md` importa `AGENTS.md`.
-- Varrimento pt-PT (scout → coder → revisão): «Técnicos»→«Treinadores», coluna «Gol»→«Golos», narração sem «marcar contra»/«sacou o cartão»; mensagens de testes sem «placares»/«chute».
-- Testado: server typecheck + test:engine-unit + test:own-goal; client check:types; lint só com o erro antigo do `landing-resp-test.jsx`.

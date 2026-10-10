@@ -91,6 +91,8 @@ export function registerCupListeners(handlers, refs, ctx) {
 			handlers.setSwapSource(null);
 			handlers.setSwapTarget(null);
 			handlers.setShowHalftimePanel(true);
+			handlers.setShowMatchDetail(false);
+			handlers.setMatchDetailFixture(null);
 			handlers.setIsPlayingMatch(true);
 			handlers.setIsCupMatch(true);
 			handlers.setCupPreMatch(false);
@@ -146,6 +148,9 @@ export function registerCupListeners(handlers, refs, ctx) {
 			handlers.setSwapSource(null);
 			handlers.setSwapTarget(null);
 			handlers.setShowHalftimePanel(true);
+			// Pausa antes do prolongamento conta como intervalo: fecha o ecrã de terceiros.
+			handlers.setShowMatchDetail(false);
+			handlers.setMatchDetailFixture(null);
 			handlers.setIsCupMatch(true);
 			handlers.setCupPreMatch(false);
 			handlers.setCurrentCupRound(data.round ?? null);
@@ -304,6 +309,9 @@ export function registerCupListeners(handlers, refs, ctx) {
 		socket.emit("requestCupBracket");
 
 		handlers.setCupRoundResults(data);
+		// Fim da ronda da Taça: fecha o ecrã de um jogo de terceiros que ficou aberto.
+		handlers.setShowMatchDetail(false);
+		handlers.setMatchDetailFixture(null);
 		handlers.setWaitingForResults(false);
 		handlers.setResultsWaitTimedOut(false);
 		// Don't navigate away yet — if a penalty shootout popup is open, wait for it to close first.

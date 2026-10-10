@@ -126,6 +126,9 @@ export function LiveView() {
   const teamById = (id) => teams.find((t) => t.id === id);
 
   const openDetail = (fixture) => {
+    // Intervalo (ou pausa antes do prolongamento): o painel de intervalo tem
+    // prioridade e este detalhe reapareceria na 2.ª parte.
+    if (showHalftimePanel) return;
     setMatchDetailFixture(fixture);
     setShowMatchDetail(true);
   };
