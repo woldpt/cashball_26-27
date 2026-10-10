@@ -320,7 +320,9 @@ test("F5 — fireStaff 2× em paralelo paga uma só indemnização", async () =>
 
 test("F6 — compra NPC: movimento certo; jogador já vendido não mexe em saldos", async () => {
   const db = await openDb();
-  await seedTeams(db, { 1: 1000, 2: 100_000, 3: 1000 });
+  // Orçamento do NPC (2) folgado: a compra conta o preço mais os ordenados
+  // até ao fim da época, e tem de caber em metade do orçamento.
+  await seedTeams(db, { 1: 1000, 2: 1_000_000, 3: 1000 });
   await runExec(
     db,
     "INSERT INTO players (id, name, position, skill, value, wage, team_id, transfer_status, transfer_price) VALUES (10, 'Listado', 'MED', 50, 100, 10, 1, 'fixed', 100)",
@@ -353,7 +355,7 @@ test("F6 — compra NPC: movimento certo; jogador já vendido não mexe em saldo
   await drain(game);
   assert.equal((await runGet(db, "SELECT team_id FROM players WHERE id = 11")).team_id, 3, "vendido fica onde está");
   assert.equal((await runGet(db, "SELECT team_id FROM players WHERE id = 10")).team_id, 2, "listado muda para o NPC");
-  assert.equal(await budgetOf(db, 2), 100_000 - 100, "NPC paga uma vez");
+  assert.equal(await budgetOf(db, 2), 1_000_000 - 100, "NPC paga uma vez");
   assert.equal(await budgetOf(db, 1), 1100, "vendedor recebe uma vez");
   assert.equal(await budgetOf(db, 3), 1000, "equipa 3 intacta");
 });
