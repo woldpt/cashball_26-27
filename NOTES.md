@@ -46,6 +46,11 @@
 - Push `c27c6180..31869844`; tag publicada.
 - Rick: `git pull` + rebuild; backend Healthy.
 
+## Deploy v26.10.49 no rick (2026-10-10)
+- Bump `ea37199a`, tag `v26.10.49`: NPC com critério — compram pela posição em falta, vendem quem sobra e escolhem o onze pela forma.
+- Push `93ce106f..ea37199a` (6 commits); tag publicada.
+- Rick: `git pull` + rebuild; backend Healthy.
+
 ## Deploy v26.10.48 no rick (2026-10-10)
 - Bump `93ce106f`, tag `v26.10.48`: equilíbrio de jogo — contra-ataque defensivo, posse pela diferença de médios, ligas menos niveladas e 4.ª divisão com estádios e sorteio justos.
 - Push `31869844..93ce106f` (14 commits); tag publicada.
