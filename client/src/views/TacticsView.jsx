@@ -403,7 +403,7 @@ function MoraleCard({ glow = false }) {
   const label = getMoraleLabel(morale);
   if (glow) {
     return (
-      <div className="border-b border-outline-variant/15">
+      <div>
         <div className="px-4 short:px-3 py-2 border-b border-outline-variant/15">
           <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
             Moral
@@ -475,7 +475,7 @@ function MoraleCard({ glow = false }) {
 function InstructionGroup({ label, field, value, options, onChange, variant = "segmented" }) {
   const active = options.find((o) => o.value === value);
   return (
-    <section className="flex flex-col gap-1.5">
+    <section className={`flex flex-col gap-1.5 ${variant === "cards" ? "flex-1" : ""}`}>
       <h4 className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-gray-500 font-black">
         <span
           className="h-1.5 w-1.5 rounded-full"
@@ -484,7 +484,7 @@ function InstructionGroup({ label, field, value, options, onChange, variant = "s
         {label}
       </h4>
       <TacticsButtons
-        className="w-full"
+        className={`w-full ${variant === "cards" ? "flex-1" : ""}`}
         options={options}
         field={field}
         value={value}
@@ -503,14 +503,14 @@ function InstructionGroup({ label, field, value, options, onChange, variant = "s
  * InstructionsCard — mentalidade + pressão, com o efeito de cada escolha.
  * @param {Object} props
  * @param {boolean} [props.bare=false] Sem cartão próprio e em cartões grandes
- *   (desktop, dentro do cartão da Moral, onde há espaço)
+ *   (desktop, a coluna do meio é o cartão)
  * @returns {JSX.Element}
  */
 function InstructionsCard({ bare = false }) {
   const { tactic, updateTactic } = useTactics();
   const variant = bare ? "cards" : "segmented";
   const body = (
-    <div className="flex flex-col gap-3">
+    <div className={`flex flex-col gap-3 ${bare ? "flex-1" : ""}`}>
       <InstructionGroup
         label="Mentalidade"
         field="style"
@@ -529,12 +529,21 @@ function InstructionsCard({ bare = false }) {
       />
     </div>
   );
-  if (bare) return <div className="flex flex-1 flex-col justify-center px-3 short:px-2 py-3 short:py-1.5">{body}</div>;
+  const header = (
+    <div className={`border-b border-outline-variant/15 ${bare ? "px-4 short:px-3 py-2" : "px-3 py-2"}`}>
+      <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">Instruções</span>
+    </div>
+  );
+  if (bare)
+    return (
+      <>
+        {header}
+        <div className="flex flex-1 flex-col px-3 short:px-2 py-3 short:py-1.5">{body}</div>
+      </>
+    );
   return (
     <div className="bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-      <div className="px-3 py-2 border-b border-outline-variant/15">
-        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">Instruções</span>
-      </div>
+      {header}
       <div className="p-3">{body}</div>
     </div>
   );
@@ -1089,15 +1098,19 @@ export function TacticsView() {
 
             {/* TOPO desktop — controlos em linha, 1 cartão por coluna */}
             <div className="hidden xl:flex gap-3 short:gap-1.5">
-              {/* TOPO 1 — Formação (sobre Titulares) */}
+              {/* TOPO 1 — Moral + Formação (sobre Titulares) */}
               <div className="flex-1 min-w-0 flex flex-col gap-2 short:gap-1.5">
+                {nextMatchSummary && (
+                  <div className="bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+                    <MoraleCard glow />
+                  </div>
+                )}
                 <FormationCard className="flex-1" desktop dataTour heartbeat={heartbeat} />
                 {missingWarning}
               </div>
 
-              {/* TOPO 2 — Moral + Instruções (sobre Suplentes) */}
+              {/* TOPO 2 — Instruções (sobre Suplentes) */}
               <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-                {nextMatchSummary && <MoraleCard glow />}
                 <InstructionsCard bare />
               </div>
 

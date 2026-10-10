@@ -54,7 +54,7 @@ export function TacticsButtons({
               role="radio"
               aria-checked={isActive}
               onClick={() => onChange({ [field]: optValue })}
-              className={`flex min-w-0 flex-col items-center gap-1 rounded-xl border px-2 py-2 text-center transition-all duration-200 active:scale-[0.97] ${
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-center transition-all duration-200 active:scale-[0.97] ${
                 isActive
                   ? "text-on-surface"
                   : "border-outline-variant/30 bg-surface-container-low/50 text-on-surface-variant hover:border-outline/60 hover:bg-surface-container/80"

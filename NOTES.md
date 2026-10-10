@@ -6,7 +6,7 @@
 ## Tática e intervalo com cara de quadro tático (2026-10-10)
 - Botões de mentalidade/pressão/conversa: barra segmentada acesa (telemóvel/Tática) ou cartões com ícone e efeito (intervalo desktop e Tática desktop); posse em destaque com emblemas e %; ordens como frase de pílulas que mudam ao toque (sem selects); duelo em 3 mini-cartões com selo (Ganhas/Em risco…). Tática mobile: Moral → Formação+duelo → Instruções → Ordens. `STYLE_OPTIONS` passou para `constants/index.js`.
 - Testado: client lint + check:types, test:mobile 195/195 (concorrência 6), test:tacticpositions, test:briefing; screenshots 360/1280/1440 da Tática e do intervalo vistos.
-- Tática desktop: a grelha de formações enche o cartão (`flex-1 auto-rows-fr`), sem vazio quando a coluna do meio é mais alta.
+- Tática desktop: Moral passou para cima da Formação (coluna 1); coluna do meio só "Instruções" com os cartões a encher a altura; grelha de formações `flex-1 auto-rows-fr` — sem vazios entre colunas.
 
 ## Deploy v26.10.41 no rick (2026-10-10)
 - Ímpeto visível no Live, remates/golos esperados no intervalo e "Leitura do jogo" no fim. Backend Healthy.
