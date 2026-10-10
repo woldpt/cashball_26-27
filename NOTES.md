@@ -1,3 +1,8 @@
+## Deploy v26.10.47 no rick (2026-10-10)
+- Bump `31869844`, tag `v26.10.47`: treinadores — aviso por má série, escolha de clube após despedimento (3 opções) e convite com vitórias recentes.
+- Push `c27c6180..31869844`; tag publicada.
+- Rick: `git pull` + rebuild; backend Healthy.
+
 ## Escolha de clube: poda das opções ocupadas (2026-10-10)
 Quando um humano fica com um clube, sai das opções dos outros despedidos (que recebem a lista nova); lista vazia ⇒ novo sorteio de 3 (antes ficavam sem clube e sem opções). `pruneDismissalOptions` em `assignCoachToTeam`.
 Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-freeze, audit:socketio.
