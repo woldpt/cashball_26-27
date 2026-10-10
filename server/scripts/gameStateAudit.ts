@@ -378,7 +378,8 @@ class GameStateAuditor {
   }
 
   // Baralho igual (seed): nas divisões onde os humanos começam, o melhor onze
-  // (4-4-2) de cada equipa tem de valer praticamente o mesmo. Só no template —
+  // (4-4-2) de cada equipa tem de valer praticamente o mesmo, e o estádio e a
+  // massa adepta têm de ser iguais. Só no template —
   // numa sala os plantéis já evoluíram. A folga cobre os arredondamentos
   // (medido: 135–136 com baralho igual; 112–150 com sorteio livre).
   private async auditBalancedDraw() {
@@ -398,6 +399,19 @@ class GameStateAuditor {
         if (!(need[r.position] > 0)) continue;
         need[r.position]--;
         sums[r.name] = (sums[r.name] ?? 0) + r.skill;
+      }
+      // A bilheteira é proporcional à lotação útil (estádio e massa adepta).
+      const venues = await this.runQuery<any>(
+        "SELECT COUNT(DISTINCT stadium_capacity) caps, COUNT(DISTINCT fanbase) fans FROM teams WHERE division = ?",
+        [division],
+      );
+      if (venues[0]?.caps > 1 || venues[0]?.fans > 1) {
+        this.addIssue(
+          "error",
+          "balanced_draw",
+          `D${division}: lotação ou massa adepta desigual entre equipas`,
+          { division, ...venues[0] },
+        );
       }
       const values = Object.values(sums);
       if (values.length && Math.max(...values) - Math.min(...values) > TOLERANCE) {

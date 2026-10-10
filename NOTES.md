@@ -1,3 +1,8 @@
+## 4.ª divisão com estádios iguais (2026-10-10)
+- Lotação de O Elvas, Oliv. Hospital, Malveira, Sintrense e Alcochetense → 5000 (`all_teams.json`); a massa adepta acompanha. Só salas novas. Plano: `docs/plans/2026-10-10-quarta-divisao-estadios-iguais.md`.
+- Porquê: a bilheteira é proporcional à lotação útil e essas equipas (2500–3500) recebiam 50–70% das outras, com o mesmo plantel — sorte no sorteio de equipa dos humanos.
+- Testado: seed, audit:gamestate base (`balanced_draw` exige agora lotação e massa adepta iguais; falha com os dados antigos, 0 erros com os novos), typecheck, connect-smoke, test:attendance.
+
 ## 4.ª divisão com baralho igual (2026-10-10)
 - Seed: na 4.ª (`BALANCED_DRAW_DIVISIONS`), cada equipa recebe os mesmos valores de skill por posição, espalhados no intervalo; o sorteio só decide que jogador fica com qual (`dealBalancedSkills`). 5.ª igual a antes. Só salas novas. Plano: `docs/plans/2026-10-10-quarta-divisao-sorteio-justo.md`.
 - Porquê: os humanos começam na 4.ª com equipa sorteada e o sorteio livre 5–15 dava onzes até 24% mais fortes.
@@ -136,7 +141,3 @@ Inclui o commit de táticas do intervalo (3.ª coluna) e o registo do deploy ant
 ## Deploy v26.10.39 no rick (2026-10-10)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui o commit de táticas do intervalo de outra sessão (em curso nesta árvore); o bump de `APP_VERSION` ficou incluído nesse commit, sem commit próprio.
-
-## Intervalo (desktop): 3.ª coluna passa a Tática (2026-10-10)
-- Saiu o relvado da 3.ª coluna: agora tem posse de bola, Mentalidade/Pressão/Conversa e "Ordens para o jogo" (editáveis). A 2.ª coluna ficou só com a lista de suplentes. `OrdersCard` passou a componente partilhado (`components/shared/OrdersCard.jsx`) usado pela Tática e pelo intervalo. Botão "Equilibrado" passou a "Neutro" (igual à Tática; cortava a 1280px).
-- Testado: client lint + check:types, test:mobile 195/195 (concorrência 6 — com 20 a máquina carregada dava timeouts), screenshots 1280/1440 vistos, test:substitutions, test:emergency-gk.

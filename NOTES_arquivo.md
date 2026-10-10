@@ -2,6 +2,10 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Intervalo (desktop): 3.ª coluna passa a Tática (2026-10-10)
+- Saiu o relvado da 3.ª coluna: agora tem posse de bola, Mentalidade/Pressão/Conversa e "Ordens para o jogo" (editáveis). A 2.ª coluna ficou só com a lista de suplentes. `OrdersCard` passou a componente partilhado (`components/shared/OrdersCard.jsx`) usado pela Tática e pelo intervalo. Botão "Equilibrado" passou a "Neutro" (igual à Tática; cortava a 1280px).
+- Testado: client lint + check:types, test:mobile 195/195 (concorrência 6 — com 20 a máquina carregada dava timeouts), screenshots 1280/1440 vistos, test:substitutions, test:emergency-gk.
+
 ## Deploy v26.10.38 no rick (2026-10-10)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10, xG, posse viva, ímpeto, NPCs que gerem o jogo, duelo, pressão, conversa ao intervalo, ordens).
