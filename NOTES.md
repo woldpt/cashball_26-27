@@ -1,3 +1,10 @@
+## Limite de plantel nos leilões dos NPC (2026-10-10)
+- NPC com 24 ou mais jogadores deixa de licitar em leilões (`NPC_MAX_SQUAD`, o mesmo limite que já havia na lista de transferências).
+- Porquê: os excedentes das divisões de cima acabavam nos leilões das de baixo, sem limite — plantéis de 33 na 5.ª e 30 na 4.ª.
+- Medido (`sim:seasons`, 2 salas × 6 épocas): plantel máximo da 5.ª 33 → 24,5 e da 4.ª 30 → 24,5; leilões com venda 483 → 215 (os outros fecham desertos e o jogador fica no clube); nenhuma posição em falta; clubes no vermelho e dinheiro em jogo iguais.
+- Por ver: a qualidade da 5.ª continua a cair (12 → 5,5 em 6 épocas) — não treinam (excluídos do treino automático) e sofrem o decaimento de fim de época. Quem sobe da 5.ª chega à 4.ª (qualidade 15) muito abaixo.
+- Testado: typecheck, npc-bid-window, finance-guards, connect-smoke, npc-squad-planning. Sem teste próprio (é uma guarda de uma linha; a prova é a medição).
+
 ## Academia dos NPC removida: base de jogadores fixa (2026-10-10)
 - `processNpcInvestment` já não cria jogadores: acima dos 10M€ o excedente vai para obra (se houver adeptos) ou infraestruturas (500 mil/semana, `NPC_INFRA_COST`). Os prospetos já criados nas salas existentes ficam.
 - Porquê: regra do jogo — base de dados de jogadores fixa e eterna, ninguém entra e ninguém sai. A academia entrou a 2026-09-11 (`1c8f9770`) como forma de gastar dinheiro e era o único sítio que criava jogadores (75 em 6 épocas, a acelerar).
@@ -155,7 +162,3 @@ Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-
 - Faixa CM só é renderizada no separador Jornal (`GameLayout`), só aparece com notícias, repete todas em ciclo contínuo e deixou de navegar ao clicar. Movimento reduzido: uma notícia de cada vez. Painéis do Jornal descontam a altura da faixa (`.journal-panel` + `.game-shell:has(.cm-ticker)` em `index.css`). Silêncio do adjunto pós-jogo 45 s → 10 s (`POST_MATCH_QUIET_MS`).
 - Porquê: a faixa só faz sentido no Jornal; antes o leitor do Jornal descia por trás dela (reproduzido no harness a 1280 px).
 - Testado: lint, check:types, test:mobile 195/195 (concorrência 6; com 20 em paralelo os checks de tempo do `journal-resp-test` falham por carga), `journal-resp-test` com a faixa e o check `barClearance` (1024/1280/1440 PASS; FAIL antes do fix). Capturas 390 e 1280 vistas.
-
-## Briefing sem espaços vazios (2026-10-10)
-- Duelo em largura total, "Prepara a estratégia" virou faixa fina (`PrepCtaCard`), 3 colunas à mesma altura (ameaças esticam, "último confronto/ambiente" colados à base do radar). `briefing-resp-test.jsx` tem cópia da grelha — mantê-la em sincronia.
-- Testado: lint, check:types, test:mobile 195/195; screenshot 1360 visto.

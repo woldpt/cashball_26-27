@@ -1,7 +1,7 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot, runRoomTask, runExec } from "./coreHelpers";
 import { rankNpcBuyTargets, pickNpcListing, npcAuctionMaxBid } from "./npcSquadPlanning";
-import { signingWage, SEASON_WEEKS, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, NPC_POS_MIN, CONTRACT_REQUEST_RESET_SQL, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
+import { signingWage, SEASON_WEEKS, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, NPC_POS_MIN, NPC_MAX_SQUAD, CONTRACT_REQUEST_RESET_SQL, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -165,7 +165,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         "SELECT id, position FROM players WHERE team_id = ?",
         [npcTeam.id],
       );
-      if (squadRows.length >= 24) continue;
+      if (squadRows.length >= NPC_MAX_SQUAD) continue;
       if (Math.random() > 0.65) continue;
 
       // Nível da equipa: média dos 14 melhores (não do plantel inteiro —
@@ -405,6 +405,11 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                         if (processed === npcTeams.length) return;
                         return;
                       }
+
+                      // Plantel cheio não licita — o mesmo limite da lista. Sem
+                      // isto os excedentes das divisões de cima acabavam todos
+                      // nos leilões das de baixo (5.ª com plantéis de 33).
+                      if (squadRows.length >= NPC_MAX_SQUAD) return;
 
                       // Contar jogadores por posição — só o plantel principal
                       // (id > 0); juniores (ids negativos) não contam para

@@ -115,6 +115,8 @@ export const NPC_BUY_FLOOR_MARGIN = 10;
 
 /** Plantel principal NPC por posição: abaixo do mínimo a posição está em falta. */
 export const NPC_POS_MIN: Record<string, number> = { GR: 2, DEF: 4, MED: 4, ATA: 3 };
+/** Plantel cheio: o NPC não compra nem licita (lista e leilões). */
+export const NPC_MAX_SQUAD = 24;
 /** Posição cheia: o NPC não compra mais (o máximo com que as equipas arrancam). */
 export const NPC_POS_MAX: Record<string, number> = { GR: 3, DEF: 8, MED: 8, ATA: 7 };
 /**
