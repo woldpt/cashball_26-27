@@ -384,6 +384,38 @@ async function main() {
   const convite = g.emitted.find((e: any) => e.event === "jobOffer");
   assert(convite?.payload?.recentWins === 3, "G: convite enviado ao treinador traz o motivo");
 
+  // ---------- Cenário H: opções ocupadas depois de apresentadas ----------
+  db = await setupDb();
+  const h = makeGame(db);
+  await primeBudgetDismissal(h.game, 201);
+  try {
+    await h.helpers.processCoachEvents(h.game);
+  } finally {
+    restoreRandom();
+  }
+  const playerH = h.game.playersByName["Huma"];
+  playerH.socketId = "sock-huma";
+  const optsH: number[] = [...h.game.dismissalOptions["Huma"]];
+  assert(optsH.length === 3, "H: 3 opções à escolha");
+  // Outro humano despedido escolhe uma das opções do Huma.
+  h.game.playersByName["H2"] = { name: "H2", teamId: null, socketId: null, ready: false };
+  for (const id of optsH) {
+    h.game.dismissalOptions["H2"] = [id];
+    h.game.dismissedCoachSince["H2"] = { division: 3 };
+    h.emitted.length = 0;
+    await h.helpers.handleSwapDismissalClub(h.game, "H2", id);
+    const left = h.game.dismissalOptions["Huma"];
+    assert(h.game.playersByName["H2"].teamId === id, `H: H2 ficou com ${id}`);
+    assert(!left.includes(id) && left.length >= 1, "H: clube ocupado sai das opções do Huma, que nunca fica sem opções");
+    assert(
+      h.emitted.some((e: any) => e.event === "dismissalChoice" && e.room === "sock-huma"),
+      "H: Huma recebe a lista atualizada",
+    );
+    h.game.playersByName["H2"].teamId = null; // H2 volta a estar livre para a próxima volta
+  }
+  assert(h.game.dismissalOptions["Huma"].length === 3, "H: opções esgotadas ⇒ novo sorteio de 3 clubes");
+  assert(playerH.teamId == null, "H: Huma continua a poder escolher");
+
   console.log("\nPASS coachDismissalLeagueRegression");
 }
 

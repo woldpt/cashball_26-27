@@ -1,3 +1,7 @@
+## Escolha de clube: poda das opções ocupadas (2026-10-10)
+Quando um humano fica com um clube, sai das opções dos outros despedidos (que recebem a lista nova); lista vazia ⇒ novo sorteio de 3 (antes ficavam sem clube e sem opções). `pruneDismissalOptions` em `assignCoachToTeam`.
+Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-freeze, audit:socketio.
+
 ## Treinadores: aviso por má série, escolha de clube e motivo do convite (2026-10-10)
 - Despedimento por resultados avisa antes (3 derrotas e 4, no Jornal e por mensagem). O treinador despedido escolhe entre 3 clubes e fica sem clube até escolher. O convite diz as vitórias dos últimos 5 jogos. Plano: `docs/plans/2026-10-10-treinadores-avisos-escolha-convite.md`.
 - Porquê: pedido do utilizador (melhorias 1, 4 e 5 da avaliação das regras de treinadores).

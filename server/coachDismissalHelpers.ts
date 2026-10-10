@@ -719,6 +719,32 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     // Era NPC: limpar as notícias acumuladas antes de entregar o clube —
     // sem isto o treinador herdava a caixa cheia como não lida.
     await clearInheritedNews(game, team.id);
+
+    await pruneDismissalOptions(game, team.id);
+  }
+
+  /**
+   * Um clube foi ocupado: sai das opções dos outros despedidos, que recebem a
+   * lista atualizada. Lista vazia ⇒ novo sorteio (senão ficavam sem clube e
+   * sem opções para sempre).
+   */
+  async function pruneDismissalOptions(
+    game: ActiveGame,
+    takenTeamId: number,
+  ): Promise<void> {
+    for (const [name, ids] of Object.entries(game.dismissalOptions)) {
+      if (!ids.includes(takenTeamId)) continue;
+      const left = ids.filter((id) => id !== takenTeamId);
+      const p = game.playersByName[name];
+      if (left.length === 0) {
+        delete game.dismissalOptions[name];
+        await autoAssignDismissedCoach(game, name, -1);
+        continue;
+      }
+      game.dismissalOptions[name] = left;
+      const payload = await dismissalChoicePayload(game, name);
+      if (payload && p?.socketId) io.to(p.socketId).emit("dismissalChoice", payload);
+    }
   }
 
   /**
