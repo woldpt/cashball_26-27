@@ -1,6 +1,6 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot, runRoomTask, runExec } from "./coreHelpers";
-import { rankNpcBuyTargets, pickNpcListing } from "./npcSquadPlanning";
+import { rankNpcBuyTargets, pickNpcListing, npcAuctionMaxBid } from "./npcSquadPlanning";
 import { signingWage, SEASON_WEEKS, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, NPC_POS_MIN, CONTRACT_REQUEST_RESET_SQL, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
@@ -454,9 +454,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                       if (Math.random() > interestProb) return;
 
                       // Orçamento máximo que este NPC está disposto a pagar
-                      const budgetCap = Math.round(npcTeam.budget * 0.6);
-                      const valueCap = Math.round(playerValue * 2.5);
-                      const maxBid = Math.min(budgetCap, valueCap);
+                      const maxBid = npcAuctionMaxBid(npcTeam.budget, playerValue);
                       if (maxBid < auction.startingPrice) return;
 
                       // Entra na fila da janela final; o valor é recalculado ao libertar
@@ -494,13 +492,13 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
     if (!auction.npcRelicitationCount) auction.npcRelicitationCount = {};
     if ((auction.npcRelicitationCount[npcTeamId] ?? 0) >= 1) return; // já relicitou
 
-    // Orçamento lido já: o limite de 60% fixa-se aqui; o lance é decidido na janela final
+    // Orçamento e valor lidos já: o limite fixa-se aqui; o lance é decidido na janela final
     game.db.get(
-      "SELECT budget FROM teams WHERE id = ?",
-      [npcTeamId],
-      (err: any, teamRow: any) => {
-        if (err || !teamRow) return;
-        enqueueNpcBid(game, playerId, { kind: "counter", npcTeamId, maxBid: Math.round(teamRow.budget * 0.6) }, placeAuctionBid);
+      "SELECT t.budget AS budget, (SELECT value FROM players WHERE id = ?) AS value FROM teams t WHERE t.id = ?",
+      [playerId, npcTeamId],
+      (err: any, row: any) => {
+        if (err || !row) return;
+        enqueueNpcBid(game, playerId, { kind: "counter", npcTeamId, maxBid: npcAuctionMaxBid(row.budget, row.value) }, placeAuctionBid);
       },
     );
   };

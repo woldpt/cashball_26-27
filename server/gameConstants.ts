@@ -124,11 +124,13 @@ export const NPC_POS_MAX: Record<string, number> = { GR: 3, DEF: 8, MED: 8, ATA:
 export const NPC_BUY_BUDGET_SHARE = 0.5;
 export const NPC_BUY_BUDGET_SHARE_URGENT = 0.7;
 /**
- * Compra NPC: preço pedido máximo, em múltiplos do valor do jogador. Sem isto
+ * Compra NPC (lista e leilão): preço máximo, em múltiplos do valor do jogador. Sem isto
  * um humano vendia a NPC por 5× o valor. Não pode ficar abaixo do sobrepreço
  * da venda de oportunidade — os NPCs deixavam de comprar uns aos outros.
  */
 export const NPC_BUY_MAX_VALUE_RATIO = 1.4;
+/** Leilão: fração do orçamento que um NPC aceita pôr num lance. */
+export const NPC_AUCTION_BUDGET_SHARE = 0.6;
 
 /** Venda NPC: depois de vender, a posição fica com pelo menos estes jogadores. */
 export const NPC_POS_KEEP: Record<string, number> = { GR: 2, DEF: 5, MED: 5, ATA: 4 };

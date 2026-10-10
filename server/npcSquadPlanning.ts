@@ -9,6 +9,7 @@ import {
   NPC_BUY_BUDGET_SHARE,
   NPC_BUY_BUDGET_SHARE_URGENT,
   NPC_BUY_MAX_VALUE_RATIO,
+  NPC_AUCTION_BUDGET_SHARE,
   NPC_POS_KEEP,
   NPC_LIST_MARKET_PREMIUM,
   NPC_LIST_SQUAD_THRESHOLDS,
@@ -72,6 +73,21 @@ export function rankNpcBuyTargets(args: {
       fill(a.player.position) - fill(b.player.position) ||
       (b.player.skill || 0) - (a.player.skill || 0) ||
       a.price - b.price,
+  );
+}
+
+/**
+ * Lance máximo de um NPC num leilão: o que o orçamento deixa e nunca acima
+ * do teto sobre o valor — o mesmo da lista. Sem o teto bastava abrir o
+ * leilão a 2,5× o valor para um NPC entrar, e o contra-lance não tinha
+ * limite nenhum sobre o valor.
+ */
+export function npcAuctionMaxBid(budget: number, playerValue: number): number {
+  return Math.round(
+    Math.min(
+      Math.max(0, budget || 0) * NPC_AUCTION_BUDGET_SHARE,
+      Math.max(0, playerValue || 0) * NPC_BUY_MAX_VALUE_RATIO,
+    ),
   );
 }
 

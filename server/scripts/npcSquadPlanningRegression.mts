@@ -31,13 +31,19 @@
  *
  *   E1 — só constrói com massa adepta acima da lotação
  *   E2 — o teto da folha sobe com a bilheteira e fica igual sem jogos em casa
+ *
+ * Antes: num leilão o NPC entrava até 2,5× o valor e relicitava sem teto
+ * sobre o valor — bastava abrir o leilão caro para um NPC pagar.
+ *
+ *   A1 — lance máximo: o menor entre a parte do orçamento e o teto sobre o valor
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rankNpcBuyTargets, pickNpcListing, npcShouldRenew, npcShouldBuildStadium } from "../npcSquadPlanning";
+import { rankNpcBuyTargets, pickNpcListing, npcShouldRenew, npcShouldBuildStadium, npcAuctionMaxBid } from "../npcSquadPlanning";
 import {
   signingWage,
   NPC_BUY_MAX_VALUE_RATIO,
+  NPC_AUCTION_BUDGET_SHARE,
   npcFolhaCeiling,
   npcSustainableWeeklyFolha,
   NPC_LIST_MARKET_PREMIUM,
@@ -204,4 +210,12 @@ test("E2: o teto da folha sobe com a bilheteira e fica igual sem ela", () => {
     npcFolhaCeiling(1, 400_000),
     npcSustainableWeeklyFolha(1) + Math.round((400_000 * 0.85 * 9) / 25 / 2),
   );
+});
+
+test("A1: lance máximo de leilão limitado pelo valor e pelo orçamento", () => {
+  // Clube rico: manda o valor (nunca 2,5× como antes).
+  assert.equal(npcAuctionMaxBid(10_000_000, 100_000), 100_000 * NPC_BUY_MAX_VALUE_RATIO);
+  // Clube pobre: manda o orçamento.
+  assert.equal(npcAuctionMaxBid(50_000, 100_000), 50_000 * NPC_AUCTION_BUDGET_SHARE);
+  assert.equal(npcAuctionMaxBid(-5_000, 100_000), 0);
 });
