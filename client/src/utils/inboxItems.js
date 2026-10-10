@@ -343,12 +343,26 @@ export function formatInboxDate(week, year) {
   return `S${Math.max(1, Number(week) || 1)}/${Number(year) || 2026}`;
 }
 
+/**
+ * Data do rescaldo: sai no dia a seguir ao jogo (semana seguinte; a 20
+ * passa à semana 1 da época seguinte).
+ * @param {number} week semana do jogo
+ * @param {number} year ano da época
+ * @returns {string}
+ */
+export function formatRecapDate(week, year) {
+  const w = Number(week) || 1;
+  return w >= 20 ? formatInboxDate(1, (Number(year) || 2026) + 1) : formatInboxDate(w + 1, year);
+}
+
 function formatNewsDate(news, fallbackDate) {
   // Data fixa da linha: a semana do calendário (`slot`, 1..20) — o `matchweek`
   // só existe nas linhas anteriores a essa coluna e repete-se nas semanas de
   // Taça (não identifica uma semana).
   if (news?.slot != null && Number(news.year) > 0) {
-    return formatInboxDate(news.slot, news.year);
+    return String(news.type) === "postmatch"
+      ? formatRecapDate(news.slot, news.year)
+      : formatInboxDate(news.slot, news.year);
   }
   return news?.matchweek != null && Number(news.year) > 0
     ? formatInboxDate(news.matchweek, news.year)

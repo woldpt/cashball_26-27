@@ -23,6 +23,7 @@ import {
   cupDrawCovered,
   cupDrawListParts,
   formatInboxDate,
+  formatRecapDate,
   jobCovered,
   linkFirstMention,
   medicalCovered,
@@ -366,7 +367,7 @@ export function useInbox() {
         id: `mood-${postMatchMood.key || "jogo"}`,
         cat: "club",
         // Data do jogo, não da semana atual (senão "muda" de semana).
-        date: formatInboxDate(
+        date: formatRecapDate(
           (postMatchMood.weekIdx ?? calendarIndex ?? 0) + 1,
           postMatchMood.year ?? seasonYear,
         ),

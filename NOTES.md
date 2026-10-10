@@ -1,3 +1,6 @@
+## Jornal: rescaldo sai na semana a seguir ao jogo (2026-10-10)
+`formatRecapDate` (inboxItems.js) soma 1 semana à data dos rescaldos (`postmatch` e o transitório); semana 20 passa à S1 do ano seguinte. Só no ecrã, a BD mantém o slot do jogo. Testado: lint + check:types.
+
 ## Deploy v26.10.44 no rick (2026-10-10)
 - Commit `119f9c04` com a tag `v26.10.44`: piso de compra NPC pela divisão e renovação de contratos NPC (menos leilões em massa). Backend Healthy.
 
