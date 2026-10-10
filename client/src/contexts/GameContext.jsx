@@ -627,22 +627,23 @@ export function GameProvider({
 			const isMyMatch =
 				me?.teamId != null &&
 				(match.homeTeamId === me.teamId || match.awayTeamId === me.teamId);
-			const isHumanMatch = players.some(
-				(p) => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId,
-			);
-			if (isMyMatch || isHumanMatch) {
+			// Só o meu jogo faz som; outros jogos (mesmo de humanos) ficam mudos.
+			if (isMyMatch) {
 				const newVar = events.filter(
 					(e) => e.type === "var_disallowed" && takeFresh(match, e),
 				);
 				const newOther = events.filter(
 					(e) => ["red", "injury"].includes(e.type) && takeFresh(match, e),
 				);
-				if (newGoals.length) playGoalSound();
+				if (newGoals.length) {
+					const mySide = match.homeTeamId === me.teamId ? "home" : "away";
+					playGoalSound(newGoals.some((e) => e.team === mySide));
+				}
 				else if (newVar.length) playVarSound();
 				else if (newOther.length) playNotification();
 			}
 		});
-	}, [liveMinute, matchResults, me?.teamId, players]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [liveMinute, matchResults, me?.teamId]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── Post-match mood modal (Vitória / Adeptos descontentes / Empate) ─────
 	// Abre sobre o tab onde o utilizador está (em regra, o Jogo) mal chegam
@@ -801,7 +802,7 @@ year: seasonYear,
 	// marcador final presente E relógio parado nos 90'/120'. As chaves e os
 	// formatos espelham o humor pós-jogo (incluindo a guarda `mom` na liga);
 	// na taça sem `winnerId` ainda há prolongamento/penáltis — o apito espera.
-	// Apito igual para V/E/D; o selo limpa-se sozinho ao fim de 5 s (= atraso do landing no GameOverlays).
+	// Apito igual para V/E/D (derrota acaba em vaia); o selo limpa-se sozinho ao fim de 5 s (= atraso do landing no GameOverlays).
 	useEffect(() => {
 		if (isPlayingMatch || liveMinute < 90) return;
 		const w = computeFinalWhistle({

@@ -193,7 +193,8 @@ export function registerMatchListeners(handlers, refs, ctx) {
 				handlers.setPenaltySuspense(null);
 				const revealedGoals = (f.minuteEvents || []).filter((ne) => ne && isGoalType(ne.type));
 				if (revealedGoals.length) {
-					playGoalSound();
+					const mySide = f.homeTeamId === myTeamId ? "home" : "away";
+					playGoalSound(revealedGoals.some((g) => g.team === mySide));
 					refs.setGoalFlashRef((prev) => {
 						const next = { ...prev };
 						for (const g of revealedGoals) {

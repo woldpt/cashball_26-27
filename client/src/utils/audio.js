@@ -40,13 +40,13 @@ export const playNotification = () =>
     bell(ctx, t + 0.13, 1175, 0.6, 0.07);
   });
 
-// Golo: ding triunfal de sino + rugido da bancada a rebentar.
-export const playGoalSound = () =>
+// Golo: ding triunfal de sino; só o golo nosso traz o rugido da bancada.
+export const playGoalSound = (mine = true) =>
   play((ctx, t) => {
     bell(ctx, t, 523, 0.5, 0.16);
     bell(ctx, t + 0.1, 659, 0.5, 0.16);
     bell(ctx, t + 0.2, 784, 0.9, 0.2);
-    crowd(ctx, t, "win");
+    if (mine) crowd(ctx, t, "win");
   });
 
 // Contratação: arpejo de sino ascendente, brilhante.
@@ -58,31 +58,31 @@ export const playSigningSound = () =>
   });
 
 // Vaia: "ooo" grave a descer com vibrato (sawtooth filtrado) + bancada em lamento.
-export const playBooSound = () =>
-  play((ctx, t) => {
-    const o = ctx.createOscillator();
-    o.type = "sawtooth";
-    o.frequency.setValueAtTime(240, t);
-    o.frequency.exponentialRampToValueAtTime(150, t + 1.1);
-    const vib = ctx.createOscillator();
-    const vibG = ctx.createGain();
-    vib.frequency.value = 5.5;
-    vibG.gain.value = 6;
-    vib.connect(vibG).connect(o.frequency);
-    const lp = ctx.createBiquadFilter();
-    lp.type = "lowpass";
-    lp.frequency.value = 520;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.1, t + 0.25);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
-    o.connect(lp).connect(g).connect(ctx.destination);
-    o.start(t);
-    vib.start(t);
-    o.stop(t + 1.2);
-    vib.stop(t + 1.2);
-    crowd(ctx, t, "loss");
-  });
+const boo = (ctx, t) => {
+  const o = ctx.createOscillator();
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(240, t);
+  o.frequency.exponentialRampToValueAtTime(150, t + 1.1);
+  const vib = ctx.createOscillator();
+  const vibG = ctx.createGain();
+  vib.frequency.value = 5.5;
+  vibG.gain.value = 6;
+  vib.connect(vibG).connect(o.frequency);
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 520;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.1, t + 0.25);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+  o.connect(lp).connect(g).connect(ctx.destination);
+  o.start(t);
+  vib.start(t);
+  o.stop(t + 1.2);
+  vib.stop(t + 1.2);
+  crowd(ctx, t, "loss");
+};
+export const playBooSound = () => play(boo);
 
 // VAR: dois bips secos + "bwom" descendente de sala de vídeo.
 export const playVarSound = () =>
@@ -173,7 +173,7 @@ const blast = (ctx, t, dur, vol) => {
 const crowd = (ctx, t, outcome) => {
   const cfg = {
     win: { f0: 500, f1: 1100, peak: 0.16, rise: 0.9, dur: 4.2 },
-    draw: { f0: 450, f1: 450, peak: 0.07, rise: 0.8, dur: 3 },
+    draw: { f0: 450, f1: 450, peak: 0.12, rise: 0.8, dur: 3 },
     loss: { f0: 700, f1: 260, peak: 0.1, rise: 0.5, dur: 3.2 },
   }[outcome] || { f0: 450, f1: 450, peak: 0.07, rise: 0.8, dur: 3 };
   const n = ctx.createBufferSource();
@@ -206,7 +206,8 @@ export const playWhistleSound = (outcome) => {
     blast(ctx, t, 0.22, 0.2);
     blast(ctx, t + 0.34, 0.22, 0.2);
     blast(ctx, t + 0.68, 0.9, 0.24);
-    crowd(ctx, t + 0.9, outcome);
+    if (outcome === "loss") boo(ctx, t + 0.9);
+    else crowd(ctx, t + 0.9, outcome);
   } catch {
     // ignore
   }
