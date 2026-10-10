@@ -39,6 +39,11 @@
 - Push `c27c6180..31869844`; tag publicada.
 - Rick: `git pull` + rebuild; backend Healthy.
 
+## Deploy v26.10.48 no rick (2026-10-10)
+- Bump `93ce106f`, tag `v26.10.48`: equilíbrio de jogo — contra-ataque defensivo, posse pela diferença de médios, ligas menos niveladas e 4.ª divisão com estádios e sorteio justos.
+- Push `31869844..93ce106f` (14 commits); tag publicada.
+- Rick: `git pull` + rebuild; backend Healthy.
+
 ## Escolha de clube: poda das opções ocupadas (2026-10-10)
 Quando um humano fica com um clube, sai das opções dos outros despedidos (que recebem a lista nova); lista vazia ⇒ novo sorteio de 3 (antes ficavam sem clube e sem opções). `pruneDismissalOptions` em `assignCoachToTeam`.
 Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-freeze, audit:socketio.
