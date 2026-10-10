@@ -311,6 +311,10 @@ export interface ActiveGame {
 
   // ── Single state machine (replaces matchState + cupState) ──
   gamePhase: GamePhase;
+  // Semana cujo apito final já soou (fixada no FULL TIME; limpa no início do
+  // jogo seguinte e no prolongamento). As notícias gravadas nessa janela saem
+  // na semana seguinte (`newsSlotFor`).
+  _whistleSlot?: number;
 
   // ── Current event runtime ──
   currentEvent: any | null; // CalendarEntry | null — what we're playing RIGHT NOW

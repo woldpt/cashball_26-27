@@ -18,8 +18,10 @@
 - Porquê: pedido do utilizador — cartões de leilão com «Sem clube» nos cortes de custos de clubes NPC.
 - Testado: typecheck, `test:contractrenewal`, `test:contractyear`, `audit:gamestate` numa sala local (0 erros); SQL antigo vs novo numa sala local (22 jogadores; antes sem `team_id`/`team_name`/`value`). Não visto num leilão real — falta confirmar.
 
-## Jornal: rescaldo sai na semana a seguir ao jogo (2026-10-10)
-`formatRecapDate` (inboxItems.js) soma 1 semana à data dos rescaldos (`postmatch` e o transitório); semana 20 passa à S1 do ano seguinte. Só no ecrã, a BD mantém o slot do jogo. Testado: lint + check:types.
+## Jornal: notícias depois do apito saem na semana seguinte (2026-10-10)
+- Após o apito final, toda a notícia grava a semana seguinte: `newsSlotFor` (`coreHelpers.ts`) usa `game._whistleSlot`, fixado no FULL TIME e limpo no jogo seguinte, no prolongamento e ao voltar ao lobby. Rescaldo continua a guardar a jogada e o ecrã soma 1. Plano em `docs/plans/2026-10-10-noticias-depois-do-apito.md`.
+- Época tem 25 semanas (não 20): a correção de ontem no rescaldo tinha o corte errado; agora `formatSeasonWeek` usa `SEASON_WEEKS`. Lesões guardam `played` na descrição para a contagem não mudar; histórico já gravado fica como está.
+- Testado: `test:newsslot` (N6 novo), `test:crash-recovery`, `test:progress-news`, `audit:gamestate` numa sala local (0 erros), typecheck, lint, check:types, datas e contagem de semanas via script. Falta ver numa finalização de época real.
 
 ## Deploy v26.10.44 no rick (2026-10-10)
 - Commit `119f9c04` com a tag `v26.10.44`: piso de compra NPC pela divisão e renovação de contratos NPC (menos leilões em massa). Backend Healthy.
@@ -125,8 +127,4 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Aviso "Faltam: 11 titulares…" passou para debaixo das Formações (e aparece também no telemóvel); Força do onze estica até à altura da linha de topo, por cima do campo.
 - Testado: lint, check:types, test:mobile (195/195).
 
-## Guardas financeiras 2 (2026-10-09)
-- Re-auditoria → `docs/plans/2026-10-09-guardas-financas-2.md`: patrocínio perfil B já não conta a época inteira como receita; clube sem treinador humano escolhe patrocinador sozinho na renda semanal; empréstimos/investimento NPC/crédito NPC de patrocínio passam pela fila da sala; erros de escrita dos prémios da Taça fazem ROLLBACK; leilão restaurado fecha pelo caminho único (`auctionHooks`) com guarda de dono e saldo; renda relê o marcador na fila; Finanças mostram amigáveis 50/50.
-- Por decidir (não mexido): lances ao sair da sala, cláusula sobre jogador sem clube, marca de patrocinador duplicada em cliques simultâneos (cosmético).
-- Testado: `test:finance-guards` (F7–F11 novos, cada um falha sem a correção), typecheck, crash-recovery, topscorer, staff, sponsor, room-tx, connect-smoke, npc-bid-window, finalize, `audit:gamestate` (4 verificações novas, sala local 0 erros), client lint + check:types.
 

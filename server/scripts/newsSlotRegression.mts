@@ -148,3 +148,23 @@ test("N5 — recordTransfer grava a semana em transfer_history", async () => {
     "negócio da jornada 4 datado na semana 6",
   );
 });
+
+test("N6 — depois do apito final a notícia sai na semana seguinte (rescaldo fica na jogada)", async () => {
+  const db = await openDb();
+  // Apito final da semana 5, com o calendário ainda na semana 5.
+  const whistle = makeGame(db, { _whistleSlot: 5 });
+  logClubNews(whistle, "league_final", "Classificação final", 7, { slot: 5 });
+  logClubNewsOnce(whistle, "training_report", "Treino", 7, { slot: 5 });
+  logClubNews(whistle, "postmatch", "Rescaldo", 7, { slot: 5 });
+  // Jogo em curso da semana 5 (sem apito): fica na semana 5.
+  logClubNews(makeGame(db, { calendarIndex: 4 }), "suspension", "Castigo", 7, {});
+  await defer(db);
+  // Por tipo (não por id): logClubNewsOnce grava depois de uma consulta.
+  const rows = await all(db, "SELECT type, slot FROM club_news ORDER BY type");
+  assert.deepEqual(rows, [
+    { type: "league_final", slot: 6 },
+    { type: "postmatch", slot: 5 },
+    { type: "suspension", slot: 5 },
+    { type: "training_report", slot: 6 },
+  ]);
+});

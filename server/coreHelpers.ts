@@ -83,6 +83,17 @@ export function currentSlot(game: ActiveGame): number {
 }
 
 /**
+ * Semana do calendário em que sai uma notícia. Depois do apito final, a
+ * notícia da jogada sai na semana seguinte: o calendário pode ainda não ter
+ * avançado, por isso não basta `currentSlot`. O rescaldo fica de fora — guarda
+ * a jogada e o ecrã soma-lhe 1 (`formatRecapDate`).
+ */
+export function newsSlotFor(game: ActiveGame, type: string, explicit?: number): number {
+  const slot = explicit ?? currentSlot(game);
+  return type !== "postmatch" && slot === game._whistleSlot ? slot + 1 : slot;
+}
+
+/**
  * Época absoluta actual derivada do estado do jogo (em slots).
  * Salas migradas do calendário de 19 avaliam contratos da época em curso
  * com a fórmula velha até ao fim da época (ver contractCutoverSeason).
@@ -819,7 +830,7 @@ export function logClubNews(
       data.related_team_name || null,
       data.amount || null,
       data.matchweek ?? game.matchweek,
-      data.slot ?? currentSlot(game),
+      newsSlotFor(game, type, data.slot),
       (data.year ?? game.year) || 0,
     ],
     () => {
@@ -865,7 +876,7 @@ export function logClubNewsOnce(
   extra?: Record<string, any>,
 ) {
   const matchweek = data.matchweek ?? game.matchweek;
-  const slot = data.slot ?? currentSlot(game);
+  const slot = newsSlotFor(game, type, data.slot);
   const year = (data.year ?? game.year) || 0;
   game.db.get(
     // A chave é a semana (`slot`), não o matchweek: nas semanas de Taça o
@@ -900,6 +911,10 @@ export function logMedicalNews(
   source?: "yellow",
 ) {
   if (!isHumanTeam(game, teamId)) return;
+  // `played` = semana em que a lesão/castigo aconteceu (o cliente conta as
+  // semanas de baixa a partir dela); a notícia pode sair na semana seguinte.
+  const played = slot ?? currentSlot(game);
+  const newsSlot = newsSlotFor(game, kind, played);
   game.db.get(
     // Castigos: qualquer linha do mesmo jogador na mesma semana conta (amarelo
     // + vermelho no mesmo jogo = uma só notícia, atualizada para o castigo mais longo).
@@ -907,7 +922,7 @@ export function logMedicalNews(
       ? `SELECT id, amount, title FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND (amount = ? OR (year = ? AND slot = ?)) LIMIT 1`
       : `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND amount = ? LIMIT 1`,
     kind === "suspension"
-      ? [teamId, kind, player.id, until, year ?? game.year ?? 0, slot ?? currentSlot(game)]
+      ? [teamId, kind, player.id, until, year ?? game.year ?? 0, newsSlot]
       : [teamId, kind, player.id, until],
     (err: any, row: any) => {
       if (err) return;
@@ -934,12 +949,11 @@ export function logMedicalNews(
           until,
           position: player.position ?? null,
           skill: player.skill ?? null,
+          played,
         }),
         matchweek,
         year,
-        // Sem slot explícito (semanas de Taça), a semana em curso é a da lesão:
-        // o cliente deriva o total de semanas por until - slot.
-        slot: slot ?? currentSlot(game),
+        slot: newsSlot,
       }, io);
     },
   );
@@ -1137,7 +1151,7 @@ interface TransferRecord {
  */
 export function recordTransfer(game: ActiveGame, info: TransferRecord, io?: any) {
   const matchweek = game.matchweek || 0;
-  const slot = currentSlot(game);
+  const slot = newsSlotFor(game, "transfer");
   const year = game.year || 0;
 
   const finish = (

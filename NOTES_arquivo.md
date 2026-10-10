@@ -651,3 +651,8 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Pontas: renda semanal não cobra se o marcador não se lê; teto de empréstimo 2,5M real (+ botão); lances do treinador despedido retirados; `audit:gamestate` com 4 verificações novas.
 - Testado: novo `test:finance-guards` (F1–F6, cada um falha no código antigo), typecheck, crash-recovery, topscorer, sponsor, staff, connect-smoke, npc-bid-window, room-tx, testes de despedimento, finalize E2E; client lint + check:types.
 
+
+## Guardas financeiras 2 (2026-10-09)
+- Re-auditoria → `docs/plans/2026-10-09-guardas-financas-2.md`: patrocínio perfil B já não conta a época inteira como receita; clube sem treinador humano escolhe patrocinador sozinho na renda semanal; empréstimos/investimento NPC/crédito NPC de patrocínio passam pela fila da sala; erros de escrita dos prémios da Taça fazem ROLLBACK; leilão restaurado fecha pelo caminho único (`auctionHooks`) com guarda de dono e saldo; renda relê o marcador na fila; Finanças mostram amigáveis 50/50.
+- Por decidir (não mexido): lances ao sair da sala, cláusula sobre jogador sem clube, marca de patrocinador duplicada em cliques simultâneos (cosmético).
+- Testado: `test:finance-guards` (F7–F11 novos, cada um falha sem a correção), typecheck, crash-recovery, topscorer, staff, sponsor, room-tx, connect-smoke, npc-bid-window, finalize, `audit:gamestate` (4 verificações novas, sala local 0 erros), client lint + check:types.

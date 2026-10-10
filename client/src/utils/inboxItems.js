@@ -8,6 +8,7 @@
  * Um evento = uma notícia: as linhas gémeas de um negócio (transfer_in /
  * transfer_out + histórico global) fundem-se num só item de Mercado.
  */
+import { SEASON_WEEKS } from "../constants/index.js";
 import { formatCurrency } from "./formatters.js";
 import { computeMoodVariant } from "./moodVariant.js";
 
@@ -344,25 +345,38 @@ export function formatInboxDate(week, year) {
 }
 
 /**
- * Data do rescaldo: sai no dia a seguir ao jogo (semana seguinte; a 20
- * passa à semana 1 da época seguinte).
+ * Semana do calendário como data: depois da última semana da época, a 1 da
+ * época seguinte.
+ * @param {number} week semana do calendário (1..SEASON_WEEKS, +1 após o apito)
+ * @param {number} year ano da época
+ * @returns {string}
+ */
+export function formatSeasonWeek(week, year) {
+  const w = Math.max(1, Number(week) || 1);
+  return w > SEASON_WEEKS
+    ? formatInboxDate(w - SEASON_WEEKS, (Number(year) || 2026) + 1)
+    : formatInboxDate(w, year);
+}
+
+/**
+ * Data do rescaldo: sai no dia a seguir ao jogo, por isso soma 1 à semana jogada.
  * @param {number} week semana do jogo
  * @param {number} year ano da época
  * @returns {string}
  */
 export function formatRecapDate(week, year) {
-  const w = Number(week) || 1;
-  return w >= 20 ? formatInboxDate(1, (Number(year) || 2026) + 1) : formatInboxDate(w + 1, year);
+  return formatSeasonWeek((Number(week) || 1) + 1, year);
 }
 
 function formatNewsDate(news, fallbackDate) {
-  // Data fixa da linha: a semana do calendário (`slot`, 1..20) — o `matchweek`
-  // só existe nas linhas anteriores a essa coluna e repete-se nas semanas de
-  // Taça (não identifica uma semana).
+  // Data fixa da linha: a semana do calendário (`slot`) — o `matchweek` só
+  // existe nas linhas anteriores a essa coluna e repete-se nas semanas de
+  // Taça (não identifica uma semana). Após o apito o servidor já grava a
+  // semana seguinte; só o rescaldo guarda a jogada e soma aqui.
   if (news?.slot != null && Number(news.year) > 0) {
     return String(news.type) === "postmatch"
       ? formatRecapDate(news.slot, news.year)
-      : formatInboxDate(news.slot, news.year);
+      : formatSeasonWeek(news.slot, news.year);
   }
   return news?.matchweek != null && Number(news.year) > 0
     ? formatInboxDate(news.matchweek, news.year)
@@ -840,8 +854,10 @@ function medicalArticle(n) {
     title = `🟥 ${player.label} castigado`;
     body = `${player.label}${detail} suspenso até à jornada ${until + 1}. O castigo obriga o treinador a mexer nas contas da próxima convocatória.`;
   } else {
-    // until - slot = semanas totais (slot = semana em que a lesão aconteceu).
-    const weeks = Number(n?.slot) > 0 ? until - Number(n.slot) : 0;
+    // until - semana da lesão = semanas totais. A linha pode sair na semana
+    // seguinte ao jogo: a semana da lesão vem no facto `played`.
+    const played = Number(facts.played) || Number(n?.slot) || 0;
+    const weeks = played > 0 ? until - played : 0;
     if (weeks >= 1) {
       ({ title, body } = injuryTexts(newsVariant(n, 3), player.label, detail, weeks, until));
     } else {
@@ -1531,7 +1547,7 @@ export function newsRowsToItems(rows, fallbackDate, viewerTeamId = null) {
   const done = new Set();
   const items = [];
   // Amarelo + vermelho na mesma semana: fica só o castigo mais longo.
-  const susKey = (n) => `${n.player_id}|${n.year}|${n.slot ?? n.matchweek}`;
+  const susKey = (n) => `${n.player_id}|${n.year}|${parseNewsFacts(n)?.played ?? n.slot ?? n.matchweek}`;
   const longestSus = new Map();
   for (const n of list) {
     if (n?.type !== "suspension") continue;

@@ -165,6 +165,7 @@ export function buildWeeklyFinanceFacts(p: {
   });
 }
 import {
+  currentSlot,
   fetchTopScorers,
   getAllTeamForms,
   getStandingsRows,
@@ -1109,6 +1110,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       `[${game.roomCode}] 🏁 FULL TIME reached | entry=${entry ? `type:${entry.type}` : "null"} | phase=${game.gamePhase}`,
     );
     game.gamePhase = "match_finalizing";
+    // Apito final: a semana jogada fica fixada até ao próximo jogo (ver `newsSlotFor`).
+    game._whistleSlot = currentSlot(game);
     saveGameState(game);
 
     const finalizeWatchdog = setTimeout(() => {
@@ -1698,6 +1701,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   // numa quebra. Sem isto a fase ficava presa ou o jogo repetia com o 11 antigo.
   function revertWeekToLobby(game: ActiveGame) {
     game.gamePhase = "lobby";
+    game._whistleSlot = undefined;
     game.currentFixtures = [];
     game.lastHalftimePayload = null;
     resetAllReady(game);
@@ -1994,6 +1998,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     game.gamePhase = "match_first_half";
     game.currentEvent = entry;
     game._lastCompletedSegment = null;
+    game._whistleSlot = undefined;
 
     console.log(
       `[${game.roomCode}] 🏟 Starting match | type=${entry.type} | calendarIndex=${game.calendarIndex} | ${entry.type === "cup" ? `round=${(entry as any).round}` : entry.type === "friendly" ? `amigável` : `mw=${(entry as any).matchweek}`}`,

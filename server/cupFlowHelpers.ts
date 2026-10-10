@@ -1764,6 +1764,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			// via the standard transient-phase restart path).
 			game.gamePhase = "match_extra_time";
 			game._etSimCompleted = false;
+			// O prolongamento ainda é jogo: as notícias dele não saem na semana seguinte.
+			game._whistleSlot = undefined;
 
 			// Apply ET substitutions and re-read tactics changed during the pause screen
 			if (humanInAnyDraw) {
@@ -2797,6 +2799,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	// fixtures — a ronda rejoga-se do 0 (como após uma quebra).
 	function revertRoundToLobby(game: ActiveGame) {
 		game.gamePhase = "lobby";
+		game._whistleSlot = undefined;
 		game.currentFixtures = [];
 		game.cupHalftimePayload = null;
 		game.lastHalftimePayload = null;
