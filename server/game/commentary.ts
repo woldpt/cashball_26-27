@@ -31,6 +31,17 @@ function goalPhrase(name: string, ctx?: GoalContext): string {
   return pickPhrase(defaultGoalPhrases(name));
 }
 
+// Golo em contra-ataque — a equipa fechada atrás apanha o adversário subido.
+function counterGoalPhrase(name: string): string {
+  return pickPhrase([
+    `GOLOOO DE ${name.toUpperCase()}! Contra-ataque de manual: recuperação, três passes e bola nas redes.`,
+    `Apanhados em contrapé! ${name} foge nas costas da defesa subida e não perdoa.`,
+    `Quem tanto ataca, descobre-se: ${name} fecha o contra-ataque com um remate certeiro. Golo!`,
+    `Transição rápida, a defesa adversária ainda vinha a recuar... e ${name} já festeja!`,
+    `Golo de ${name}! Tanto espaço nas costas dos defesas só podia dar nisto.`,
+  ]);
+}
+
 // Auto-golo — um defensor da equipa contrária empurra a bola para a própria
 // baliza. Conta como golo da equipa atacante no marcador, mas não credita
 // nenhum jogador (sem update em players.goals).
@@ -1656,6 +1667,7 @@ export {
   captainRalliesPhrase,
   captainSilentPhrase,
   goalPhrase,
+  counterGoalPhrase,
   ownGoalPhrase,
   penaltyGoalPhrase,
   penaltyMissPhrase,

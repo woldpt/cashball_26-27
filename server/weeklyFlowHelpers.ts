@@ -190,6 +190,7 @@ import {
   queueMatchDeltaWrites,
   createMinuteBarrier,
 } from "./game/engine";
+import { fatiguePoints } from "./game/playerUtils";
 import { generateAITactic } from "./game/matchCalculations";
 import { halftimeSubPhrase } from "./game/commentary";
 import { loadSquadRatings } from "./game/oddsSquad";
@@ -259,7 +260,7 @@ function planNpcHalftimeSubs(
       fatigue: getMatchFatigueSnapshot(fixture, teamSide, player.id),
     }))
     .filter(
-      ({ fatigue }) => fatigue.matchMinutes >= 45 && fatigue.fatigueLoss >= 2,
+      ({ player, fatigue }) => fatigue.matchMinutes >= 45 && fatiguePoints(player) >= 2,
     )
     .sort(
       (a, b) =>

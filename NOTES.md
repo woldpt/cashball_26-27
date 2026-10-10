@@ -1,3 +1,9 @@
+## Motor: contra-ataque e cansaço proporcional (2026-10-10)
+- Defensivo finaliza melhor contra Ofensivo (+25%) e contra Pressão Alta (+10%) — `counterAttackConvMult`; metade desses golos tem narração de contra-ataque. Cansaço: cada golpe tira 4% da skill base (antes −1 fixo), ×1,3 com Pressão Alta; por dentro tem decimais, arredonda-se só ao enviar ao cliente. Lesões e trocas NPC ao intervalo usam `fatiguePoints(p)`.
+- Porquê: Ofensivo + Pressão Alta ganhava a tudo e defender nunca compensava. Plano: `docs/plans/2026-10-10-contra-ataque-cansaco-proporcional.md`.
+- Medido (todos contra todos, pts/jogo): estilos 1,29/1,36/1,43 → 1,37/1,35/1,36; Defensivo vs Ofensivo −0,25 → +0,09 a +0,15; Pressão Alta vs Média +0,15 → −0,13 (skill 44), mas ainda +0,10 em skill 10 (a posse conta médios em pontos, não em % — por fazer). Golos/jogo 2,53 na calibração.
+- Testado: typecheck, test:engine-unit (46/46, U40/U41 novos), substitutions, emergency-gk, own-goal, penalty-ordering, engineCalibration, audit:socketio (0 erros), audit:gamestate B8N0ZH (0 erros).
+
 ## Deploy v26.10.47 no rick (2026-10-10)
 - Bump `31869844`, tag `v26.10.47`: treinadores — aviso por má série, escolha de clube após despedimento (3 opções) e convite com vitórias recentes.
 - Push `c27c6180..31869844`; tag publicada.
@@ -126,16 +132,3 @@ Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10
 ## Motor: Fase 1 do roadmap tático (2026-10-09)
 - Formação contada no onze real; jogar com 10 custa (oportunidades/defesa); penáltis pelo domínio + GR conta; cartões pela agressividade; lesões pelo cansaço (+ erro: resistência testada num jogador e lesão noutro); golo possível no minuto após golo; `xg` por lance → "Remates"/"Golos esperados" no jogo ao vivo. Plano: `docs/plans/2026-10-09-roadmap-tatica-treinador-bancada.md`.
 - Testado: engine-unit 34/34 (U21–U26 novos, falham no código antigo), simulação 8000 jogos (golos/jogo iguais 2,465), own-goal, penalty-ordering, emergency-gk, substitutions, crash-recovery, segment-barrier, finalize, ratings, connect-smoke, audit:socketio, audit:gamestate B8N0ZH (0 erros), typecheck; client lint + check:types + test:mobile (2 falhas intermitentes no cabeçalho/jornal, passam ao repetir). Visual das estatísticas por ver num jogo real.
-
-## Deploy v26.10.37 no rick (2026-10-09)
-Push, tag e rebuild feitos; backend Healthy.
-Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
-
-## Transição do PAUSA no marcador (2026-10-09)
-- `LiveMatchHero.jsx`: ao passar o rato, o resultado esbate/encolhe e o "PAUSA" sobe com brilho (300ms; só esbater com movimento reduzido), em vez de trocar de repente.
-- Testado: lint, check:types.
-
-## Jornal: castigo duplicado e leitor com altura fixa (2026-10-09)
-- Amarelo + vermelho do mesmo jogador na mesma semana davam 2 notícias (sala TVV6WB): `logMedicalNews` atualiza a linha existente para o castigo mais longo e o cliente (`newsRowsToItems`) mostra só o mais longo (limpa também as já duplicadas). Leitor do Jornal: sem rodapé Recente/Antiga/Ler próxima, cartão com altura da área livre e scroll interno (só desktop).
-- Testado: server typecheck, client lint + check:types, test:mobile (195/195).
-

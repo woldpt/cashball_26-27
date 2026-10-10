@@ -92,6 +92,7 @@ const {
   shortHandedChanceMult,
   selectPenaltyTaker,
   duelConversionMult,
+  counterAttackConvMult,
 } = require("../game/matchCalculations.ts");
 const {
   resolvePenaltyKick,
@@ -865,7 +866,8 @@ test("U25 — lesão: o cansado lesiona-se mais, e é quem falhou a resistência
   const { tick, shared, fixture } = minuteTick(1);
   for (const p of tick.homeSquad) p.resistance = 1; // resistência nunca salva
   fixture._minute = 10;
-  fixture._fatigueLoss = { home: { 6: 20 }, away: {} }; // id 6: peso 7, resto 1 (total 17)
+  // id 6 (skill 32) com 20 golpes de cansaço (4% cada): peso 7, resto 1 (total 17)
+  tick.homeSquad.find((p) => p.id === 6)._matchSkill = 32 - 32 * 0.04 * 20;
   // gate 0 → lesão na casa; 0.68 → id 6 (0.68×17 cai na fatia dele). Antes: o
   // teste de resistência era para squad[7] e a lesão sorteava outro (0.95 → id 11).
   const seq = [0, 0.68];
@@ -1106,4 +1108,49 @@ test("U36 — braçadeira: escolha no arranque, passa quando o capitão sai, ím
   // Intervalo: sem escolha válida, mantém quem tem a braçadeira.
   assignCaptain(fixture, "home", home, { formation: "4-4-2", style: "Balanced", captainId: 3 }, 46);
   assert.equal(fixture._captain.home.id, 1);
+});
+
+// ── U40–U41: contra-ataque e cansaço proporcional ───────────────────────────
+test("U40 — contra-ataque: só o DEFENSIVO, só contra quem se expõe", () => {
+  assert.equal(counterAttackConvMult("DEFENSIVO", "EQUILIBRADO", "MEDIA"), 1, "adversário fechado: nada");
+  assert.equal(counterAttackConvMult("OFENSIVO", "OFENSIVO", "ALTA"), 1, "quem ataca não contra-ataca");
+  assert.equal(counterAttackConvMult("EQUILIBRADO", "OFENSIVO", "ALTA"), 1);
+  const vsOff = counterAttackConvMult("DEFENSIVO", "OFENSIVO", "MEDIA");
+  const vsPress = counterAttackConvMult("DEFENSIVO", "EQUILIBRADO", "ALTA");
+  assert.ok(vsOff > vsPress && vsPress > 1, "ofensivo expõe-se mais do que a pressão alta");
+  assert.ok(counterAttackConvMult("Defensive", "Offensive", "ALTA") > vsOff, "os dois somam (e aceita os nomes antigos)");
+
+  // No lance: mesma semente, o "golo esperado" do defensivo sobe contra o ofensivo.
+  const xgOf = (awayStyle) => {
+    const { tick, shared, fixture } = minuteTick(1);
+    const t = (style) => ({ formation: "4-4-2", style });
+    shared.currentHome = computeSidePower(tick.homeSquad, t("DEFENSIVO"), 25, 0, 1);
+    shared.currentAway = computeSidePower(tick.awaySquad, t(awayStyle), 25, 0, 1);
+    const defense = shared.currentAway.defense;
+    tick.rng = () => 0; // há sempre lance
+    resolveOpenPlayGoal(tick, shared, "home");
+    return { xg: fixture.events[0].xg, defense };
+  };
+  const eq = xgOf("EQUILIBRADO");
+  const off = xgOf("OFENSIVO");
+  // O ofensivo já defende pior; o contra-ataque soma por cima disso.
+  assert.ok(off.xg > eq.xg * (eq.defense / off.defense) * 0.99, `xg ${eq.xg} → ${off.xg}`);
+});
+
+test("U41 — cansaço proporcional: pesa o mesmo no jogador de 10 e no de 45", () => {
+  const lossShare = (skill, pressure) => {
+    const { tick } = minuteTick(77);
+    for (const p of tick.homeSquad) p.skill = skill;
+    tick.powers.home = computeSidePower(tick.homeSquad, { formation: "4-4-2", pressure }, 25, 0, 1);
+    for (let m = 1; m <= 90; m++) {
+      tick.minute = m;
+      applyMinuteFatigue(tick);
+    }
+    return tick.homeSquad.reduce((s, p) => s + (skill - (p._matchSkill ?? skill)), 0) / (skill * 11);
+  };
+  const low = lossShare(10, "MEDIA");
+  const high = lossShare(45, "MEDIA");
+  assert.ok(low > 0.05, `90' cansam (${low})`);
+  assert.ok(Math.abs(low - high) < 1e-9, `mesma percentagem: ${low} vs ${high}`);
+  assert.ok(lossShare(45, "ALTA") > high * 1.2, "pressão alta: cada golpe custa mais");
 });

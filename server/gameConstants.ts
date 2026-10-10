@@ -670,13 +670,19 @@ export const MATCH_TUNING = {
   duelSpareNeutral: 2,
   duelConvMin: 0.88,
   duelConvMax: 1.12,
+  // Contra-ataque: quem joga DEFENSIVO finaliza melhor contra quem se expõe
+  // (estilo OFENSIVO e/ou pressão ALTA — somam). Fecha o ciclo
+  // DEFENSIVO > OFENSIVO > EQUILIBRADO > DEFENSIVO.
+  counterVsOffensive: 0.25,
+  counterVsHighPress: 0.1,
   // Pressão: posse (inclinação), ataque/defesa, cartões e cansaço
-  // (fatigueSkip multiplica a hipótese de escapar ao desgaste).
+  // (fatigueSkip multiplica a hipótese de escapar ao desgaste; fatigueLoss
+  // multiplica o tamanho de cada golpe).
   pressure: {
-    ALTA: { posse: 0.03, attack: 1.03, defense: 0.95, cards: 1.3, fatigueSkip: 0.4 },
-    MEDIA: { posse: 0, attack: 1, defense: 1, cards: 1, fatigueSkip: 1 },
-    BAIXA: { posse: -0.03, attack: 0.95, defense: 1.15, cards: 0.8, fatigueSkip: 1.5 },
-  } as Record<string, { posse: number; attack: number; defense: number; cards: number; fatigueSkip: number }>,
+    ALTA: { posse: 0.03, attack: 1.03, defense: 0.95, cards: 1.3, fatigueSkip: 0.4, fatigueLoss: 1.3 },
+    MEDIA: { posse: 0, attack: 1, defense: 1, cards: 1, fatigueSkip: 1, fatigueLoss: 1 },
+    BAIXA: { posse: -0.03, attack: 0.95, defense: 1.15, cards: 0.8, fatigueSkip: 1.5, fatigueLoss: 1 },
+  } as Record<string, { posse: number; attack: number; defense: number; cards: number; fatigueSkip: number; fatigueLoss: number }>,
   // Conversa ao intervalo: pontos de moral de equipa na 2.ª parte, pelo
   // resultado ao intervalo (a ganhar / empate / a perder). Acalmar também
   // corta os cartões da 2.ª parte.
@@ -753,10 +759,12 @@ export const MATCH_TUNING = {
   // jogo é reduzida a este fator — amortiza lesões consecutivas (queixas
   // de coaches). Lido da BD no arranque do jogo → estável em replays/crashes.
   injuryLoadSoftener: 0.5,
-  // Fadiga: a cada intervalo de minutos jogados, -1 skill efetiva, com
-  // escape por resistência (por ponto). 0.00816→0.012: resistência máxima
+  // Fadiga: a cada intervalo de minutos jogados, um golpe de cansaço que tira
+  // fatigueLossShare da skill BASE (proporcional: pesa o mesmo num jogador de
+  // 10 e num de 45 — antes era -1 fixo), com escape por resistência (por ponto). 0.00816→0.012: resistência máxima
   // evita ~60% do desgaste (antes ~40%) — a resistência nota-se mais.
   fatigueIntervalMinutes: 15,
+  fatigueLossShare: 0.04,
   fatigueSkipPerResPoint: 0.012,
   // GR cansam-se muito menos que jogadores de campo: bónus extra de escape
   // (soma-se ao skipChance) para quem joga como GR (posição "GR", incl. GR

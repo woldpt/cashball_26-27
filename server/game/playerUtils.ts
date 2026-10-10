@@ -53,6 +53,16 @@ export function getEffectiveSkill(player: PlayerRow): number {
 }
 
 /**
+ * Golpes de cansaço que o jogador leva neste jogo (0 = fresco), deduzidos da
+ * skill perdida — a mesma medida em todas as divisões.
+ */
+export function fatiguePoints(player: PlayerRow): number {
+  const base = player?.skill ?? 0;
+  if (base <= 0) return 0;
+  return Math.max(0, base - getEffectiveSkill(player)) / (base * MATCH_TUNING.fatigueLossShare);
+}
+
+/**
  * Converte um jogador de campo em GR improvisado (regra do futebol
  * profissional: quando o GR sai e não há outro disponível, um jogador
  * calça as luvas até ao fim do jogo).

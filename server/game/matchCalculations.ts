@@ -610,6 +610,23 @@ export function duelConversionMult(attackers: number, defenders: number): number
 }
 
 /**
+ * Contra-ataque: só quem joga DEFENSIVO o tem, e só contra quem se expõe —
+ * estilo OFENSIVO e/ou pressão ALTA do adversário (somam).
+ */
+export function counterAttackConvMult(
+  attackingStyle: unknown,
+  defendingStyle: unknown,
+  defendingPressure: unknown,
+): number {
+  if (normaliseStyle(attackingStyle) !== "DEFENSIVO") return 1;
+  return (
+    1 +
+    (normaliseStyle(defendingStyle) === "OFENSIVO" ? MATCH_TUNING.counterVsOffensive : 0) +
+    (normalisePressure(defendingPressure) === "ALTA" ? MATCH_TUNING.counterVsHighPress : 0)
+  );
+}
+
+/**
  * Probabilidade de uma chance (criada pelo nº de posse) ser golo.
  * ATA (médio dos avançados, já com modificadores) contra a "parede"
  * DEF+GR — média vs média, logo o nº de jogadores não pesa.

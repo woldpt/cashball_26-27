@@ -10,6 +10,7 @@ import {
   isPlayerAvailable,
   convertToEmergencyGK,
   getEffectiveSkill,
+  fatiguePoints,
 } from "./playerUtils";
 import {
   canMakeSubstitution,
@@ -38,6 +39,7 @@ export {
 } from "./playerUtils";
 import {
   goalPhrase,
+  counterGoalPhrase,
   ownGoalPhrase,
   penaltyGoalPhrase,
   penaltyMissPhrase,
@@ -86,6 +88,7 @@ import {
   quotaFromFormation,
   shortHandedChanceMult,
   duelConversionMult,
+  counterAttackConvMult,
   normalisePressure,
   pickCaptain,
   captainMomentumMinutes,
@@ -149,7 +152,8 @@ export function getMatchFatigueSnapshot(
 ): MatchFatigueSnapshot {
   return {
     matchMinutes: Number(fixture._minutesPlayed?.[side]?.[playerId] ?? 0),
-    fatigueLoss: Number(fixture._fatigueLoss?.[side]?.[playerId] ?? 0),
+    // Arredondado só para mostrar — por dentro o cansaço tem casas decimais.
+    fatigueLoss: Math.round(Number(fixture._fatigueLoss?.[side]?.[playerId] ?? 0)),
   };
 }
 
@@ -172,7 +176,7 @@ export function buildLineupSnapshot(
     name: p.name,
     position: p.position,
     is_star: p.is_star || 0,
-    skill: getEffectiveSkill(p),
+    skill: Math.round(getEffectiveSkill(p)),
     photo: (p as any).photo || null,
     nationality: (p as any).nationality || null,
     ...getMatchFatigueSnapshot(fixture, side, p.id),
@@ -189,7 +193,7 @@ export function buildLineupSnapshot(
       name: p.name,
       position: p.position,
       is_star: p.is_star || 0,
-      skill: getEffectiveSkill(p),
+      skill: Math.round(getEffectiveSkill(p)),
       photo: p.photo || null,
       nationality: p.nationality || null,
       ...getMatchFatigueSnapshot(fixture, side, p.id),
@@ -237,7 +241,7 @@ export function buildPlayerCard(
     id: p.id,
     name: p.name,
     position: p.position,
-    skill: getEffectiveSkill(p),
+    skill: Math.round(getEffectiveSkill(p)),
     ...(detailed
       ? { resistance: p.resistance, form: p.form, is_star: p.is_star }
       : {}),
@@ -955,7 +959,7 @@ function swapOnPitch({
         position: incoming.position,
         is_star: incoming.is_star || 0,
         is_starter: true,
-        skill: getEffectiveSkill(incoming),
+        skill: Math.round(getEffectiveSkill(incoming)),
         ...getMatchFatigueSnapshot(fixture, side, incoming.id),
       };
       for (let i = lineupRef.length - 1; i > li; i--) {
@@ -1505,7 +1509,7 @@ function syncFatigueSnapshot(
     ...lineupRef[li],
     ...getMatchFatigueSnapshot(fixture, side, playerId),
   };
-  if (skill !== undefined) next.skill = skill;
+  if (skill !== undefined) next.skill = Math.round(skill);
   lineupRef[li] = next;
 }
 
@@ -1521,8 +1525,12 @@ function applyFatigueToPlayer(
   // O cansaço vive em `_matchSkill` (só memória) — `player.skill` é o atributo
   // persistente e nunca é mutado em jogo (senão o flush de lesões e os
   // snapshots de lineup guardariam valores fatigados na DB).
+  // `amount` = golpes de cansaço; cada um tira fatigueLossShare da skill BASE.
   const before = Number(getEffectiveSkill(player) ?? 0);
-  const after = Math.max(1, before - amount);
+  const after = Math.max(
+    1,
+    before - (player.skill ?? 0) * MATCH_TUNING.fatigueLossShare * amount,
+  );
   player._matchSkill = after;
   // A skill efetiva mudou — a força do lado fica dirty.
   if (after !== before) bumpPowerVersion(fixture, side);
@@ -1554,7 +1562,7 @@ function fatigueSkipChance(p: PlayerRow, pressureMult = 1): number {
 // Cansaço progressivo por minutos jogados. Cada jogador em campo acumula
 // minutos no fixture (fixture._minutesPlayed) e, a cada intervalo de fadiga
 // (MATCH_TUNING.fatigueIntervalMinutes), rola contra a resistência para
-// perder 1 de skill efetiva. Jogadores que entram mais
+// levar um golpe de cansaço (× lossMult da pressão). Jogadores que entram mais
 // tarde (substituições) começam a contar do zero — pernas frescas valem mais
 // que titulares cansados. O snapshot de lineup é mantido em sincronia para
 // que o ecrã de intervalo e os painéis de substituição mostrem o skill real.
@@ -1565,6 +1573,7 @@ function trackFatigue(
   lineupIds: Set<number>,
   rng: Rng = Math.random,
   pressureMult = 1,
+  lossMult = 1,
 ) {
   ensureFatigueLedgers(fixture);
   const mps = fixture._minutesPlayed[side];
@@ -1577,7 +1586,7 @@ function trackFatigue(
 
     if (rng() < fatigueSkipChance(p, pressureMult)) continue;
 
-    applyFatigueToPlayer(fixture, side, p, 1, rng);
+    applyFatigueToPlayer(fixture, side, p, lossMult, rng);
   }
 }
 
@@ -2426,15 +2435,17 @@ function npcSubstitute(tick: MinuteTickContext, side: MatchSide, diff: number): 
  */
 export function applyMinuteFatigue(tick: MinuteTickContext): void {
   const { fixture, homeSquad, awaySquad, homeLineupIds, awayLineupIds, rng } = tick;
-  const pressMult = (side: MatchSide) =>
-    MATCH_TUNING.pressure[normalisePressure(tick.powers?.[side]?.pressure)]?.fatigueSkip ?? 1;
-  const homePress = pressMult("home");
-  const awayPress = pressMult("away");
+  const press = (side: MatchSide) =>
+    MATCH_TUNING.pressure[normalisePressure(tick.powers?.[side]?.pressure)];
+  const homePress = press("home").fatigueSkip;
+  const awayPress = press("away").fatigueSkip;
+  const homeLoss = press("home").fatigueLoss;
+  const awayLoss = press("away").fatigueLoss;
 
   // Cansaço progressivo: cada intervalo de fadiga jogado, -1 skill efetiva,
   // com escape por resistência. Quem entra depois (subs) começa do zero.
-  trackFatigue(fixture, "home", homeSquad, homeLineupIds, rng, homePress);
-  trackFatigue(fixture, "away", awaySquad, awayLineupIds, rng, awayPress);
+  trackFatigue(fixture, "home", homeSquad, homeLineupIds, rng, homePress, homeLoss);
+  trackFatigue(fixture, "away", awaySquad, awayLineupIds, rng, awayPress, awayLoss);
 
   // Clima adverso: golpe de fadiga EXTRA por minuto, gradual por condição
   // (neve > frio > chuva forte > nevoeiro > vento > chuva; sol = 0), com
@@ -2445,13 +2456,13 @@ export function applyMinuteFatigue(tick: MinuteTickContext): void {
     for (const p of homeSquad) {
       if (!homeLineupIds.has(p.id)) continue;
       if (rng() < wPerMin && rng() >= fatigueSkipChance(p, homePress)) {
-        applyFatigueToPlayer(fixture, "home", p, 1, rng);
+        applyFatigueToPlayer(fixture, "home", p, homeLoss, rng);
       }
     }
     for (const p of awaySquad) {
       if (!awayLineupIds.has(p.id)) continue;
       if (rng() < wPerMin && rng() >= fatigueSkipChance(p, awayPress)) {
-        applyFatigueToPlayer(fixture, "away", p, 1, rng);
+        applyFatigueToPlayer(fixture, "away", p, awayLoss, rng);
       }
     }
   }
@@ -2733,6 +2744,9 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
     if (attacking.lines && defending.lines) {
       probGoal *= duelConversionMult(attacking.lines.ATA, defending.lines.DEF);
     }
+    // Contra-ataque: DEFENSIVO contra quem se expõe (OFENSIVO / pressão ALTA).
+    const counter = counterAttackConvMult(attacking.style, defending.style, defending.pressure);
+    probGoal *= counter;
     // "Golo esperado" do lance — o cliente soma por equipa (estatísticas).
     const xg = Math.round(probGoal * 100) / 100;
 
@@ -2859,9 +2873,14 @@ export function resolveOpenPlayGoal(tick: MinuteTickContext, shared: MinuteShare
     );
     const isDecisive = rng() < decisiveChance;
 
+    // Metade dos golos de quem tem o bónus conta-se como contra-ataque — o
+    // treinador vê a tática a resultar sem perder as frases de contexto.
+    const isCounter = counter > 1 && Math.random() < 0.5;
     const goalText = isCupFinalRound(fixture.round)
       ? finalGoalPhrase(scorer ? scorer.name : "Jogador")
-      : goalPhrase(scorer ? scorer.name : "Jogador", goalCtx);
+      : isCounter
+        ? counterGoalPhrase(scorer ? scorer.name : "Jogador")
+        : goalPhrase(scorer ? scorer.name : "Jogador", goalCtx);
     fixture.events.push({
       minute,
       type: "goal",
@@ -3215,11 +3234,10 @@ export async function resolveInjuries(tick: MinuteTickContext, shared: MinuteSha
     const isHome = side === "home";
     const squad = isHome ? powers.home.squad : powers.away.squad;
     if (squad.length === 0) return;
-    // Pernas cansadas lesionam-se mais: peso pelo desgaste acumulado no jogo.
-    const fatigue = fixture._fatigueLoss?.[side] ?? {};
+    // Pernas cansadas lesionam-se mais: peso pelos golpes de cansaço no jogo.
     const injuredPlayer = weightedPick(
       squad,
-      (p) => 1 + MATCH_TUNING.injuryFatigueWeightPerPoint * (fatigue[p.id] ?? 0),
+      (p) => 1 + MATCH_TUNING.injuryFatigueWeightPerPoint * fatiguePoints(p),
       rng,
     );
     const resistanceSkip =

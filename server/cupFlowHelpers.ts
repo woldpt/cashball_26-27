@@ -1779,7 +1779,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						name: p.name,
 						position: p.position,
 						is_star: p.is_star || 0,
-						skill: getEffectiveSkill(p),
+						skill: Math.round(getEffectiveSkill(p)),
 						photo: p.photo || null,
 						nationality: p.nationality || null,
 						...getMatchFatigueSnapshot(fx, teamSide, p.id),

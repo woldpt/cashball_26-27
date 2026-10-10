@@ -2,6 +2,18 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Deploy v26.10.37 no rick (2026-10-09)
+Push, tag e rebuild feitos; backend Healthy.
+Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
+
+## Transição do PAUSA no marcador (2026-10-09)
+- `LiveMatchHero.jsx`: ao passar o rato, o resultado esbate/encolhe e o "PAUSA" sobe com brilho (300ms; só esbater com movimento reduzido), em vez de trocar de repente.
+- Testado: lint, check:types.
+
+## Jornal: castigo duplicado e leitor com altura fixa (2026-10-09)
+- Amarelo + vermelho do mesmo jogador na mesma semana davam 2 notícias (sala TVV6WB): `logMedicalNews` atualiza a linha existente para o castigo mais longo e o cliente (`newsRowsToItems`) mostra só o mais longo (limpa também as já duplicadas). Leitor do Jornal: sem rodapé Recente/Antiga/Ler próxima, cartão com altura da área livre e scroll interno (só desktop).
+- Testado: server typecheck, client lint + check:types, test:mobile (195/195).
+
 ## RoomHub + WaitingCoachesModal — redesign (2026-10-06)
 - RoomHub: bugs (mensagem perdida no gap, convites presos, kick sem confirmação), mensagens agrupadas + sistema intercalado + scroll inteligente, split (`RoomHub` casca + `RoomHubPanel` só aberto, `CoachRow`, `ChatMessages`, `ChatComposer`, `useRoomInvites`), layout novo (cabeçalho único, folha inferior no mobile). `chatMessagesRef` saiu do GameContext.
 - WaitingCoachesModal: hero "À espera de X" + barra segmentada, banner de pausa com coaches offline, reutiliza `ChatMessages`/`ChatComposer`. Planos em `docs/plans/2026-10-06-*`.
