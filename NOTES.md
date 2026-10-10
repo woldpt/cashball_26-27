@@ -1,3 +1,9 @@
+## Motor: equilíbrio das formações (2026-10-10)
+- `duelPossePerMed` 0.025 → 0.012: cada médio a mais vale metade da posse.
+- Porquê: com equipas iguais a classificação das formações era a contagem de médios (3-5-2 ganhava a tudo, 4-2-4 perdia com tudo). Plano: `docs/plans/2026-10-10-equilibrio-formacoes.md`.
+- Medido (todos contra todos, pts/jogo por formação): de 1,46–1,22 para 1,40–1,31; melhor tática 1,44, pior 1,26; golos/jogo 2,52.
+- Testado: typecheck, test:engine-unit (47/47), engineCalibration, audit:gamestate B8N0ZH (0 erros).
+
 ## Motor: posse em percentagem (2026-10-10)
 - `computePossession` conta a diferença entre médios em % da média dos dois (`posseRelative: 0.42`, substitui `possePerPoint`); o meio da escala (skill 30) fica igual.
 - Porquê: em pontos, o mesmo desnível valia 1,4pp de posse a 10 de skill e 6,2pp a 44, e a Pressão Alta saía mais barata nas divisões de baixo. Plano: `docs/plans/2026-10-10-posse-em-percentagem.md`.
@@ -129,8 +135,3 @@ Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10
 ## Motor: Fase 3 do roadmap tático (2026-10-10)
 - Duelo de formações (linhas reais: médios a mais → posse; avançados vs sobra de defesas → finalização), pressão alta/média/baixa, conversa ao intervalo e até 2 ordens programadas (aplicadas pelo servidor só a humanos; evento `order` alinha a tática do cliente). UI: Tática (duelo, pressão, "Ordens para o jogo") e Intervenção (pressão + conversa só no intervalo).
 - Testado: engine-unit 41/41 (U30–U33 falham no código da Fase 2), simulação 8000 jogos (2,52 golos/jogo), own-goal, penalty-ordering, emergency-gk, substitutions, segment-barrier, finalize, ratings, connect-smoke, session-freeze, crash-recovery (GRMTZM), audits 0 erros, typecheck; client lint + check:types + test:mobile 195/195 + screenshots 320/360/390/1440 vistos. Validação do setTactic sem teste automático.
-
-## Motor: Fase 2 do roadmap tático (2026-10-10)
-- Posse recalculada a cada minuto (estilo, médios, cansaço, jogadores a menos, ímpeto de quem marcou — 8' a ×1,15); NPCs mudam de estilo pelo resultado (46'/70') e fazem trocas (60'/75', guardam 1 para lesões); humanos nunca tocados.
-- Testado: engine-unit 37/37 (U27–U29 falham no código da Fase 1), simulação 8000 jogos (2,50 golos/jogo), own-goal, penalty-ordering, emergency-gk, substitutions, segment-barrier, finalize, ratings, connect-smoke, audits 0 erros, typecheck.
-- ✅ Resolvido (2026-10-10): o `test:crash-recovery` S1 "finanças exatas" falhava com B8N0ZH/HP9S2L porque a conta esperada do teste não incluía os salários dos funcionários (534 000 €/semana nessas salas) nem a prestação do patrocínio; o jogo estava certo. Teste corrigido (e escolha sorteada de patrocinador neutralizada no setup); passa com B8N0ZH, HP9S2L, GRMTZM e uma cópia com patrocínio semanal.

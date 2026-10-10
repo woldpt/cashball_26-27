@@ -665,7 +665,7 @@ export const MATCH_TUNING = {
   // adversário inclina a posse; na finalização conta a "sobra" de defesas
   // (DEF − ATA adversários): 2 é o neutro (4-4-2 vs 4-4-2); cada um a menos
   // facilita, cada um a mais complica.
-  duelPossePerMed: 0.025,
+  duelPossePerMed: 0.012, // antes 0.025: a classificação das formações era a contagem de médios (3-5-2 ganhava a tudo, 4-2-4 perdia com tudo)
   duelConvPerPlayer: 0.04,
   duelSpareNeutral: 2,
   duelConvMin: 0.88,
