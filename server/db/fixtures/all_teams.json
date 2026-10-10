@@ -4,8 +4,8 @@
       "name": "Sporting",
       "division": 1,
       "skillRange": [
-        39,
-        54
+        44,
+        50
       ],
       "colors": {
         "primary": "#1ba84a",
@@ -205,8 +205,8 @@
       "name": "Porto",
       "division": 1,
       "skillRange": [
-        39,
-        54
+        44,
+        50
       ],
       "colors": {
         "primary": "#00428C",
@@ -406,8 +406,8 @@
       "name": "Benfica",
       "division": 1,
       "skillRange": [
-        39,
-        54
+        44,
+        50
       ],
       "colors": {
         "primary": "#EF2D2D",
@@ -606,6 +606,10 @@
     {
       "name": "Sp. Braga",
       "division": 1,
+      "skillRange": [
+        41,
+        48
+      ],
       "colors": {
         "primary": "#DC0B15",
         "secondary": "#FFFFFF"
@@ -803,6 +807,10 @@
     {
       "name": "Famalicão",
       "division": 1,
+      "skillRange": [
+        41,
+        48
+      ],
       "colors": {
         "primary": "#13273F",
         "secondary": "#F6C605"
@@ -1000,6 +1008,10 @@
     {
       "name": "Gil Vicente",
       "division": 1,
+      "skillRange": [
+        41,
+        48
+      ],
       "colors": {
         "primary": "#E30613",
         "secondary": "#FFFFFF"
@@ -1197,6 +1209,10 @@
     {
       "name": "Estoril",
       "division": 1,
+      "skillRange": [
+        38,
+        45
+      ],
       "colors": {
         "primary": "#FFEE00",
         "secondary": "#0000FF"
@@ -1394,6 +1410,10 @@
     {
       "name": "Moreirense",
       "division": 1,
+      "skillRange": [
+        38,
+        45
+      ],
       "colors": {
         "primary": "#00A650",
         "secondary": "#FFFFFF"
@@ -1591,6 +1611,10 @@
     {
       "name": "Marítimo",
       "division": 2,
+      "skillRange": [
+        31,
+        37
+      ],
       "colors": {
         "primary": "#990012",
         "secondary": "#FFFFFF"
@@ -1788,6 +1812,10 @@
     {
       "name": "Ac.Viseu",
       "division": 2,
+      "skillRange": [
+        31,
+        37
+      ],
       "colors": {
         "primary": "#101010",
         "secondary": "#FFFFFF"
@@ -1985,6 +2013,10 @@
     {
       "name": "Torreense",
       "division": 2,
+      "skillRange": [
+        31,
+        37
+      ],
       "colors": {
         "primary": "#800020",
         "secondary": "#FFFFFF"
@@ -2182,6 +2214,10 @@
     {
       "name": "U. Leiria",
       "division": 2,
+      "skillRange": [
+        29,
+        34
+      ],
       "colors": {
         "primary": "#E5E4E2",
         "secondary": "#000000"
@@ -2379,6 +2415,10 @@
     {
       "name": "Vizela",
       "division": 2,
+      "skillRange": [
+        29,
+        34
+      ],
       "colors": {
         "primary": "#2D4C97",
         "secondary": "#FFFFFF"
@@ -2576,6 +2616,10 @@
     {
       "name": "Lus. Lourosa",
       "division": 2,
+      "skillRange": [
+        29,
+        34
+      ],
       "colors": {
         "primary": "#FDD945",
         "secondary": "#FFFFFF"
@@ -2773,6 +2817,10 @@
     {
       "name": "Feirense",
       "division": 2,
+      "skillRange": [
+        27,
+        32
+      ],
       "colors": {
         "primary": "#2D4C97",
         "secondary": "#ffffff"
@@ -2967,6 +3015,10 @@
     {
       "name": "Chaves",
       "division": 2,
+      "skillRange": [
+        27,
+        32
+      ],
       "colors": {
         "primary": "#800020",
         "secondary": "#ff0000"
@@ -3164,6 +3216,10 @@
     {
       "name": "Amarante",
       "division": 3,
+      "skillRange": [
+        20,
+        26
+      ],
       "colors": {
         "primary": "#E5E4E2",
         "secondary": "#ffffff"
@@ -3361,6 +3417,10 @@
     {
       "name": "Belenenses",
       "division": 3,
+      "skillRange": [
+        20,
+        26
+      ],
       "colors": {
         "primary": "#273E7C",
         "secondary": "#ffffff"
@@ -3558,6 +3618,10 @@
     {
       "name": "Académica",
       "division": 3,
+      "skillRange": [
+        20,
+        26
+      ],
       "colors": {
         "primary": "#101010",
         "secondary": "#ffffff"
@@ -3755,6 +3819,10 @@
     {
       "name": "Varzim",
       "division": 3,
+      "skillRange": [
+        19,
+        24
+      ],
       "colors": {
         "primary": "#101010",
         "secondary": "#000000"
@@ -3952,6 +4020,10 @@
     {
       "name": "Mafra",
       "division": 3,
+      "skillRange": [
+        19,
+        24
+      ],
       "colors": {
         "primary": "#FDD945",
         "secondary": "#ffffff"
@@ -4149,6 +4221,10 @@
     {
       "name": "U. Santarém",
       "division": 3,
+      "skillRange": [
+        19,
+        24
+      ],
       "colors": {
         "primary": "#AD1814",
         "secondary": "#ffffff"
@@ -4343,6 +4419,10 @@
     {
       "name": "Trofense",
       "division": 3,
+      "skillRange": [
+        17,
+        22
+      ],
       "colors": {
         "primary": "#990012",
         "secondary": "#000000"
@@ -4540,6 +4620,10 @@
     {
       "name": "Atlético",
       "division": 3,
+      "skillRange": [
+        17,
+        22
+      ],
       "colors": {
         "primary": "#FBB82E",
         "secondary": "#0000ff"
@@ -7685,6 +7769,10 @@
     {
       "name": "Arouca",
       "division": 1,
+      "skillRange": [
+        38,
+        45
+      ],
       "colors": {
         "primary": "#FDD945",
         "secondary": "#000000"
@@ -7882,6 +7970,10 @@
     {
       "name": "Vitória SC",
       "division": 1,
+      "skillRange": [
+        35,
+        42
+      ],
       "colors": {
         "primary": "#FFFFFF",
         "secondary": "#000000"
@@ -8079,6 +8171,10 @@
     {
       "name": "Alverca",
       "division": 1,
+      "skillRange": [
+        35,
+        42
+      ],
       "colors": {
         "primary": "#990012",
         "secondary": "#1E3A8A"
@@ -8276,6 +8372,10 @@
     {
       "name": "Rio Ave",
       "division": 1,
+      "skillRange": [
+        35,
+        42
+      ],
       "colors": {
         "primary": "#347C17",
         "secondary": "#FFFFFF"
@@ -8473,6 +8573,10 @@
     {
       "name": "Leixões",
       "division": 2,
+      "skillRange": [
+        27,
+        32
+      ],
       "colors": {
         "primary": "#AD1814",
         "secondary": "#FFFFFF"
@@ -8670,6 +8774,10 @@
     {
       "name": "Felgueiras",
       "division": 2,
+      "skillRange": [
+        24,
+        30
+      ],
       "colors": {
         "primary": "#800020",
         "secondary": "#0047AB"
@@ -8867,6 +8975,10 @@
     {
       "name": "Penafiel",
       "division": 2,
+      "skillRange": [
+        24,
+        30
+      ],
       "colors": {
         "primary": "#AD1814",
         "secondary": "#FF0000"
@@ -9064,6 +9176,10 @@
     {
       "name": "Portimonense",
       "division": 2,
+      "skillRange": [
+        24,
+        30
+      ],
       "colors": {
         "primary": "#101010",
         "secondary": "#00A650"
@@ -9261,6 +9377,10 @@
     {
       "name": "Vit. Setúbal",
       "division": 3,
+      "skillRange": [
+        17,
+        22
+      ],
       "colors": {
         "primary": "#00703C",
         "secondary": "#FFFFFF"
@@ -9458,6 +9578,10 @@
     {
       "name": "São João Ver",
       "division": 3,
+      "skillRange": [
+        15,
+        21
+      ],
       "colors": {
         "primary": "#AD1814",
         "secondary": "#FFFFFF"
@@ -9653,6 +9777,10 @@
     {
       "name": "Fafe",
       "division": 3,
+      "skillRange": [
+        15,
+        21
+      ],
       "colors": {
         "primary": "#FDD945",
         "secondary": "#FFFFFF"
@@ -9842,6 +9970,10 @@
     {
       "name": "Lusitano Évora",
       "division": 3,
+      "skillRange": [
+        15,
+        21
+      ],
       "colors": {
         "primary": "#347C17",
         "secondary": "#FFFFFF"

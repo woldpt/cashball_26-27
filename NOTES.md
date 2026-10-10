@@ -1,3 +1,10 @@
+## Plantéis iniciais por escalões (2026-10-10)
+- `skillRange` próprio nas 36 equipas das 1.ª–3.ª divisões (`all_teams.json`), 4 escalões de 3 pela ordem do ficheiro; 4.ª e 5.ª iguais (os humanos começam na 4.ª com equipa sorteada). Só salas novas. Plano: `docs/plans/2026-10-10-ligas-menos-niveladas.md`.
+- Porquê: todas as equipas de uma divisão sorteavam do mesmo intervalo e o título calhava a qualquer um.
+- Medido (30 épocas, 22 jogos, campeão/último): 1.ª 41/20 → 42/18, 2.ª 41/19 → 43/16, 3.ª 40/20 → 45/17. A 1.ª mexe menos: o escalão 1 bate no teto de 50 (onze 49 vs 40 = 22%; nas outras 26–28%).
+- Por vigiar: folha salarial do escalão 1 da 1.ª cabe 15 vezes no orçamento (escalão 4: 20) — não testado ao longo de uma época.
+- Testado: seed, audit:gamestate base (0 erros), typecheck, connect-smoke, own-goal, penalty-ordering, segment-barrier.
+
 ## Motor: equilíbrio das formações (2026-10-10)
 - `duelPossePerMed` 0.025 → 0.012: cada médio a mais vale metade da posse.
 - Porquê: com equipas iguais a classificação das formações era a contagem de médios (3-5-2 ganhava a tudo, 4-2-4 perdia com tudo). Plano: `docs/plans/2026-10-10-equilibrio-formacoes.md`.
@@ -131,7 +138,3 @@ Inclui o commit de táticas do intervalo de outra sessão (em curso nesta árvor
 ## Deploy v26.10.38 no rick (2026-10-10)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10, xG, posse viva, ímpeto, NPCs que gerem o jogo, duelo, pressão, conversa ao intervalo, ordens).
-
-## Motor: Fase 3 do roadmap tático (2026-10-10)
-- Duelo de formações (linhas reais: médios a mais → posse; avançados vs sobra de defesas → finalização), pressão alta/média/baixa, conversa ao intervalo e até 2 ordens programadas (aplicadas pelo servidor só a humanos; evento `order` alinha a tática do cliente). UI: Tática (duelo, pressão, "Ordens para o jogo") e Intervenção (pressão + conversa só no intervalo).
-- Testado: engine-unit 41/41 (U30–U33 falham no código da Fase 2), simulação 8000 jogos (2,52 golos/jogo), own-goal, penalty-ordering, emergency-gk, substitutions, segment-barrier, finalize, ratings, connect-smoke, session-freeze, crash-recovery (GRMTZM), audits 0 erros, typecheck; client lint + check:types + test:mobile 195/195 + screenshots 320/360/390/1440 vistos. Validação do setTactic sem teste automático.
