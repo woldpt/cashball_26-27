@@ -1,3 +1,6 @@
+## Deploy v26.10.44 no rick (2026-10-10)
+- Commit `119f9c04` com a tag `v26.10.44`: piso de compra NPC pela divisão e renovação de contratos NPC (menos leilões em massa). Backend Healthy.
+
 ## NPC: piso de compra pela divisão e menos leilões (2026-10-10)
 - Compras NPC (leilão e lista): piso = máx(nível próprio, nível da divisão) − 10 (`getDivisionLevels`, `npcTransferHelpers.ts`). Contratos NPC que acabam: renova quem for bom e couber no orçamento, sem exigir posição curta (`contractHelpers.ts`) — antes quase todos iam a leilão em massa.
 - Porquê: sala PYG2GT — Vit. Setúbal comprou 16 jogadores de média 20 (divisão 32); 58 leilões numa jornada.
