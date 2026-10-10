@@ -513,7 +513,7 @@ export const STADIUM_EXPANSION_COST = 300000;
 /** Rótulo da época em curso (marca, header, footer e ecrã de carregamento). */
 export const SEASON_LABEL = "26/27";
 /** Versão do build (CalVer `vAA.MM.N`, rolling release — ver NOTES.md). */
-export const APP_VERSION = "v26.10.41";
+export const APP_VERSION = "v26.10.42";
 /** Total de jornadas de liga por época. */
 export const SEASON_JORNADAS = 18;
 /** A final da Taça (última ronda) — espelha CUP_FINAL_ROUND do servidor. */
