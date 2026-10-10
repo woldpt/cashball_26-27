@@ -1,3 +1,6 @@
+## Deploy v26.10.43 no rick (2026-10-10)
+- Commit `10dde42c` com a tag `v26.10.43`: barra CM só no Jornal em ciclo, painéis do Jornal livres da barra, adjunto com 10 s pós-jogo. Backend Healthy.
+
 ## Notícias CM só no Jornal, em ciclo; adjunto com 10 s pós-jogo (2026-10-10)
 - Faixa CM só é renderizada no separador Jornal (`GameLayout`), só aparece com notícias, repete todas em ciclo contínuo e deixou de navegar ao clicar. Movimento reduzido: uma notícia de cada vez. Painéis do Jornal descontam a altura da faixa (`.journal-panel` + `.game-shell:has(.cm-ticker)` em `index.css`). Silêncio do adjunto pós-jogo 45 s → 10 s (`POST_MATCH_QUIET_MS`).
 - Porquê: a faixa só faz sentido no Jornal; antes o leitor do Jornal descia por trás dela (reproduzido no harness a 1280 px).
@@ -125,13 +128,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - `socket.on` envolvido por ligação (index.ts): erro/rejeição num handler é registado e não chega ao `fatalShutdown`.
 - `cacheVersion.js` preserva todas as chaves com prefixo `cashball` (lista fixa esquecia chaves novas).
 - Testado: novo S6b em `test:crash-recovery` (falha sem a correção), typecheck, connect-smoke, session-freeze, segment-barrier, lint, check:types.
-
-## FARMACIA3: jornada perdida + logout no telemóvel (2026-10-08)
-- Crash: `setTactic` de um socket sem sala → `getPlayerBySocket(null)` → `fatalShutdown` fechou a BD a meio do `persistMatchResults` (época 2, J1 sem linhas em `matches`; classificação OK). Guarda de `null` na função partilhada.
-- Logout: `cacheVersion.js` (versão = arranque do servidor) fazia `localStorage.clear()` sem preservar `cashball_auth/rooms/device` — cada restart deslogava no reload seguinte.
-- `DELETE FROM matches` do replay passa a filtrar `season`. Testado: typecheck, connect-smoke, lint, check:types.
-
-## Consistência de estado no frontend (2026-10-08)
-- Limpar a tática mantém a formação; contagens ignoram ids fora do plantel; subs voltam do servidor após reload ao intervalo; plantel/finanças/standings emitidos em ordem; reconexão em lobby limpa o resultado parcial; leilão reaberto, lance offline, Pronto com patrocinador, tabs e guardas de sala; estado de leilão legado removido. Plano: `docs/plans/2026-10-08-consistencia-estado-frontend.md`.
-- Porquê: o que o cliente mostrava/enviava divergia do servidor (11 que nunca chegava, subs a mais, plantel com segundos de atraso).
-- Testado: client `lint` (só o `landing-resp-test.jsx`, já falhava) + `check:types` + `test:tacticpositions` (novo) + `build`; server `typecheck` + `test:finalize` + `audit:socketio`. Reload/rede/Taça por testar à mão.

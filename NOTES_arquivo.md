@@ -600,3 +600,13 @@ Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, s�
 - Lease começa na queda do socket; janelas de decisão nunca decidem `auto` por quem só tem lease; join passivo (separador oculto) não rouba o assento; `presencePing` + gate de join no cliente; contra-proposta/convite sobrevivem à queda. Plano: `docs/plans/2026-10-07-sessao-presenca-mobile.md`.
 - Porquê: bloqueios de ecrã do telemóvel congelavam/descongelavam a sala e a lista `players` tratava a equipa como NPC.
 - Testado: `test:session-freeze` (novos F13–F15), `test:segment-barrier`, `test:connect-smoke`, `test:crash-recovery`, typecheck, lint, check:types. Telemóvel real com bloqueio de ecrã por testar.
+
+## Consistência de estado no frontend (2026-10-08)
+- Limpar a tática mantém a formação; contagens ignoram ids fora do plantel; subs voltam do servidor após reload ao intervalo; plantel/finanças/standings emitidos em ordem; reconexão em lobby limpa o resultado parcial; leilão reaberto, lance offline, Pronto com patrocinador, tabs e guardas de sala; estado de leilão legado removido. Plano: `docs/plans/2026-10-08-consistencia-estado-frontend.md`.
+- Porquê: o que o cliente mostrava/enviava divergia do servidor (11 que nunca chegava, subs a mais, plantel com segundos de atraso).
+- Testado: client `lint` (só o `landing-resp-test.jsx`, já falhava) + `check:types` + `test:tacticpositions` (novo) + `build`; server `typecheck` + `test:finalize` + `audit:socketio`. Reload/rede/Taça por testar à mão.
+
+## FARMACIA3: jornada perdida + logout no telemóvel (2026-10-08)
+- Crash: `setTactic` de um socket sem sala → `getPlayerBySocket(null)` → `fatalShutdown` fechou a BD a meio do `persistMatchResults` (época 2, J1 sem linhas em `matches`; classificação OK). Guarda de `null` na função partilhada.
+- Logout: `cacheVersion.js` (versão = arranque do servidor) fazia `localStorage.clear()` sem preservar `cashball_auth/rooms/device` — cada restart deslogava no reload seguinte.
+- `DELETE FROM matches` do replay passa a filtrar `season`. Testado: typecheck, connect-smoke, lint, check:types.
