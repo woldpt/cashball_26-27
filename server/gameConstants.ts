@@ -113,6 +113,17 @@ export const NPC_ACADEMY_COST = 500000;
 /** Piso de skill nas compras NPC: rejeita abaixo de (nível da equipa − margem). */
 export const NPC_BUY_FLOOR_MARGIN = 10;
 
+/** Plantel principal NPC por posição: abaixo do mínimo a posição está em falta. */
+export const NPC_POS_MIN: Record<string, number> = { GR: 2, DEF: 4, MED: 4, ATA: 3 };
+/** Posição cheia: o NPC não compra mais (o máximo com que as equipas arrancam). */
+export const NPC_POS_MAX: Record<string, number> = { GR: 3, DEF: 8, MED: 8, ATA: 7 };
+/**
+ * Compra NPC: preço + ordenados até ao fim da época têm de caber nesta fração
+ * do orçamento (a segunda quando a posição está em falta).
+ */
+export const NPC_BUY_BUDGET_SHARE = 0.5;
+export const NPC_BUY_BUDGET_SHARE_URGENT = 0.7;
+
 /**
  * Re-exportadas de db/seedEcon.js (fonte única partilhada com a seed).
  * O valor é recalculado sempre que o skill muda (treino, evolução, decaimento).

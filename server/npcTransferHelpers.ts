@@ -1,6 +1,7 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot, runRoomTask, runExec } from "./coreHelpers";
-import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
+import { rankNpcBuyTargets } from "./npcSquadPlanning";
+import { signingWage, SEASON_WEEKS, AUCTION_BID_STEP, CONTRACT_LENGTH_WEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS, AUCTION_NPC_WINDOW_MS, AUCTION_NPC_GAP_MIN_MS, AUCTION_NPC_GAP_MAX_MS, AUCTION_NPC_CLOSE_MARGIN_MS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -161,7 +162,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
     for (const npcTeam of npcTeams) {
       const squadRows = await runAll(
         game.db,
-        "SELECT id FROM players WHERE team_id = ?",
+        "SELECT id, position FROM players WHERE team_id = ?",
         [npcTeam.id],
       );
       if (squadRows.length >= 24) continue;
@@ -183,25 +184,16 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         ? Math.max(ownLevel, divLevels[npcTeam.division ?? 3] ?? 0)
         : 0;
 
-      for (const player of marketPlayers) {
-        if (player.team_id === npcTeam.id) continue;
-        if (teamLevel > 0 && (player.skill || 0) < teamLevel - NPC_BUY_FLOOR_MARGIN) continue;
-
-        const listedPrice =
-          player.transfer_status === "fixed" && player.transfer_price > 0
-            ? player.transfer_price
-            : Math.round((player.value || 0) * 1.2);
-        if (listedPrice <= 0) continue;
-        if (listedPrice > npcTeam.budget * 0.7) continue;
+      const targets = rankNpcBuyTargets({
+        teamId: npcTeam.id,
+        squad: squadRows,
+        market: marketPlayers,
+        budget: npcTeam.budget,
+        weeksLeft: SEASON_WEEKS - currentSlot(game),
+        floorSkill: teamLevel > 0 ? teamLevel - NPC_BUY_FLOOR_MARGIN : 0,
+      });
+      for (const { player, price } of targets) {
         if (Math.random() > 0.75) continue;
-
-        // Contra-oferta: quando o preço pedido aperta o orçamento (entre 35% e 70%),
-        // o NPC negocia e compra a 85% do preço listado em vez de ignorar a lista.
-        const price =
-          listedPrice > npcTeam.budget * 0.35
-            ? Math.round(listedPrice * 0.85)
-            : listedPrice;
-        if (price <= 0) continue;
 
         // Transação na fila da sala: jogador primeiro (só se ainda listado),
         // depois os saldos. Sem isto um crash a meio deixava o vendedor com o
