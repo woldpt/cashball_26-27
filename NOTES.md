@@ -1,3 +1,7 @@
+## Amigável da Taça com estádio à sorte (2026-10-10)
+- Ao formar o par (inscrição com NPC/humano e sorteio de fecho) há 50% de trocar casa/fora; antes era sempre em casa de quem marcava primeiro. Fica gravado na BD.
+- Testado: typecheck e connect-smoke (sem teste próprio: a moeda ao ar não se testa de forma útil).
+
 ## Deploy v26.10.50 no rick (2026-10-10)
 - Push `ea37199a..d6aafb21` (19 commits: correções à economia, golos 2,5, 5.ª divisão a treinar, limite de plantel nos leilões, fim da academia NPC, simulador de épocas) + bump `APP_VERSION` para v26.10.50. Tag `v26.10.50` publicada.
 - Rick: `git pull` + `docker compose up --build -d` → `backend Healthy`. Sem erros no rebuild.
