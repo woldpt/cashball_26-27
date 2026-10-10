@@ -1115,9 +1115,9 @@ const coachDismissalHelpers = createCoachDismissalHelpers({
 const processCoachEvents = coachDismissalHelpers.processCoachEvents;
 const handleAcceptJobOffer = coachDismissalHelpers.handleAcceptJobOffer;
 const handleDeclineJobOffer = coachDismissalHelpers.handleDeclineJobOffer;
-const handleConfirmDismissalClub = coachDismissalHelpers.handleConfirmDismissalClub;
 const handleSwapDismissalClub = coachDismissalHelpers.handleSwapDismissalClub;
 const resendPendingJobOffer = coachDismissalHelpers.resendPendingJobOffer;
+const resendDismissalChoice = coachDismissalHelpers.resendDismissalChoice;
 const resendBoardWarning = coachDismissalHelpers.resendBoardWarning;
 
 const cupFlowHelpers = createCupFlowHelpers({
@@ -1294,6 +1294,7 @@ io.on("connection", (socket) => {
 		presenceRoom: PRESENCE_ROOM,
 		resendPendingContractRequests,
 		resendPendingJobOffer,
+		resendDismissalChoice,
 		resendBoardWarning,
 	});
 
@@ -1340,7 +1341,6 @@ io.on("connection", (socket) => {
 		saveGameState,
 		handleAcceptJobOffer,
 		handleDeclineJobOffer,
-		handleConfirmDismissalClub,
 		handleSwapDismissalClub,
 		emitGlobalPlayerUpdate,
 		purgeEmptyRoom,

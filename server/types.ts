@@ -369,10 +369,14 @@ export interface ActiveGame {
   allMatchResults: Record<number, SlimMatchResult[]>;
 
   // ── Coach dismissal & job offers ──
-  pendingJobOffers: Record<string, { fromTeamId: number; toTeamId: number }>;
+  pendingJobOffers: Record<
+    string,
+    { fromTeamId: number; toTeamId: number; recentWins?: number }
+  >; // recentWins: vitórias nos últimos 5 jogos que originaram o convite (mostrado ao treinador)
   negativeBudgetStreak: Record<number, number>; // teamId → semanas consecutivas com budget < 0
   npcNegativeBudgetStreak: Record<number, number>; // teamId NPC → semanas consecutivas com budget < 0 (insolvência)
   boardBudgetWarned: Record<number, number>; // teamId → nível de aviso da direcção já enviado (1 ou 3)
+  formWarned: Record<number, number>; // teamId → nível de aviso por má série já enviado (1 = 3 derrotas, 2 = 4)
   coachMatchesManaged: Record<string, number>; // coachName → jogos dirigidos no clube atual (carência antes de despedimento)
   npcMatchesManaged: Record<number, number>; // teamId → jogos do treinador NPC atual (carência antes de despedimento)
   dismissedCoachSince: Record<
@@ -385,7 +389,7 @@ export interface ActiveGame {
       detail?: string;
     }
   >; // coachName → info de despedimento
-  dismissalOptions: Record<string, number[]>; // coachName → clubes (atual + alternativas) da troca imediata pós-despedimento (transitório)
+  dismissalOptions: Record<string, number[]>; // coachName → 3 clubes à escolha depois do despedimento (sem clube até escolher)
   dismissalsThisSeason: Set<string>; // coaches despedidos na época actual (máx 1 por época)
 
   // ── Coaches expulso da sala pelo Admin (ban permanente, persistido) ──

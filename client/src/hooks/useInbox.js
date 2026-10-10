@@ -25,6 +25,7 @@ import {
   formatInboxDate,
   formatRecapDate,
   jobCovered,
+  jobOfferBody,
   linkFirstMention,
   medicalCovered,
   newsRowsToItems,
@@ -229,7 +230,7 @@ export function useInbox() {
       const to = jobOfferModal.toTeam;
       const from = jobOfferModal.fromTeam;
       const team = { id: to.id, label: to.name };
-      const body = `${to.name} quer-te como treinador. Responde antes do próximo jogo.`;
+      const body = jobOfferBody(to.name, jobOfferModal.recentWins);
       list.push({
         id: `job-${to.id}`,
         cat: "club",

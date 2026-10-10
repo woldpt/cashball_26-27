@@ -46,10 +46,23 @@ export function registerCoachListeners(handlers, refs, ctx) {
 		handlers.setJobOfferModal(data);
 	});
 
+	// Escolha do clube depois do despedimento: o modal fica aberto com as 3
+	// opções até o treinador escolher (ou até a lista ser atualizada).
+	socket.on("dismissalChoice", ({ clubs }) => {
+		if (!ctx.inRoom()) return;
+		const pending = refs.pendingDismissalRef.current;
+		refs.pendingDismissalRef.current = null;
+		handlers.setDismissalModal((prev) => {
+			const base = prev ?? pending;
+			return base ? { ...base, clubs } : prev;
+		});
+	});
+
 	return () => {
 		socket.off("coachDismissed");
 		socket.off("boardBudgetWarning");
 		socket.off("coachMarketReport");
 		socket.off("jobOffer");
+		socket.off("dismissalChoice");
 	};
 }

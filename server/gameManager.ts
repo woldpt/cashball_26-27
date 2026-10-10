@@ -354,6 +354,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
     negativeBudgetStreak: {},
     npcNegativeBudgetStreak: {},
     boardBudgetWarned: {},
+    formWarned: {},
     coachMatchesManaged: {},
     npcMatchesManaged: {},
     dismissedCoachSince: {},
@@ -502,6 +503,21 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               if (st["pendingJobOffers"]) {
                 try {
                   game.pendingJobOffers = JSON.parse(st["pendingJobOffers"]) || {};
+                } catch (_) {}
+              }
+              // Treinadores despedidos à espera de escolher clube (sobrevive ao restart)
+              game.dismissalOptions = {};
+              if (st["dismissalOptions"]) {
+                try {
+                  game.dismissalOptions = JSON.parse(st["dismissalOptions"]) || {};
+                } catch (_) {}
+              }
+              if (st["formWarned"]) {
+                try {
+                  const parsed = JSON.parse(st["formWarned"]);
+                  game.formWarned = Object.fromEntries(
+                    Object.entries(parsed).map(([k, v]) => [Number(k), Number(v)]),
+                  );
                 } catch (_) {}
               }
               if (st["negativeBudgetStreak"]) {
@@ -913,6 +929,8 @@ function saveGameState(game: ActiveGame): void {
     "boardBudgetWarned",
     JSON.stringify(game.boardBudgetWarned || {}),
   );
+  upsert("formWarned", JSON.stringify(game.formWarned || {}));
+  upsert("dismissalOptions", JSON.stringify(game.dismissalOptions || {}));
   upsert("dismissedCoachSince", JSON.stringify(game.dismissedCoachSince || {}));
   upsert(
     "coachMatchesManaged",

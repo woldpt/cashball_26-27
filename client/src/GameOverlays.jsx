@@ -90,7 +90,6 @@ export function GameOverlays() {
     setCupDrawRevealIdx,
     setCupPenaltyKickIdx,
     setCupPenaltyPopup,
-    setDismissalModal,
     setGameDialog,
     setPlayerHistoryModal,
     setRoomSettingsOpen,
@@ -372,11 +371,7 @@ export function GameOverlays() {
 
       <DismissalModal
         dismissalModal={postMatchFlow.showDismissal ? dismissalModal : null}
-        onContinue={() => {
-          queueEmit("confirmDismissalClub");
-          setDismissalModal(null);
-        }}
-        onSwap={(teamId) => queueEmit("swapDismissalClub", teamId)}
+        onChoose={(teamId) => queueEmit("swapDismissalClub", teamId)}
       />
 
 

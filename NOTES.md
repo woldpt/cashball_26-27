@@ -1,3 +1,9 @@
+## Treinadores: aviso por má série, escolha de clube e motivo do convite (2026-10-10)
+- Despedimento por resultados avisa antes (3 derrotas e 4, no Jornal e por mensagem). O treinador despedido escolhe entre 3 clubes e fica sem clube até escolher. O convite diz as vitórias dos últimos 5 jogos. Plano: `docs/plans/2026-10-10-treinadores-avisos-escolha-convite.md`.
+- Porquê: pedido do utilizador (melhorias 1, 4 e 5 da avaliação das regras de treinadores).
+- Testado: server typecheck, connect-smoke, session-freeze (17/17), audit:socketio (0 erros), test:coach-dismissal-league (F/G novos), test:relegation-coach; client lint, check:types, test:postmatchflow, test:inboxreads, test:mobile (195/195 + harness `dismissal-resp-test`).
+- Já falhava antes, não tocado: `test:journaldb` (renovação → club; duas equipas na media).
+
 ## Deploy v26.10.46 no rick (2026-10-10)
 - Commit `b68d9659` + bump `c27c6180`, tag `v26.10.46`: botão Continuar da barra mobile sem corte (etiqueta 8px, sem tracking extra).
 - Push `6b81e737..c27c6180`; tag publicada.
@@ -123,13 +129,4 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 ## Jornal: castigo duplicado e leitor com altura fixa (2026-10-09)
 - Amarelo + vermelho do mesmo jogador na mesma semana davam 2 notícias (sala TVV6WB): `logMedicalNews` atualiza a linha existente para o castigo mais longo e o cliente (`newsRowsToItems`) mostra só o mais longo (limpa também as já duplicadas). Leitor do Jornal: sem rodapé Recente/Antiga/Ler próxima, cartão com altura da área livre e scroll interno (só desktop).
 - Testado: server typecheck, client lint + check:types, test:mobile (195/195).
-
-## Mini classificação do cabeçalho (2026-10-09)
-- Tirado o scroll da lista e adicionado crachá âmbar com o nome do treinador humano ("TU" na própria linha), como na `LiveStandings`. Plano em `docs/plans/2026-10-09-mini-classificacao.md`.
-- Testado: lint, check:types.
-
-## Tática: aviso e Força do onze (2026-10-09)
-- Aviso "Faltam: 11 titulares…" passou para debaixo das Formações (e aparece também no telemóvel); Força do onze estica até à altura da linha de topo, por cima do campo.
-- Testado: lint, check:types, test:mobile (195/195).
-
 

@@ -192,6 +192,7 @@ async function makeScenario(capPreused: boolean) {
     pendingJobOffers: {},
     negativeBudgetStreak: {},
     boardBudgetWarned: {},
+    formWarned: {},
     coachMatchesManaged: {},
     npcMatchesManaged: {},
     dismissedCoachSince: {}, dismissalOptions: {},
@@ -227,11 +228,28 @@ async function main() {
       "cenário A: equipa despromovida (T7) fica sem treinador (manager_id NULL)",
     );
 
-    const newTeamId = game.playersByName.CoachHumano.teamId;
     const validTargets = [2, 3, 4, 5, 6, 9, 10];
     assert(
-      validTargets.includes(newTeamId),
-      `cenário A: coach realocado para clube NPC do CP (obtido teamId=${newTeamId}, esperado um de [${validTargets.join(",")}])`,
+      game.playersByName.CoachHumano.teamId == null,
+      "cenário A: coach despromovido fica sem clube até escolher",
+    );
+    const optsA: number[] = game.dismissalOptions.CoachHumano ?? [];
+    assert(
+      optsA.length === 3 && optsA.every((id) => validTargets.includes(id)),
+      `cenário A: 3 opções entre os clubes NPC do CP (obtido [${optsA.join(",")}], esperado de [${validTargets.join(",")}])`,
+    );
+    const choice = emitted.find(
+      (e) => e.room === "sock-coach1" && e.event === "dismissalChoice",
+    );
+    assert(
+      choice?.payload?.clubs?.length === 3,
+      "cenário A: emit dismissalChoice com os 3 clubes",
+    );
+    await helpers.handleSwapDismissalClub(game, "CoachHumano", optsA[0]);
+    const newTeamId = game.playersByName.CoachHumano.teamId;
+    assert(
+      newTeamId === optsA[0],
+      "cenário A: escolher um clube atribui-o ao coach",
     );
 
     const mgrRow = await runGet(
@@ -286,13 +304,21 @@ async function main() {
     const report = emitted.find(
       (e) => e.room === "TEST" && e.event === "coachMarketReport",
     );
+    // A contratação do treinador só acontece quando ele escolhe o clube (depois
+    // do relatório), por isso o relatório traz só o despedimento.
     assert(
-      report?.payload?.events?.length === 2 &&
+      report?.payload?.events?.length === 1 &&
         report.payload.events[0].type === "dismissal" &&
-        report.payload.events[0].reason === "relegation" &&
-        report.payload.events[1].type === "hiring",
-      "cenário A: coachMarketReport emitido com despedimento + contratação",
+        report.payload.events[0].reason === "relegation",
+      "cenário A: coachMarketReport emitido com o despedimento",
     );
+    const anunciado = emitted.find(
+      (e) =>
+        e.room === "TEST" &&
+        e.event === "systemMessage" &&
+        String(e.payload?.text ?? "").includes("foi atribuído"),
+    );
+    assert(Boolean(anunciado), "cenário A: escolha do clube anunciada à sala");
     const sysMsg = emitted.find(
       (e) =>
         e.room === "TEST" &&
@@ -319,8 +345,8 @@ async function main() {
       `cenário B: despedimento por despromoção não consome o limite da nova época (size=${game.dismissalsThisSeason.size})`,
     );
     assert(
-      game.playersByName.CoachHumano.teamId !== 7,
-      "cenário B: coach foi despedido e realocado",
+      game.playersByName.CoachHumano.teamId == null,
+      "cenário B: coach foi despedido (sem clube até escolher)",
     );
     db.close();
   }

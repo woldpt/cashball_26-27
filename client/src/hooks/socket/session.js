@@ -64,20 +64,10 @@ export function registerSessionListeners(handlers, refs, ctx) {
 				...data.coachAvatarSeeds,
 			}));
 		}
-		const pendingDismissal = refs.pendingDismissalRef.current;
-		// Troca de clube no modal de despedimento: o servidor re-emite o
-		// teamAssigned (com as alternativas atualizadas) e o modal só muda de clube.
-		if (!pendingDismissal && data.dismissalOptions) {
-			handlers.setDismissalModal((prev) => (prev ? { ...prev, newTeam: data } : prev));
-			ensureJoinState();
-			return;
-		}
-		if (pendingDismissal) {
-			refs.pendingDismissalRef.current = null;
-			handlers.setDismissalModal({ ...pendingDismissal, newTeam: data });
-			ensureJoinState();
-			return;
-		}
+		// Clube escolhido depois do despedimento (ou convite aceite): o modal das
+		// opções fecha e o treinador já tem clube.
+		refs.pendingDismissalRef.current = null;
+		handlers.setDismissalModal(null);
 		if (data.isNew) {
 			if (!hasSeenWelcome(currentMe.name, currentMe.roomCode)) {
 				handlers.setWelcomeModal(data);

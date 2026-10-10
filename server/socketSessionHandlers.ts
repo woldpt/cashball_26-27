@@ -114,6 +114,7 @@ interface SessionHandlerDeps {
 	resendPendingContractRequests?: (game: ActiveGame) => Promise<void>;
 	resendPendingJobOffer?: (game: ActiveGame, toSocket: any, coachName: string) => Promise<boolean>;
 	resendBoardWarning?: (game: ActiveGame, toSocket: any, teamId: number) => Promise<boolean>;
+	resendDismissalChoice?: (game: ActiveGame, toSocket: any, coachName: string) => Promise<boolean>;
 }
 
 // ── Convites de sala entre coaches (pre-join → in-game) ─────────────────────
@@ -253,6 +254,7 @@ export function registerSessionSocketHandlers(
 		presenceRoom,
 		resendPendingContractRequests,
 		resendPendingJobOffer,
+		resendDismissalChoice,
 		resendBoardWarning,
 	} = deps;
 
@@ -781,6 +783,8 @@ export function registerSessionSocketHandlers(
 											teamName: dismissalInfo.teamName || "equipa anterior",
 											detail: dismissalInfo.detail,
 										});
+										// Sem clube até escolher: o modal das 3 opções volta a aparecer.
+										resendDismissalChoice?.(game, socket, trimmedName)?.catch(() => {});
 
 										getTeamsWithCoachNames(game.db)
 											.then((teams: any[]) => {

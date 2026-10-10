@@ -133,15 +133,14 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
   }
 
   /**
-   * Emite teamAssigned + mySquad para um treinador (partilhado pelo
-   * auto-assign pós-despedimento e pelo aceitar de convite).
+   * Emite teamAssigned + mySquad para um treinador (partilhado pela escolha de
+   * clube pós-despedimento e pelo aceitar de convite).
    */
   async function emitTeamAssigned(
     game: ActiveGame,
     coachName: string,
     team: AnyRow,
     isNew: boolean,
-    dismissalOptions?: AnyRow[],
   ): Promise<void> {
     const player = game.playersByName[coachName];
     if (!player?.socketId) return;
@@ -170,9 +169,6 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
           coaches,
           coachAvatars,
           isNew,
-          ...(dismissalOptions && dismissalOptions.length > 0
-            ? { dismissalOptions: dismissalOptions.map(toClubOption) }
-            : {}),
         });
       });
 
@@ -498,6 +494,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game: ActiveGame,
     fromTeam: AnyRow,
     toTeam: AnyRow,
+    recentWins?: number,
   ) {
     // Query squad for toTeam
     const squad = await runAll<AnyRow>(game.db,
@@ -542,6 +539,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       },
       toTeamDivisionPosition: divisionPosition,
       toTeamSquad: fullSquad,
+      recentWins: recentWins ?? null,
     };
   }
 
@@ -551,6 +549,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     fromTeamId: number,
     toTeam: AnyRow,
     fromTeam: AnyRow,
+    recentWins: number,
   ): Promise<void> {
     const player = game.playersByName[coachName];
     if (!player) return;
@@ -558,9 +557,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game.pendingJobOffers[coachName] = {
       fromTeamId,
       toTeamId: toTeam.id,
+      recentWins,
     };
 
-    const payload = await buildJobOfferPayload(game, fromTeam, toTeam);
+    const payload = await buildJobOfferPayload(game, fromTeam, toTeam, recentWins);
     // Espelho no Jornal com data fixa (a semana do convite).
     try {
       logClubNewsOnce(
@@ -580,6 +580,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             wins: toTeam.wins ?? 0,
             draws: toTeam.draws ?? 0,
             losses: toTeam.losses ?? 0,
+            recentWins,
           }),
         },
         io,
@@ -617,8 +618,41 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     if (!toTeam || !fromTeam) return false;
     toSocket.emit(
       "jobOffer",
-      await buildJobOfferPayload(game, fromTeam, toTeam),
+      await buildJobOfferPayload(game, fromTeam, toTeam, pending.recentWins),
     );
+    return true;
+  }
+
+  /**
+   * Os 3 clubes à escolha de um treinador despedido (null se já não houver).
+   * Usado ao despedir, ao reentrar na sala e depois de um clube ser ocupado.
+   */
+  async function dismissalChoicePayload(
+    game: ActiveGame,
+    coachName: string,
+  ): Promise<{ clubs: ReturnType<typeof toClubOption>[] } | null> {
+    const ids = game.dismissalOptions[coachName] ?? [];
+    if (ids.length === 0) return null;
+    const rows = await runAll<AnyRow>(
+      game.db,
+      `SELECT * FROM teams WHERE id IN (${ids.map(() => "?").join(",")})`,
+      ids,
+    );
+    const clubs = ids
+      .map((id) => rows.find((t) => t.id === id))
+      .filter((t): t is AnyRow => !!t);
+    return clubs.length > 0 ? { clubs: clubs.map(toClubOption) } : null;
+  }
+
+  /** Reenvia a escolha de clube a quem reentra (o modal sobrevive ao refresh). */
+  async function resendDismissalChoice(
+    game: ActiveGame,
+    toSocket: Socket,
+    coachName: string,
+  ): Promise<boolean> {
+    const payload = await dismissalChoicePayload(game, coachName);
+    if (!payload) return false;
+    toSocket.emit("dismissalChoice", payload);
     return true;
   }
 
@@ -680,6 +714,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game.coachMatchesManaged[coachName] = 0;
     game.negativeBudgetStreak[team.id] = 0;
     game.boardBudgetWarned[team.id] = 0;
+    game.formWarned[team.id] = 0;
 
     // Era NPC: limpar as notícias acumuladas antes de entregar o clube —
     // sem isto o treinador herdava a caixa cheia como não lida.
@@ -758,65 +793,61 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       );
     }
     const ordered = [...preferred, ...spare];
-    const team: AnyRow | undefined = ordered[0];
-    if (team && preferred.length === 0) {
+    if (ordered.length > 0 && preferred.length === 0) {
       console.warn(
-        `[${game.roomCode}] autoAssignDismissedCoach: bottom-${REASSIGN_BOTTOM_PLACES} places unavailable for ${coachName}; assigning any available club`,
+        `[${game.roomCode}] autoAssignDismissedCoach: bottom-${REASSIGN_BOTTOM_PLACES} places unavailable for ${coachName}; offering any available club`,
       );
     }
 
-    if (!team) {
+    if (ordered.length === 0) {
       console.warn(
         `[${game.roomCode}] autoAssignDismissedCoach: no available NPC team found for ${coachName} (dismissed from div ${fromDivision})`,
       );
       return;
     }
 
-    const mgr = await runGet<{ id: number }>(
-      game.db,
-      "SELECT id FROM managers WHERE name = ?",
-      [coachName],
-    );
-    if (!mgr) {
-      console.warn(
-        `[${game.roomCode}] autoAssignDismissedCoach: manager record not found for ${coachName}`,
-      );
+    // Três clubes à escolha (o primeiro é o que a atribuição automática daria).
+    // O treinador fica sem clube até escolher: nada é atribuído aqui.
+    game.dismissalOptions[coachName] = ordered.slice(0, 3).map((t) => t.id);
+    const payload = await dismissalChoicePayload(game, coachName);
+    const socketId = player.socketId;
+    if (payload && socketId) io.to(socketId).emit("dismissalChoice", payload);
+  }
+
+  /**
+   * Aviso da direção por má série (3 derrotas nos últimos 5 = aviso; 4 = último
+   * aviso), antes do sorteio do despedimento por resultados. Um aviso por
+   * nível: só volta a sair se a série recuperar (menos de 3 derrotas) e cair.
+   */
+  async function warnResultsSlump(
+    game: ActiveGame,
+    player: { socketId?: string | null },
+    team: AnyRow,
+    lossCount: number,
+  ): Promise<void> {
+    const level = lossCount >= 4 ? 2 : lossCount >= 3 ? 1 : 0;
+    if (level === 0) {
+      game.formWarned[team.id] = 0;
       return;
     }
+    if (level <= (game.formWarned[team.id] ?? 0)) return;
+    game.formWarned[team.id] = level;
 
-    await assignCoachToTeam(game, coachName, mgr.id, team);
-    delete game.dismissedCoachSince[coachName];
-
-    // Troca imediata: o treinador já tem o clube (nunca fica sem ele); o modal
-    // oferece-lhe mais 2 como alternativa até confirmar ou o jogo recomeçar.
-    const alternatives = ordered.slice(1, 3);
-    if (alternatives.length > 0) {
-      game.dismissalOptions[coachName] = [team, ...alternatives].map((t) => t.id);
-    } else {
-      delete game.dismissalOptions[coachName];
+    const final = level === 2;
+    const text = final
+      ? `Último aviso da direção: já são ${lossCount} derrotas nos últimos 5 jogos. Mais uma derrota pode custar-te o lugar.`
+      : `A direção está preocupada: já são ${lossCount} derrotas nos últimos 5 jogos.`;
+    if (player.socketId) {
+      io.to(player.socketId).emit("systemMessage", { text, broadcast: false });
     }
-
-    // Notify coach
-    await emitTeamAssigned(game, coachName, team, true, alternatives);
-
-    await recordMarketEvent(game, {
-      type: "hiring",
-      coachName,
-      teamId: team.id,
-      teamName: team.name,
-      division: team.division,
-      isHuman: true,
-      colorPrimary: team.color_primary ?? undefined,
-      colorSecondary: team.color_secondary ?? undefined,
-    });
-
-    io.to(game.roomCode).emit("systemMessage", {
-      text: `${coachName} foi atribuído a ${team.name}.`,
-      broadcast: true,
-      cm: true,
-    });
-
-    broadcastTeamsData(game);
+    logClubNewsOnce(
+      game,
+      "results_warning",
+      final ? "Último aviso da direção" : "Aviso da direção",
+      team.id,
+      { description: JSON.stringify({ v: 1, level, lossCount }) },
+      io,
+    );
   }
 
   // ── RELEGATION (fim de época) ─────────────────────────────────────────────
@@ -888,8 +919,6 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
   const processCoachEvents = async (game: ActiveGame): Promise<void> => {
     // Resumo semanal do mercado de treinadores (limpo após emissão do report)
     game.coachMarketEvents = [];
-    // A janela de troca pós-despedimento fecha com a jornada seguinte.
-    game.dismissalOptions = {};
 
     // 1. Carregar equipas e forms
     const allTeams = await runAll<AnyRow>(game.db, "SELECT * FROM teams");
@@ -1010,6 +1039,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       const form = forms[teamId] ?? "";
       const results = form.split("").slice(0, 5);
       const lossCount = results.filter((r) => r === "D").length;
+      await warnResultsSlump(game, player, team, lossCount);
       const formDismissalChance = DISMISSAL_BY_LOSSES[lossCount] ?? 0;
       if (formDismissalChance > 0 && Math.random() < formDismissalChance) {
         await dismissHumanCoach(
@@ -1131,7 +1161,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       const pool = struggling.length > 0 ? struggling : npcCandidates;
       const toTeam = pool[Math.floor(Math.random() * pool.length)];
       offeredTeamIds.add(toTeam.id);
-      await offerJobToCoach(game, coachName, teamId, toTeam, team);
+      await offerJobToCoach(game, coachName, teamId, toTeam, team, winCount);
     }
 
     // 6. Persistir estado
@@ -1242,6 +1272,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game.coachMatchesManaged[coachName] = 0;
     game.negativeBudgetStreak[toTeamId] = 0;
     game.boardBudgetWarned[toTeamId] = 0;
+    game.formWarned[toTeamId] = 0;
 
     // Fetch new team details
     const team = await runGet<AnyRow>(
@@ -1313,16 +1344,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     "match_finalizing",
   ]);
 
-  /** «Assumir o comando»: fecha a janela de troca (o clube atual fica). */
-  const handleConfirmDismissalClub = (game: ActiveGame, coachName: string): void => {
-    delete game.dismissalOptions[coachName];
-  };
-
   /**
-   * Troca o clube atribuído no despedimento por uma das alternativas oferecidas.
-   * O treinador nunca fica sem clube: o novo é atribuído e só depois o antigo
-   * é devolvido a um treinador NPC. A janela é a mesma enquanto não confirmar
-   * (o clube que largou volta a ser alternativa) e fecha com a jornada seguinte.
+   * Escolha do clube depois do despedimento: o treinador está sem clube até
+   * escolher uma das 3 opções. Se a opção já foi ocupada por outro humano, sai
+   * da lista e o modal recebe as restantes.
    */
   const handleSwapDismissalClub = async (
     game: ActiveGame,
@@ -1331,65 +1356,62 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
   ): Promise<void> => {
     const player = game.playersByName[coachName];
     const options = game.dismissalOptions[coachName];
-    if (!player || player.teamId == null || !options) return;
-    if (!options.includes(toTeamId) || toTeamId === player.teamId) return;
+    if (!player || player.teamId != null || !options) return;
+    if (!options.includes(toTeamId)) return;
     // A meio do jogo a equipa nova entraria na ronda sem tática nem 11 validados.
     if (MATCH_RUNNING_PHASES.has(game.gamePhase)) return;
 
-    const fromTeamId = player.teamId;
     const claims = teamClaims(game);
     const taken =
       claims.has(toTeamId) ||
       Object.values(game.playersByName).some(
         (p) => p.name !== coachName && p.teamId === toTeamId,
       );
-    if (!taken) claims.add(toTeamId);
+    if (taken) {
+      game.dismissalOptions[coachName] = options.filter((id) => id !== toTeamId);
+      const payload = await dismissalChoicePayload(game, coachName);
+      if (payload && player.socketId) {
+        io.to(player.socketId).emit("dismissalChoice", payload);
+      }
+      return;
+    }
+
+    claims.add(toTeamId);
     try {
-      const [toTeam, fromTeam, mgr] = await Promise.all([
+      const [toTeam, mgr] = await Promise.all([
         runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [toTeamId]),
-        runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [fromTeamId]),
         runGet<{ id: number }>(
           game.db,
           "SELECT id FROM managers WHERE name = ?",
           [coachName],
         ),
       ]);
-      if (taken || !toTeam || !fromTeam || !mgr) {
-        // Outro humano ficou com o clube entretanto: tira-o das alternativas.
-        game.dismissalOptions[coachName] = options.filter((id) => id !== toTeamId);
-        return;
-      }
+      if (!toTeam || !mgr) return;
 
       await assignCoachToTeam(game, coachName, mgr.id, toTeam);
-      // O clube largado volta a ter treinador NPC (e fica como alternativa).
-      await execQuiet(
-        game,
-        "UPDATE teams SET manager_id = NULL WHERE id = ?",
-        [fromTeamId],
-      );
-      await hireNpcManager(game, fromTeam, coachName);
+      delete game.dismissalOptions[coachName];
+      delete game.dismissedCoachSince[coachName];
 
-      game.dismissalOptions[coachName] = options.map((id) =>
-        id === toTeamId ? fromTeamId : id,
-      );
-      const alternatives = (
-        await Promise.all(
-          game.dismissalOptions[coachName]
-            .filter((id) => id !== toTeamId)
-            .map((id) => runGet<AnyRow>(game.db, "SELECT * FROM teams WHERE id = ?", [id])),
-        )
-      ).filter((t): t is AnyRow => !!t);
-
-      await emitTeamAssigned(game, coachName, toTeam, true, alternatives);
+      await recordMarketEvent(game, {
+        type: "hiring",
+        coachName,
+        teamId: toTeam.id,
+        teamName: toTeam.name,
+        division: toTeam.division,
+        isHuman: true,
+        colorPrimary: toTeam.color_primary ?? undefined,
+        colorSecondary: toTeam.color_secondary ?? undefined,
+      });
+      await emitTeamAssigned(game, coachName, toTeam, true);
       io.to(game.roomCode).emit("systemMessage", {
-        text: `${coachName} passou de ${fromTeam.name} para ${toTeam.name}.`,
+        text: `${coachName} foi atribuído a ${toTeam.name}.`,
         broadcast: true,
         cm: true,
       });
       broadcastTeamsData(game);
       saveGameState(game);
     } finally {
-      if (!taken) claims.delete(toTeamId);
+      claims.delete(toTeamId);
     }
   };
 
@@ -1398,9 +1420,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     processRelegatedHumanCoaches,
     handleAcceptJobOffer,
     handleDeclineJobOffer,
-    handleConfirmDismissalClub,
     handleSwapDismissalClub,
     resendPendingJobOffer,
+    resendDismissalChoice,
     resendBoardWarning,
   };
 }

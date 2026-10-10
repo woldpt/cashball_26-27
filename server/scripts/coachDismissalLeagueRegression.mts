@@ -6,17 +6,19 @@
  * tabela: procurar entre os últimos 4 classificados dessa divisão."
  *
  * Cenários:
- *  A. Humano na Liga 3 (div 3), médio → despedido por orçamento ⇒ o clube
- *     atribuído pertence aos últimos 4 classificados da div 3 (nunca a um
- *     clube do topo).
+ *  A. Humano na Liga 3 (div 3), médio → despedido por orçamento ⇒ fica sem
+ *     clube e recebe 3 opções, todas entre os últimos 4 classificados da div 3
+ *     (nunca a um clube do topo). Só depois de escolher fica com clube.
  *  B. O clube do humano foi promovido ao fim da época (div 3 → div 2, o coach
- *     fica com o clube) e, na época seguinte, é despedido ⇒ realocação usa a
- *     divisão CORRENTE (div 2), dentro dos últimos 4 dessa divisão. (Explica
- *     o incidente observado "despedido na Liga 3, reintegrado na Segunda":
- *     o clube tinha sido promovido antes.)
+ *     fica com o clube) e, na época seguinte, é despedido ⇒ as opções usam a
+ *     divisão CORRENTE (div 2), dentro dos últimos 4 dessa divisão.
  *  D. Últimos 4 da div de origem já ocupados por outros humanos ⇒ desce uma
- *     divisão e continua a escolher apenas entre os últimos 4 (nunca fica
- *     sem clube).
+ *     divisão e as opções são os últimos 4 dessa divisão.
+ *  E. Escolha do clube: recusa a meio do jogo e clubes fora das opções;
+ *     depois de escolher já não há troca.
+ *  F. Aviso da direção por má série: 3 derrotas (aviso), 4 (último aviso),
+ *     um aviso por nível e nova série depois de recuperar.
+ *  G. Convite de clube guarda as vitórias recentes (motivo mostrado ao treinador).
  *
  * Run: cd server && npm run test:coach-dismissal-league
  */
@@ -28,7 +30,6 @@ const { createCoachDismissalHelpers } = require("../coachDismissalHelpers.ts") a
   createCoachDismissalHelpers: (deps: any) => {
     processCoachEvents: (game: any) => Promise<void>;
     handleSwapDismissalClub: (game: any, coachName: string, toTeamId: number) => Promise<void>;
-    handleConfirmDismissalClub: (game: any, coachName: string) => void;
   };
 };
 
@@ -168,13 +169,14 @@ async function setupDb() {
 }
 
 function makeGame(db: any): any {
-  const { io } = createMockIo();
+  const { io, emitted } = createMockIo();
   const game: any = {
     db, roomCode: "TEST", season: 1, matchweek: 6,
     // Assentos duráveis (roomStateHelpers): sem eles `deleteSeat` rebenta.
     seats: {}, seatSeenAt: {},
     playersByName: { Huma: { name: "Huma", teamId: 201, socketId: null, ready: false } },
     pendingJobOffers: {}, negativeBudgetStreak: {}, npcNegativeBudgetStreak: {}, boardBudgetWarned: {},
+    formWarned: {},
     coachMatchesManaged: {}, npcMatchesManaged: {}, dismissedCoachSince: {},
     dismissalOptions: {}, dismissalsThisSeason: new Set<string>(), coachMarketEvents: [],
     lockedCoaches: new Set<string>(),
@@ -188,7 +190,7 @@ function makeGame(db: any): any {
     getCoachAvatars: async () => ({}),
     forceNpcWageCut: async () => 0,
   });
-  return { game, helpers };
+  return { game, helpers, emitted };
 }
 
 /** Determinístico: orçamento negativo + streak no limite (5ª semana) + random=0. */
@@ -211,6 +213,21 @@ function restoreRandom() {
 const teamRow = async (db: any, teamId: number): Promise<any> =>
   runGet(db, "SELECT * FROM teams WHERE id=?", [teamId]);
 
+/** Substitui os jogos do humano (201, em casa) por uma série; o 1.º é o mais recente. */
+async function setSerie(db: any, serie: string[]): Promise<void> {
+  await new Promise<void>((resolve) => db.run("DELETE FROM matches", () => resolve()));
+  for (let i = 0; i < serie.length; i++) {
+    const win = serie[i] === "V";
+    await new Promise<void>((resolve, reject) =>
+      db.run(
+        "INSERT INTO matches (id, home_team_id, away_team_id, home_score, away_score, played, season) VALUES (?, 201, 301, ?, ?, 1, 1)",
+        [1000 + serie.length - i, win ? 1 : 0, win ? 0 : 1],
+        (err: any) => (err ? reject(err) : resolve()),
+      ),
+    );
+  }
+}
+
 async function main() {
   // ---------- Cenário A: despedido a meio da Liga 3 ⇒ últimos 4 da div 3 ----------
   let db = await setupDb();
@@ -223,16 +240,18 @@ async function main() {
   }
 
   const player = game.playersByName["Huma"];
-  assert(player.teamId !== 201, "A: coach despedido do clube da Liga 3");
-  if (player.teamId == null) {
-    console.error("FAIL: A — nenhum clube atribuído ao humano");
-    process.exit(1);
+  assert(player.teamId == null, "A: despedido fica sem clube até escolher");
+  const optsA: number[] = game.dismissalOptions["Huma"];
+  assert(Array.isArray(optsA) && optsA.length === 3, "A: 3 clubes à escolha");
+  for (const id of optsA) {
+    const t = await teamRow(db, id);
+    assert(t.division === 3, `A: opção na mesma divisão (div ${t.division})`);
+    assert(DIV3_BOTTOM4_NAMES.includes(t.name), `A: opção "${t.name}" está entre os últimos 4 classificados da Liga 3`);
   }
-  const newTeam = await teamRow(db, player.teamId);
-  assert(newTeam.division === 3, `A: realocação na mesma divisão (div ${newTeam.division})`);
-  assert(DIV3_BOTTOM4_NAMES.includes(newTeam.name), `A: clube atribuído está entre os últimos 4 classificados da Liga 3 — obtido "${newTeam.name}"`);
-  assert((await teamRow(db, player.teamId)).manager_id != null, "A: clube atribuído ficou com treinador");
   assert((await teamRow(db, 201)).manager_id != null, "A: clube de onde foi despedido recebeu treinador NPC (não fica órfão)");
+  await helpers.handleSwapDismissalClub(game, "Huma", optsA[0]);
+  assert(player.teamId === optsA[0], "A: escolher o clube atribui-o");
+  assert((await teamRow(db, player.teamId)).manager_id != null, "A: clube escolhido ficou com treinador");
 
   // ---------- Cenário B: promoção → despedição ⇒ realocação na div 2 ----------
   db = await setupDb();
@@ -255,14 +274,16 @@ async function main() {
   }
 
   const playerB = game.playersByName["Huma"];
-  assert(playerB.teamId !== 201, "B: coach despedido do clube promovido");
-  if (playerB.teamId == null) {
-    console.error("FAIL: B — nenhum clube atribuído ao humano");
-    process.exit(1);
+  assert(playerB.teamId == null, "B: coach despedido do clube promovido fica sem clube até escolher");
+  const optsB: number[] = game.dismissalOptions["Huma"] ?? [];
+  assert(optsB.length === 3, "B: 3 opções à escolha");
+  for (const id of optsB) {
+    const t = await teamRow(db, id);
+    assert(t.division === 2, `B: opções usam divisão CORRENTE do clube (div ${t.division}) — caso 'Liga 3 → Segunda Liga' quando o clube tinha subido`);
+    assert(["S1", "S2", "S3", "S4"].includes(t.name), `B: opção "${t.name}" está entre os últimos 4 classificados da div 2`);
   }
-  const newTeamB = await teamRow(db, playerB.teamId);
-  assert(newTeamB.division === 2, `B: realocação usa divisão CORRENTE do clube (div ${newTeamB.division}) — caso 'Liga 3 → Segunda Liga' quando o clube tinha subido`);
-  assert(["S1", "S2", "S3", "S4"].includes(newTeamB.name), `B: clube atribuído está entre os últimos 4 classificados da div 2 — obtido "${newTeamB.name}"`);
+  await helpers.handleSwapDismissalClub(game, "Huma", optsB[0]);
+  assert(playerB.teamId === optsB[0], "B: escolha atribui o clube da div 2");
 
   // ---------- Cenário D: últimos 4 da div 3 ocupados ⇒ desce p/ div 4 (aí sim, últimos 4) ----------
   db = await setupDb();
@@ -282,14 +303,16 @@ async function main() {
   }
 
   const playerD = game.playersByName["Huma"];
-  assert(playerD.teamId !== 201, "D: coach despedido do clube da Liga 3");
-  if (playerD.teamId == null) {
-    console.error("FAIL: D — nenhum clube atribuído ao humano");
-    process.exit(1);
+  assert(playerD.teamId == null, "D: coach despedido do clube da Liga 3 fica sem clube até escolher");
+  const optsD: number[] = game.dismissalOptions["Huma"] ?? [];
+  assert(optsD.length === 3, "D: 3 opções à escolha");
+  for (const id of optsD) {
+    const t = await teamRow(db, id);
+    assert(t.division === 4, `D: sem últimos-4 livres na div 3, opções na div ${t.division}`);
+    assert(DIV4_BOTTOM4_NAMES.includes(t.name), `D: opção "${t.name}" está entre os últimos 4 classificados da div 4`);
   }
-  const newTeamD = await teamRow(db, playerD.teamId);
-  assert(newTeamD.division === 4, `D: sem últimos-4 livres na div 3, desceu para div ${newTeamD.division}`);
-  assert(DIV4_BOTTOM4_NAMES.includes(newTeamD.name), `D: clube da div 4 atribuído está entre os últimos 4 classificados — obtido "${newTeamD.name}"`);
+  await helpers.handleSwapDismissalClub(game, "Huma", optsD[0]);
+  assert(playerD.teamId === optsD[0], "D: escolha atribui o clube da div 4");
 
   // ---------- Cenário E: troca imediata (despedimento + escolha, nunca sem clube) ----------
   db = await setupDb();
@@ -301,28 +324,65 @@ async function main() {
     restoreRandom();
   }
   const playerE = game.playersByName["Huma"];
-  const firstTeamId = playerE.teamId;
-  assert(firstTeamId != null && firstTeamId !== 201, "E: despedido fica logo com clube (nunca sem clube)");
+  assert(playerE.teamId == null, "E: despedido sem clube enquanto não escolhe");
   const optsE: number[] = game.dismissalOptions["Huma"];
-  assert(Array.isArray(optsE) && optsE.length === 3 && optsE[0] === firstTeamId, "E: 3 clubes à escolha, o atribuído em primeiro");
-  const altId = optsE[1];
+  assert(Array.isArray(optsE) && optsE.length === 3, "E: 3 clubes à escolha");
   await helpers.handleSwapDismissalClub(game, "Huma", 999999);
-  assert(playerE.teamId === firstTeamId, "E: clube fora das opções é ignorado");
-  await helpers.handleSwapDismissalClub(game, "Huma", altId);
-  assert(playerE.teamId === altId, "E: troca para a alternativa escolhida");
-  assert((await teamRow(db, altId)).manager_id != null, "E: clube escolhido ficou com o humano");
-  assert((await teamRow(db, firstTeamId)).manager_id != null, "E: clube largado voltou a ter treinador (NPC)");
-  assert(
-    game.dismissalOptions["Huma"].includes(firstTeamId) && !game.dismissalOptions["Huma"].includes(altId),
-    "E: o clube largado passa a alternativa (dá para voltar atrás)",
-  );
+  assert(playerE.teamId == null, "E: clube fora das opções é ignorado");
   game.gamePhase = "match_first_half";
-  await helpers.handleSwapDismissalClub(game, "Huma", firstTeamId);
-  assert(playerE.teamId === altId, "E: troca recusada a meio do jogo");
+  await helpers.handleSwapDismissalClub(game, "Huma", optsE[1]);
+  assert(playerE.teamId == null, "E: escolha recusada a meio do jogo");
   game.gamePhase = "lobby";
-  helpers.handleConfirmDismissalClub(game, "Huma");
-  await helpers.handleSwapDismissalClub(game, "Huma", firstTeamId);
-  assert(playerE.teamId === altId, "E: depois de assumir o comando já não há troca");
+  const escolhidoE = optsE[1];
+  await helpers.handleSwapDismissalClub(game, "Huma", escolhidoE);
+  assert(playerE.teamId === escolhidoE, "E: escolha atribui o clube escolhido");
+  assert((await teamRow(db, escolhidoE)).manager_id != null, "E: clube escolhido ficou com o humano");
+  assert(game.dismissedCoachSince["Huma"] === undefined, "E: despedimento fecha depois de escolher");
+  await helpers.handleSwapDismissalClub(game, "Huma", optsE[0]);
+  assert(playerE.teamId === escolhidoE, "E: depois de escolher já não há troca");
+
+  // ---------- Cenário F: aviso da direção por má série (3 e 4 derrotas) ----------
+  db = await setupDb();
+  const f = makeGame(db);
+  f.game.playersByName["Huma"].socketId = "sock-huma";
+  f.game.coachMatchesManaged["Huma"] = 9;
+  const realRandomF = Math.random;
+  Math.random = () => 0.99; // sem despedimento nem convite: só o aviso
+  try {
+    await setSerie(db, ["V", "V", "D", "D", "D"]); // 3 derrotas em 5
+    await f.helpers.processCoachEvents(f.game);
+    const avisosF = () => f.emitted.filter((e: any) => e.event === "systemMessage" && e.room === "sock-huma");
+    assert(f.game.formWarned[201] === 1, "F: 3 derrotas em 5 → aviso (nível 1)");
+    assert(avisosF().length === 1 && /3 derrotas/.test(avisosF()[0].payload.text), "F: aviso chega ao treinador");
+    await f.helpers.processCoachEvents(f.game);
+    assert(avisosF().length === 1, "F: o mesmo nível não se repete na semana seguinte");
+    await setSerie(db, ["V", "D", "D", "D", "D"]); // 4 derrotas em 5
+    await f.helpers.processCoachEvents(f.game);
+    assert(f.game.formWarned[201] === 2, "F: 4 derrotas → último aviso (nível 2)");
+    assert(avisosF().length === 2 && /Último aviso/.test(avisosF()[1].payload.text), "F: último aviso chega ao treinador");
+    await setSerie(db, ["V", "V", "V", "D", "D"]); // recuperou: 2 derrotas
+    await f.helpers.processCoachEvents(f.game);
+    assert(f.game.formWarned[201] === 0, "F: recuperar (menos de 3 derrotas) repõe o aviso");
+  } finally {
+    Math.random = realRandomF;
+  }
+
+  // ---------- Cenário G: convite guarda as vitórias recentes ----------
+  db = await setupDb();
+  const g = makeGame(db);
+  g.game.playersByName["Huma"].socketId = "sock-huma";
+  g.game.coachMatchesManaged["Huma"] = 9;
+  await setSerie(db, ["V", "V", "V", "D", "D"]); // 3 vitórias em 5
+  const realRandomG = Math.random;
+  Math.random = () => 0; // o convite sai (5%) e nada mais
+  try {
+    await g.helpers.processCoachEvents(g.game);
+  } finally {
+    Math.random = realRandomG;
+  }
+  assert(g.game.pendingJobOffers["Huma"]?.recentWins === 3, "G: convite guarda as 3 vitórias recentes");
+  const convite = g.emitted.find((e: any) => e.event === "jobOffer");
+  assert(convite?.payload?.recentWins === 3, "G: convite enviado ao treinador traz o motivo");
 
   console.log("\nPASS coachDismissalLeagueRegression");
 }

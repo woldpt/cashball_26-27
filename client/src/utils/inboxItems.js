@@ -317,7 +317,8 @@ export function newsCategory(n) {
     t === "job_offer" ||
     t === "staff_hire" ||
     t === "staff_fire" ||
-    t === "board_warning"
+    t === "board_warning" ||
+    t === "results_warning"
   )
     return "club";
   if (t === "cup_draw") return "competitions";
@@ -524,6 +525,18 @@ function contractRequestArticle(n) {
 }
 
 /**
+ * Texto do convite: diz porque é que o treinador foi escolhido (vitórias recentes).
+ * @param {string} label clube que convida
+ * @param {number|null|undefined} recentWins vitórias nos últimos 5 jogos
+ * @returns {string}
+ */
+export function jobOfferBody(label, recentWins) {
+  const reason =
+    recentWins != null ? ` porque ganhaste ${recentWins} dos últimos 5 jogos` : "";
+  return `${label} quer-te como treinador${reason}. Responde antes do próximo jogo.`;
+}
+
+/**
  * Artigo de um convite de clube persistido (factos em JSON).
  * @param {object} n linha `job_offer`
  */
@@ -536,7 +549,7 @@ function jobOfferArticle(n) {
   const from = newsTeam(n?.team_id, n?.team_name);
   const record = `${facts.wins ?? 0}V ${facts.draws ?? 0}E ${facts.losses ?? 0}D`;
   const title = `Convite: ${to.label}`;
-  const body = `${to.label} quer-te como treinador. Responde antes do próximo jogo.`;
+  const body = jobOfferBody(to.label, facts.recentWins);
   return {
     ...makeArticle(
       [partText("Convite: "), partTeam(to)],
@@ -560,6 +573,31 @@ function boardWarningArticle(n) {
   const title = final ? "Último aviso da direção" : "Aviso da direção";
   const owner = newsTeam(n?.team_id, n?.team_name);
   const body = `Orçamento negativo (${formatCurrency(facts.budget ?? 0)}): ${facts.streak ?? 1} semana${facts.streak === 1 ? "" : "s"} no vermelho. Carrega em Ok para confirmar leitura.`;
+  return {
+    ...makeArticle(
+      [partText(title)],
+      owner ? [partTeam(owner), partText(`: ${body.charAt(0).toLowerCase()}${body.slice(1)}`)] : [partText(body)],
+      null,
+      owner ? [owner] : [],
+      null,
+    ),
+    title,
+    facts: { ...facts, final },
+  };
+}
+
+/**
+ * Artigo de um aviso por má série de resultados persistido (factos em JSON).
+ * @param {object} n linha `results_warning`
+ */
+function resultsWarningArticle(n) {
+  const facts = parseNewsFacts(n) || {};
+  const final = Number(facts.level) === 2;
+  const title = final ? "Último aviso da direção" : "Aviso da direção";
+  const owner = newsTeam(n?.team_id, n?.team_name);
+  const body = `${facts.lossCount ?? 3} derrotas nos últimos 5 jogos. ${
+    final ? "Mais uma derrota pode custar-te o lugar." : "A direção está preocupada."
+  }`;
   return {
     ...makeArticle(
       [partText(title)],
@@ -934,6 +972,7 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   if (String(n?.type || "") === "contract_request") return contractRequestArticle(n);
   if (String(n?.type || "") === "job_offer") return jobOfferArticle(n);
   if (String(n?.type || "") === "board_warning") return boardWarningArticle(n);
+  if (String(n?.type || "") === "results_warning") return resultsWarningArticle(n);
   if (String(n?.type || "") === "cup_draw") return cupDrawArticle(n, viewerTeamId);
   if (String(n?.type || "") === "sponsor_offer") return sponsorOfferArticle(n);
   if (String(n?.type || "") === "league_final") return leagueFinalArticle(n, viewerTeamId);
