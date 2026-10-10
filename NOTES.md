@@ -1,3 +1,9 @@
+## Motor: golos por jogo de volta aos 2,5 (2026-10-10)
+- `chancesTotal` 30,7 → 22,6 (oportunidades por jogo; a conversão não mexe).
+- Porquê: o simulador de épocas mostrou 3,3 golos por jogo nas ligas a sério (3,0 antes da nova escolha de onze dos NPC). A calibração sintética dava 2,5 porque só joga 4-4-2 iguais em equilibrado; formações de ataque, mudanças de estilo, auto-golos (0,26/jogo) e penáltis (0,12) somam por cima.
+- Medido (`sim:seasons`, 3 salas × 3 épocas): 3,31 → 2,47 (1.ª 2,46 · 2.ª 2,41 · 3.ª 2,67 · 4.ª 2,34). Ligas ~2 pontos mais niveladas (1.ª: campeão 38,7 → 36,4, último 9,1 → 11,8). A calibração sintética passa a dar ~1,9 — a referência dos 2,5 mede-se agora no simulador.
+- Testado: typecheck, test:engine-unit (47/47), own-goal, penalty-ordering, substitutions, segment-barrier, ratings, attendance; sem salas presas nem erros do servidor.
+
 ## Simulador de épocas (2026-10-10)
 - `cd server && npm run sim:seasons -- --seasons 3 --runs 3` corre o jogo real só com NPC, ~15 s por época: servidor no mesmo processo (`simBridge` no `index.ts`) + relógio virtual (`scripts/lib/virtualClock.ts`) que dispara os temporizadores quando a BD está parada. Relatório por divisão, salas presas, erros do servidor e `audit:gamestate`; `--json` para comparar antes/depois.
 - No jogo: `simLobbyHoldMs` em `checkAllReady` (nunca definido em produção) — sem humanos a sala salta de jornada em jornada e os leilões nunca saíam da pausa.
@@ -148,8 +154,3 @@ Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-
 ## Familiaridade táctica: estrelas ao abrir Táticas (2026-10-10)
 - Estrelas vazias: o cliente só pedia `requestAllTacticFamiliarity` no botão JOGAR; abrir Táticas pelo menu, sidebar ou reload nunca pedia. Agora `GameContext.jsx` pede ao abrir o separador (com `teamInfo` carregado). Pós-jogo sem gatilho próprio: o `matchResults` já muda para "Ao Vivo".
 - Testado: client lint + check:types (0 erros). Não visto no ecrã — falta ver as estrelas num jogo real.
-
-## Ímpeto visível, remates ao intervalo e leitura do jogo (2026-10-10)
-- Live: chip "🔥 <equipa> por cima · mais N'" durante os 8' a seguir a um golo (espelha `momentumMinutes`; `liveMomentum` em `liveHelpers.js`, sem mexer no servidor). Pós-jogo: cartão "Leitura do jogo" (`matchVerdict`: expulsão cedo, golos esperados vs resultado, golo no embalo).
-- Intervalo: linha "Remates · Golos esp." (`ShotLine`) no bloco da posse (desktop) e sob "Intervalo" (telemóvel); coluna da Tática com `[&>*]:shrink-0` para o bloco não ser cortado.
-- Testado: test:livehelpers (casos novos), lint, check:types, test:mobile 195/195; screenshots livehero 360 e intervalo 1280.

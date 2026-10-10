@@ -671,7 +671,13 @@ export const MATCH_TUNING = {
   awayGoalFactor: 0.92,
   // Posse (hatrick-style): médios decidem a repartição das chances, fixada
   // no apito inicial. 50% ± diferença RELATIVA de médios × posseRelative + estilo.
-  chancesTotal: 30.7, // chances/jogo no total, divididas pela posse (compensa o minuto a meio gás após um golo — goalAfterGoalChanceMult)
+  // chances/jogo no total, divididas pela posse (compensa o minuto a meio gás
+  // após um golo — goalAfterGoalChanceMult). Afinado no jogo real
+  // (sim:seasons, 3 salas × 3 épocas) para ~2,5 golos por jogo: com 30,7 a
+  // calibração sintética (4-4-2 iguais, equilibrado) dava 2,5, mas as ligas
+  // a sério davam 3,3 — formações de ataque, mudanças de estilo dos NPC,
+  // auto-golos e penáltis somam por cima. A sintética dá agora ~1,9.
+  chancesTotal: 22.6,
   posseRelative: 0.42, // 10% de diferença entre médios ≈ 4,2pp de posse, em qualquer divisão (antes 0,014 por ponto: o mesmo desnível valia 1,4pp a 10 de skill e 6,2pp a 44)
   posseStyleDefensiva: 0.02, // estilo inclina: OFENSIVO + / DEFENSIVO −
   // Conversão de chance: p = base × ATA/(ATA + defWeight×(DEF+GR)).

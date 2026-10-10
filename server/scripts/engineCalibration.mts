@@ -9,6 +9,9 @@
  * Compara: golos/jogo, % 0-0, bandas de 10', e sensibilidade a diferença
  * de qualidade (casa 27.5 vs fora 22.5 de média).
  * Sol só, moral 50, sem clima/ego/eventos especiais — isola o modelo de golo.
+ * Referência do modelo "new": ~1,9 golos/jogo. O alvo de 2,5 mede-se no jogo
+ * real com `npm run sim:seasons` — formações de ataque, mudanças de estilo,
+ * auto-golos e penáltis somam ~30% por cima destes jogos sintéticos.
  *
  * Nota: o modelo "old" reconstrói o ataque antigo (0.4×MED + 0.6×ATA) a
  * partir do plantel, porque a computeSidePower já devolve ataque só de ATA.

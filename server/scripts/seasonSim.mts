@@ -161,6 +161,8 @@ async function snapshot(game: any, label: string): Promise<Snapshot> {
     shortTeams += short;
   }
   m["all.dinheiro em jogo"] = teams.reduce((a, t) => a + t.budget, 0);
+  const played = games.reduce((a, r) => a + r.n, 0);
+  m["all.golos por jogo"] = played ? games.reduce((a, r) => a + r.goals, 0) / played : 0;
   m["all.clubes no vermelho"] = teams.filter((t) => t.budget < 0).length;
   m["all.clubes com posição em falta"] = shortTeams;
   m["all.jogadores"] = players.filter((p) => p.id > 0).length;
