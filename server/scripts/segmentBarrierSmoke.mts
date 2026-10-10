@@ -295,7 +295,8 @@ async function main() {
     `B5: tática da casa A após setTactic: ${JSON.stringify({ f: (homeTacticA as any).formation, s: (homeTacticA as any).style })}`,
   );
   const tacticEvents = (fixtureA.events as any[]).filter(
-    (e) => e.type === "tactic_change" && e.team === "home",
+    // A troca de braçadeira (sub do minuto 10) usa o mesmo tipo de evento.
+    (e) => e.type === "tactic_change" && e.team === "home" && !e.captain,
   );
   check(tacticEvents.length === 1, `B5: eventos tactic_change da casa A: ${tacticEvents.length} (esperado 1)`);
   if (tacticEvents.length === 1) {
