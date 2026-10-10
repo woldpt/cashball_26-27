@@ -7,6 +7,9 @@
 - Botões de mentalidade/pressão/conversa: barra segmentada acesa (telemóvel/Tática) ou cartões com ícone e efeito (intervalo desktop e Tática desktop); posse em destaque com emblemas e %; ordens como frase de pílulas que mudam ao toque (sem selects); duelo em 3 mini-cartões com selo (Ganhas/Em risco…). Tática mobile: Moral → Formação+duelo → Instruções → Ordens. `STYLE_OPTIONS` passou para `constants/index.js`.
 - Testado: client lint + check:types, test:mobile 195/195 (concorrência 6), test:tacticpositions, test:briefing; screenshots 360/1280/1440 da Tática e do intervalo vistos.
 
+## Deploy v26.10.41 no rick (2026-10-10)
+- Ímpeto visível no Live, remates/golos esperados no intervalo e "Leitura do jogo" no fim. Backend Healthy.
+
 ## Deploy v26.10.40 no rick (2026-10-10)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui o commit de táticas do intervalo (3.ª coluna) e o registo do deploy anterior.
@@ -131,9 +134,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Topo comum `TransferHeader` (saldo grande + chips) e cabeça de cromo partilhada (`components/transfers/TransferChrome.jsx`); Mercado com selo preço vs valor e barra de % do saldo.
 - Leilões ordenados pelo fim, fita a liderar/superado (`utils/auctionStanding.js` + teste), lance numa linha com Mín./+5%/+10%. Scout: consola de pesquisa, atalhos, ação com preço; `PlayerRow` com `actions` põe-nas na linha de baixo em mobile.
 - Testado: lint (só o erro antigo do landing-resp-test), check:types, `node src/utils/auctionStanding.test.mjs`, test:mobile scout/transfer/auctions/mobile 320–1440 + capturas lidas.
-
-## Redesign Clube · Finanças · Treino (2026-10-06)
-- Treino: foco em 2 grupos (Posições/Físico) com ícone por cima, topo sem cartão órfão, «Como funciona?» em `<details>`, relatório com chip de variação compacto. Finanças: topo 1+2 no telemóvel, Receitas/Despesas em `Panel` com ponto da cor da barra e %, painéis do topo esticam à mesma altura. Clube: hero com faixa Moral/Adeptos/Salários/Saldo (sai o cartão de saldo), Estádio/Equipamento/Palmarés à mesma altura, lugares de funcionários em pontos.
-- Fix: diálogo «Liquidar» mostrava `{interestPct}` literal; `ClubTab` recebe `homeWeather` por prop (o `useTactics` partia o harness do Clube, que volta a passar).
-- Testado: lint, check:types, test:mobile club/finances/training PASS 320–430 + capturas 320/390/1440 com a fonte dos ícones; falhas restantes da suite já existiam (assistant, journal, landing, stadiumtab, teamsquad, topwidgets ← `useTactics` do StadiumTab) ou são da outra sessão (zz-ph).
-- Plano em `docs/plans/2026-10-06-clube-financas-treino-redesign.md`.
