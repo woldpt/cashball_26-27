@@ -1,3 +1,8 @@
+## Tática: seletor de capitão sem menu nativo (2026-10-10)
+- Capitão deixou de ser o `<select>` nativo (lista desenhada pelo sistema, seta do navegador, nomes cortados): pílula + cartão próprio no estilo do `StatusPicker`, fecha com clique fora/Esc. Fundo `bg-bg` por baixo (`surface-container` tem 10% de transparência e deixava ver as linhas do plantel).
+- Coluna «Titulares» de `overflow-hidden` para `overflow-visible`: com menos de 11 titulares a lista era cortada e as últimas opções não se clicavam (medido com 7 titulares). Deve deixar de cortar também os pop-ups de estado das últimas linhas (não testado).
+- Testado: lint, check:types, `test:mobile` (5 larguras PASS); capturas 390/1440 com a lista aberta e a escolha; clique na última opção com 7 titulares (antes não, agora sim).
+
 ## Leilões de cortes forçados: «Sem clube» e venda que falhava (2026-10-10)
 - `forceNpcWageCut` (`contractHelpers.ts`) lia o jogador sem `team_id` nem nome do clube: o leilão mostrava «Sem clube» e, se alguém ganhasse, a venda falhava (`auctionHelpers.ts`, `team_id IS ?`) e o jogador ficava no clube. Agora lê `p.*` + `t.name`, como `processContractExpiries`; o preço inicial passa a usar o valor real (antes caía no proxy `skill*20000`).
 - Porquê: pedido do utilizador — cartões de leilão com «Sem clube» nos cortes de custos de clubes NPC.
@@ -120,7 +125,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - Pontas: renda semanal não cobra se o marcador não se lê; teto de empréstimo 2,5M real (+ botão); lances do treinador despedido retirados; `audit:gamestate` com 4 verificações novas.
 - Testado: novo `test:finance-guards` (F1–F6, cada um falha no código antigo), typecheck, crash-recovery, topscorer, sponsor, staff, connect-smoke, npc-bid-window, room-tx, testes de despedimento, finalize E2E; client lint + check:types.
 
-## Camisola do adversário sem patrocinador (2026-10-09)
-- Bug: no Briefing o logótipo do patrocinador aparecia na nossa camisola mas não na do adversário, porque o resumo do adversário (`buildOpponentSummary` em `matchSummaryHelpers.ts`) não levava `sponsorBrand`.
-- Fix: `withSponsorBrand` (coreHelpers.ts, agora exportada) aplicado ao adversário; cobre liga e taça.
-- Testado: server `typecheck` OK. Visual no briefing por confirmar após reiniciar o servidor.

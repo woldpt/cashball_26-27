@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTactics } from "../contexts/TacticsContext.jsx";
 import { useGame } from "../contexts/GameContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
@@ -570,34 +570,94 @@ function InstructionsCard({ bare = false }) {
 
 /**
  * CaptainPicker — quem leva a braçadeira. Sem escolha (ou com o escolhido
- * fora do onze) o capitão é o maior líder em campo.
+ * fora do onze) o capitão é o maior líder em campo. Pílula + cartão próprio
+ * (o <select> nativo desenha a lista ao sistema e não encaixa na Tática).
  * @returns {JSX.Element|null}
  */
 function CaptainPicker() {
   const { updateTactic } = useTactics();
   const { captain, ranked } = useCaptain();
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const onKey = (e) => e.key === "Escape" && close();
+    document.addEventListener("click", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
   if (!captain) return null;
+  const pick = (id) => {
+    updateTactic({ captainId: id });
+    setOpen(false);
+  };
+  const optionClass = (selected) =>
+    `flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold transition-colors ${
+      selected ? "bg-amber-400/15 text-amber-200" : "text-gray-400 hover:bg-white/5 hover:text-white"
+    }`;
   return (
-    <label className="flex items-center gap-2 border-b border-outline-variant/15 px-3 short:px-2 py-1.5">
+    <div
+      className="relative flex items-center gap-2 border-b border-outline-variant/15 px-3 short:px-2 py-1.5"
+      onClick={(e) => e.stopPropagation()}
+    >
       <CaptainBadge />
       <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-gray-500">Capitão</span>
-      <select
-        value={captain.auto ? "" : captain.id}
-        onChange={(e) => updateTactic({ captainId: e.target.value ? Number(e.target.value) : undefined })}
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
         title="O capitão segura a equipa depois de um golo sofrido. Conta a diferença para o capitão adversário."
-        className="min-h-8 min-w-0 flex-1 cursor-pointer truncate rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 text-[11px] font-bold text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+        className="flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 text-left text-[11px] font-bold text-amber-200 transition-colors hover:bg-amber-400/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
       >
-        <option value="">{`Automático — ${captain.auto ? captain.name : ranked[0].name}`}</option>
-        {ranked.map((r) => (
-          <option key={r.id} value={r.id}>
-            {`${leadDots(r.lead)} ${r.name}`}
-          </option>
-        ))}
-      </select>
+        <span className="min-w-0 flex-1 truncate">{captain.auto ? `Automático — ${captain.name}` : captain.name}</span>
+        <span aria-hidden className="material-symbols-outlined shrink-0 text-[16px] leading-none text-amber-300">
+          {open ? "expand_less" : "expand_more"}
+        </span>
+      </button>
       <span className="shrink-0 text-[11px] tracking-tight text-amber-300" title={`Liderança ${captain.lead}/5`}>
         {leadDots(captain.lead)}
       </span>
-    </label>
+      {open && (
+        // bg-bg por baixo: surface-container tem 10% de transparência e deixava ver as linhas do plantel.
+        <div className="absolute inset-x-3 top-full z-50 mt-1 rounded-2xl bg-bg shadow-2xl">
+          <div
+            role="listbox"
+            className="flex flex-col gap-0.5 rounded-2xl border border-outline-variant/25 bg-surface-container p-1.5"
+          >
+            <button
+              type="button"
+              role="option"
+              aria-selected={captain.auto}
+              onClick={() => pick(undefined)}
+              className={optionClass(captain.auto)}
+            >
+              <span className="min-w-0 flex-1 truncate">{`Automático — ${ranked[0].name}`}</span>
+              <span className="shrink-0 text-[11px] tracking-tight text-amber-300">{leadDots(ranked[0].lead)}</span>
+            </button>
+            {ranked.map((r) => {
+              const selected = !captain.auto && captain.id === r.id;
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => pick(r.id)}
+                  className={optionClass(selected)}
+                >
+                  <span className="min-w-0 flex-1 truncate">{r.name}</span>
+                  <span className="shrink-0 text-[11px] tracking-tight text-amber-300">{leadDots(r.lead)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1129,7 +1189,7 @@ export function TacticsView() {
               {/* Titulares */}
               <div
                 data-tour="tactic-titulares"
-                className={`flex-1 min-w-0 bg-surface-container border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-outline-variant/25"}`}
+                className={`flex-1 min-w-0 bg-surface-container border rounded-2xl overflow-visible transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-outline-variant/25"}`}
                 onDragOver={(e) => {
                   e.preventDefault();
                   if (dragPlayerId) t.setDragOverSection("Titular");
