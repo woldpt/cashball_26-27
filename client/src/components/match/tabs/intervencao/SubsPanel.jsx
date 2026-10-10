@@ -1,14 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  getPosStyle,
-  sortPlayersByPos,
-  buildPositionRows,
-} from "../../matchConstants.js";
+import { getPosStyle } from "../../matchConstants.js";
 import {
   CompactPlayerCard,
   MatchIcon,
-  MatchPitch,
   TacticsButtons,
 } from "../../shared/index.js";
 import { PRESSURE_OPTIONS, TALK_OPTIONS } from "../../../../constants/index.js";
@@ -30,11 +25,13 @@ import {
   TitularesColumn,
 } from "./PlayerLists.jsx";
 import { SwapControls } from "./SwapControls.jsx";
+import { MatchSummaryBlock } from "./Panels.jsx";
+import { OrdersCard } from "../../../shared/OrdersCard.jsx";
 
 // Rótulos pt-PT dos estilos de intervalo (o TacticsButtons usa os valores em inglês).
 const STYLE_LABELS = {
   Defensive: "Defensivo",
-  Balanced: "Equilibrado",
+  Balanced: "Neutro",
   Offensive: "Ofensivo",
 };
 
@@ -133,10 +130,10 @@ function StackSheet({ isFront, reducedMotion, children }) {
   );
 }
 
-/* ── SubsPanel — Titulares | Suplentes+Mentalidade | Relvado ─────────────
- * Desktop (md+): 3-col grid — Titulares, Suplentes (Mentalidade no fundo) e
- * relvado compacto da nossa equipa (clicável = escolhe quem sai, com preview
- * da troca). A confirmação é a pill flutuante ao centro, igual ao mobile.
+/* ── SubsPanel — Titulares | Suplentes | Tática ──────────────────────────
+ * Desktop (md+): 3-col grid — Titulares, Suplentes (só a lista) e Tática
+ * (posse, mentalidade/pressão/conversa e ordens para o jogo). A confirmação
+ * é a pill flutuante ao centro, igual ao mobile.
  * Mobile:
  * stack de duas páginas sobrepostas (Titulares/Suplentes) com deslizamento
  * horizontal —
@@ -176,7 +173,6 @@ export function SubsPanel({
   pauseInitialIdx = null,
   confirmResetAll,
   onArmResetAll,
-  teamColor = "#6366f1",
   summary,
   showTalk = false,
 }) {
@@ -308,35 +304,6 @@ export function SubsPanel({
     pauseInitialIdx,
   };
 
-  // ── Relvado da 3.ª coluna (desktop): 11 projetado ──
-  // Com Sai+Entra mostra o 11 pós-troca (quem entra com anel esmeralda); só
-  // com Sai mostra o atual com o escolhido em rosa. GR improvisado não troca
-  // ninguém — só marca quem vai à baliza.
-  const previewPitchPlayers = useMemo(() => {
-    if (isEmergencyGk || !effectiveOutId || !selectedInId || !targetPlayer)
-      return onPitchPlayers;
-    const outId = Number(effectiveOutId);
-    return sortPlayersByPos([
-      ...onPitchPlayers.filter((p) => Number(p.id) !== outId),
-      targetPlayer,
-    ]);
-  }, [isEmergencyGk, effectiveOutId, selectedInId, targetPlayer, onPitchPlayers]);
-  const pitchRows = useMemo(
-    () => buildPositionRows(previewPitchPlayers),
-    [previewPitchPlayers],
-  );
-  const selectedPitchId = isEmergencyGk ? selectedInId : effectiveOutId;
-  const previewPitchId =
-    !isEmergencyGk && effectiveOutId && selectedInId && targetPlayer
-      ? selectedInId
-      : null;
-  // Toque no relvado escolhe quem sai (mesmos bloqueios dos cartões).
-  const pickFromPitch = (p) => {
-    if (!p) return;
-    if (getPitchCardState(p, cardCtx).disabled) return;
-    if (isEmergencyGk) handlePickIn(p);
-    else pickOut(p);
-  };
   // Confirmar em fila (intervalo/pausa) + resolução imediata — partilhados
   // pela pill do mobile vertical e do desktop.
   const queuedConfirm = flashConfirming(mobileOnConfirmSub);
@@ -382,9 +349,10 @@ export function SubsPanel({
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {!compact ? (
-        /* ═══ Desktop: Titulares | Suplentes+Mentalidade | Relvado ═══
+        /* ═══ Desktop: Titulares | Suplentes | Tática ═══
          * A confirmação é a pill flutuante ao centro (igual ao mobile
-         * vertical); a 3.ª coluna é o relvado, sem barra de Substituições. */
+         * vertical); a 3.ª coluna junta posse, mentalidade/pressão/conversa e
+         * as ordens para o jogo. */
         <div className="relative flex-1 min-h-0 overflow-hidden">
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(260px,1.05fr)] h-full min-h-0 overflow-hidden">
             <TitularesColumn
@@ -415,23 +383,8 @@ export function SubsPanel({
               handleDragOver={handleDragOver}
               handleDropOnBench={handleDropOnBench}
               handleDragEnd={handleDragEnd}
-              summary={summary}
-              mentalidadeFooter={
-                <div className="shrink-0 border-t border-outline-variant/15 bg-surface-container-low/60 px-3 py-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.5)]" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                      Mentalidade
-                    </span>
-                    <span className="ml-auto truncate text-[11px] font-bold text-on-surface">
-                      {STYLE_LABELS[tactic.style] || tactic.style}
-                    </span>
-                  </div>
-                  <MatchInstructions tactic={tactic} onUpdateTactic={onUpdateTactic} showTalk={showTalk} />
-                </div>
-              }
             />
-            <PitchColumn
+            <TacticColumn
               isHalftime={isHalftime}
               isUserSubPause={isUserSubPause}
               subsMade={subsMade}
@@ -440,13 +393,10 @@ export function SubsPanel({
               pauseInitialIdx={pauseInitialIdx}
               confirmResetAll={confirmResetAll}
               onArmResetAll={onArmResetAll}
-              rows={pitchRows}
-              events={summary?.fixture?.events}
-              liveMinute={summary?.liveMinute}
-              teamColor={teamColor}
-              selectedId={selectedPitchId}
-              previewId={previewPitchId}
-              onPlayerClick={pickFromPitch}
+              summary={summary}
+              tactic={tactic}
+              onUpdateTactic={onUpdateTactic}
+              showTalk={showTalk}
               confirmHint={confirmHint}
               canConfirmSwap={canConfirmSwap}
               noReplacement={noReplacement}
@@ -731,7 +681,6 @@ export function SubsPanel({
               handleDragOver={handleDragOver}
               handleDropOnBench={handleDropOnBench}
               handleDragEnd={handleDragEnd}
-              summary={summary}
             />
           </StackSheet>
 
@@ -857,7 +806,7 @@ function ConfirmPill({ tone, onClick, disabled, ariaLabel, icon, children }) {
  * escolhidos (todos os modos: intervalo/pausa em fila, GR improvisado e
  * trocas forçadas com countdown). O wrapper não interceta toques — só o
  * botão — para não roubar scroll às listas. Partilhado pelo mobile vertical
- * e pelo desktop (a 3.ª coluna é o relvado, sem barra de Substituições). */
+ * e pelo desktop (a 3.ª coluna é a Tática, sem barra de Substituições). */
 function FloatingConfirmButton({
   canConfirmSwap,
   isForcedSwap,
@@ -930,12 +879,28 @@ function FloatingConfirmButton({
   );
 }
 
-/* ── Relvado da nossa equipa (3.ª coluna, só desktop) ─────────────────────
- * Compacto e sem scroll próprio: o MatchPitch em altura preenche a coluna.
- * Clicar num jogador escolhe-o para sair (atalho das listas). Com Sai+Entra
- * mostra o 11 projetado pós-troca. Cabeçalho com contador + anular todas;
- * rodapé com fila e motivo do botão desativado. */
-function PitchColumn({
+/**
+ * TacticColumn — 3.ª coluna do desktop: contador/anular subs, posse de bola,
+ * mentalidade + pressão (+ conversa ao intervalo) e as ordens para o jogo.
+ * @param {Object} props
+ * @param {boolean} props.isHalftime
+ * @param {boolean} props.isUserSubPause
+ * @param {number} props.subsMade
+ * @param {number} props.maxSubs
+ * @param {Array<Object>} props.confirmedSubs
+ * @param {number|null} props.pauseInitialIdx
+ * @param {boolean} props.confirmResetAll
+ * @param {() => void} props.onArmResetAll
+ * @param {Object} props.summary - {fixture, hInfo, aInfo, liveMinute} para a posse.
+ * @param {Object} props.tactic
+ * @param {(patch: Object) => void} props.onUpdateTactic
+ * @param {boolean} props.showTalk
+ * @param {string|null} props.confirmHint
+ * @param {boolean} props.canConfirmSwap
+ * @param {boolean} props.noReplacement
+ * @returns {JSX.Element}
+ */
+function TacticColumn({
   isHalftime,
   isUserSubPause,
   subsMade,
@@ -944,13 +909,10 @@ function PitchColumn({
   pauseInitialIdx,
   confirmResetAll,
   onArmResetAll,
-  rows,
-  events,
-  liveMinute,
-  teamColor,
-  selectedId,
-  previewId,
-  onPlayerClick,
+  summary,
+  tactic,
+  onUpdateTactic,
+  showTalk,
   confirmHint,
   canConfirmSwap,
   noReplacement,
@@ -961,8 +923,8 @@ function PitchColumn({
     <div className="flex flex-col min-h-0 min-w-0 bg-surface-container-high/30">
       <div className="shrink-0 px-3 py-2.5 flex items-center gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
         <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2 min-w-0">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-          <span className="truncate">Em campo</span>
+          <span className="w-2 h-2 rounded-full bg-violet-400 shrink-0 shadow-[0_0_8px_rgba(167,139,250,0.5)]" />
+          <span className="truncate">Tática</span>
         </h3>
         {(isHalftime || isUserSubPause) && (
           <span className="ml-auto shrink-0">
@@ -988,18 +950,20 @@ function PitchColumn({
           </button>
         )}
       </div>
-      <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-2">
-        <MatchPitch
-          rows={rows}
-          events={events}
-          liveMinute={liveMinute}
-          teamColor={teamColor}
-          showFatigue={false}
-          onPlayerClick={onPlayerClick}
-          selectedId={selectedId}
-          previewId={previewId}
-          className="md:mx-auto"
-        />
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
+        {summary && <MatchSummaryBlock {...summary} />}
+        <div className="rounded-md border border-outline-variant/25 bg-surface-container/60 p-3 space-y-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+              Mentalidade
+            </span>
+            <span className="ml-auto truncate text-[11px] font-bold text-on-surface">
+              {STYLE_LABELS[tactic.style] || tactic.style}
+            </span>
+          </div>
+          <MatchInstructions tactic={tactic} onUpdateTactic={onUpdateTactic} showTalk={showTalk} />
+        </div>
+        <OrdersCard tactic={tactic} onUpdateTactic={onUpdateTactic} />
       </div>
       <div className="shrink-0 px-3 py-1.5 border-t border-outline-variant/15 space-y-1">
         {isUserSubPause && queued.length > 0 && (

@@ -8,7 +8,6 @@ import {
   getBenchCardState,
   getPitchCardState,
 } from "./subsSelection.js";
-import { MatchSummaryBlock } from "./Panels.jsx";
 
 /* ── Subs counter (halftime) ───────────────────────────────────────────── */
 export function SubsCounter({ subsMade, max = MAX_MATCH_SUBS }) {
@@ -136,11 +135,9 @@ export function SuplentesColumn({
   handleDragOver,
   handleDropOnBench,
   handleDragEnd,
-  summary,
   flat = false,
   skillLast = false,
   posRight = false,
-  mentalidadeFooter = null,
 }) {
   // `flat` (mobile): lista em altura natural dentro do scroll único da página.
   const Card = flat ? CompactPlayerCard : MatchPlayerCard;
@@ -195,17 +192,6 @@ export function SuplentesColumn({
           </p>
         )}
       </div>
-      {/* Mentalidade — só desktop (a 3.ª coluna é o relvado); no mobile
-       * vive recolhível no topo da stack. */}
-      {!flat && mentalidadeFooter}
-      {/* Posse de Bola — só desktop; no mobile mudou para a linha de 2px do
-       * banner intermitente no topo do ecrã. */}
-      {!flat &&
-        summary && (
-          <div className="shrink-0 p-3 border-t border-outline-variant/15 bg-surface-container-high/30">
-            <MatchSummaryBlock {...summary} />
-          </div>
-        )}
     </div>
   );
 }

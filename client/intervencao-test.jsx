@@ -57,7 +57,13 @@ for (const p of squad) positions[p.id] = starterIds.includes(p.id) ? "Titular" :
 positions[8] = "Suplente";
 positions[16] = "Titular";
 
-const tactic = { positions, style: "Equilibrado" };
+const tactic = {
+  positions,
+  style: "Equilibrado",
+  pressure: "ALTA",
+  // Ordem programada: a 3.ª coluna (desktop) mostra-a editável.
+  orders: [{ minute: 70, when: "LOSING", style: "Offensive", pressure: "ALTA" }],
+};
 
 /* ── Opponent (away, id 2) — 11 starters + 5 bench ────────────────────── */
 const oppSquad = [

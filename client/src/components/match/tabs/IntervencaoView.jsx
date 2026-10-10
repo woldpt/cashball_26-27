@@ -22,7 +22,7 @@ import {
  * Simplified layout:
  *   [Descrição do ecrã]            [Scoreboard]   [Anular todas]
  *   [Tab Cronologia] [Tab Substituições] [Tab Adversário]
- *   (Subs)  Titulares | Suplentes | [Mentalidade | Substituições]
+ *   (Subs)  Titulares | Suplentes | Tática (posse, mentalidade, ordens)
  *   [Iniciar/Continuar]  ← full-width button em MatchPage (mantido)
  * ──────────────────────────────────────────────────────────────────────── */
 export function IntervencaoView({
@@ -135,7 +135,6 @@ export function IntervencaoView({
       Number(fixture?.awayTeamId) === Number(myTeamId));
   const hInfo = teams?.find((t) => t.id === fixture?.homeTeamId);
   const aInfo = teams?.find((t) => t.id === fixture?.awayTeamId);
-  const ownColor = (isHome ? hInfo : aInfo)?.color_primary;
 
   // O plantel base vem da BD e mantém a skill permanente. No intervalo
   // sobrepõe-se a fadiga transitória do fixture; nas pausas de 30'/70'
@@ -551,7 +550,6 @@ export function IntervencaoView({
               onResolveAction={onResolveAction}
               confirmResetAll={confirmResetAll}
               onArmResetAll={handleArmResetAll}
-              teamColor={ownColor}
               summary={{ fixture, hInfo, aInfo, liveMinute }}
               showTalk={isHalftime && !isPreExtraTime}
             />

@@ -1,3 +1,7 @@
+## Intervalo (desktop): 3.ª coluna passa a Tática (2026-10-10)
+- Saiu o relvado da 3.ª coluna: agora tem posse de bola, Mentalidade/Pressão/Conversa e "Ordens para o jogo" (editáveis). A 2.ª coluna ficou só com a lista de suplentes. `OrdersCard` passou a componente partilhado (`components/shared/OrdersCard.jsx`) usado pela Tática e pelo intervalo. Botão "Equilibrado" passou a "Neutro" (igual à Tática; cortava a 1280px).
+- Testado: client lint + check:types, test:mobile 195/195 (concorrência 6 — com 20 a máquina carregada dava timeouts), screenshots 1280/1440 vistos, test:substitutions, test:emergency-gk.
+
 ## Deploy v26.10.38 no rick (2026-10-10)
 Push, tag e rebuild feitos; backend Healthy.
 Inclui as Fases 1–3 do roadmap tático do motor (formação real, jogar com 10, xG, posse viva, ímpeto, NPCs que gerem o jogo, duelo, pressão, conversa ao intervalo, ordens).
@@ -138,8 +142,3 @@ Inclui os últimos commits do master (odds, PAUSA, jornal, amigáveis).
 - 10 equipas/divisão, 18 jornadas, época de 25 semanas; final da Taça = ronda 6 (`CUP_FINAL_ROUND`). Salas antigas são para apagar (sem migração).
 - 32 avos com Distritais; isentas = D1 + top-4 da D2 (`last_season_rank`). Plano em `docs/plans/2026-10-05-ligas-10-equipas.md`.
 - Testado: typecheck, lint/check:types, engine-unit, fansmood, sponsor, contratos, skillhistory, connect-smoke + verificação da regra de isenção sobre a base.db.
-
-## Briefing: relvado do adversário visível em mobile (2026-10-04)
-- Bug: no Briefing pré-jogo (<`lg`) o cartão «Confronto tático em campo» só mostrava o cabeçalho — o wrapper do `OpponentFormation` só tinha `min-h` e o `PitchFormation` é `h-full` com conteúdo `absolute` (colapsava a 0px; em `lg` o cartão é flex column e `flex-1` dava altura).
-- Fix (plano `docs/plans/briefing-pitch-mobile.md`): wrapper passa a `h-80 short:h-56` em mobile e `lg:h-auto lg:flex-1` em desktop — altura definida → `h-full` do filho resolve. `PitchFormation` e `MatchBriefing` intactos.
-- Verificação: `check:types` 0 · `lint` 0 no ficheiro (3 erros pré-existentes noutros) · `build` OK · `test:mobile -- briefing-resp-test` PASS 360/390 · screenshots full-page 360/390 lidos (relvado com os 11 nas 4 linhas; desktop CSS idêntico ao anterior).

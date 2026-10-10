@@ -13,7 +13,7 @@ const TACTIC_OPTIONS = [
   },
   {
     value: "Balanced",
-    label: "Equilibrado",
+    label: "Neutro",
     accent: "#6366f1",
     icon: "form-flat",
   },
