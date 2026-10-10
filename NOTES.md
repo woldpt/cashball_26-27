@@ -1,3 +1,8 @@
+## Deploy v26.10.50 no rick (2026-10-10)
+- Push `ea37199a..d6aafb21` (19 commits: correções à economia, golos 2,5, 5.ª divisão a treinar, limite de plantel nos leilões, fim da academia NPC, simulador de épocas) + bump `APP_VERSION` para v26.10.50. Tag `v26.10.50` publicada.
+- Rick: `git pull` + `docker compose up --build -d` → `backend Healthy`. Sem erros no rebuild.
+- Regra: rick ficou exatamente na tag; este apontamento fica só local (sem push).
+
 ## 5.ª divisão passa a treinar (2026-10-10)
 - `ensureNpcTrainingFocus` deixa de excluir a 5.ª divisão: treina como as outras (linha mais fraca, ou recuperação física/forma). Equipa técnica e investimento continuam só para a 1.ª–4.ª.
 - Porquê: sem treino só perdia qualidade e quem subia chegava à 4.ª três vezes mais fraco.
