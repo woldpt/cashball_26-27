@@ -145,11 +145,3 @@ Testado: typecheck, test:coach-dismissal-league (cenário H novo), test:session-
 
 ## Deploy v26.10.41 no rick (2026-10-10)
 - Ímpeto visível no Live, remates/golos esperados no intervalo e "Leitura do jogo" no fim. Backend Healthy.
-
-## Deploy v26.10.40 no rick (2026-10-10)
-Push, tag e rebuild feitos; backend Healthy.
-Inclui o commit de táticas do intervalo (3.ª coluna) e o registo do deploy anterior.
-
-## Deploy v26.10.39 no rick (2026-10-10)
-Push, tag e rebuild feitos; backend Healthy.
-Inclui o commit de táticas do intervalo de outra sessão (em curso nesta árvore); o bump de `APP_VERSION` ficou incluído nesse commit, sem commit próprio.

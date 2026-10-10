@@ -2,6 +2,14 @@
 
 Apontamentos antigos movidos do NOTES.md para ele nunca pesar. Nada se apaga, só muda de casa.
 
+## Deploy v26.10.40 no rick (2026-10-10)
+Push, tag e rebuild feitos; backend Healthy.
+Inclui o commit de táticas do intervalo (3.ª coluna) e o registo do deploy anterior.
+
+## Deploy v26.10.39 no rick (2026-10-10)
+Push, tag e rebuild feitos; backend Healthy.
+Inclui o commit de táticas do intervalo de outra sessão (em curso nesta árvore); o bump de `APP_VERSION` ficou incluído nesse commit, sem commit próprio.
+
 ## Intervalo (desktop): 3.ª coluna passa a Tática (2026-10-10)
 - Saiu o relvado da 3.ª coluna: agora tem posse de bola, Mentalidade/Pressão/Conversa e "Ordens para o jogo" (editáveis). A 2.ª coluna ficou só com a lista de suplentes. `OrdersCard` passou a componente partilhado (`components/shared/OrdersCard.jsx`) usado pela Tática e pelo intervalo. Botão "Equilibrado" passou a "Neutro" (igual à Tática; cortava a 1280px).
 - Testado: client lint + check:types, test:mobile 195/195 (concorrência 6 — com 20 a máquina carregada dava timeouts), screenshots 1280/1440 vistos, test:substitutions, test:emergency-gk.
