@@ -30,6 +30,7 @@
  * Antes: o NPC rico construía todas as semanas, com ou sem adeptos.
  *
  *   E1 — só constrói com massa adepta acima da lotação
+ *   E2 — o teto da folha sobe com a bilheteira e fica igual sem jogos em casa
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -37,6 +38,8 @@ import { rankNpcBuyTargets, pickNpcListing, npcShouldRenew, npcShouldBuildStadiu
 import {
   signingWage,
   NPC_BUY_MAX_VALUE_RATIO,
+  npcFolhaCeiling,
+  npcSustainableWeeklyFolha,
   NPC_LIST_MARKET_PREMIUM,
   NPC_OPPORTUNITY_SALE_PREMIUM,
   MAX_BENCH_SIZE,
@@ -191,4 +194,14 @@ test("E1: NPC só constrói com massa adepta acima da lotação", () => {
   assert.equal(npcShouldBuildStadium({ stadium_capacity: 10000, fanbase: 10000 }), false);
   assert.equal(npcShouldBuildStadium({ stadium_capacity: 10000, fanbase: 12000 }), true);
   assert.equal(npcShouldBuildStadium({ stadium_capacity: 10000 }), false);
+});
+
+test("E2: o teto da folha sobe com a bilheteira e fica igual sem ela", () => {
+  assert.equal(npcFolhaCeiling(1), npcSustainableWeeklyFolha(1));
+  assert.equal(npcFolhaCeiling(1, 0), npcSustainableWeeklyFolha(1));
+  // 400 mil por jogo em casa: 85% ficam no clube, 9 jogos em 25 semanas, metade conta.
+  assert.equal(
+    npcFolhaCeiling(1, 400_000),
+    npcSustainableWeeklyFolha(1) + Math.round((400_000 * 0.85 * 9) / 25 / 2),
+  );
 });

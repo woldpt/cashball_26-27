@@ -266,6 +266,24 @@ export function npcSustainableWeeklyFolha(division: number): number {
 }
 
 /**
+ * Fração da bilheteira semanal média que entra no teto da folha dos NPCs.
+ * Sem ela o teto só via mesada + patrocínio e a bilheteira (47% da receita
+ * na 1.ª) ficava toda a acumular no banco.
+ */
+export const NPC_FOLHA_GATE_SHARE = 0.5;
+
+/**
+ * Teto da folha de um NPC: o estrutural da divisão mais a parte da
+ * bilheteira que o clube encaixa por semana — média dos jogos em casa da
+ * época (parte do visitado), espalhada pelas semanas da época.
+ */
+export function npcFolhaCeiling(division: number, avgHomeGate = 0): number {
+  const weeklyGate =
+    (Math.max(0, avgHomeGate) * (1 - AWAY_TICKET_SHARE) * (LEAGUE_MATCHWEEKS / 2)) / SEASON_WEEKS;
+  return Math.round(npcSustainableWeeklyFolha(division) + weeklyGate * NPC_FOLHA_GATE_SHARE);
+}
+
+/**
  * Semanas consecutivas de "insolvência estrutural" (orçamento negativo E
  * folha acima do break-even) antes de um NPC entrar em restrições (aviso).
  */

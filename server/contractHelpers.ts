@@ -6,7 +6,7 @@ import {
   fairWeeklyWage,
   recalcPlayerValue,
   wealthAgentMultiplier,
-  npcSustainableWeeklyFolha,
+  npcFolhaCeiling,
   NPC_INVEST_BUDGET_THRESHOLD,
   NPC_ACADEMY_COST,
   NPC_WAGE_CUT_PER_EVENT,
@@ -424,8 +424,8 @@ export function createContractHelpers(deps: ContractDeps) {
    * Pressão salarial anti-acumulação (P1). Para cada NPC das divisões 1-4,
    * alguns jogadores subvalorizados (wage < fairWage ajustada à riqueza e ao
    * desempenho do clube) recebem um aumento gradual — o agente pede mais a
-   * quem pode pagar. O aumento é limitado ao teto sustentável da folha
-   * (nunca provoca insolvência) e a ~+15%/evento por jogador (sem choques).
+   * quem pode pagar. O aumento é limitado ao teto da folha (estrutural da
+   * divisão + metade da bilheteira semanal do clube) e a ~+15%/evento por jogador (sem choques).
    * Ricos / em boa forma acumulam excedentes → a folha sobe até ao equilíbrio;
    * clubes equilibrados não têm margem → os salários estagnam.
    */
@@ -442,11 +442,18 @@ export function createContractHelpers(deps: ContractDeps) {
       game.db,
       "SELECT id, division, budget FROM teams",
     );
+    // Bilheteira média em casa desta época, por clube (entra no teto da folha).
+    const gateRows = await runAll<AnyRow>(
+      game.db,
+      "SELECT home_team_id AS id, AVG(ticket_revenue) AS gate FROM matches WHERE played = 1 AND season = ? AND competition = 'League' GROUP BY home_team_id",
+      [game.season],
+    ).catch(() => [] as AnyRow[]);
+    const gateByTeam = new Map<number, number>(gateRows.map((r) => [r.id, r.gate || 0]));
     for (const team of teams) {
       if (!team || humanTeamIds.has(team.id)) continue;
       const division = Number(team.division ?? 4);
       if (division === 5) continue; // pool interno, invisível
-      const sustainable = npcSustainableWeeklyFolha(division);
+      const sustainable = npcFolhaCeiling(division, gateByTeam.get(team.id) ?? 0);
       const recentForm = (forms[team.id] || "").slice(0, 5);
       const wins = recentForm.split("").filter((c) => c === "V").length;
       const players = await runAll<AnyRow>(
