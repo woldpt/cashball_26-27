@@ -133,3 +133,15 @@ export function npcShouldRenew(args: {
   if (skill >= squadAvgSkill * NPC_RENEW_MIN_SKILL_RATIO) return true;
   return positionCount - 1 < (NPC_POS_MIN[position] ?? 3);
 }
+
+/**
+ * Obra no estádio de um NPC: só com adeptos para encher os lugares novos.
+ * A assistência é limitada pela massa adepta — bancada a mais só traz
+ * manutenção e um estádio vazio (que ainda tira ataque à equipa).
+ */
+export function npcShouldBuildStadium(team: {
+  stadium_capacity?: number;
+  fanbase?: number;
+}): boolean {
+  return (team.fanbase || 0) > (team.stadium_capacity || 0);
+}

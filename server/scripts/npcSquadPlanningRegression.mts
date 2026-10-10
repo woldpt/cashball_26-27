@@ -26,10 +26,14 @@
  *   L1 — o melhor em baixo de forma perde o lugar para um colega em forma
  *   L2 — plantel forte em médios joga com 5 médios, mesmo com suplentes fracos
  *   L3 — lesionado não joga; banco com 1 GR e no máximo MAX_BENCH_SIZE
+ *
+ * Antes: o NPC rico construía todas as semanas, com ou sem adeptos.
+ *
+ *   E1 — só constrói com massa adepta acima da lotação
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rankNpcBuyTargets, pickNpcListing, npcShouldRenew } from "../npcSquadPlanning";
+import { rankNpcBuyTargets, pickNpcListing, npcShouldRenew, npcShouldBuildStadium } from "../npcSquadPlanning";
 import {
   signingWage,
   NPC_BUY_MAX_VALUE_RATIO,
@@ -180,4 +184,11 @@ test("L3: lesionado fica de fora; banco com 1 GR e tamanho máximo", () => {
   assert.ok(![...starters, ...bench].some((p) => p.id === injured.id));
   assert.equal(bench.filter((p) => p.position === "GR").length, 1);
   assert.equal(bench.length, MAX_BENCH_SIZE);
+});
+
+test("E1: NPC só constrói com massa adepta acima da lotação", () => {
+  assert.equal(npcShouldBuildStadium({ stadium_capacity: 50000, fanbase: 35000 }), false);
+  assert.equal(npcShouldBuildStadium({ stadium_capacity: 10000, fanbase: 10000 }), false);
+  assert.equal(npcShouldBuildStadium({ stadium_capacity: 10000, fanbase: 12000 }), true);
+  assert.equal(npcShouldBuildStadium({ stadium_capacity: 10000 }), false);
 });

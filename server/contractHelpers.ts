@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { npcShouldRenew } from "./npcSquadPlanning";
+import { npcShouldRenew, npcShouldBuildStadium } from "./npcSquadPlanning";
 import {
   CONTRACT_LENGTH_WEEKS,
   getAgentName,
@@ -553,7 +553,7 @@ export function createContractHelpers(deps: ContractDeps) {
   /**
    * Direção investe excedente. NPC com banco acima do limiar gasta 1 ação
    * por semana até regressar ao limiar: obra (300k, se houver margem até
-   * 120k) ou academia (500k → prospeto real para o plantel, com ordenado).
+   * 120k e adeptos para encher) ou academia (500k → prospeto real para o plantel, com ordenado).
    * Esvazia as pilhas multimilionárias (Porto 60M€) sem árbitro central.
    */
   const NPC_STADIUM_BUILD_COST = 300000;
@@ -566,14 +566,20 @@ export function createContractHelpers(deps: ContractDeps) {
     );
     const teams = await runAll<AnyRow>(
       game.db,
-      "SELECT id, division, budget, stadium_capacity, name FROM teams WHERE budget > ?",
+      // SELECT * de propósito: tolera salas antigas sem a coluna fanbase
+      // (sem ela não há obra — como no computeAttendance).
+      "SELECT * FROM teams WHERE budget > ?",
       [NPC_INVEST_BUDGET_THRESHOLD],
     );
     for (const team of teams) {
       if (!team || humanTeamIds.has(team.id)) continue;
       if (Number(team.division ?? 4) === 5) continue; // pool interno
       const capacity = team.stadium_capacity || 10000;
-      if (capacity < NPC_MAX_CAPACITY && team.budget - NPC_STADIUM_BUILD_COST >= NPC_INVEST_BUDGET_THRESHOLD) {
+      if (
+        capacity < NPC_MAX_CAPACITY &&
+        npcShouldBuildStadium(team) &&
+        team.budget - NPC_STADIUM_BUILD_COST >= NPC_INVEST_BUDGET_THRESHOLD
+      ) {
         // Fila da sala + guarda de saldo no próprio SQL (o `team.budget` lido
         // em cima pode estar velho).
         const built = await runRoomTask(game.roomCode, () =>
